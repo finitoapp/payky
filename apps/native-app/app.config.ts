@@ -39,6 +39,7 @@ export default {
     "@sentry/react-native/expo",
     ["expo-sqlite", { useSQLCipher: true }],
     "./plugins/with-no-data-extraction.cjs",
+    "./plugins/with-hardware-key-events.cjs",
     "./plugins/with-library-compile-sdk.cjs",
     "./plugins/with-release-proguard-rules.cjs",
   ],

@@ -33,15 +33,25 @@ import {
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { TableId } from "@payky/core/modules/table/table-types"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
-import { Suspense, useDeferredValue, useMemo, useRef, useState } from "react"
+import { useAtomValue } from "jotai"
+import {
+  Suspense,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
+import { confirmQueueAtom } from "../../atoms/confirm.ts"
 import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useProductLookup } from "../../hooks/use-product-lookup.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
@@ -73,9 +83,10 @@ const goHome = () => router.dismissTo("/")
  */
 export function BillRoute() {
   const { t } = useTranslation()
-  const { billId, tableId } = useLocalSearchParams<{
+  const { billId, tableId, scan } = useLocalSearchParams<{
     billId?: string
     tableId?: string
+    scan?: string
   }>()
   const [mintedId] = useState(createRandomBillId)
 
@@ -95,6 +106,7 @@ export function BillRoute() {
         initialTableId={
           tableId === undefined ? undefined : TableId.safeParse(tableId).data
         }
+        initialScanCode={scan === "" ? undefined : scan}
       />
     </Suspense>
   )
@@ -103,9 +115,12 @@ export function BillRoute() {
 function BillPage({
   billId,
   initialTableId,
+  initialScanCode,
 }: {
   readonly billId: BillId
   readonly initialTableId: TableId | undefined
+  /** A code scanned on the home screen, which opened this bill to add it. */
+  readonly initialScanCode: string | undefined
 }) {
   const { t } = useTranslation()
   // Only meaningful before the bill row exists: it seeds the table the lazily
@@ -167,6 +182,7 @@ function BillPage({
       currency={bill?.currency ?? getFiatCurrency(settings)}
       tipsEnabled={settings?.tipsEnabled === sqliteTrue}
       summaries={summaries}
+      initialScanCode={initialScanCode}
     />
   )
 }
@@ -301,6 +317,7 @@ function BillCart({
   currency,
   tipsEnabled,
   summaries,
+  initialScanCode,
 }: {
   readonly billId: BillId
   readonly tableId: TableId | null
@@ -311,6 +328,7 @@ function BillCart({
   readonly currency: FiatCurrency
   readonly tipsEnabled: boolean
   readonly summaries: ReadonlyArray<BillLineSummary>
+  readonly initialScanCode: string | undefined
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -386,6 +404,13 @@ function BillCart({
     setLastScanned(item)
     void cart.addOne(item)
   }
+  const confirmOpen = useAtomValue(confirmQueueAtom).length > 0
+  const scanDialogOpen =
+    collisionCandidates.length > 0 ||
+    createCode !== null ||
+    confirmOpen ||
+    tablePickerOpen ||
+    splitOpen
   // A code matching one item adds it, several ask which one, an unknown one
   // offers to create the item (prefilled from the product lookup) and add it.
   const handleScan = async (rawValue: string) => {
@@ -404,6 +429,20 @@ function BillCart({
     } else if (matches.length > 1) setCollisionCandidates(matches)
     else addScanned(first)
   }
+  // At any time, not only in scan mode, as web (scanner/0001).
+  useHardwareScanner({
+    enabled: !scanDialogOpen,
+    onScan: (code) => void handleScan(code),
+  })
+  // Handled once, then dropped from the route so a return to this bill does
+  // not add the item a second time.
+  const initialScanHandledRef = useRef(false)
+  useEffect(() => {
+    if (initialScanCode === undefined || initialScanHandledRef.current) return
+    initialScanHandledRef.current = true
+    router.setParams({ scan: undefined })
+    void handleScan(initialScanCode)
+  })
   const usedCategoryIds = useMemo(
     () => new Set(currencyItems.map((item) => item.categoryId)),
     [currencyItems]
@@ -482,7 +521,7 @@ function BillCart({
       />
       {scanMode ? (
         <BillScanView
-          paused={collisionCandidates.length > 0 || createCode !== null}
+          paused={scanDialogOpen}
           onScan={handleScan}
           lastScanned={
             lastScanned === null ? null : (

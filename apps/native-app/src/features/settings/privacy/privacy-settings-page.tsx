@@ -9,6 +9,7 @@ export function PrivacySettingsPage() {
   const { t } = useTranslation()
   const settings = usePrivacySettings()
   const reporting = settings.errorReportingEnabled
+  const lookup = settings.productLookupEnabled
 
   return (
     <Screen>
@@ -27,6 +28,21 @@ export function PrivacySettingsPage() {
             : "settings.privacy.errorReporting.enable"
         )}
         onPress={() => settings.setErrorReportingEnabled(!reporting)}
+      />
+      <ConsentCard
+        title={t("settings.privacy.productLookup.title")}
+        description={t("settings.privacy.productLookup.description")}
+        status={t(
+          lookup
+            ? "settings.privacy.productLookup.enabled"
+            : "settings.privacy.productLookup.disabled"
+        )}
+        actionLabel={t(
+          lookup
+            ? "settings.privacy.productLookup.disable"
+            : "settings.privacy.productLookup.enable"
+        )}
+        onPress={() => settings.setProductLookupEnabled(!lookup)}
       />
     </Screen>
   )

@@ -25,3 +25,12 @@ it("flips errorReportingEnabled on the device row and lets the controller react"
   expect(controller).toContain("disableErrorReporting()")
   expect(reporting).toContain("void Sentry.close()")
 })
+
+it("flips productLookupEnabled on the device row, with no lookup of its own", () => {
+  expect(hook).toContain(
+    "productLookupEnabled: enabled ? sqliteTrue : sqliteFalse"
+  )
+  expect(page).toContain("settings.setProductLookupEnabled(!lookup)")
+  // The lookup itself arrives with the bill/item screens, not the consent.
+  expect(page + hook).not.toMatch(/open-facts|lookupOpenFactsProduct/u)
+})

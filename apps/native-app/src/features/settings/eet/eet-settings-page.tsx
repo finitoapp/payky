@@ -35,6 +35,7 @@ import { useToast } from "../../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { useEetSettings } from "../../shared/use-eet-settings.ts"
 import { WarningPanel } from "../../shared/warning-panel.tsx"
+import { EetCertificateImport } from "./eet-certificate-import.tsx"
 import { EetOfficialTestCertificates } from "./eet-official-test-certificates.tsx"
 import { EetTestSection } from "./eet-test-section.tsx"
 import { EetUnconfirmedSales } from "./eet-unconfirmed-sales.tsx"
@@ -69,8 +70,8 @@ const environmentErrorKeys = {
 
 /**
  * EET configuration (A03b): reporting, tip owner, environment and the stored
- * certificate's state. Importing a certificate (A03a), the test card (A03c)
- * and unconfirmed sales (A03d) are separate screens' worth of work.
+ * certificate's state. The certificate import, test and unconfirmed sales
+ * (A03a, A03c, A03d) are sections of the same screen.
  */
 export function EetSettingsPage() {
   const { t } = useTranslation()
@@ -331,6 +332,7 @@ function StoredCertificate({
           locale={locale}
         />
       )}
+      <EetCertificateImport />
       {environment === "playground" ? <EetOfficialTestCertificates /> : null}
     </Section>
   )

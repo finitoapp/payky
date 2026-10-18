@@ -6,24 +6,26 @@ import {
   publishNostrProfile,
 } from "@payky/core/integrations/nostr/nostr-client"
 import { useState } from "react"
-import { ActivityIndicator, Text as NativeText } from "react-native"
-import { Text, YStack } from "tamagui"
+import { ActivityIndicator, Image, Text as NativeText } from "react-native"
+import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
+import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import {
   useNostrIdentity,
   useNostrProfile,
 } from "../../../hooks/use-nostr-profile.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { pickProfilePicture } from "../../../platform/pick-profile-picture.ts"
 
 /**
- * Edits the name of the account's Nostr profile, as web's
+ * Edits the name and picture of the account's Nostr profile, as web's
  * `ProfileSettingsPage`: republished with the account's key as soon as it is
  * saved. The editor opens only once the published profile is known, so a save
- * never overwrites fields it could not read. The picture (C06) is not here yet.
+ * never overwrites fields it could not read.
  */
 export function ProfileSettingsPage() {
   const { t } = useTranslation()
@@ -65,31 +67,100 @@ export function ProfileSettingsPage() {
 function ProfileEditor({ profile }: { readonly profile: NostrProfile }) {
   const { t } = useTranslation()
   const runToast = useRunToast()
+  const [pictureInvalid, setPictureInvalid] = useState(false)
   // What this screen last published; relays may still serve the previous
   // event for a moment, so it is shown instead of a refetch.
   const [published, setPublished] = useState<NostrProfile | null>(null)
   const current = published ?? profile
 
+  // ponytail: each save merges into the profile as last published here, so a
+  // name and a picture saved at the same instant can drop one of the two.
+  const publish = (changes: {
+    readonly name: string
+    readonly picture: string | null
+  }) =>
+    runToast(async (run) => {
+      const metadata = mergeProfileMetadata({
+        current: current.metadata,
+        ...changes,
+      })
+      const result = await run(publishNostrProfile({ metadata }))
+      if (!result.ok) return "settings.profile.saveFailed"
+      setPublished(profileFromMetadata(metadata) ?? current)
+      return undefined
+    })
+
+  const picture = useInlineChoice(current.picture, (next) =>
+    publish({ name: current.name ?? "", picture: next })
+  )
+
+  const choosePicture = async () => {
+    const picked = await pickProfilePicture()
+    if (picked.type === "cancelled") return
+    setPictureInvalid(picked.type === "invalid")
+    if (picked.type === "picked") await picture.choose(picked.dataUrl)
+  }
+
   return (
-    <InlineEditField
-      label={t("settings.profile.name.label")}
-      placeholder={t("settings.profile.name.placeholder")}
-      defaultValue={current.name}
-      codec={optionalTextCodec}
-      errorKey="settings.profile.name.invalid"
-      onSave={(name) =>
-        runToast(async (run) => {
-          const metadata = mergeProfileMetadata({
-            current: current.metadata,
-            name: name ?? "",
-            picture: current.picture,
-          })
-          const result = await run(publishNostrProfile({ metadata }))
-          if (!result.ok) return "settings.profile.saveFailed"
-          setPublished(profileFromMetadata(metadata) ?? current)
-          return undefined
-        })
-      }
-    />
+    <YStack gap="3">
+      <YStack gap="2">
+        <Text fontSize="sm" fontWeight="600">
+          {t("settings.profile.picture.label")}
+        </Text>
+        <XStack gap="3" alignItems="center">
+          <YStack
+            width={80}
+            height={80}
+            borderRadius={40}
+            overflow="hidden"
+            backgroundColor="card"
+            borderWidth={1}
+            borderColor="border-color"
+          >
+            {picture.value !== null ? (
+              <Image
+                source={{ uri: picture.value }}
+                style={{ width: 80, height: 80 }}
+                accessibilityIgnoresInvertColors
+              />
+            ) : null}
+          </YStack>
+          <YStack gap="2" flex={1}>
+            <AppButton
+              label={t("settings.profile.picture.choose")}
+              variant="secondary"
+              disabled={picture.saving}
+              onPress={() => void choosePicture()}
+            />
+            {picture.value !== null ? (
+              <AppButton
+                label={t("settings.profile.picture.remove")}
+                variant="secondary"
+                disabled={picture.saving}
+                onPress={() => {
+                  setPictureInvalid(false)
+                  void picture.choose(null)
+                }}
+              />
+            ) : null}
+          </YStack>
+        </XStack>
+        {pictureInvalid ? (
+          <Text color="red-600" accessibilityRole="alert">
+            {t("settings.profile.picture.invalid")}
+          </Text>
+        ) : null}
+      </YStack>
+      <InlineEditField
+        label={t("settings.profile.name.label")}
+        placeholder={t("settings.profile.name.placeholder")}
+        defaultValue={current.name}
+        codec={optionalTextCodec}
+        errorKey="settings.profile.name.invalid"
+        onSave={(name) =>
+          publish({ name: name ?? "", picture: current.picture })
+        }
+      />
+    </YStack>
   )
 }

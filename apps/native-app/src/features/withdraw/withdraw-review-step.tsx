@@ -64,10 +64,13 @@ const EXPIRY_WARNING_MS = 60_000
 function OnchainReview({
   quote,
   exitSpeed,
+  confirming,
   onExitSpeedChange,
 }: {
   readonly quote: OnchainWithdrawalQuote
   readonly exitSpeed: SparkExitSpeed
+  /** The fee shown must not change while a send is being confirmed. */
+  readonly confirming: boolean
   readonly onExitSpeedChange: (exitSpeed: SparkExitSpeed) => void
 }) {
   const { t } = useTranslation()
@@ -91,7 +94,7 @@ function OnchainReview({
               key={option.value}
               accessibilityRole="radio"
               accessibilityState={{ selected, disabled: unavailable }}
-              disabled={unavailable}
+              disabled={unavailable || confirming}
               onPress={() => onExitSpeedChange(option.value)}
             >
               <XStack
@@ -273,6 +276,7 @@ export function WithdrawReviewStep({
         <OnchainReview
           quote={quote}
           exitSpeed={exitSpeed}
+          confirming={confirming}
           onExitSpeedChange={onExitSpeedChange}
         />
       ) : (

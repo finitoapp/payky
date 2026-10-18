@@ -60,6 +60,19 @@ it("sends a quote once per press and never offers a retry after a send started",
   )
 })
 
+it("ignores Back while a confirm is in flight, and keeps the exit speed fixed", () => {
+  const page = read("withdraw-page.tsx")
+  expectInOrder(
+    page,
+    /onBack=\{\(\) => \{/,
+    /if \(confirmingRef\.current && !uncertain\) return/,
+    /confirmingRef\.current = false/
+  )
+  expect(read("withdraw-review-step.tsx")).toMatch(
+    /disabled=\{unavailable \|\| confirming\}/
+  )
+})
+
 it("calls executeWithdrawal from the review's confirm handler only", () => {
   const offenders = readdirSync(new URL("../..", import.meta.url), {
     recursive: true,

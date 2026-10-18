@@ -248,6 +248,9 @@ function WithdrawFlow({
             dispatch({ type: "SET_EXIT_SPEED", exitSpeed })
           }
           onBack={() => {
+            // Back in the same frame as Confirm must not reset the guard
+            // while the PIN prompt is open.
+            if (confirmingRef.current && !uncertain) return
             setUncertain(false)
             confirmingRef.current = false
             dispatch({ type: "BACK" })

@@ -18,6 +18,11 @@ import {
 } from "../../components/ui/card.tsx"
 import { Checkbox } from "../../components/ui/checkbox.tsx"
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../../components/ui/collapsible.tsx"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -35,6 +40,15 @@ import {
 } from "../../components/ui/field.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { Input } from "../../components/ui/input.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select.tsx"
 import { Separator } from "../../components/ui/separator.tsx"
 import { Skeleton } from "../../components/ui/skeleton.tsx"
 import { Switch } from "../../components/ui/switch.tsx"
@@ -227,6 +241,34 @@ export function UiKitCard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Select
+        value={choice}
+        onValueChange={setChoice}
+        items={{ a: "Apple", b: "Banana", c: "Cherry" }}
+      >
+        <SelectTrigger accessibilityLabel="Fruit" fullWidth>
+          <SelectValue placeholder="Pick a fruit" />
+        </SelectTrigger>
+        <SelectContent title="Fruit">
+          <SelectGroup>
+            <SelectLabel>Fruit</SelectLabel>
+            <SelectItem value="a">Apple</SelectItem>
+            <SelectItem value="b">Banana</SelectItem>
+            <SelectItem value="c">Cherry</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Collapsible>
+        <CollapsibleTrigger flexDirection="row" justify="space-between">
+          <Text fontSize={14} fontWeight="500">
+            Advanced
+          </Text>
+          <Icon icon={ChevronRight} />
+        </CollapsibleTrigger>
+        <CollapsibleContent pt={8}>
+          <Text>Collapsible content</Text>
+        </CollapsibleContent>
+      </Collapsible>
       <Input placeholder="Input" />
       <Input placeholder="Invalid" invalid />
       <Input placeholder="Disabled" disabled />

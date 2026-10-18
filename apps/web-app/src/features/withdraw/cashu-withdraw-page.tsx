@@ -1,5 +1,11 @@
-import type { AbortError } from "@evolu/common"
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import {
+  type CashuWithdrawRequest,
+  cashuConfirmOutcome,
+  cashuQuoteErrorMessage,
+  cashuWithdrawPinDetail,
+  fundedMints,
+  withdrawMint,
+} from "@payky/app-shared/cashu-withdraw-flow"
 import {
   createWithdrawDraft,
   draftComment,
@@ -8,7 +14,6 @@ import type { AccountId } from "@payky/core/modules/account/account-types"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
 import {
   type CashuWithdrawalQuote,
-  type ExecuteCashuWithdrawalError,
   executeCashuWithdrawal,
   quoteCashuWithdrawal,
 } from "@payky/core/modules/withdraw/withdraw-cashu-actions"
@@ -22,38 +27,13 @@ import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
 import { useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatSatsAmount } from "@/lib/format-utils.ts"
-import {
-  CashuWithdrawFormStep,
-  type CashuWithdrawRequest,
-  cashuQuoteErrorMessage,
-} from "./cashu-withdraw-form-step.tsx"
+import { CashuWithdrawFormStep } from "./cashu-withdraw-form-step.tsx"
 import { CashuWithdrawReviewStep } from "./cashu-withdraw-review-step.tsx"
 import {
   useWithdrawAccountId,
   WithdrawNoAccountCard,
 } from "./withdraw-account.tsx"
 import { withdrawRoutes } from "./withdraw-display.ts"
-
-/** Refused before the melt was sent: the review stays open and says why. */
-const earlyConfirmErrorKeys = {
-  AbortError: "withdraw.review.error.interrupted",
-  MintUnreachable: "withdraw.cashu.error.unreachable",
-  MintRejected: "withdraw.cashu.error.rejected",
-  CounterLockTimeout: "withdraw.cashu.error.unreachable",
-  QuoteExpired: "withdraw.error.quoteExpired",
-  CashuInsufficientFunds: "withdraw.cashu.error.insufficient",
-  CashuMeltQuoteNotPayable: "withdraw.cashu.error.rejected",
-  CashuMeltUnpaid: "withdraw.cashu.error.rejected",
-  CashuMeltPending: "withdraw.detail.pending.cashu",
-  CashuWithdrawalDestinationUnsupported: "withdraw.cashu.error.destination",
-} satisfies Record<
-  Exclude<
-    (ExecuteCashuWithdrawalError | AbortError)["type"],
-    "WithdrawalRejected" | "WithdrawalOutcomeUnknown"
-  >,
-  TranslationKey
->
 
 interface CashuReview {
   readonly request: CashuWithdrawRequest
@@ -117,14 +97,12 @@ function CashuWithdrawFlow({
   // not melt the same quote twice.
   const confirmingRef = useRef(false)
 
-  const funded = [...(snapshot?.balances ?? new Map<MintUrl, number>())]
-    .filter(([, balance]) => balance > 0)
-    .toSorted(([a], [b]) => a.localeCompare(b))
-  const mint =
-    chosenMint ??
-    (funded.some(([candidate]) => candidate === snapshot?.defaultMint)
-      ? (snapshot?.defaultMint ?? null)
-      : (funded[0]?.[0] ?? null))
+  const funded = fundedMints(snapshot?.balances ?? new Map<MintUrl, number>())
+  const mint = withdrawMint({
+    funded,
+    chosen: chosenMint,
+    defaultMint: snapshot?.defaultMint ?? null,
+  })
 
   const openDetail = (withdrawalId: string) =>
     navigate({
@@ -137,12 +115,7 @@ function CashuWithdrawFlow({
     setConfirmError(null)
     // Moving money always asks for the PIN, session or not (access/0007).
     // With access control off there is no PIN, and `require` lets it through.
-    const pinDetail = t("withdraw.review.pinDetail", {
-      amount: formatSatsAmount(quote.amountSats, locale),
-      destination:
-        quote.lightningAddress ??
-        t("withdraw.destination.kind.lightningInvoice"),
-    })
+    const pinDetail = cashuWithdrawPinDetail({ quote, t, locale })
     const allowed = access.enabled
       ? await requirePin("access.action.withdraw", pinDetail)
       : await require("admin", "access.action.withdraw")
@@ -163,19 +136,13 @@ function CashuWithdrawFlow({
           ...(comment === null ? {} : { comment }),
         })
       )
-      if (result.ok) {
-        await openDetail(result.value.withdrawalId)
+      const outcome = cashuConfirmOutcome(result, t)
+      if (outcome.kind === "recorded") {
+        // Sent: its detail follows what the mint does next.
+        await openDetail(outcome.withdrawalId)
         return
       }
-      // Sent: its detail follows what the mint does next.
-      if (
-        result.error.type === "WithdrawalRejected" ||
-        result.error.type === "WithdrawalOutcomeUnknown"
-      ) {
-        await openDetail(result.error.withdrawalId)
-        return
-      }
-      setConfirmError(t(earlyConfirmErrorKeys[result.error.type]))
+      setConfirmError(outcome.message)
     } catch {
       setConfirmError(t("withdraw.review.error.generic"))
     }

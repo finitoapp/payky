@@ -1,23 +1,19 @@
-import type { AbortError } from "@evolu/common"
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
-  amountErrorMessage,
+  type CashuWithdrawRequest,
+  cashuQuoteErrorMessage,
+  formatMintLabel,
+} from "@payky/app-shared/cashu-withdraw-flow"
+import {
   draftAmountSats,
-  type Translate,
   type WithdrawDraft,
   withdrawAllUnavailableKey,
 } from "@payky/app-shared/withdraw-flow"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
-import {
-  type PositiveInteger,
-  PositiveIntegerSchema,
-} from "@payky/core/modules/shared/schema"
+import { PositiveIntegerSchema } from "@payky/core/modules/shared/schema"
 import {
   type CashuWithdrawalQuote,
-  type QuoteCashuWithdrawalError,
   quoteCashuWithdrawal,
 } from "@payky/core/modules/withdraw/withdraw-cashu-actions"
-import type { WithdrawDestination } from "@payky/core/modules/withdraw/withdraw-destination-utils"
 import { LoaderCircleIcon } from "lucide-react"
 import { type FormEvent, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
@@ -36,7 +32,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field.tsx"
-import { formatMintLabel } from "@/features/shared/cashu/cashu-mint-label.ts"
 import { useCashuAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -49,51 +44,6 @@ import {
   WithdrawDestinationField,
 } from "./withdraw-destination-field.tsx"
 import { WithdrawOptionsFields } from "./withdraw-options-fields.tsx"
-
-const lightningAddressUnavailable = "withdraw.error.lightningAddressUnavailable"
-
-const cashuQuoteErrorKeys = {
-  AbortError: "withdraw.quoteError.generic",
-  MintUnreachable: "withdraw.cashu.error.unreachable",
-  MintRejected: "withdraw.cashu.error.rejected",
-  CashuWithdrawalAmountNeeded: "withdraw.amount.invalid",
-  CashuWithdrawalToSelf: "withdraw.cashu.error.toSelf",
-  CashuWithdrawalInvoiceExpired: "withdraw.error.lightningInvoiceExpired",
-  CashuWithdrawalDestinationUnsupported: "withdraw.cashu.error.destination",
-  LightningAddressInvoiceMismatch: "withdraw.error.lightningAddressMismatch",
-  FetchError: lightningAddressUnavailable,
-  LnurlRequestError: lightningAddressUnavailable,
-  LnurlHttpError: lightningAddressUnavailable,
-  LnurlResponseError: lightningAddressUnavailable,
-} satisfies Record<
-  Exclude<
-    (QuoteCashuWithdrawalError | AbortError)["type"],
-    "InsufficientWithdrawalBalance" | "WithdrawalAmountOutOfRange"
-  >,
-  TranslationKey
->
-
-export const cashuQuoteErrorMessage = (
-  error: QuoteCashuWithdrawalError | AbortError,
-  t: Translate
-): string =>
-  error.type === "InsufficientWithdrawalBalance" ||
-  error.type === "WithdrawalAmountOutOfRange"
-    ? amountErrorMessage(error, t)
-    : t(cashuQuoteErrorKeys[error.type])
-
-/** What the merchant asked for, kept so the review can fetch a new quote. */
-export interface CashuWithdrawRequest {
-  readonly mint: MintUrl
-  readonly destination: WithdrawDestination
-  /**
-   * `undefined` for an invoice, which carries its own amount, or "withdraw
-   * all" to a Lightning address (withdraw/0014).
-   */
-  readonly amountSats: PositiveInteger | undefined
-  /** LUD-12, for a Lightning address that accepts it; ignored elsewhere. */
-  readonly recipientComment: string
-}
 
 /**
  * The Cashu withdrawal form: which mint, then the same destination, amount,

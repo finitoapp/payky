@@ -1,6 +1,6 @@
+import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import type { CashuWithdrawalQuote } from "@payky/core/modules/withdraw/withdraw-cashu-actions"
 import { DetailRow } from "@/components/detail-row.tsx"
-import { formatMintLabel } from "@/features/shared/cashu/cashu-mint-label.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { WithdrawCollapsible } from "./withdraw-collapsible.tsx"

@@ -1,3 +1,4 @@
+import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   type CashuMoveError,
@@ -36,7 +37,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { formatMintLabel } from "@/features/shared/cashu/cashu-mint-label.ts"
 import { useCashuWallet } from "@/features/shared/cashu/use-cashu-wallet.ts"
 import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
 import { useLocale } from "@/hooks/use-locale.ts"

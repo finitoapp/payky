@@ -1,3 +1,4 @@
+import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import { useNow } from "@payky/app-shared/use-now"
 import {
   reusableWithdrawalDestination,
@@ -33,7 +34,6 @@ import { FadeHeader } from "@/components/fade-header.tsx"
 import { NotFoundCard } from "@/components/not-found-card.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
-import { formatMintLabel } from "@/features/shared/cashu/cashu-mint-label.ts"
 import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"

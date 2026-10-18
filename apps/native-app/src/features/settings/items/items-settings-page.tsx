@@ -117,6 +117,7 @@ function ItemsList({
       renderRow={(item) => ({
         id: item.id,
         title: getStaffDisplayName(item),
+        href: `/settings/items/${item.id}`,
         subtitle:
           item.categoryId === null
             ? undefined

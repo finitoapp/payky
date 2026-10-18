@@ -34,6 +34,7 @@ export type NativeRoutePath =
   | "/settings/payment-number-series"
   | "/settings/items"
   | "/settings/items/new"
+  | "/settings/items/:catalogItemId"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -91,6 +92,8 @@ export const routeAccess = {
   "/settings/items": "settings",
   // Like web's `_terminal/settings/items/new`.
   "/settings/items/new": "settings",
+  // Like web's `_terminal/settings/items/$catalogItemId`.
+  "/settings/items/:catalogItemId": "settings",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

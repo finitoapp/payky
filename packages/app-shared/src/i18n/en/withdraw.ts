@@ -177,6 +177,8 @@ export const enWithdraw = {
     "The withdrawal could not be started. Try again.",
   "withdraw.review.error.interrupted":
     "The withdrawal was interrupted before it completed. Try again.",
+  "withdraw.review.error.uncertain":
+    "The withdrawal may or may not have been sent. Check the withdrawals list before trying again; do not send it again until you know.",
   "withdraw.review.expiresIn": "Invoice valid for",
   "withdraw.review.fee": "Estimated network fee",
   "withdraw.review.feeEstimate": "~{estimate} sats (at most {max} sats)",

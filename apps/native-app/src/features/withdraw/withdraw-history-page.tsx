@@ -16,6 +16,7 @@ import { Suspense } from "react"
 import { ActivityIndicator, FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
+import { AppButton } from "../../components/app-button.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
@@ -96,6 +97,10 @@ function WithdrawHistory({ accountId }: { readonly accountId: AccountId }) {
 
   return (
     <YStack flex={1} gap="3">
+      <AppButton
+        label={t("withdraw.history.new")}
+        onPress={() => router.push("/withdraw/new")}
+      />
       {balance === null ? null : (
         <YStack items="flex-end">
           <Text fontWeight="600">

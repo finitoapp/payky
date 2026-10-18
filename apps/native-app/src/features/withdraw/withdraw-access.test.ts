@@ -1,0 +1,88 @@
+import { readdirSync, readFileSync } from "node:fs"
+import { expect, it } from "vitest"
+
+const read = (name: string) =>
+  readFileSync(new URL(`./${name}`, import.meta.url), "utf8")
+
+const expectInOrder = (source: string, ...patterns: ReadonlyArray<RegExp>) => {
+  let remainder = source
+  for (const pattern of patterns) {
+    const match = remainder.match(pattern)
+    expect(match, `missing ${pattern}`).not.toBeNull()
+    if (match === null) return
+    if (match.index === undefined) throw new Error(`no index for ${pattern}`)
+    remainder = remainder.slice(match.index + match[0].length)
+  }
+}
+
+it("asks for the PIN, then re-checks the account, before the send Task", () => {
+  const page = read("withdraw-page.tsx")
+  const confirm = page.slice(
+    page.indexOf("const confirmReviewedWithdrawal"),
+    page.indexOf("const requote")
+  )
+
+  expectInOrder(
+    confirm,
+    /const accountVersion = jotaiStore\.get\(evoluCounterAtom\)/,
+    /const pinDetail = withdrawPinDetail\(/,
+    // Moving money always asks for the PIN (access/0007), awaited.
+    /await requirePin\(\s*"access\.action\.withdraw",\s*pinDetail\s*\)/,
+    /await require\(\s*"admin",\s*"access\.action\.withdraw"\s*\)/,
+    /if \(!allowed \|\| !mountedRef\.current \|\| !isCurrentAccount\(\)\)/,
+    /if \(!isCurrentAccount\(\)\)/,
+    /await run\(\s*executeWithdrawal\(/
+  )
+  // Access control being on is read when confirming, not when rendering.
+  expect(page).toMatch(/accessEnabledRef\.current = access\.enabled/)
+  expect(confirm).toMatch(/accessEnabledRef\.current\s*\?/)
+})
+
+it("sends a quote once per press and never offers a retry after a send started", () => {
+  const page = read("withdraw-page.tsx")
+  const confirm = page.slice(
+    page.indexOf("const confirmWithdrawal"),
+    page.indexOf("/** `true` when nothing was sent")
+  )
+
+  expectInOrder(
+    confirm,
+    /confirmingRef\.current\) return/,
+    /confirmingRef\.current = true/,
+    /retryable = await confirmReviewedWithdrawal\(/,
+    /if \(retryable\) confirmingRef\.current = false/
+  )
+  // An unexpected throw is an uncertain outcome, not a failure.
+  expect(page).toMatch(/catch \{[^}]*return markUncertain\(\)/su)
+  // A recorded withdrawal replaces the review, so back cannot confirm it again.
+  expect(page).toMatch(
+    /router\.replace\(\{\s*pathname: "\/withdraw\/\[withdrawalId\]"/
+  )
+})
+
+it("calls executeWithdrawal from the review's confirm handler only", () => {
+  const offenders = readdirSync(new URL("../..", import.meta.url), {
+    recursive: true,
+  })
+    .map(String)
+    .filter((file) => /\.tsx?$/u.test(file) && !/\.test\.tsx?$/u.test(file))
+    .filter((file) =>
+      /\bexecuteWithdrawal\(/u.test(
+        readFileSync(new URL(`../../${file}`, import.meta.url), "utf8")
+      )
+    )
+  expect(offenders).toEqual(["features/withdraw/withdraw-page.tsx"])
+})
+
+it("asks for admin, then confirmation, before settling an on-chain withdrawal", () => {
+  const detail = read("withdraw-detail-page.tsx")
+  const resolve = detail.slice(detail.indexOf("const resolve ="))
+
+  expectInOrder(
+    resolve,
+    /await require\("admin", "access\.action\.withdraw"\)/,
+    /await confirm\(/,
+    /confirmOnchainWithdrawalSent\(/,
+    /markWithdrawalFailed\(/
+  )
+})

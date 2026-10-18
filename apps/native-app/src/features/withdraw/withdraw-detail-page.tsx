@@ -2,6 +2,7 @@ import { formatDateTime } from "@payky/app-shared/format-date"
 import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { useNow } from "@payky/app-shared/use-now"
 import {
+  reusableWithdrawalDestination,
   withdrawalFailureKeys,
   withdrawalKindKeys,
 } from "@payky/app-shared/withdraw-display"
@@ -22,7 +23,7 @@ import {
   withdrawalDetailQuery,
 } from "@payky/core/modules/withdraw/withdraw-queries"
 import { WithdrawalId } from "@payky/core/modules/withdraw/withdraw-types"
-import { useLocalSearchParams } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue, useStore } from "jotai"
 import { Suspense } from "react"
 import { Linking, ScrollView } from "react-native"
@@ -118,6 +119,31 @@ function PendingLightningText({ view }: { readonly view: WithdrawalView }) {
         t,
       })}
     </Text>
+  )
+}
+
+/** Offered only after a failure confirmed by something other than time (withdraw/0007). */
+function NewWithdrawalButton({ view }: { readonly view: WithdrawalView }) {
+  const { t } = useTranslation()
+  const destination = reusableWithdrawalDestination(view.target)
+  return (
+    <>
+      {destination === null ? (
+        <Text color="muted-foreground">
+          {t("withdraw.detail.invoiceRenewHint")}
+        </Text>
+      ) : null}
+      <AppButton
+        label={t("withdraw.detail.newWithdrawal")}
+        onPress={() =>
+          router.push(
+            destination === null
+              ? "/withdraw/new"
+              : { pathname: "/withdraw/new", params: { destination } }
+          )
+        }
+      />
+    </>
   )
 }
 
@@ -244,7 +270,9 @@ function WithdrawalStatusCard({ view }: { readonly view: WithdrawalView }) {
             <Text color="muted-foreground">
               {t("withdraw.detail.failed.notCreatedHint")}
             </Text>
-          ) : null}
+          ) : (
+            <NewWithdrawalButton view={view} />
+          )}
           {state.reason === "manual" ? (
             <OnchainResolutionButtons view={view} offerNotSent={false} />
           ) : null}

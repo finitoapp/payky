@@ -177,6 +177,8 @@ export const skWithdraw = {
     "Výber sa nepodarilo začať. Skúste to znova.",
   "withdraw.review.error.interrupted":
     "Výber bol prerušený pred dokončením. Skúste to znova.",
+  "withdraw.review.error.uncertain":
+    "Výber mohol, ale nemusel byť odoslaný. Pred ďalším pokusom skontrolujte zoznam výberov; kým to neviete iste, neposielajte ho znova.",
   "withdraw.review.expiresIn": "Faktúra platí ešte",
   "withdraw.review.fee": "Odhadovaný sieťový poplatok",
   "withdraw.review.feeEstimate": "~{estimate} satov (najviac {max} satov)",

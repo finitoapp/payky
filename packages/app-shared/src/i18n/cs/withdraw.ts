@@ -176,6 +176,8 @@ export const csWithdraw = {
     "Výběr se nepodařilo zahájit. Zkuste to znovu.",
   "withdraw.review.error.interrupted":
     "Výběr byl přerušen před dokončením. Zkuste to znovu.",
+  "withdraw.review.error.uncertain":
+    "Výběr mohl, ale nemusel být odeslán. Před dalším pokusem zkontrolujte seznam výběrů; dokud to nevíte jistě, neposílejte ho znovu.",
   "withdraw.review.expiresIn": "Faktura platí ještě",
   "withdraw.review.fee": "Odhadovaný síťový poplatek",
   "withdraw.review.feeEstimate": "~{estimate} satů (nejvýš {max} satů)",

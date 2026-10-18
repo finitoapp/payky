@@ -46,6 +46,7 @@ describe("native route access", () => {
     expect(requiredPermission("/activity/abc123")).toBe("activity")
     expect(requiredPermission("/activity/bills/abc123")).toBe("activity")
     expect(requiredPermission("/withdraw")).toBe("admin")
+    expect(requiredPermission("/withdraw/new")).toBe("admin")
     expect(requiredPermission("/withdraw/abc123")).toBe("admin")
   })
 })

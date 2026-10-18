@@ -1,7 +1,13 @@
 import { AbortError } from "@evolu/common"
+import {
+  type AssistantTurn,
+  assistantConversationAtom,
+  toAssistantMessages,
+} from "@payky/app-shared/assistant-conversation"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { createAiModelDep } from "@payky/core/ai/ai-model"
 import { askAssistant } from "@payky/core/ai/assistant"
+import { createAssistantTools } from "@payky/core/ai/assistant-tools"
 import type { AiAssistantAccess } from "@payky/core/evolu/device-client"
 import { Navigate } from "@tanstack/react-router"
 import { atom, type PrimitiveAtom, useAtomValue, useStore } from "jotai"
@@ -13,12 +19,6 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button.tsx"
 import { apiUrl } from "@/core/app-env.ts"
-import {
-  type AssistantTurn,
-  assistantConversationAtom,
-  toAssistantMessages,
-} from "@/features/settings/assistant/assistant-conversation.ts"
-import { createAssistantTools } from "@/features/settings/assistant/assistant-tools.ts"
 import {
   ChatComposer,
   ChatLayout,
@@ -188,7 +188,10 @@ function useAssistantConversation(access: Access) {
     store.set(answeringAtom, { text: "", lookingUp: null })
 
     await using run = appRun()
-    const { tools, repoTools } = createAssistantTools(access, run)
+    const { tools, repoTools } = createAssistantTools(access, run, {
+      snapshotUrl: apiUrl("/repo-snapshot.json"),
+      appVersion: __APP_VERSION__,
+    })
     const current = run.abortable(
       askAssistant({
         messages: toAssistantMessages(earlier, question),

@@ -62,8 +62,8 @@ code tools, so it answers from the data and the system prompt only.
 
 ## Enforced by
 
-- `apps/web-app/src/features/settings/assistant/assistant-conversation.test.ts > toAssistantMessages > sends the earlier questions and replies, then the new question`
-- `apps/web-app/src/features/settings/assistant/assistant-conversation.test.ts > toAssistantMessages > leaves out a turn that failed or was stopped before any reply`
+- `packages/app-shared/src/assistant-conversation.test.ts > toAssistantMessages > sends the earlier questions and replies, then the new question`
+- `packages/app-shared/src/assistant-conversation.test.ts > toAssistantMessages > leaves out a turn that failed or was stopped before any reply`
 - `packages/core/src/ai/assistant.test.ts > recentMessages > keeps the last twenty messages, starting at a question`
 - `packages/core/src/ai/assistant.test.ts > askAssistant > stops with the reply so far when its run is aborted`
 - `apps/web-app/e2e/settings-assistant.spec.ts > asks the assistant and keeps the conversation`

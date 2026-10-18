@@ -1,6 +1,6 @@
 import { testCreateRun } from "@evolu/common"
-import type { FetchDep } from "@payky/core/deps"
 import { describe, expect, test } from "vitest"
+import type { FetchDep } from "../deps.ts"
 import {
   createSnapshotRepoFilesLoader,
   snapshotRepoFiles,
@@ -43,7 +43,10 @@ describe("createSnapshotRepoFilesLoader", () => {
       },
     } satisfies FetchDep
     await using run = testCreateRun(deps)
-    const loadFiles = createSnapshotRepoFilesLoader(run)
+    const loadFiles = createSnapshotRepoFilesLoader(run, {
+      snapshotUrl: "https://payky.me/repo-snapshot.json",
+      appVersion: "abc1234",
+    })
 
     await expect(loadFiles()).rejects.toThrow()
     expect((await loadFiles()).paths).toEqual(["apps/web-app/src/app.ts"])

@@ -15,12 +15,21 @@ export const createAiModelDep = ({
   baseURL,
   ownerId,
   model = "payky",
+  fetch,
 }: {
   readonly baseURL: string
   readonly ownerId: OwnerId
   readonly model?: string
+  /**
+   * The HTTP client, where the platform's global one cannot stream a
+   * response (native passes Expo's); the global one by default.
+   */
+  readonly fetch?: typeof globalThis.fetch
 }): AiModelDep => ({
-  aiModel: createOpenAICompatible({ name: "payky", baseURL, apiKey: ownerId })(
-    model
-  ),
+  aiModel: createOpenAICompatible({
+    name: "payky",
+    baseURL,
+    apiKey: ownerId,
+    fetch,
+  })(model),
 })

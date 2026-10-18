@@ -111,7 +111,7 @@ const repoSnapshotPaths = ["apps", "packages", "docs", "AGENTS.md"]
 
 /**
  * The repository's text files the app assistant's tools read (ai/0003), as
- * `src/core/integrations/repo-snapshot/repo-snapshot-client.ts` expects them.
+ * `packages/core/src/integrations/repo-snapshot/repo-snapshot-client.ts` expects them.
  * Only files git tracks, so `.env` files and build output stay out.
  */
 function readRepoSnapshot(): string {

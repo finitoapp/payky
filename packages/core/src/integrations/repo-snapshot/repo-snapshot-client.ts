@@ -1,12 +1,11 @@
 import type { Task } from "@evolu/common"
+import { z } from "zod"
 import {
   type FetchDep,
   type FetchError,
   fetchAndValidateJson,
-} from "@payky/core/deps"
-import { defineError } from "@payky/core/error"
-import { z } from "zod"
-import { apiUrl } from "@/core/app-env.ts"
+} from "../../deps.ts"
+import { defineError } from "../../error.ts"
 
 const RepoSnapshotSchema = z.object({
   /** The version the snapshot was built from, as `__APP_VERSION__`. */
@@ -43,12 +42,14 @@ export type RepoSnapshotError =
   | FetchError
 
 export const fetchRepoSnapshot =
-  (): Task<RepoSnapshot, RepoSnapshotError, FetchDep> => (run) =>
+  (
+    /** `repo-snapshot.json` of the deployment the app reads (ai/0003), absolute on native. */
+    url: string
+  ): Task<RepoSnapshot, RepoSnapshotError, FetchDep> =>
+  (run) =>
     run(
       fetchAndValidateJson({
-        // Only the web build carries it (ai/0003), so the native app reads
-        // payky.me's.
-        url: apiUrl("/repo-snapshot.json"),
+        url,
         schema: RepoSnapshotSchema,
         onHttpError: ({ status, responseBody }) =>
           createRepoSnapshotHttpError({

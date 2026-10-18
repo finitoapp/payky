@@ -205,6 +205,7 @@
       "dependencies": {
         "@evolu/common": "8.23.0",
         "@payky/core": "workspace:*",
+        "ai": "7.0.142",
         "date-fns": "4.4.0",
         "nostr-tools": "2.25.2",
       },

@@ -88,11 +88,11 @@ so a long one costs more tokens, up to the twenty-message cap.
 
 ## Enforced by
 
-- `apps/web-app/src/features/settings/assistant/assistant-tools.test.ts > createAssistantTools > leaves the data tools out unless the merchant allowed their data`
+- `packages/core/src/ai/assistant-tools.test.ts > createAssistantTools > leaves the data tools out unless the merchant allowed their data`
 - `apps/web-app/e2e/settings-assistant.spec.ts > hides the assistant until the device allows it`
 - `apps/web-app/e2e/settings-assistant.spec.ts > answers from the documentation alone without the data tools`
-- `apps/web-app/src/features/settings/assistant/assistant-conversation.test.ts > toAssistantMessages > sends the earlier questions and replies, then the new question`
-- `apps/web-app/src/features/settings/assistant/assistant-conversation.test.ts > toAssistantMessages > leaves out a turn that failed or was stopped before any reply`
+- `packages/app-shared/src/assistant-conversation.test.ts > toAssistantMessages > sends the earlier questions and replies, then the new question`
+- `packages/app-shared/src/assistant-conversation.test.ts > toAssistantMessages > leaves out a turn that failed or was stopped before any reply`
 - `packages/core/src/ai/assistant.test.ts > recentMessages > keeps the last twenty messages, starting at a question`
 - `packages/core/src/ai/assistant.test.ts > askAssistant > stops with the reply so far when its run is aborted`
 - `apps/web-app/e2e/settings-assistant.spec.ts > asks the assistant and keeps the conversation`

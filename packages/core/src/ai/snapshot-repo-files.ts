@@ -1,10 +1,10 @@
 import type { Run } from "@evolu/common"
-import type { RepoFiles } from "@payky/core/ai/repo-ai-tools"
-import type { FetchDep } from "@payky/core/deps"
+import type { FetchDep } from "../deps.ts"
 import {
   fetchRepoSnapshot,
   type RepoSnapshot,
-} from "@/core/integrations/repo-snapshot/repo-snapshot-client.ts"
+} from "../integrations/repo-snapshot/repo-snapshot-client.ts"
+import type { RepoFiles } from "./repo-ai-tools.ts"
 
 /** The repository files of a snapshot, noting when it is not the app's code. */
 export const snapshotRepoFiles = (
@@ -27,11 +27,22 @@ let loaded: Promise<RepoFiles> | null = null
  * use and kept while the app runs. A failed download is tried again next time.
  */
 export const createSnapshotRepoFilesLoader =
-  (run: Run<FetchDep>) => (): Promise<RepoFiles> => {
+  (
+    run: Run<FetchDep>,
+    {
+      snapshotUrl,
+      appVersion,
+    }: {
+      /** Where the deployment serves `repo-snapshot.json`. */
+      readonly snapshotUrl: string
+      readonly appVersion: string
+    }
+  ) =>
+  (): Promise<RepoFiles> => {
     loaded ??= (async () => {
       try {
-        const snapshot = await run.orThrow(fetchRepoSnapshot())
-        return snapshotRepoFiles(snapshot, __APP_VERSION__)
+        const snapshot = await run.orThrow(fetchRepoSnapshot(snapshotUrl))
+        return snapshotRepoFiles(snapshot, appVersion)
       } catch (error) {
         loaded = null
         // The tool fails with it, and the model reads that it failed.

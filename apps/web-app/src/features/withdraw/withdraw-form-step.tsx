@@ -1,10 +1,17 @@
+import {
+  buildWithdrawRequest,
+  draftAmountSats,
+  draftWithDestination,
+  quoteErrorMessage,
+  type WithdrawDraft,
+  type WithdrawRequest,
+  withdrawAllUnavailableKey,
+} from "@payky/app-shared/withdraw-flow"
 import type { AccountId } from "@payky/core/modules/account/account-types"
-import { PositiveIntegerSchema } from "@payky/core/modules/shared/schema"
 import {
   quoteWithdrawal,
   type WithdrawalQuote,
 } from "@payky/core/modules/withdraw/withdraw-actions"
-import { parseWithdrawDestination } from "@payky/core/modules/withdraw/withdraw-destination-utils"
 import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@payky/core/modules/withdraw/withdraw-utils"
 import { LoaderCircleIcon } from "lucide-react"
 import { type FormEvent, useState } from "react"
@@ -21,21 +28,12 @@ import { FieldError, FieldGroup } from "@/components/ui/field.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
-import {
-  WithdrawAllField,
-  withdrawAllUnavailableKey,
-} from "./withdraw-all-field.tsx"
+import { WithdrawAllField } from "./withdraw-all-field.tsx"
 import { WithdrawAmountField } from "./withdraw-amount-field.tsx"
 import {
   useWithdrawDestination,
   WithdrawDestinationField,
 } from "./withdraw-destination-field.tsx"
-import {
-  draftAmountSats,
-  quoteErrorMessage,
-  type WithdrawDraft,
-  type WithdrawRequest,
-} from "./withdraw-flow.ts"
 import { WithdrawOptionsFields } from "./withdraw-options-fields.tsx"
 
 export function WithdrawFormStep({
@@ -70,45 +68,26 @@ export function WithdrawFormStep({
   const typedSats = draftAmountSats(draft, fiat)
 
   const changeDestination = (value: string) => {
-    const next = parseWithdrawDestination(value)
-    if (next.ok && next.value.kind === "onchain" && next.value.amountSats) {
-      update({
-        destination: value,
-        withdrawAll: false,
-        unit: "sats",
-        amount: String(next.value.amountSats),
-      })
-      return
-    }
-    update({ destination: value })
+    setSubmitError(null)
+    onDraftChange(draftWithDestination(draft, value))
   }
 
   const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSubmitError(null)
 
-    if (destination === null || destination.kind === "unsupported") {
-      setSubmitError(
-        t(destinationState.error ?? "withdraw.destination.invalid")
-      )
+    const built = buildWithdrawRequest({
+      destination,
+      destinationError: destinationState.error,
+      draft,
+      typedSats,
+      withdrawAll: effectiveWithdrawAll,
+    })
+    if (!built.ok) {
+      setSubmitError(t(built.error))
       return
     }
-
-    let amountSats: WithdrawRequest["amountSats"]
-    if (invoiceAmountSats === null && !effectiveWithdrawAll) {
-      const amount = PositiveIntegerSchema.safeParse(typedSats)
-      if (!amount.success) {
-        setSubmitError(t("withdraw.amount.invalid"))
-        return
-      }
-      amountSats = amount.data
-    }
-
-    const request: WithdrawRequest = {
-      destination,
-      amountSats,
-      recipientComment: draft.recipientComment,
-    }
+    const request = built.value
     setPending(true)
     try {
       await using run = appRun()

@@ -1,8 +1,8 @@
+import type { WithdrawDraft } from "@payky/app-shared/withdraw-flow"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { WithdrawCollapsible } from "./withdraw-collapsible.tsx"
-import type { WithdrawDraft } from "./withdraw-flow.ts"
 
 /**
  * "Options": the LUD-12 comment for a Lightning address that accepts one,

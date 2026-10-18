@@ -1,9 +1,18 @@
+import {
+  confirmOutcome,
+  createWithdrawDraft,
+  draftComment,
+  initialWithdrawState,
+  quoteErrorMessage,
+  type WithdrawReviewState,
+  withdrawPinDetail,
+  withdrawReducer,
+} from "@payky/app-shared/withdraw-flow"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import {
   executeWithdrawal,
   quoteWithdrawal,
 } from "@payky/core/modules/withdraw/withdraw-actions"
-import { withdrawalRecipientSats } from "@payky/core/modules/withdraw/withdraw-utils"
 import { useNavigate } from "@tanstack/react-router"
 import { useStore } from "jotai"
 import { useReducer, useRef, useState } from "react"
@@ -13,21 +22,11 @@ import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { formatSatsAmount } from "@/lib/format-utils.ts"
 import { useSparkBalance } from "./use-spark-balance.ts"
 import {
   useWithdrawAccountId,
   WithdrawNoAccountCard,
 } from "./withdraw-account.tsx"
-import {
-  createWithdrawDraft,
-  draftComment,
-  earlyConfirmErrorKeys,
-  initialWithdrawState,
-  quoteErrorMessage,
-  type WithdrawReviewState,
-  withdrawReducer,
-} from "./withdraw-flow.ts"
 import { WithdrawFormStep } from "./withdraw-form-step.tsx"
 import { WithdrawReviewStep } from "./withdraw-review-step.tsx"
 
@@ -95,17 +94,11 @@ function WithdrawFlow({
 
     // Moving money always asks for the PIN, session or not (access/0007).
     // With access control off there is no PIN, and `require` lets it through.
-    const { quote } = review
-    const pinDetail = t("withdraw.review.pinDetail", {
-      amount: formatSatsAmount(
-        withdrawalRecipientSats(quote, review.exitSpeed),
-        locale
-      ),
-      destination:
-        quote.kind === "onchain"
-          ? quote.onchainAddress
-          : (quote.lightningAddress ??
-            t("withdraw.destination.kind.lightningInvoice")),
+    const pinDetail = withdrawPinDetail({
+      quote: review.quote,
+      exitSpeed: review.exitSpeed,
+      t,
+      locale,
     })
     const allowed = access.enabled
       ? await requirePin("access.action.withdraw", pinDetail)
@@ -128,33 +121,16 @@ function WithdrawFlow({
         })
       )
 
-      if (result.ok) {
+      const outcome = confirmOutcome(result, t)
+      if (outcome.kind === "recorded") {
+        // Recorded: its detail follows what happens next.
         await navigate({
           to: "/settings/payment-accounts/spark/withdrawals/$withdrawalId",
-          params: { withdrawalId: result.value.withdrawalId },
+          params: { withdrawalId: outcome.withdrawalId },
         })
         return
       }
-      // Recorded: its detail follows what happens next.
-      if (
-        result.error.type === "WithdrawalRejected" ||
-        result.error.type === "WithdrawalOutcomeUnknown"
-      ) {
-        await navigate({
-          to: "/settings/payment-accounts/spark/withdrawals/$withdrawalId",
-          params: { withdrawalId: result.error.withdrawalId },
-        })
-        return
-      }
-      dispatch({
-        type: "CONFIRM_FAILED",
-        error:
-          result.error.type === "WithdrawalBelowMinimum"
-            ? t("withdraw.error.belowMinimum", {
-                amount: result.error.minSats,
-              })
-            : t(earlyConfirmErrorKeys[result.error.type]),
-      })
+      dispatch({ type: "CONFIRM_FAILED", error: outcome.message })
     } catch {
       dispatch({
         type: "CONFIRM_FAILED",

@@ -1,4 +1,9 @@
 import { groupByDay } from "@payky/app-shared/group-by-day"
+import {
+  shortWithdrawalDestination,
+  withdrawalKindKeys,
+} from "@payky/app-shared/withdraw-display"
+import type { WithdrawMethod } from "@payky/app-shared/withdraw-flow"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import {
   toWithdrawalView,
@@ -27,12 +32,7 @@ import {
   useWithdrawAccountId,
   WithdrawNoAccountCard,
 } from "./withdraw-account.tsx"
-import {
-  shortWithdrawalDestination,
-  withdrawalKindKeys,
-  withdrawRoutes,
-} from "./withdraw-display.ts"
-import type { WithdrawMethod } from "./withdraw-flow.ts"
+import { withdrawRoutes } from "./withdraw-display.ts"
 import { WithdrawalStatusBadge } from "./withdraw-status-badge.tsx"
 
 export function WithdrawHistoryPage({

@@ -1,5 +1,6 @@
 import { useCountdown } from "@dedalik/use-react"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { isExitSpeedUnavailable } from "@payky/app-shared/withdraw-flow"
 import type {
   LightningWithdrawalQuote,
   OnchainWithdrawalQuote,
@@ -33,7 +34,6 @@ import {
 import { cn } from "@/lib/utils.ts"
 import { useBtcFiat } from "./use-btc-fiat.ts"
 import { WithdrawCollapsible } from "./withdraw-collapsible.tsx"
-import { isExitSpeedUnavailable } from "./withdraw-flow.ts"
 import { LightningAddress } from "./withdraw-lightning-address.tsx"
 import { SatsWithFiat } from "./withdraw-sats.tsx"
 

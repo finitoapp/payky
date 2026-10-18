@@ -1,5 +1,14 @@
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { useNow } from "@payky/app-shared/use-now"
+import {
+  reusableWithdrawalDestination,
+  withdrawalFailureKeys,
+  withdrawalKindKeys,
+  withdrawalMethod,
+} from "@payky/app-shared/withdraw-display"
+import {
+  pendingLightningText,
+  pendingLightningTimes,
+} from "@payky/app-shared/withdraw-flow"
 import { activeSparkAccountByIdQuery } from "@payky/core/modules/account/account-spark-queries"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import { TimestampMs } from "@payky/core/modules/shared/schema"
@@ -13,11 +22,6 @@ import {
   withdrawalDetailQuery,
 } from "@payky/core/modules/withdraw/withdraw-queries"
 import { WithdrawalId } from "@payky/core/modules/withdraw/withdraw-types"
-import {
-  WITHDRAWAL_CHECK_WINDOW_MS,
-  WITHDRAWAL_SEND_TIMEOUT_MS,
-  WITHDRAWAL_SEND_TIMEOUT_OTHER_DEVICE_MS,
-} from "@payky/core/modules/withdraw/withdraw-utils"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useAtomValue } from "jotai"
@@ -41,28 +45,11 @@ import { copyToClipboard } from "@/lib/clipboard.ts"
 import { formatDateTime, formatSatsAmount } from "@/lib/format-utils.ts"
 import { useSparkBalance } from "./use-spark-balance.ts"
 import { WithdrawCollapsible } from "./withdraw-collapsible.tsx"
-import {
-  reusableWithdrawalDestination,
-  withdrawalKindKeys,
-  withdrawalMethod,
-  withdrawRoutes,
-} from "./withdraw-display.ts"
+import { withdrawRoutes } from "./withdraw-display.ts"
 import { SatsWithFiat } from "./withdraw-sats.tsx"
 import { WithdrawalStatusBadge } from "./withdraw-status-badge.tsx"
 
 const TXID_REFETCH_INTERVAL_MS = 30_000
-
-type FailureReason = Extract<
-  WithdrawalView["state"],
-  { status: "failed" }
->["reason"]
-
-const failureKeys = {
-  manual: "withdraw.detail.failed.manual",
-  rejected: "withdraw.detail.failed.rejected",
-  returned: "withdraw.detail.failed.returned",
-  "not-created": "withdraw.detail.failed.notCreated",
-} satisfies Record<FailureReason, TranslationKey>
 
 export function WithdrawDetailPage({
   withdrawalId,
@@ -132,29 +119,23 @@ function CopyableValue({ value }: { readonly value: string }) {
   )
 }
 
-/**
- * The pending Lightning text: the creating device promises ten minutes, any
- * other one a day; past that the transfer exists and only waits; past the
- * check window nobody is watching any more (withdraw/0003, withdraw/0007).
- */
+/** The pending Lightning text, which changes at two moments (withdraw/0003, withdraw/0007). */
 const usePendingLightningText = (view: WithdrawalView): string => {
   const { t } = useTranslation()
   const { device } = useAtomValue(accountAtom)
   const ownDevice = view.deviceId !== null && view.deviceId === device.id
-  const timeoutAt =
-    view.createdAt +
-    (ownDevice
-      ? WITHDRAWAL_SEND_TIMEOUT_MS
-      : WITHDRAWAL_SEND_TIMEOUT_OTHER_DEVICE_MS)
-  const windowEndsAt = view.createdAt + WITHDRAWAL_CHECK_WINDOW_MS
-  const now = useNow([TimestampMs(timeoutAt), TimestampMs(windowEndsAt)])
-
-  if (now.getTime() >= windowEndsAt) return t("withdraw.detail.pending.unknown")
-  if (now.getTime() >= timeoutAt) return t("withdraw.detail.pending.processing")
-  if (ownDevice) return t("withdraw.detail.pending.ownDevice")
-  return view.deviceName === null
-    ? t("withdraw.detail.pending.unknownDevice")
-    : t("withdraw.detail.pending.otherDevice", { device: view.deviceName })
+  const times = pendingLightningTimes({ createdAt: view.createdAt, ownDevice })
+  const now = useNow([
+    TimestampMs(times.timeoutAt),
+    TimestampMs(times.windowEndsAt),
+  ])
+  return pendingLightningText({
+    times,
+    now: now.getTime(),
+    ownDevice,
+    deviceName: view.deviceName,
+    t,
+  })
 }
 
 function PendingLightningText({ view }: { readonly view: WithdrawalView }) {
@@ -299,7 +280,7 @@ function WithdrawalStatusCard({ view }: { readonly view: WithdrawalView }) {
   } else if (state.status === "failed") {
     body = (
       <>
-        <p className="text-sm">{t(failureKeys[state.reason])}</p>
+        <p className="text-sm">{t(withdrawalFailureKeys[state.reason])}</p>
         {state.reason === "not-created" ? (
           // Derived from time, not confirmed: a new withdrawal to the same
           // Lightning address could pay twice (withdraw/0007).

@@ -40,3 +40,7 @@ export function formatMoney(money: Money, locale: string = "en-US") {
   const value = minorUnitsToDecimalString(money)
   return formatAmount(Number(value), money.currency, locale)
 }
+
+/** A satoshi amount with the locale's digit grouping, and no currency label. */
+export const formatSatsAmount = (sats: number, locale: string): string =>
+  new Intl.NumberFormat(locale).format(sats)

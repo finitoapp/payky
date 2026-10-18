@@ -1,5 +1,9 @@
 import type { AbortError } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import {
+  createWithdrawDraft,
+  draftComment,
+} from "@payky/app-shared/withdraw-flow"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
 import {
@@ -30,7 +34,6 @@ import {
   WithdrawNoAccountCard,
 } from "./withdraw-account.tsx"
 import { withdrawRoutes } from "./withdraw-display.ts"
-import { createWithdrawDraft, draftComment } from "./withdraw-flow.ts"
 
 /** Refused before the melt was sent: the review stays open and says why. */
 const earlyConfirmErrorKeys = {

@@ -1,3 +1,8 @@
+import {
+  amountFieldWarnings,
+  draftAmountSats,
+  type WithdrawDraft,
+} from "@payky/app-shared/withdraw-flow"
 import type { LnurlPayMetadata } from "@payky/core/integrations/lnurl/lnurl-pay-client"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
@@ -6,7 +11,6 @@ import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatSatsAmount } from "@/lib/format-utils.ts"
 import type { useBtcFiat } from "./use-btc-fiat.ts"
-import { draftAmountSats, type WithdrawDraft } from "./withdraw-flow.ts"
 
 /**
  * The amount in sats or the fiat currency, with what it comes to in the
@@ -40,16 +44,12 @@ export function WithdrawAmountField({
   const locale = useLocale()
   const sats = (amount: number) => formatSatsAmount(amount, locale)
   const typedSats = draftAmountSats(draft, fiat)
-  const outOfRange =
-    range !== null &&
-    !withdrawAll &&
-    typedSats !== null &&
-    (typedSats < range.minSendableSats || typedSats > range.maxSendableSats)
-  const belowOnchainMinimum =
-    onchainMinimumSats !== null &&
-    !withdrawAll &&
-    typedSats !== null &&
-    typedSats < onchainMinimumSats
+  const { outOfRange, belowOnchainMinimum } = amountFieldWarnings({
+    typedSats,
+    range,
+    withdrawAll,
+    onchainMinimumSats,
+  })
   const equivalent =
     typedSats === null
       ? null

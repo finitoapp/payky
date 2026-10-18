@@ -365,7 +365,6 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
         )}
       </Card>
 
-      {/* Identifiers are selectable text; a copy button needs a clipboard module the app does not ship yet. */}
       <Technical>
         <OptionalRow mono label={t("paymentDetail.id")} value={payment.id} />
         <OptionalRow

@@ -4,6 +4,7 @@ import type { WithdrawalView } from "@payky/core/modules/withdraw/withdraw-queri
 import { type ReactNode, useState } from "react"
 import { Pressable, Text as RNText } from "react-native"
 import { Text, useTheme, XStack, YStack } from "tamagui"
+import { CopyLink } from "../../components/copy-link.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 
@@ -57,13 +58,26 @@ export function Row({
   )
 }
 
-/** An identifier the owner may need to copy: selectable by long-press. */
+/** An identifier the owner may need to copy: selectable, with a Copy link. */
 export function Mono({ value }: { readonly value: string }) {
   const theme = useTheme()
+  const { t } = useTranslation()
   return (
-    <RNText selectable style={{ fontSize: 12, color: theme.color.val }}>
-      {value}
-    </RNText>
+    <XStack gap="3" items="center" justify="space-between">
+      <RNText
+        selectable
+        style={{ flex: 1, fontSize: 12, color: theme.color.val }}
+      >
+        {value}
+      </RNText>
+      <CopyLink
+        value={value}
+        label={t("withdraw.detail.copy")}
+        accessibilityLabel={t("withdraw.detail.copy")}
+        copied={t("withdraw.detail.copied")}
+        failed={t("withdraw.detail.copyError")}
+      />
+    </XStack>
   )
 }
 

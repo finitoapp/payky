@@ -5,6 +5,7 @@ import { useState } from "react"
 import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
+import { CopyLink } from "../../components/copy-link.tsx"
 import { QrCode } from "../../components/qr-code.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
@@ -77,12 +78,28 @@ export function IbanPaymentTab({
             {t("paymentWait.ibanDetails.iban.label")}
           </Text>
           <Text>{groupIban(iban)}</Text>
+          <CopyLink
+            value={iban.replaceAll(/\s+/gu, "")}
+            label={t("withdraw.detail.copy")}
+            accessibilityLabel={t("paymentWait.ibanDetails.iban.copy")}
+            copied={t("paymentWait.ibanDetails.iban.copied")}
+            failed={t("paymentWait.ibanDetails.iban.copyError")}
+          />
           {variableSymbol === null ? null : (
             <>
               <Text color="muted-foreground">
                 {t("paymentWait.ibanDetails.variableSymbol.label")}
               </Text>
               <Text>{variableSymbol}</Text>
+              <CopyLink
+                value={variableSymbol}
+                label={t("withdraw.detail.copy")}
+                accessibilityLabel={t(
+                  "paymentWait.ibanDetails.variableSymbol.copy"
+                )}
+                copied={t("paymentWait.ibanDetails.variableSymbol.copied")}
+                failed={t("paymentWait.ibanDetails.variableSymbol.copyError")}
+              />
             </>
           )}
         </YStack>

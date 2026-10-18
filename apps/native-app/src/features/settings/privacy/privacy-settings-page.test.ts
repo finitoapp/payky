@@ -5,6 +5,7 @@ import { requiredPermission } from "../../../core/route-access.ts"
 const read = (file: string) =>
   readFileSync(new URL(file, import.meta.url), "utf8")
 const page = read("./privacy-settings-page.tsx")
+const card = read("./ai-assistant-card.tsx")
 const hook = read("./use-privacy-settings.ts")
 const controller = read("../../../components/sentry-controller.tsx")
 const reporting = read("../../../core/error-reporting.ts")
@@ -33,4 +34,17 @@ it("flips productLookupEnabled on the device row, with no lookup of its own", ()
   expect(page).toContain("settings.setProductLookupEnabled(!lookup)")
   // The lookup itself arrives with the bill/item screens, not the consent.
   expect(page + hook).not.toMatch(/open-facts|lookupOpenFactsProduct/u)
+})
+
+it("offers the three AI access values behind the owner gate", () => {
+  for (const value of ['"off"', '"public"', '"all"'])
+    expect(card).toContain(`value: ${value}`)
+  expect(card).toContain('require("admin", "access.action.aiAccess")')
+  expect(card.indexOf("access.action.aiAccess")).toBeLessThan(
+    card.indexOf("setAiAssistantAccess(next)")
+  )
+  expect(hook).toContain(
+    "updateDeviceSettings(deviceEvolu, { aiAssistantAccess })"
+  )
+  expect(page).toContain("<AiAssistantCard />")
 })

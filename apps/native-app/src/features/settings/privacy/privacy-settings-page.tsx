@@ -1,6 +1,7 @@
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { AiAssistantCard } from "./ai-assistant-card.tsx"
 import { ConsentCard } from "./consent-card.tsx"
 import { usePrivacySettings } from "./use-privacy-settings.ts"
 
@@ -44,6 +45,7 @@ export function PrivacySettingsPage() {
         )}
         onPress={() => settings.setProductLookupEnabled(!lookup)}
       />
+      <AiAssistantCard />
     </Screen>
   )
 }

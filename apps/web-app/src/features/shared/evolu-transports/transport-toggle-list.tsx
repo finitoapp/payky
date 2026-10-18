@@ -1,12 +1,10 @@
-import { type KyselyNotNull, sqliteFalse, sqliteTrue } from "@evolu/common"
+import { sqliteFalse, sqliteTrue } from "@evolu/common"
+import { splitTransportUrl } from "@payky/app-shared/evolu-transports"
 import {
-  appOwnerIdPlaceholder,
+  accountTransportsQuery,
   setAccountEvoluTransportActive,
 } from "@payky/core/evolu/device-account"
-import {
-  createDeviceQuery,
-  type DeviceAccountId,
-} from "@payky/core/evolu/device-client"
+import type { DeviceAccountId } from "@payky/core/evolu/device-client"
 import { runMutationWithCompletion } from "@payky/core/modules/shared/evolu-utils"
 import { useAtomValue } from "jotai"
 import { useState } from "react"
@@ -18,33 +16,6 @@ import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
-
-const accountTransportsQuery = (accountId: DeviceAccountId) =>
-  createDeviceQuery((db) =>
-    db
-      .selectFrom("accountEvoluTransport")
-      .innerJoin(
-        "accountEvoluTransportWebsocket",
-        "accountEvoluTransportWebsocket.id",
-        "accountEvoluTransport.id"
-      )
-      .select([
-        "accountEvoluTransport.id as id",
-        "accountEvoluTransport.type as type",
-        "accountEvoluTransport.isActive as isActive",
-        "accountEvoluTransportWebsocket.url as url",
-      ])
-      .where("accountEvoluTransport.accountId", "=", accountId)
-      .where("accountEvoluTransport.isDeleted", "is not", sqliteTrue)
-      .where("accountEvoluTransport.isActive", "is not", null)
-      .where("accountEvoluTransportWebsocket.isDeleted", "is not", sqliteTrue)
-      .where("accountEvoluTransportWebsocket.url", "is not", null)
-      .orderBy("accountEvoluTransport.createdAt", "desc")
-      .$narrowType<{
-        isActive: KyselyNotNull
-        url: KyselyNotNull
-      }>()
-  )
 
 interface TransportToggleListProps {
   readonly accountId: DeviceAccountId
@@ -160,9 +131,7 @@ interface TransportUrlProps {
  */
 function TransportUrl({ url, muted }: TransportUrlProps) {
   const { t } = useTranslation()
-  const scheme = "wss://"
-  const rest = url.startsWith(scheme) ? url.slice(scheme.length) : url
-  const parts = rest.split(appOwnerIdPlaceholder)
+  const { scheme, parts } = splitTransportUrl(url)
 
   return (
     <p
@@ -171,7 +140,7 @@ function TransportUrl({ url, muted }: TransportUrlProps) {
         muted && "text-muted-foreground"
       )}
     >
-      {rest === url ? null : (
+      {scheme === null ? null : (
         <span className="text-muted-foreground">{scheme}</span>
       )}
       {parts.map((part, index) => (

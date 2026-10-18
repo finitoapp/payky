@@ -12,9 +12,13 @@ import type {
   SyncState,
   SyncTransport,
 } from "@evolu/common/local-first"
+import { appOwnerIdPlaceholder } from "@payky/core/evolu/device-account"
 import { describe, expect, test } from "vitest"
-
-import { findRelaySyncState } from "@/features/shared/evolu-transports/transport-sync-state.ts"
+import {
+  findRelaySyncState,
+  splitTransportUrl,
+  toTransportSyncKind,
+} from "./evolu-transports.ts"
 
 const deps = testCreateDeps()
 
@@ -78,5 +82,23 @@ describe("findRelaySyncState", () => {
     expect(
       findRelaySyncState(null, testName, testAppOwner.id, transport.label)
     ).toBeNull()
+  })
+})
+
+describe("splitTransportUrl", () => {
+  test("cuts at the owner-id placeholder and strips the scheme", () => {
+    expect(
+      splitTransportUrl(`wss://relay.example/${appOwnerIdPlaceholder}/x`)
+    ).toEqual({ scheme: "wss://", parts: ["relay.example/", "/x"] })
+    expect(splitTransportUrl("wss://relay.example")).toEqual({
+      scheme: "wss://",
+      parts: ["relay.example"],
+    })
+  })
+})
+
+describe("toTransportSyncKind", () => {
+  test("is connecting until the relay is reported", () => {
+    expect(toTransportSyncKind(null, null)).toBe("connecting")
   })
 })

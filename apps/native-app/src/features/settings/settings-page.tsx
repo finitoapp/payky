@@ -115,6 +115,11 @@ export function SettingsPage() {
     },
   ]
   const accountRows: ReadonlyArray<SettingsRowData> = [
+    {
+      title: t("settings.security.title"),
+      value: t("settings.security.description"),
+      href: "/settings/security",
+    },
     { title: t("access.title"), href: "/settings/access" },
   ]
   const appearanceRows: ReadonlyArray<SettingsRowData> = [

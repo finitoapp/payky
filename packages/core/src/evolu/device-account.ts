@@ -225,6 +225,34 @@ export const upsertAccountEvoluWebsocketTransport = (
   return id
 }
 
+/** An account's live sync transports with their on/off state, newest first. */
+export const accountTransportsQuery = (accountId: DeviceAccountId) =>
+  createDeviceQuery((db) =>
+    db
+      .selectFrom("accountEvoluTransport")
+      .innerJoin(
+        "accountEvoluTransportWebsocket",
+        "accountEvoluTransportWebsocket.id",
+        "accountEvoluTransport.id"
+      )
+      .select([
+        "accountEvoluTransport.id as id",
+        "accountEvoluTransport.type as type",
+        "accountEvoluTransport.isActive as isActive",
+        "accountEvoluTransportWebsocket.url as url",
+      ])
+      .where("accountEvoluTransport.accountId", "=", accountId)
+      .where("accountEvoluTransport.isDeleted", "is not", sqliteTrue)
+      .where("accountEvoluTransport.isActive", "is not", null)
+      .where("accountEvoluTransportWebsocket.isDeleted", "is not", sqliteTrue)
+      .where("accountEvoluTransportWebsocket.url", "is not", null)
+      .orderBy("accountEvoluTransport.createdAt", "desc")
+      .$narrowType<{
+        isActive: KyselyNotNull
+        url: KyselyNotNull
+      }>()
+  )
+
 /** Turns one of an account's sync transports on or off. */
 export const setAccountEvoluTransportActive = (
   deviceEvolu: DeviceEvolu,

@@ -1,17 +1,17 @@
 import type { Millis } from "@evolu/common"
+import { relaySyncStateToStatus } from "@evolu/common/local-first"
 import {
-  type RelaySyncState,
-  type RelaySyncStatus,
-  relaySyncStateToStatus,
-  type SyncRouteError,
-} from "@evolu/common/local-first"
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+  findRelaySyncState,
+  type TransportSyncKind,
+  toTransportSyncKind,
+  transportRouteErrorKeys,
+  transportSyncKindLabels,
+} from "@payky/app-shared/evolu-transports"
 import { resolveTransportUrl } from "@payky/core/evolu/device-account"
 import { isSameDay } from "date-fns"
 import { useAtomValue } from "jotai"
 import { useSyncExternalStore } from "react"
 import { runAtom } from "@/atoms/run.ts"
-import { findRelaySyncState } from "@/features/shared/evolu-transports/transport-sync-state.ts"
 import { useDebouncedValue } from "@/hooks/use-debounced-value.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -19,78 +19,13 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatDateTime, formatTime } from "@/lib/format-utils.ts"
 import { cn } from "@/lib/utils.ts"
 
-type TransportSyncKind =
-  | "synced"
-  | "syncing"
-  | "connecting"
-  | "offline"
-  | "error"
-
-const kindPresentation = {
-  synced: {
-    label: "settings.security.transports.status.synced",
-    dot: "bg-success",
-  },
-  syncing: {
-    label: "settings.security.transports.status.syncing",
-    dot: "bg-info animate-pulse motion-reduce:animate-none",
-  },
-  connecting: {
-    label: "settings.security.transports.status.connecting",
-    dot: "bg-warning animate-pulse motion-reduce:animate-none",
-  },
-  offline: {
-    label: "settings.security.transports.status.offline",
-    dot: "bg-muted-foreground",
-  },
-  error: {
-    label: "settings.security.transports.status.error",
-    dot: "bg-destructive",
-  },
-} satisfies Record<
-  TransportSyncKind,
-  { readonly label: TranslationKey; readonly dot: string }
->
-
-const routeErrorKeys = {
-  ProtocolVersionError: "settings.security.transports.status.errors.version",
-  ProtocolWriteKeyError: "settings.security.transports.status.errors.writeKey",
-  ProtocolQuotaError: "settings.security.transports.status.errors.quota",
-  StorageQuotaError: "settings.security.transports.status.errors.quota",
-  UnknownError: "settings.security.transports.status.errors.generic",
-  ProtocolChangeTooLargeError:
-    "settings.security.transports.status.errors.generic",
-  DecryptWithXChaCha20Poly1305Error:
-    "settings.security.transports.status.errors.decrypt",
-  ProtocolInvalidDataError:
-    "settings.security.transports.status.errors.generic",
-  ProtocolWriteError: "settings.security.transports.status.errors.generic",
-  ProtocolSyncError: "settings.security.transports.status.errors.generic",
-  ProtocolTimestampMismatchError:
-    "settings.security.transports.status.errors.generic",
-  WriteFailed: "settings.security.transports.status.errors.generic",
-  SyncFailed: "settings.security.transports.status.errors.generic",
-} satisfies Record<SyncRouteError["type"], TranslationKey>
-
-/** Evolu's `Syncing` covers a first connection too, which this line tells apart. */
-const toKind = (
-  relay: RelaySyncState | null,
-  status: RelaySyncStatus | null
-): TransportSyncKind => {
-  if (relay === null || status === null) return "connecting"
-  switch (status.type) {
-    case "Error":
-      return "error"
-    case "Synced":
-      return "synced"
-    case "Offline":
-      return "offline"
-    case "Syncing":
-      return relay.transport.connection.type === "Connecting"
-        ? "connecting"
-        : "syncing"
-  }
-}
+const kindDots = {
+  synced: "bg-success",
+  syncing: "bg-info animate-pulse motion-reduce:animate-none",
+  connecting: "bg-warning animate-pulse motion-reduce:animate-none",
+  offline: "bg-muted-foreground",
+  error: "bg-destructive",
+} satisfies Record<TransportSyncKind, string>
 
 interface TransportSyncStatusProps {
   readonly url: string
@@ -119,8 +54,9 @@ export function TransportSyncStatus({ url }: TransportSyncStatusProps) {
     400
   )
   const status = relay === null ? null : relaySyncStateToStatus(relay)
-  const kind = toKind(relay, status)
-  const { label, dot } = kindPresentation[kind]
+  const kind = toTransportSyncKind(relay, status)
+  const label = transportSyncKindLabels[kind]
+  const dot = kindDots[kind]
 
   const formatAt = (millis: Millis) => {
     const date = new Date(millis)
@@ -137,7 +73,7 @@ export function TransportSyncStatus({ url }: TransportSyncStatusProps) {
     switch (kind) {
       case "error":
         return status?.type === "Error"
-          ? t(routeErrorKeys[status.error.type])
+          ? t(transportRouteErrorKeys[status.error.type])
           : null
       case "synced":
         return route.completeAt === null ? null : formatAt(route.completeAt)

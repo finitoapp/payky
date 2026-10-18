@@ -938,6 +938,7 @@ export const enSettings = {
     "Mark the canceled payment as paid",
   "access.action.createItem": "Create a catalog item",
   "access.action.disable": "Turn access control off",
+  "access.action.revealRecoveryPhrase": "Reveal the recovery phrase",
   "access.action.discardBill": "Discard the bill",
   "access.action.enable": "Turn access control on with the current PIN",
   "access.action.markCashPaid": "Confirm the cash was received",

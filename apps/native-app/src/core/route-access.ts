@@ -45,6 +45,7 @@ export type NativeRoutePath =
   | "/settings/tables/new"
   | "/settings/tables/:tableId"
   | "/settings/access"
+  | "/settings/security"
   | "/settings/payment-accounts"
   | "/settings/payment-accounts/iban"
   | "/settings/payment-accounts/iban/fio-plugin"
@@ -132,6 +133,8 @@ export const routeAccess = {
   "/settings/tables/:tableId": "settings",
   // Like web's `_terminal/settings/access`: the Access section is owner-only (access/0002).
   "/settings/access": "admin",
+  // Like web's `_terminal/settings/security`: the recovery phrase and sync relays are owner-only.
+  "/settings/security": "admin",
   // Like web's `_terminal/settings/payment-accounts` (owner-only, access/0002).
   "/settings/payment-accounts": "admin",
   // Like web's `_terminal/settings/payment-accounts/iban` (owner-only).

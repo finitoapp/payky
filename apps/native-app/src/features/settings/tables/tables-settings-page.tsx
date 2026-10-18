@@ -75,6 +75,7 @@ function TablesList({
       renderRow={(table) => ({
         id: table.id,
         title: table.name,
+        href: `/settings/tables/${table.id}`,
         trailing: t("settings.tables.seatCount", { value: table.seatCount }),
       })}
     />

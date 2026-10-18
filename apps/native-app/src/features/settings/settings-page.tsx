@@ -59,6 +59,7 @@ export function SettingsPage() {
   const fiatCurrency = getFiatCurrency(settings)
   const catalogRows: ReadonlyArray<SettingsRowData> = [
     { title: t("settings.items.title"), href: "/settings/items" },
+    { title: t("settings.categories.title"), href: "/settings/categories" },
   ]
   const paymentRows: ReadonlyArray<SettingsRowData> = [
     {

@@ -1,12 +1,13 @@
 import { type GetProps, styled, TextArea } from "tamagui"
 import { fontSize, radius } from "../../theme/tokens.ts"
+import { useFieldLabelId } from "./field.tsx"
 
 /**
  * Web `apps/web-app/src/components/ui/textarea.tsx`, on Tamagui `TextArea`:
  * `ui/input.tsx`'s field with `min-h-24 py-2` (96/8), top-aligned text.
  */
 
-export const Textarea = styled(TextArea, {
+const TextareaFrame = styled(TextArea, {
   name: "Textarea",
   minH: 96,
   rounded: radius.lg,
@@ -24,8 +25,14 @@ export const Textarea = styled(TextArea, {
 
   variants: {
     invalid: { true: { borderColor: "destructive" } },
-    disabled: { true: { opacity: 0.5, bg: "input-disabled" } },
   } as const,
 })
 
-export type TextareaProps = GetProps<typeof Textarea>
+export type TextareaProps = GetProps<typeof TextareaFrame>
+
+/** Inside a `ui/field` `Field`, TalkBack names it after the `FieldLabel`. */
+export function Textarea(props: TextareaProps) {
+  return (
+    <TextareaFrame accessibilityLabelledBy={useFieldLabelId()} {...props} />
+  )
+}

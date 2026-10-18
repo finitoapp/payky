@@ -13,6 +13,14 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSeparator,
+} from "../../components/ui/field.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { Input } from "../../components/ui/input.tsx"
 import { Textarea } from "../../components/ui/textarea.tsx"
@@ -77,6 +85,19 @@ export function UiKitCard() {
       <Input placeholder="Invalid" invalid />
       <Input placeholder="Disabled" disabled />
       <Textarea placeholder="Textarea" />
+      <FieldGroup>
+        <Field>
+          <FieldLabel>Field label</FieldLabel>
+          <Input placeholder="Labelled input" />
+          <FieldDescription>Field description</FieldDescription>
+        </Field>
+        <FieldSeparator>or</FieldSeparator>
+        <Field>
+          <FieldLabel>Invalid field</FieldLabel>
+          <Input invalid />
+          <FieldError>Field error</FieldError>
+        </Field>
+      </FieldGroup>
       <Card size="sm">
         <CardHeader>
           <CardTitle>Small card</CardTitle>

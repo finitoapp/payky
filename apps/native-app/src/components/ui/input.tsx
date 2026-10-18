@@ -1,5 +1,6 @@
 import { type GetProps, styled, Input as TamaguiInput } from "tamagui"
 import { fontSize, radius } from "../../theme/tokens.ts"
+import { useFieldLabelId } from "./field.tsx"
 
 /**
  * Web `apps/web-app/src/components/ui/input.tsx`, on Tamagui `Input`.
@@ -17,7 +18,7 @@ import { fontSize, radius } from "../../theme/tokens.ts"
  * where a screen relies on them.
  */
 
-export const Input = styled(TamaguiInput, {
+const InputFrame = styled(TamaguiInput, {
   name: "Input",
   minH: 40,
   rounded: radius.lg,
@@ -33,8 +34,24 @@ export const Input = styled(TamaguiInput, {
 
   variants: {
     invalid: { true: { borderColor: "destructive" } },
-    disabled: { true: { opacity: 0.5, bg: "input-disabled" } },
   } as const,
 })
 
-export type InputProps = GetProps<typeof Input>
+export type InputProps = GetProps<typeof InputFrame>
+
+/** Inside a `ui/field` `Field`, TalkBack names it after the `FieldLabel`. */
+export function Input(props: InputProps) {
+  // The disabled look is applied here, not as a variant, so `disabled`
+  // still reaches Tamagui's input and makes it read-only.
+  const disabledStyle =
+    props.disabled === true
+      ? ({ opacity: 0.5, bg: "input-disabled" } as const)
+      : {}
+  return (
+    <InputFrame
+      accessibilityLabelledBy={useFieldLabelId()}
+      {...disabledStyle}
+      {...props}
+    />
+  )
+}

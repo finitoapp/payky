@@ -1,37 +1,24 @@
-import type { ComponentProps } from "react"
-import { Input, Text, YStack } from "tamagui"
+import { FieldError, FieldLabel, Field as UiField } from "./ui/field.tsx"
+import { Input, type InputProps } from "./ui/input.tsx"
 
-interface FieldProps
-  extends Omit<ComponentProps<typeof Input>, "accessibilityLabel"> {
+interface FieldProps extends Omit<InputProps, "accessibilityLabel"> {
   /** Already translated. */
   readonly label: string
   /** Already translated; shown in place of nothing when set. */
   readonly error?: string | undefined
 }
 
-/** Label, input and error text; the input is announced by its label. */
+/** Label, input and error text from `ui/field`; the input is announced by its label. */
 export function Field({ label, error, ...input }: FieldProps) {
   return (
-    <YStack gap="1.5">
-      <Text fontSize="sm" fontWeight="600">
-        {label}
-      </Text>
+    <UiField>
+      <FieldLabel>{label}</FieldLabel>
       <Input
-        minH={48}
         accessibilityLabel={label}
-        borderColor={error === undefined ? "border-color" : "red-600"}
+        invalid={error !== undefined}
         {...input}
       />
-      {error === undefined ? null : (
-        <Text
-          fontSize="sm"
-          color="red-600"
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-        >
-          {error}
-        </Text>
-      )}
-    </YStack>
+      <FieldError>{error}</FieldError>
+    </UiField>
   )
 }

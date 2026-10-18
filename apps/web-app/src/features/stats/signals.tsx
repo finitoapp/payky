@@ -1,59 +1,19 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { signalFigures } from "@payky/app-shared/stats-sections"
 import {
   type SalesSignal,
-  type SignalsRow,
   signalsQuery,
 } from "@payky/core/modules/sales-stats/sales-stats-queries"
-import { orderCurrencies } from "@payky/core/modules/sales-stats/sales-stats-utils"
-import type { Currency } from "@payky/core/modules/shared/schema"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { CurrencyGroup, StatsSection, useStatsMoney } from "./stats-section.tsx"
 import { type SalesStats, useStatsRows } from "./use-sales-stats.ts"
-
-const signalOrder: ReadonlyArray<SalesSignal> = [
-  "canceledPayment",
-  "canceledBill",
-  "manualIban",
-]
 
 const signalLabelKeys = {
   canceledPayment: "stats.signals.canceledPayment",
   canceledBill: "stats.signals.canceledBill",
   manualIban: "stats.signals.manualIban",
 } satisfies Record<SalesSignal, TranslationKey>
-
-export interface SignalFigures {
-  readonly currency: Currency
-  readonly signals: ReadonlyArray<{
-    readonly signal: SalesSignal
-    readonly count: number
-    readonly amount: number
-  }>
-}
-
-/**
- * Every signal per currency, in a fixed order, zero where nothing happened,
- * so "none" reads as a number too. Without any row, one set of zeros in the
- * account currency.
- */
-export const signalFigures = (
-  rows: ReadonlyArray<SignalsRow>,
-  accountCurrency: Currency
-): ReadonlyArray<SignalFigures> =>
-  orderCurrencies(
-    [accountCurrency, ...rows.map((row) => row.currency)],
-    accountCurrency
-  ).map((currency) => ({
-    currency,
-    signals: signalOrder.map((signal) => {
-      const row = rows.find(
-        (candidate) =>
-          candidate.currency === currency && candidate.signal === signal
-      )
-      return { signal, count: row?.count ?? 0, amount: row?.amount ?? 0 }
-    }),
-  }))
 
 /**
  * Cancelled payments, cancelled bills and bank transfers confirmed by hand

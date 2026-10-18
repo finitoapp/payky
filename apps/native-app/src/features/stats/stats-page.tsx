@@ -3,6 +3,8 @@ import {
   StatsSearchSchema,
   statsPeriodFromSearch,
 } from "@payky/app-shared/stats-search"
+import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
+import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import type { StatsPeriod } from "@payky/core/modules/sales-stats/sales-stats-types"
 import { statsPeriodRanges } from "@payky/core/modules/sales-stats/sales-stats-utils"
 import { router, useLocalSearchParams } from "expo-router"
@@ -11,13 +13,16 @@ import { Text, YStack } from "tamagui"
 import { Screen } from "../../components/screen.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
+import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { DeviceBreakdown } from "./device-breakdown.tsx"
 import { formatStatsRange, KpiTiles } from "./kpi-tiles.tsx"
 import { ExpectedCashSummary, MethodBreakdown } from "./method-breakdown.tsx"
+import { OpenBillsSummary } from "./open-bills-summary.tsx"
 import { PeriodSelector } from "./period-selector.tsx"
 import { RevenueChart } from "./revenue-chart.tsx"
 import { SalesHeatmap } from "./sales-heatmap.tsx"
+import { Signals } from "./signals.tsx"
 import { TopSales } from "./top-sales.tsx"
 import {
   useSalesStats,
@@ -112,18 +117,27 @@ function PeriodStats({
   readonly period: StatsPeriod
   readonly now: Date
 }) {
+  const [settings] = useEvoluQuery(settingsQuery).data
   const { t } = useTranslation()
   const stats = useSalesStats(period, now)
+
+  // Not tied to the period, so it shows on an empty one too.
+  const openBills = (
+    <OpenBillsSummary accountCurrency={getFiatCurrency(settings)} />
+  )
 
   if (stats === null) return <LoadingView />
   if (stats.kpis.length === 0) {
     return (
-      <YStack items="center" gap="2" py="8">
-        <Text fontWeight="600">{t("stats.empty.title")}</Text>
-        <Text color="muted-foreground" text="center">
-          {t("stats.empty.description")}
-        </Text>
-      </YStack>
+      <>
+        <YStack items="center" gap="2" py="8">
+          <Text fontWeight="600">{t("stats.empty.title")}</Text>
+          <Text color="muted-foreground" text="center">
+            {t("stats.empty.description")}
+          </Text>
+        </YStack>
+        {openBills}
+      </>
     )
   }
 
@@ -132,6 +146,7 @@ function PeriodStats({
   return (
     <>
       <KpiTiles kpis={stats.kpis} comparisonKpis={stats.comparisonKpis} />
+      {openBills}
       <ExpectedCashSummary cash={stats.cash} />
       {primary === undefined ? null : (
         <RevenueChart
@@ -148,6 +163,7 @@ function PeriodStats({
       {primary === undefined ? null : (
         <SalesHeatmap stats={stats} currency={primary.currency} />
       )}
+      <Signals stats={stats} />
     </>
   )
 }

@@ -30,7 +30,7 @@ export function AccessSettingsPage() {
   return (
     <Screen>
       <ScreenHeader title={t("access.title")} />
-      {mode === "wizard" ? (
+      {mode === "wizard" && !enabled ? (
         <TurnOnWizard hasPin={hasPin} onDone={toView} />
       ) : mode === "changePin" ? (
         <ChangePinCard onDone={toView} />
@@ -41,7 +41,7 @@ export function AccessSettingsPage() {
           onChangePin={() => setMode("changePin")}
         />
       )}
-      {mode === "wizard" ? null : <DevicesCard />}
+      {mode === "wizard" && !enabled ? null : <DevicesCard />}
     </Screen>
   )
 }

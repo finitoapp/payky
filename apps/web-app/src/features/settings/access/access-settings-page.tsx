@@ -114,7 +114,7 @@ export function AccessSettingsPage() {
       <div className="h-6" />
       <FadeHeader title={t("access.title")} />
       <div className="flex flex-col gap-5">
-        {mode === "wizard" ? (
+        {mode === "wizard" && !enabled ? (
           <TurnOnWizard hasPin={hasPin} onDone={() => setMode("view")} />
         ) : mode === "changePin" ? (
           <ChangePinCard onDone={() => setMode("view")} />
@@ -125,7 +125,7 @@ export function AccessSettingsPage() {
             onChangePin={() => setMode("changePin")}
           />
         )}
-        {mode === "wizard" ? null : <DevicesCard />}
+        {mode === "wizard" && !enabled ? null : <DevicesCard />}
       </div>
     </>
   )
@@ -340,7 +340,11 @@ function TurnOnWizard({
           devices: wizardDeviceDefaults(devices, presets),
         })
       )
-      if (!result.ok) return "access.wizard.noPin"
+      if (!result.ok) {
+        return result.error.type === "NoPin"
+          ? "access.wizard.noPin"
+          : "app.saveFailed"
+      }
     })
     if (!saved) return
     // Whoever just set or entered the PIN holds it: they stay on this page

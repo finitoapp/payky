@@ -44,11 +44,18 @@ import {
 const createNoPinError = defineError("NoPin")()
 export type NoPinError = ReturnType<typeof createNoPinError>
 
+const createAccessAlreadyEnabledError = defineError("AccessAlreadyEnabled")()
+export type AccessAlreadyEnabledError = ReturnType<
+  typeof createAccessAlreadyEnabledError
+>
+
 /**
  * Switches access control on (access/0001) in one batch with the PIN and the
  * turn-on wizard's device defaults (access/0004): otherwise every existing
  * device, all `null`, would stop working, the owner's own included. `pin`
- * `null` keeps the PIN set before, which must still decode.
+ * `null` keeps the PIN set before, which must still decode. Refuses while
+ * access control is already on, so a wizard left open on a device cannot
+ * replace the PIN after another device turned access on (access/0001).
  */
 export const enableAccessControl =
   ({
@@ -60,12 +67,18 @@ export const enableAccessControl =
       readonly id: DeviceId
       readonly permissions: ReadonlyArray<Permission>
     }>
-  }): Task<void, NoPinError, EvoluDep & EvoluOwnerDep> =>
+  }): Task<
+    void,
+    NoPinError | AccessAlreadyEnabledError,
+    EvoluDep & EvoluOwnerDep
+  > =>
   async (run) => {
     const { evolu, evoluOwner } = run.deps
+    const [row] = await evolu.loadQuery(accessControlQuery)
+    if (row?.enabled === sqliteTrue)
+      return err(createAccessAlreadyEnabledError())
     let encodedPin: string | undefined
     if (pin === null) {
-      const [row] = await evolu.loadQuery(accessControlQuery)
       if (decodePinHash(row?.pin ?? null) === null) {
         return err(createNoPinError())
       }

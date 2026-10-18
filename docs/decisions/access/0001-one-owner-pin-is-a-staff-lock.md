@@ -37,6 +37,9 @@ keeps staff and customers at the counter out. It does not stop an attacker.
   always ask for the current PIN, even on a device whose defaults include
   `admin`. Otherwise a device set to Owner by mistake could replace the
   PIN and lock the owner out.
+- Turning access control on is refused while it is already on, so a turn-on
+  wizard left open on a device cannot replace the PIN after another device
+  turned access on.
 - Whoever turns access control on starts a PIN session on that device:
   they just set or entered the PIN.
 
@@ -71,6 +74,7 @@ keeps staff and customers at the counter out. It does not stop an attacker.
 
 - `packages/core/src/modules/access/access-actions.test.ts > enableAccessControl > turns access control on with the PIN and the wizard's defaults in one go`
 - `packages/core/src/modules/access/access-actions.test.ts > enableAccessControl > turning it off keeps the PIN, and on again can reuse it`
+- `packages/core/src/modules/access/access-actions.test.ts > enableAccessControl > refuses while access control is already on and keeps the stored PIN`
 - `packages/core/src/modules/access/access-actions.test.ts > enableAccessControl > cannot reuse a PIN that was never set`
 - `packages/core/src/modules/access/access-actions.test.ts > enterPin > a changed PIN replaces the old one`
 - `packages/core/src/modules/access/access-utils.test.ts > PinSchema > accepts %s`

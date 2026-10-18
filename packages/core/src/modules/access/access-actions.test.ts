@@ -100,6 +100,21 @@ describe("enableAccessControl", () => {
     await expect(env.run(tryPin("4821"))).resolves.toMatchObject({ ok: true })
   })
 
+  test("refuses while access control is already on and keeps the stored PIN", async () => {
+    await using env = await setUp()
+    const [before] = await env.evolu.loadQuery(accessControlQuery)
+
+    await expect(
+      env.run(
+        enableAccessControl({ pin: PinSchema.parse("9999"), devices: [] })
+      )
+    ).resolves.toEqual({ ok: false, error: { type: "AccessAlreadyEnabled" } })
+
+    const [after] = await env.evolu.loadQuery(accessControlQuery)
+    expect(after?.pin).toBe(before?.pin)
+    await expect(env.run(tryPin("4821"))).resolves.toMatchObject({ ok: true })
+  })
+
   test("cannot reuse a PIN that was never set", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu

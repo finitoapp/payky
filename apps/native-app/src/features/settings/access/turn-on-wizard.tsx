@@ -65,7 +65,11 @@ export function TurnOnWizard({
           devices: wizardDeviceDefaults(devices, presets),
         })
       )
-      if (!result.ok) return "access.wizard.noPin"
+      if (!result.ok) {
+        return result.error.type === "NoPin"
+          ? "access.wizard.noPin"
+          : "app.saveFailed"
+      }
     })
     newPin.clear()
     setPending(false)

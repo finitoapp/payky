@@ -57,8 +57,10 @@ export const palette = {
     "primary-pressed": "#c04a00cc",
     "secondary-hover": "#e2e7eb",
     "input-30": "#e3e8ef4d",
+    "input-50": "#e3e8ef80",
     "destructive-10": "#ba2e171a",
     "destructive-20": "#ba2e1733",
+    "destructive-30": "#ba2e174d",
     "muted-50": "#f6f4f080",
   },
   dark: {
@@ -103,8 +105,10 @@ export const palette = {
     "primary-pressed": "#e36b2ccc",
     "secondary-hover": "#393e43",
     "input-30": "#4d4d4d4d",
+    "input-50": "#4d4d4d80",
     "destructive-10": "#da44531a",
     "destructive-20": "#da445333",
+    "destructive-30": "#da44534d",
     "muted-50": "#393d4380",
   },
 } as const satisfies Record<"light" | "dark", Record<string, string>>

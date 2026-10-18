@@ -98,8 +98,10 @@ const derive = (selector: string): Record<string, string> => {
       mixOklch(color("secondary"), color("foreground"), 0.05)
     ),
     "input-30": alpha("input", 0.3),
+    "input-50": alpha("input", 0.5),
     "destructive-10": alpha("destructive", 0.1),
     "destructive-20": alpha("destructive", 0.2),
+    "destructive-30": alpha("destructive", 0.3),
     "muted-50": alpha("muted", 0.5),
   }
 }

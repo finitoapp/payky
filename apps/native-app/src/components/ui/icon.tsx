@@ -1,12 +1,6 @@
 import type { LucideIcon } from "lucide-react-native"
 import { useTheme } from "tamagui"
-import type { palette } from "../../theme/palette.ts"
-
-/** A theme key a native color prop accepts (see `tamagui.config.ts`). */
-export type ThemeColor =
-  | Exclude<keyof (typeof palette)["dark"], "border">
-  | "color"
-  | "border-color"
+import type { ThemeColor } from "../../theme/themes.ts"
 
 export interface IconProps {
   readonly icon: LucideIcon

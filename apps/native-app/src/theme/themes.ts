@@ -1,0 +1,65 @@
+import { palette } from "./palette.ts"
+
+type Palette = (typeof palette)["light" | "dark"]
+
+type Tones = Record<
+  | "button-outline"
+  | "button-outline-border"
+  | "button-outline-pressed"
+  | "button-ghost-pressed"
+  | "button-destructive"
+  | "button-destructive-pressed",
+  string
+>
+
+/**
+ * Tones web picks with a `dark:` class, which a Tamagui variant cannot
+ * express: each is one theme key with a light and a dark value.
+ */
+const lightTones = (colors: Palette): Tones => ({
+  // ui/button outline: `border-border bg-background hover:bg-muted`
+  "button-outline": colors.background,
+  "button-outline-border": colors.border,
+  "button-outline-pressed": colors.muted,
+  // ui/button ghost: `hover:bg-muted`
+  "button-ghost-pressed": colors.muted,
+  // ui/button destructive: `bg-destructive/10 hover:bg-destructive/20`
+  "button-destructive": colors["destructive-10"],
+  "button-destructive-pressed": colors["destructive-20"],
+})
+
+const darkTones = (colors: Palette): Tones => ({
+  // `dark:border-input dark:bg-input/30 dark:hover:bg-input/50`
+  "button-outline": colors["input-30"],
+  "button-outline-border": colors.input,
+  "button-outline-pressed": colors["input-50"],
+  // `dark:hover:bg-muted/50`
+  "button-ghost-pressed": colors["muted-50"],
+  // `dark:bg-destructive/20 dark:hover:bg-destructive/30`
+  "button-destructive": colors["destructive-20"],
+  "button-destructive-pressed": colors["destructive-30"],
+})
+
+/**
+ * The web palette as Tamagui theme keys. Tamagui `Text` reads `color`, so
+ * `foreground` is exposed under both names; `border` would clash with the
+ * shorthand, so it becomes `border-color`.
+ */
+const appTheme = (
+  { foreground, border, ...colors }: Palette,
+  tones: Tones
+) => ({
+  ...colors,
+  foreground,
+  color: foreground,
+  "border-color": border,
+  ...tones,
+})
+
+export const appThemes = {
+  light: appTheme(palette.light, lightTones(palette.light)),
+  dark: appTheme(palette.dark, darkTones(palette.dark)),
+}
+
+/** A theme key a native color prop accepts. */
+export type ThemeColor = keyof (typeof appThemes)["dark"]

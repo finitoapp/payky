@@ -1,6 +1,6 @@
 import { defaultConfig } from "@tamagui/config/v6"
 import { createTamagui } from "tamagui"
-import { palette } from "./src/theme/palette"
+import { appThemes } from "./src/theme/themes"
 import { radius } from "./src/theme/tokens"
 
 const inter = {
@@ -13,23 +13,9 @@ const inter = {
   },
 }
 
-// Themes are the web palette. Tamagui `Text` reads `color`, so `foreground`
-// is exposed under both names; `border` would clash with the shorthand, so it
-// becomes `border-color`.
-const nativeTheme = ({
-  foreground,
-  border,
-  ...rest
-}: (typeof palette)["light" | "dark"]) => ({
-  ...rest,
-  foreground,
-  color: foreground,
-  "border-color": border,
-})
-
 const nativeThemes = {
-  light: { ...defaultConfig.themes.light, ...nativeTheme(palette.light) },
-  dark: { ...defaultConfig.themes.dark, ...nativeTheme(palette.dark) },
+  light: { ...defaultConfig.themes.light, ...appThemes.light },
+  dark: { ...defaultConfig.themes.dark, ...appThemes.dark },
 }
 
 export const tamaguiConfig = createTamagui({

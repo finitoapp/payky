@@ -1,3 +1,4 @@
+import { cashuMintAddErrorKeys } from "@payky/app-shared/cashu-mint-errors"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { addKnownCashuMint } from "@payky/core/cashu/cashu-mints"
 import { useNavigate } from "@tanstack/react-router"
@@ -14,12 +15,6 @@ import { Input } from "@/components/ui/input.tsx"
 import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useCashuRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-
-const addErrorKeys = {
-  CashuMintUrlInvalid: "settings.cashuMints.addError.invalid",
-  MintUnreachable: "settings.cashuMints.addError.unreachable",
-  MintRejected: "settings.cashuMints.addError.rejected",
-} satisfies Record<string, TranslationKey>
 
 /**
  * Adds a mint by URL. Unlike Linky, a mint that does not load or lists
@@ -41,7 +36,7 @@ export function CashuMintNewPage() {
     await runToast(async (run) => {
       const added = await run(addKnownCashuMint(url))
       if (!added.ok) {
-        setErrorKey(addErrorKeys[added.error.type])
+        setErrorKey(cashuMintAddErrorKeys[added.error.type])
         return
       }
       await navigate({

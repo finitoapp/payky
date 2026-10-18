@@ -6,6 +6,10 @@ const page = readFileSync(
   new URL("./cashu-mints-page.tsx", import.meta.url),
   "utf8"
 )
+const newPage = readFileSync(
+  new URL("./cashu-mint-new-page.tsx", import.meta.url),
+  "utf8"
+)
 const knownMints = readFileSync(
   new URL("../../shared/cashu/use-cashu-known-mints.ts", import.meta.url),
   "utf8"
@@ -27,6 +31,20 @@ it("keeps the native mints list owner-only and read-only", () => {
   expect(page).toContain("snapshot.hydrated ?")
   expect(page).not.toMatch(
     /addKnownCashuMint|removeKnownCashuMint|writeCashuDefaultMint|loadCashuWallet/u
+  )
+  expect(page).toContain("/settings/payment-accounts/cashu/mints/new")
+})
+
+it("adds a mint only through core's validating Task, owner-gated", () => {
+  expect(requiredPermission("/settings/payment-accounts/cashu/mints/new")).toBe(
+    "admin"
+  )
+  expect(newPage).toContain("run(addKnownCashuMint(url))")
+  expect(newPage).toContain('require("admin", "access.action.cashuMints")')
+  expect(newPage).toContain("cashuMintAddErrorKeys[result.error.type]")
+  // No network or table access of its own: URL and keyset-host checks live in core.
+  expect(newPage).not.toMatch(
+    /fetch\(|loadCashuWallet|new Wallet|new Mint|cashuShardStore|addCashuMint|deviceEvolu/u
   )
 })
 

@@ -1,7 +1,9 @@
 import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import { formatSatsAmount } from "@payky/app-shared/format-money"
+import { router } from "expo-router"
 import type { ReactNode } from "react"
 import { Text, XStack, YStack } from "tamagui"
+import { AppButton } from "../../../components/app-button.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { FailureView, LoadingView } from "../../../components/state-views.tsx"
@@ -68,6 +70,13 @@ export function CashuMintsPage() {
           ))}
         </MintSection>
       )}
+      <AppButton
+        variant="secondary"
+        label={t("settings.cashuMints.add")}
+        onPress={() =>
+          router.push("/settings/payment-accounts/cashu/mints/new")
+        }
+      />
     </Screen>
   )
 }

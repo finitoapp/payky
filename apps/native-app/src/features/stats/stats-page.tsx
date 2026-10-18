@@ -14,6 +14,7 @@ import { LoadingView } from "../../components/state-views.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { formatStatsRange, KpiTiles } from "./kpi-tiles.tsx"
 import { PeriodSelector } from "./period-selector.tsx"
+import { RevenueChart } from "./revenue-chart.tsx"
 import {
   useSalesStats,
   useStatsLoadedAt,
@@ -122,5 +123,20 @@ function PeriodStats({
     )
   }
 
-  return <KpiTiles kpis={stats.kpis} comparisonKpis={stats.comparisonKpis} />
+  const [primary] = stats.kpis
+
+  return (
+    <>
+      <KpiTiles kpis={stats.kpis} comparisonKpis={stats.comparisonKpis} />
+      {primary === undefined ? null : (
+        <RevenueChart
+          hourRows={stats.hourRows}
+          comparisonHourRows={stats.comparisonWholeHourRows}
+          ranges={stats.ranges}
+          currency={primary.currency}
+          now={now}
+        />
+      )}
+    </>
+  )
 }

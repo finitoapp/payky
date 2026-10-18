@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 
-import { revenueChartPoints } from "./revenue-chart.tsx"
+import { revenueChartPoints } from "./stats-revenue-chart.ts"
 
 const bucket = (iso: string, gross: number, tips = 0) => ({
   start: new Date(iso),

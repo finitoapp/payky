@@ -2,7 +2,7 @@ import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { Text, YStack } from "tamagui"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
-type NativeAccountType = "new" | "restore"
+type NativeAccountType = "new" | "restore" | "transfer"
 
 const options = [
   {
@@ -15,13 +15,18 @@ const options = [
     title: "accountChoice.restore.title",
     description: "accountChoice.restore.description",
   },
+  {
+    type: "transfer",
+    title: "accountChoice.transfer.title",
+    description: "accountChoice.transfer.description",
+  },
 ] satisfies ReadonlyArray<{
   readonly type: NativeAccountType
   readonly title: TranslationKey
   readonly description: TranslationKey
 }>
 
-/** New and restore; transferring from another device has no native screen yet. */
+/** New, restore, and transfer from another device. */
 export function AccountChoiceStep({
   pending,
   onSelect,

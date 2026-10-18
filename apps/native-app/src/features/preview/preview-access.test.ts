@@ -92,16 +92,19 @@ it("requires confirm for both diagnostic cash settlements", () => {
 })
 
 it("requires current-account admin before adding a received account", () => {
-  const pairTarget = read("pair-target-page")
-  const addAccount = pairTarget.slice(
-    pairTarget.indexOf("onPress={async () => {")
+  const transferTarget = readFileSync(
+    new URL("../shared/account-transfer-target.tsx", import.meta.url),
+    "utf8"
+  )
+  const addAccount = transferTarget.slice(
+    transferTarget.indexOf("const addAccount")
   )
 
   expectInOrder(
     addAccount,
-    /if\s*\(store\.get\(evoluCounterAtom\) !== accountVersion\)\s*return/,
-    permissionReturn("admin", "accountTransfer.target.confirm.confirm"),
-    /if\s*\(store\.get\(evoluCounterAtom\) !== accountVersion\)\s*return/,
+    /if\s*\(stale\(\)\)\s*return/,
+    /await\s+require\(\s*"admin",\s*"accountTransfer\.target\.confirm\.confirm"\s*\)/,
+    /stale\(\)/,
     /createOrSelectAccount\(/
   )
 })

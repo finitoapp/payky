@@ -33,6 +33,7 @@ import { Screen } from "../../components/screen.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useSetLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { AccountTransferTarget } from "../shared/account-transfer-target.tsx"
 import { AccountChoiceStep } from "./account-choice-step.tsx"
 import { LanguageSelect } from "./language-select.tsx"
 import { PaymentsStep } from "./payments-step.tsx"
@@ -203,6 +204,13 @@ export function OnboardingPage() {
           onRestore={(phrase) => {
             void restore(phrase)
           }}
+        />
+      ) : null}
+
+      {step === "transfer" ? (
+        <AccountTransferTarget
+          source="onboarding"
+          confirmBeforeAdding={false}
         />
       ) : null}
 

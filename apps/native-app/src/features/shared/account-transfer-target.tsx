@@ -16,6 +16,7 @@ import {
 } from "@payky/core/modules/shared/payky-uri"
 import { router } from "expo-router"
 import { useAtomValue, useSetAtom, useStore } from "jotai"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useEffect, useRef, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
@@ -29,12 +30,16 @@ import {
   QR_SCAN_TYPES,
   ScanCodeScanner,
 } from "../../components/scan-code-scanner.tsx"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "../../components/ui/alert.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
-import { WarningPanel } from "./warning-panel.tsx"
 
 const scanErrorKeys = {
   NotPaykyUri: "accountTransfer.target.error.NotPaykyUri",
@@ -186,9 +191,12 @@ export function AccountTransferTarget({
               {t(view.error)}
             </Text>
           ) : null}
-          <WarningPanel title={t("accountTransfer.target.warning.title")}>
-            <Text>{t("accountTransfer.target.warning.description")}</Text>
-          </WarningPanel>
+          <Alert variant="warning" icon={TriangleAlert}>
+            <AlertTitle>{t("accountTransfer.target.warning.title")}</AlertTitle>
+            <AlertDescription>
+              {t("accountTransfer.target.warning.description")}
+            </AlertDescription>
+          </Alert>
         </>
       ) : null}
 
@@ -220,9 +228,10 @@ export function AccountTransferTarget({
       ) : null}
 
       {view.phase === "failed" ? (
-        <WarningPanel title={t("accountTransfer.target.failed.title")}>
-          <Text>{t(failureKeys[view.reason])}</Text>
-        </WarningPanel>
+        <Alert variant="destructive" icon={TriangleAlert}>
+          <AlertTitle>{t("accountTransfer.target.failed.title")}</AlertTitle>
+          <AlertDescription>{t(failureKeys[view.reason])}</AlertDescription>
+        </Alert>
       ) : null}
 
       {view.phase === "connecting" || view.phase === "code" ? (

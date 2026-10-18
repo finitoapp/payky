@@ -33,6 +33,7 @@ import {
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { TableId } from "@payky/core/modules/table/table-types"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import {
   Suspense,
   useDeferredValue,
@@ -46,6 +47,11 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "../../components/ui/alert.tsx"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -60,7 +66,6 @@ import {
   useBillStatus,
   usePendingPayments,
 } from "../shared/use-bill-state.ts"
-import { WarningPanel } from "../shared/warning-panel.tsx"
 import { AssignTableDialog } from "./assign-table-dialog.tsx"
 import { BillScanView } from "./bill-scan-view.tsx"
 import { CreateCatalogItemDialog } from "./create-catalog-item-dialog.tsx"
@@ -241,9 +246,10 @@ function BillCancellationCollisionMessage({
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <YStack flex={1} p="4" gap="3" justify="center">
-        <WarningPanel title={t("bill.collision.title")}>
-          <Text>{t("bill.collision.description")}</Text>
-        </WarningPanel>
+        <Alert variant="warning" icon={TriangleAlert}>
+          <AlertTitle>{t("bill.collision.title")}</AlertTitle>
+          <AlertDescription>{t("bill.collision.description")}</AlertDescription>
+        </Alert>
         <Text fontSize={28} fontWeight="600" text="center">
           {formatMoney(
             { value: deriveBillSummaryTotal(summaries), currency },

@@ -2,9 +2,16 @@ import ArrowLeft from "lucide-react-native/icons/arrow-left"
 import Check from "lucide-react-native/icons/check"
 import ChevronRight from "lucide-react-native/icons/chevron-right"
 import Plus from "lucide-react-native/icons/plus"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Text, View } from "tamagui"
 import { OptionToggleGroup } from "../../components/option-toggle-group.tsx"
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "../../components/ui/alert.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import {
@@ -280,6 +287,27 @@ export function UiKitCard() {
       <Input placeholder="Invalid" invalid />
       <Input placeholder="Disabled" disabled />
       <Textarea placeholder="Textarea" />
+      {(
+        [
+          "default",
+          "destructive",
+          "info",
+          "success",
+          "warning",
+          "invert",
+        ] as const
+      ).map((variant) => (
+        <Alert key={variant} variant={variant} icon={TriangleAlert}>
+          <AlertTitle>{`Alert ${variant}`}</AlertTitle>
+          <AlertDescription>Alert description</AlertDescription>
+        </Alert>
+      ))}
+      <Alert variant="warning">
+        <AlertDescription>Without icon, with an action</AlertDescription>
+        <AlertAction>
+          <Button variant="outline" size="sm" label="Retry" />
+        </AlertAction>
+      </Alert>
       <InputOTP
         value={otp}
         maxLength={4}

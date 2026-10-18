@@ -14,6 +14,7 @@ import {
 } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { useAtomValue, useStore } from "jotai"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { Fragment, useEffect, useRef, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
@@ -22,6 +23,11 @@ import { AppButton } from "../../../components/app-button.tsx"
 import { QrCode } from "../../../components/qr-code.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "../../../components/ui/alert.tsx"
 import {
   Field,
   FieldDescription,
@@ -37,7 +43,6 @@ import {
 import { nativeEnv } from "../../../core/native-env.ts"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { WarningPanel } from "../../shared/warning-panel.tsx"
 
 type FailureReason = Extract<TransferSourceState, { phase: "failed" }>["reason"]
 
@@ -147,9 +152,12 @@ export function AccountTransferSourcePage() {
           ).map((label, index) => (
             <Text key={label}>{`${index + 1}. ${t(label)}`}</Text>
           ))}
-          <WarningPanel title={t("accountTransfer.source.warning.title")}>
-            <Text>{t("accountTransfer.source.warning.description")}</Text>
-          </WarningPanel>
+          <Alert variant="warning" icon={TriangleAlert}>
+            <AlertTitle>{t("accountTransfer.source.warning.title")}</AlertTitle>
+            <AlertDescription>
+              {t("accountTransfer.source.warning.description")}
+            </AlertDescription>
+          </Alert>
           {accessControlOn ? (
             <Text color="muted-foreground">
               {t("accountTransfer.source.permissions")}
@@ -263,11 +271,12 @@ export function AccountTransferSourcePage() {
       ) : null}
 
       {state?.phase === "failed" ? (
-        <WarningPanel title={t("accountTransfer.source.failed.title")}>
-          <Text>
+        <Alert variant="destructive" icon={TriangleAlert}>
+          <AlertTitle>{t("accountTransfer.source.failed.title")}</AlertTitle>
+          <AlertDescription>
             {`${t(failureKeys[state.reason])} ${t("accountTransfer.source.failed.nothingSent")}`}
-          </Text>
-        </WarningPanel>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       {state === null ? (

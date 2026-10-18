@@ -21,6 +21,7 @@ import {
   deriveEetCertificateExpiry,
   findEetConfigurationGaps,
 } from "@payky/core/modules/eet/eet-utils"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { z } from "zod"
@@ -28,13 +29,17 @@ import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "../../../components/ui/alert.tsx"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { useEetSettings } from "../../shared/use-eet-settings.ts"
-import { WarningPanel } from "../../shared/warning-panel.tsx"
 import { EetCertificateImport } from "./eet-certificate-import.tsx"
 import { EetOfficialTestCertificates } from "./eet-official-test-certificates.tsx"
 import { EetTestSection } from "./eet-test-section.tsx"
@@ -388,21 +393,25 @@ function StoredCertificateDetails({
         ) : null}
       </YStack>
       {expiry === "valid" ? null : (
-        <WarningPanel
-          title={t(
-            expiry === "expired"
-              ? "settings.eet.certificate.expired.title"
-              : "settings.eet.certificate.expiresSoon.title"
-          )}
+        <Alert
+          variant={expiry === "expired" ? "destructive" : "warning"}
+          icon={TriangleAlert}
         >
-          <Text>
+          <AlertTitle>
+            {t(
+              expiry === "expired"
+                ? "settings.eet.certificate.expired.title"
+                : "settings.eet.certificate.expiresSoon.title"
+            )}
+          </AlertTitle>
+          <AlertDescription>
             {t(
               expiry === "expired"
                 ? "settings.eet.certificate.expired.description"
                 : "settings.eet.certificate.expiresSoon.description"
             )}
-          </Text>
-        </WarningPanel>
+          </AlertDescription>
+        </Alert>
       )}
     </YStack>
   )

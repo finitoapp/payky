@@ -8,18 +8,24 @@ import {
 } from "@payky/app-shared/support-chat-timeline"
 import { shortenNpub } from "@payky/core/integrations/nostr/nostr-client"
 import { hexToNpub } from "@payky/core/integrations/nostr/npub"
+import CircleAlert from "lucide-react-native/icons/circle-alert"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
 import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+} from "../../../components/ui/alert.tsx"
+import { Button } from "../../../components/ui/button.tsx"
+import {
   useNostrIdentity,
   useNostrMemberProfile,
 } from "../../../hooks/use-nostr-profile.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { ChatComposer } from "../../shared/chat-composer.tsx"
-import { WarningPanel } from "../../shared/warning-panel.tsx"
 import { DmInboxWarning } from "./dm-inbox-warning.tsx"
 import { useSendSupportMessage } from "./use-send-support-message.ts"
 import {
@@ -86,16 +92,20 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
     <Screen>
       <ScreenHeader title={t("settings.supportChat.title")} />
       {failure === null ? null : (
-        <WarningPanel title={t(failure)}>
-          <AppButton
-            label={t("settings.supportChat.retry")}
-            variant="secondary"
-            disabled={reloading}
-            onPress={() => {
-              void failedQuery.refetch()
-            }}
-          />
-        </WarningPanel>
+        <Alert variant="destructive" icon={CircleAlert}>
+          <AlertDescription>{t(failure)}</AlertDescription>
+          <AlertAction>
+            <Button
+              label={t("settings.supportChat.retry")}
+              variant="outline"
+              size="sm"
+              disabled={reloading}
+              onPress={() => {
+                void failedQuery.refetch()
+              }}
+            />
+          </AlertAction>
+        </Alert>
       )}
       {loading ? (
         <LoadingView />

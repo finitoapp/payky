@@ -2,15 +2,20 @@ import type { EetCertificateFile } from "@payky/core/integrations/eet/eet-certif
 import { fetchPlaygroundCertificates } from "@payky/core/integrations/eet/playground-certificates-client"
 import { storeEetCertificate } from "@payky/core/modules/eet/eet-actions"
 import { useQuery } from "@tanstack/react-query"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "../../../components/ui/alert.tsx"
 import { apiUrl } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { WarningPanel } from "../../shared/warning-panel.tsx"
 
 /**
  * The sandbox's official test certificates, fetched only on request: the
@@ -68,9 +73,14 @@ export function EetOfficialTestCertificates() {
 
   if (certificatesQuery.isError) {
     return (
-      <WarningPanel title={t("settings.eet.officialTest.unavailable.title")}>
-        <Text>{t("settings.eet.officialTest.unavailable.description")}</Text>
-      </WarningPanel>
+      <Alert variant="warning" icon={TriangleAlert}>
+        <AlertTitle>
+          {t("settings.eet.officialTest.unavailable.title")}
+        </AlertTitle>
+        <AlertDescription>
+          {t("settings.eet.officialTest.unavailable.description")}
+        </AlertDescription>
+      </Alert>
     )
   }
 

@@ -1,8 +1,13 @@
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
-import { AppButton } from "../../../components/app-button.tsx"
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+} from "../../../components/ui/alert.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { WarningPanel } from "../../shared/warning-panel.tsx"
 
 /**
  * Support may have nowhere to reply: the account's DM relay list could not be
@@ -35,42 +40,47 @@ export function DmInboxWarning({
   }
 
   return (
-    <WarningPanel
-      title={t(
-        unverified
-          ? "settings.supportChat.inbox.unverified"
-          : "settings.supportChat.inbox.publishFailed"
-      )}
-    >
-      <AppButton
-        label={t("settings.supportChat.retry")}
-        variant="secondary"
-        disabled={busy}
-        onPress={() => {
-          void busyWhile(unverified && !publishFailed ? onVerify : onPublish)
-        }}
-      />
-      {unverified ? (
-        <AppButton
-          label={t("settings.supportChat.inbox.publishAnyway")}
-          variant="secondary"
+    <Alert variant="warning" icon={TriangleAlert}>
+      <AlertDescription>
+        {t(
+          unverified
+            ? "settings.supportChat.inbox.unverified"
+            : "settings.supportChat.inbox.publishFailed"
+        )}
+      </AlertDescription>
+      <AlertAction>
+        <Button
+          label={t("settings.supportChat.retry")}
+          variant="outline"
+          size="sm"
           disabled={busy}
           onPress={() => {
-            void busyWhile(async () => {
-              const confirmed = await confirm({
-                title: t("settings.supportChat.inbox.confirm.title"),
-                description: t(
-                  "settings.supportChat.inbox.confirm.description"
-                ),
-                confirmLabel: t("settings.supportChat.inbox.confirm.confirm"),
-                cancelLabel: t("settings.supportChat.inbox.confirm.cancel"),
-                variant: "destructive",
-              })
-              if (confirmed) await onPublish()
-            })
+            void busyWhile(unverified && !publishFailed ? onVerify : onPublish)
           }}
         />
-      ) : null}
-    </WarningPanel>
+        {unverified ? (
+          <Button
+            label={t("settings.supportChat.inbox.publishAnyway")}
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onPress={() => {
+              void busyWhile(async () => {
+                const confirmed = await confirm({
+                  title: t("settings.supportChat.inbox.confirm.title"),
+                  description: t(
+                    "settings.supportChat.inbox.confirm.description"
+                  ),
+                  confirmLabel: t("settings.supportChat.inbox.confirm.confirm"),
+                  cancelLabel: t("settings.supportChat.inbox.confirm.cancel"),
+                  variant: "destructive",
+                })
+                if (confirmed) await onPublish()
+              })
+            }}
+          />
+        ) : null}
+      </AlertAction>
+    </Alert>
   )
 }

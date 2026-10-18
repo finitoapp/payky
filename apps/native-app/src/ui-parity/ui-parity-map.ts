@@ -726,11 +726,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "pending",
   },
   {
-    native: "src/features/shared/warning-panel.tsx",
-    web: ["apps/web-app/src/components/reui/alert.tsx"],
-    status: "pending",
-  },
-  {
     native: "src/features/stats/device-breakdown.tsx",
     web: ["apps/web-app/src/features/stats/device-breakdown.tsx"],
     status: "pending",

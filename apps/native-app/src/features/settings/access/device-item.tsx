@@ -11,10 +11,12 @@ import {
   unblockDevice,
 } from "@payky/core/modules/device/device-actions"
 import type { DeviceListRow } from "@payky/core/modules/device/device-queries"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import {
   accessPresetLabelKeys,
   permissionDescriptionKeys,
@@ -24,7 +26,6 @@ import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { WarningPanel } from "../../shared/warning-panel.tsx"
 import { DeviceHeading, PresetPicker, RenameForm } from "./device-parts.tsx"
 
 /** One device of the account: its defaults, name, and removal (access/0004). */
@@ -188,7 +189,22 @@ function PermissionsEditor({
         </XStack>
       ))}
       {granted.has("admin") ? (
-        <WarningPanel title={t("access.device.adminWarning")} />
+        <XStack
+          gap={8}
+          rounded={6.8}
+          borderWidth={1}
+          borderColor="destructive-40"
+          bg="destructive-5"
+          p={12}
+          accessibilityRole="alert"
+        >
+          <YStack pt={2}>
+            <Icon icon={TriangleAlert} color="destructive" />
+          </YStack>
+          <Text flex={1} fontSize={14}>
+            {t("access.device.adminWarning")}
+          </Text>
+        </XStack>
       ) : null}
       <XStack gap="2">
         <YStack flex={1}>

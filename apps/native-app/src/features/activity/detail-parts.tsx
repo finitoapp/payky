@@ -7,14 +7,19 @@ import {
   type Currency,
   NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { type ReactNode, useState } from "react"
 import { Pressable, Text as RNText, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { CopyLink } from "../../components/copy-link.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "../../components/ui/alert.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import { WarningPanel } from "../shared/warning-panel.tsx"
 import type { StatusTone } from "./activity-parts.tsx"
 
 /** The building blocks of the payment and bill detail screens. */
@@ -272,22 +277,23 @@ export function BillCoverageWarning({
   const delta = NonNegativeInteger(Math.abs(expectedAmount - claimedSum))
 
   return (
-    <WarningPanel
-      title={t(
-        isUnderpaid
-          ? "paymentDetail.bill.coverage.underpaid.title"
-          : "paymentDetail.bill.coverage.overpaid.title"
-      )}
-    >
-      <Text fontWeight="600">
+    <Alert variant="warning" icon={TriangleAlert}>
+      <AlertTitle>
         {t(
           isUnderpaid
-            ? "paymentDetail.bill.coverage.delta.underpaid"
-            : "paymentDetail.bill.coverage.delta.overpaid",
-          { amount: formatMoney({ value: delta, currency }, locale) }
+            ? "paymentDetail.bill.coverage.underpaid.title"
+            : "paymentDetail.bill.coverage.overpaid.title"
         )}
-      </Text>
-      <Text>
+      </AlertTitle>
+      <AlertDescription>
+        <Text fontSize={14} fontWeight="600">
+          {t(
+            isUnderpaid
+              ? "paymentDetail.bill.coverage.delta.underpaid"
+              : "paymentDetail.bill.coverage.delta.overpaid",
+            { amount: formatMoney({ value: delta, currency }, locale) }
+          )}
+        </Text>
         {reason === null
           ? t(
               isUnderpaid
@@ -300,16 +306,16 @@ export function BillCoverageWarning({
                 : "paymentDetail.bill.coverage.overpaid.factWithReason",
               { reason: t(`paymentDetail.bill.coverage.reason.${reason}`) }
             )}
-      </Text>
-      <DetailRow
-        label={t("paymentDetail.bill.coverage.expectedAmount")}
-        value={formatMoney({ value: expectedAmount, currency }, locale)}
-      />
-      <DetailRow
-        label={t("paymentDetail.bill.coverage.paidAmount")}
-        value={formatMoney({ value: claimedSum, currency }, locale)}
-      />
-      {children}
-    </WarningPanel>
+        <DetailRow
+          label={t("paymentDetail.bill.coverage.expectedAmount")}
+          value={formatMoney({ value: expectedAmount, currency }, locale)}
+        />
+        <DetailRow
+          label={t("paymentDetail.bill.coverage.paidAmount")}
+          value={formatMoney({ value: claimedSum, currency }, locale)}
+        />
+        {children}
+      </AlertDescription>
+    </Alert>
   )
 }

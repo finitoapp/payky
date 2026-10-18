@@ -110,6 +110,14 @@ const derive = (selector: string): Record<string, string> => {
     "destructive-40": alpha("destructive", 0.4),
     "destructive-90": alpha("destructive", 0.9),
     "muted-50": alpha("muted", 0.5),
+    "destructive-4": alpha("destructive", 0.04),
+    "info-4": alpha("info", 0.04),
+    "info-30": alpha("info", 0.3),
+    "success-4": alpha("success", 0.04),
+    "success-30": alpha("success", 0.3),
+    "warning-4": alpha("warning", 0.04),
+    "warning-30": alpha("warning", 0.3),
+    "invert-foreground-70": alpha("invert-foreground", 0.7),
   }
 }
 

@@ -12,6 +12,7 @@ import { Screen } from "../../components/screen.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { DeviceBreakdown } from "./device-breakdown.tsx"
 import { formatStatsRange, KpiTiles } from "./kpi-tiles.tsx"
 import { ExpectedCashSummary, MethodBreakdown } from "./method-breakdown.tsx"
 import { PeriodSelector } from "./period-selector.tsx"
@@ -143,6 +144,7 @@ function PeriodStats({
       )}
       <MethodBreakdown methods={stats.methods} kpis={stats.kpis} />
       <TopSales stats={stats} />
+      <DeviceBreakdown stats={stats} />
       {primary === undefined ? null : (
         <SalesHeatmap stats={stats} currency={primary.currency} />
       )}

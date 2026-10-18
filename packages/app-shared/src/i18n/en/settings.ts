@@ -563,6 +563,8 @@ export const enSettings = {
     "Customers see payment methods in this order. The first available one opens automatically.",
   "settings.paymentAccounts.status.currencyMismatch":
     "Set up in {currency}, but the app uses {appCurrency}",
+  "settings.paymentAccounts.status.unavailableHere":
+    "Not available in this version of the app yet",
   "settings.paymentAccounts.status.missingIban":
     "Add a bank account to turn this on",
   "settings.paymentAccounts.title": "Payment Accounts",

@@ -564,6 +564,8 @@ export const csSettings = {
     "Zákazník uvidí platební metody v tomto pořadí. První dostupná se otevře automaticky.",
   "settings.paymentAccounts.status.currencyMismatch":
     "Nastaveno v {currency}, aplikace ale používá {appCurrency}",
+  "settings.paymentAccounts.status.unavailableHere":
+    "V této verzi aplikace zatím není dostupné",
   "settings.paymentAccounts.status.missingIban":
     "Pro zapnutí doplňte bankovní účet",
   "settings.paymentAccounts.title": "Platební účty",

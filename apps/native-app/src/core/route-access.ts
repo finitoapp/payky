@@ -42,6 +42,7 @@ export type NativeRoutePath =
   | "/settings/tables/new"
   | "/settings/tables/:tableId"
   | "/settings/access"
+  | "/settings/payment-accounts"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -115,6 +116,8 @@ export const routeAccess = {
   "/settings/tables/:tableId": "settings",
   // Like web's `_terminal/settings/access`: the Access section is owner-only (access/0002).
   "/settings/access": "admin",
+  // Like web's `_terminal/settings/payment-accounts` (owner-only, access/0002).
+  "/settings/payment-accounts": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

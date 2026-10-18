@@ -567,6 +567,8 @@ export const skSettings = {
     "Zákazník uvidí platobné metódy v tomto poradí. Prvá dostupná sa otvorí automaticky.",
   "settings.paymentAccounts.status.currencyMismatch":
     "Nastavené v {currency}, aplikácia však používa {appCurrency}",
+  "settings.paymentAccounts.status.unavailableHere":
+    "V tejto verzii aplikácie zatiaľ nie je dostupné",
   "settings.paymentAccounts.status.missingIban":
     "Na zapnutie doplňte bankový účet",
   "settings.paymentAccounts.title": "Platobné účty",

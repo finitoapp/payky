@@ -1,5 +1,11 @@
 import { sqliteTrue } from "@evolu/common"
 import { countryLabelKey } from "@payky/app-shared/legal-entity-options"
+import {
+  cardSwitchioAccountQuery,
+  cashRegisterAccountQuery,
+  fiatBankAccountQuery,
+  sparkAccountQuery,
+} from "@payky/core/modules/account/account-queries"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import {
   getFiatCurrency,
@@ -55,6 +61,21 @@ export function SettingsPage() {
   const profile = useNostrProfile(useNostrIdentity().pubkey)
   const [settings] = useEvoluQuery(settingsQuery).data
   const [legalEntity] = useEvoluQuery(legalEntityQuery).data
+  const [cash] = useEvoluQuery(cashRegisterAccountQuery).data
+  const [bank] = useEvoluQuery(fiatBankAccountQuery).data
+  const [spark] = useEvoluQuery(sparkAccountQuery).data
+  const [card] = useEvoluQuery(cardSwitchioAccountQuery).data
+  const enabledMethods = [
+    [cash, "settings.paymentAccounts.method.cashRegister"],
+    [bank, "settings.paymentAccounts.method.iban"],
+    [spark, "settings.paymentAccounts.method.spark"],
+    [card, "settings.paymentAccounts.method.cardSwitchio"],
+  ] as const
+  const paymentMethodsValue =
+    enabledMethods
+      .filter(([account]) => account !== undefined && account.isDeleted !== 1)
+      .map(([, key]) => t(key))
+      .join(", ") || t("settings.paymentAccounts.nav.none")
   const enabledHomeModes = parseEnabledHomeModes(settings?.enabledHomeModesJson)
   const fiatCurrency = getFiatCurrency(settings)
   const catalogRows: ReadonlyArray<SettingsRowData> = [
@@ -70,6 +91,11 @@ export function SettingsPage() {
           ? fiatCurrency
           : `${t(countryLabelKey(legalEntity.country))} · ${fiatCurrency}`,
       href: "/settings/legal-entity",
+    },
+    {
+      title: t("settings.paymentAccounts.title"),
+      value: paymentMethodsValue,
+      href: "/settings/payment-accounts",
     },
     {
       title: t("settings.tips.title"),

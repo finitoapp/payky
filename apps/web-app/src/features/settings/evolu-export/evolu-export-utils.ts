@@ -1,7 +1,6 @@
 import { Capacitor } from "@capacitor/core"
-import { format } from "date-fns"
 
-export type EvoluExportDatabase = "app"
+import type { EvoluExportDatabase } from "@payky/app-shared/evolu-export"
 
 interface EvoluExportFile {
   readonly database: EvoluExportDatabase
@@ -22,37 +21,6 @@ type EvoluExportDestination =
     }
 
 const evoluExportMimeType = "application/vnd.sqlite3"
-
-export function createEvoluExportFilename({
-  createdAt,
-  database,
-}: {
-  readonly createdAt: Date
-  readonly database: EvoluExportDatabase
-}): string {
-  return `payky-evolu-${database}-export-${formatFilenameTimestamp(createdAt)}.sqlite`
-}
-
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes.toString()} B`
-
-  const units = ["KiB", "MiB", "GiB"] as const
-  let value = bytes / 1024
-
-  for (const unit of units) {
-    if (value < 1024) return `${value.toFixed(1)} ${unit}`
-    value /= 1024
-  }
-
-  return `${value.toFixed(1)} TiB`
-}
-
-export function formatExportCreatedAt(date: Date): string {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "medium",
-  }).format(date)
-}
 
 /**
  * Resolves to `null` when the user dismisses the native share sheet: nothing
@@ -76,9 +44,6 @@ export async function saveEvoluExportFile(
     },
   }
 }
-
-const formatFilenameTimestamp = (date: Date) =>
-  format(date, "yyyy-MM-dd-HHmmss")
 
 function downloadWithBrowser(file: EvoluExportFile): void {
   const blob = new Blob([file.bytes], { type: evoluExportMimeType })

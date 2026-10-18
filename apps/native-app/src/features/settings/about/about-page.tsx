@@ -40,6 +40,11 @@ export function AboutPage() {
         value={t("settings.about.terms.description")}
         href="/settings/about/terms"
       />
+      <SettingsRow
+        title={t("settings.evoluExport.title")}
+        value={t("settings.evoluExport.description")}
+        href="/settings/evolu-export"
+      />
     </Screen>
   )
 }

@@ -945,6 +945,7 @@ export const skSettings = {
     "Označiť zrušenú platbu ako zaplatenú",
   "access.action.createItem": "Vytvoriť položku katalógu",
   "access.action.disable": "Vypnúť riadenie prístupu",
+  "access.action.exportDatabase": "Exportovať databázu aplikácie",
   "access.action.revealRecoveryPhrase": "Zobraziť obnovovaciu frázu",
   "access.action.discardBill": "Zahodiť účet",
   "access.action.enable": "Zapnúť riadenie prístupu so súčasným PINom",

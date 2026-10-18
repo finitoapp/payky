@@ -17,6 +17,8 @@ export type NativeRoutePath =
   | "/activity/bills"
   | "/activity/bills/:billId"
   | "/activity/:paymentId"
+  | "/withdraw"
+  | "/withdraw/:withdrawalId"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -44,6 +46,9 @@ export const routeAccess = {
   "/activity/bills": "activity",
   "/activity/bills/:billId": "activity",
   "/activity/:paymentId": "activity",
+  // Like web's Spark `withdrawals` routes (access/0002: owner-only).
+  "/withdraw": "admin",
+  "/withdraw/:withdrawalId": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

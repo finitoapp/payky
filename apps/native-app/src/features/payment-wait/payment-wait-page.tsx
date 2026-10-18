@@ -60,6 +60,7 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useCashuRunToast, useRunToast } from "../../hooks/use-run-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { readCashReceived } from "./cash-received.ts"
+import { BoltCardReader } from "./payment-wait-bolt-card.tsx"
 import { CashuPaymentTab } from "./payment-wait-cashu-tab.tsx"
 import { IbanPaymentTab } from "./payment-wait-iban-tab.tsx"
 
@@ -531,6 +532,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           )}
           {status === "expired" ? (
             <Text color="muted-foreground">{t("payment.status.expired")}</Text>
+          ) : null}
+          {/* A Bolt Card pays a Lightning invoice, not a Spark one. */}
+          {status === "pending" && payment.lnInvoice !== null ? (
+            <BoltCardReader paymentId={paymentId} />
           ) : null}
         </YStack>
       ) : active.id === "cashu" ? (

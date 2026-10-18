@@ -9,6 +9,7 @@ import {
   retryPaymentMethodPreparation,
 } from "@payky/app-shared/payment-method-preparation"
 import { useNow } from "@payky/app-shared/use-now"
+import { buildCashuPaymentUri } from "@payky/core/cashu/cashu-payment-request"
 import {
   fetchNostrProfile,
   getNostrIdentity,
@@ -29,7 +30,10 @@ import {
   type BankQrPayload,
   createBankQrPayloads,
 } from "@payky/core/modules/payment/payment-iban-qr-payload-utils"
-import { preparePaymentMethod } from "@payky/core/modules/payment/payment-preparation-actions"
+import {
+  prepareCashuPaymentMethod,
+  preparePaymentMethod,
+} from "@payky/core/modules/payment/payment-preparation-actions"
 import {
   paymentClaimsQuery,
   paymentRequestQuery,
@@ -48,25 +52,28 @@ import { Field } from "../../components/field.tsx"
 import { QrCode } from "../../components/qr-code.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { EmptyView } from "../../components/state-views.tsx"
+import { nativeEnv } from "../../core/native-env.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
-import { useAppRun } from "../../hooks/use-app-run.ts"
+import { useAppRun, useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
-import { useRunToast } from "../../hooks/use-run-toast.ts"
+import { useCashuRunToast, useRunToast } from "../../hooks/use-run-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { readCashReceived } from "./cash-received.ts"
+import { CashuPaymentTab } from "./payment-wait-cashu-tab.tsx"
 import { IbanPaymentTab } from "./payment-wait-iban-tab.tsx"
 
-// Spark/Lightning, cash and bank transfer are offered here; Cashu (P08) adds
-// its tab. Only methods native supports get a tab. A Bolt Card tap under the
+// Spark/Lightning, cash, bank transfer and Cashu are offered here. Only
+// methods native supports get a tab. A Bolt Card tap under the
 // Lightning QR is H04, not here.
 
-type MethodId = "spark" | "cash" | "iban"
+type MethodId = "spark" | "cash" | "iban" | "cashu"
 
 const methodLabelKeys = {
   spark: "paymentWait.method.lightning",
   cash: "paymentWait.method.cash",
   iban: "paymentWait.method.iban",
+  cashu: "paymentWait.method.cashu",
 } satisfies Record<MethodId, TranslationKey>
 
 const goHome = () => router.dismissTo("/")
@@ -83,7 +90,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const appRun = useAppRun()
+  const cashuAppRun = useCashuAppRun()
   const runToast = useRunToast()
+  const cashuRunToast = useCashuRunToast()
   const { require } = useRequirePermission()
   const deviceId = useAtomValue(accountAtom).device.id
   const [payment] = useEvoluQuery(paymentRequestQuery(paymentId)).data
@@ -97,6 +106,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const [markPending, setMarkPending] = useState(false)
   const [ibanPending, setIbanPending] = useState(false)
   const [cancelPending, setCancelPending] = useState(false)
+  const [newQuotePending, setNewQuotePending] = useState(false)
   const [selected, setSelected] = useState<MethodId | null>(null)
   const [selectedQrFormat, setSelectedQrFormat] = useState<BankQrFormat | null>(
     null
@@ -147,6 +157,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       account.iban !== null &&
       account.ibanCurrency === payment?.currency
   )
+  // A Cashu account is not tied to a currency: the quote is for the sats.
+  const cashuAccount = accounts.find((account) => account.kind === "cashu")
   const methods = useMemo(() => {
     const order = getPaymentMethodOrder(settings)
     const found: { id: MethodId; accountId: AccountId }[] = []
@@ -156,15 +168,18 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       found.push({ id: "cash", accountId: cashAccount.id })
     if (ibanAccount !== undefined)
       found.push({ id: "iban", accountId: ibanAccount.id })
+    if (cashuAccount !== undefined)
+      found.push({ id: "cashu", accountId: cashuAccount.id })
     const kindOf = {
       spark: "spark",
       cash: "cashRegister",
       iban: "iban",
+      cashu: "cashu",
     } as const
     return found.toSorted(
       (a, b) => order.indexOf(kindOf[a.id]) - order.indexOf(kindOf[b.id])
     )
-  }, [settings, sparkAccount, cashAccount, ibanAccount])
+  }, [settings, sparkAccount, cashAccount, ibanAccount, cashuAccount])
   const active = methods.find(({ id }) => id === selected) ?? methods[0]
   const preparationKey =
     active === undefined
@@ -180,12 +195,16 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         : active?.id === "iban"
           ? payment?.ibanAccountId !== null &&
             payment?.ibanAccountId !== undefined
-          : false
+          : payment?.cashuLnInvoice !== null &&
+            payment?.cashuLnInvoice !== undefined
   const preparationStatus =
     preparationKey === null ? undefined : preparation[preparationKey]
   // Spark invoices carry an `expiresAt` and nothing writes a row when it
   // passes, so the clock ticks to flip the derived status.
-  const now = useNow([payment?.expiresAt ?? null])
+  const now = useNow([
+    payment?.expiresAt ?? null,
+    payment?.cashuQuoteExpiresAt ?? null,
+  ])
   const status =
     payment === undefined
       ? null
@@ -231,17 +250,31 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   ) =>
     runner.run(key, async () => {
       try {
-        await using run = appRun()
-        const result = await run(
-          preparePaymentMethod({
-            paymentId,
-            ...(method.id === "cash"
-              ? { cashRegister: { accountId: method.accountId } }
-              : method.id === "spark"
-                ? { spark: { accountId: method.accountId } }
-                : { bank: { accountId: method.accountId } }),
-          })
-        )
+        // Only a Cashu preparation reads the Cashu wallet, and only now: no
+        // other method waits on it, or fails with it.
+        const attach = async () => {
+          if (method.id === "cashu") {
+            await using run = await cashuAppRun()
+            return await run(
+              prepareCashuPaymentMethod({
+                paymentId,
+                accountId: method.accountId,
+              })
+            )
+          }
+          await using run = appRun()
+          return await run(
+            preparePaymentMethod({
+              paymentId,
+              ...(method.id === "cash"
+                ? { cashRegister: { accountId: method.accountId } }
+                : method.id === "spark"
+                  ? { spark: { accountId: method.accountId } }
+                  : { bank: { accountId: method.accountId } }),
+            })
+          )
+        }
+        const result = await attach()
         if (!result.ok) {
           nativeConsole.error("Failed to prepare payment method", result.error)
           setPreparation((state) =>
@@ -291,6 +324,21 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     formatMoney({ value: Integer(value), currency: payment.currency }, locale)
   const canMarkCashPaid =
     cashRegisterAccountId !== null && cashRegisterAccountId !== undefined
+  const cashuQuoteExpiresAt = payment.cashuQuoteExpiresAt ?? null
+  const cashuQrPayload =
+    payment.cashuLnInvoice === null ||
+    payment.cashuLnInvoice === undefined ||
+    payment.cashuMintUrl === null ||
+    payment.cashuMintUrl === undefined
+      ? null
+      : buildCashuPaymentUri({
+          paymentId,
+          lnInvoice: payment.cashuLnInvoice,
+          amountSats: payment.cashuAmountSats ?? 0,
+          mintUrl: payment.cashuMintUrl,
+          nostrPubkey: getNostrIdentity(masterKey).pubkey,
+          relays: nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS,
+        })
   const ibanAccountId = payment.ibanAccountId
   const canMarkIbanPaid = ibanAccountId !== null && ibanAccountId !== undefined
   const preparing =
@@ -376,6 +424,34 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     }
   }
 
+  // A new quote for an expired one: the old topup stays pending in the
+  // wallet until the mint confirms it unpaid, and still settles if paid.
+  const requestNewQuote = async () => {
+    if (cashuAccount === undefined || busyRef.current) return
+    busyRef.current = true
+    setNewQuotePending(true)
+    try {
+      await cashuRunToast(async (run) => {
+        const result = await run(
+          prepareCashuPaymentMethod({
+            paymentId,
+            accountId: cashuAccount.id,
+          })
+        )
+        if (!result.ok) {
+          nativeConsole.error(
+            "Failed to prepare a new Cashu quote",
+            result.error
+          )
+          return "paymentWait.prepareError"
+        }
+      })
+    } finally {
+      setNewQuotePending(false)
+      busyRef.current = false
+    }
+  }
+
   const retryPreparation = () => {
     if (active === undefined || preparationKey === null || prepared) return
     const transition = retryPaymentMethodPreparation(
@@ -398,6 +474,15 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           <Text color="muted-foreground">
             {formatMoney(
               { value: payment.amountSats, currency: Currency.BTC },
+              locale
+            )}
+          </Text>
+        ) : active?.id === "cashu" &&
+          payment.cashuAmountSats !== null &&
+          payment.cashuAmountSats !== undefined ? (
+          <Text color="muted-foreground">
+            {formatMoney(
+              { value: payment.cashuAmountSats, currency: Currency.BTC },
               locale
             )}
           </Text>
@@ -447,6 +532,19 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           {status === "expired" ? (
             <Text color="muted-foreground">{t("payment.status.expired")}</Text>
           ) : null}
+        </YStack>
+      ) : active.id === "cashu" ? (
+        <YStack gap="3" items="center">
+          <CashuPaymentTab
+            paymentId={paymentId}
+            qrPayload={cashuQrPayload}
+            quoteExpired={
+              cashuQuoteExpiresAt !== null &&
+              now.getTime() >= cashuQuoteExpiresAt
+            }
+            newQuotePending={newQuotePending}
+            onNewQuote={() => void requestNewQuote()}
+          />
         </YStack>
       ) : active.id === "iban" && ibanNumber !== null ? (
         <IbanPaymentTab

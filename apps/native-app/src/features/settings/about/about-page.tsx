@@ -50,6 +50,11 @@ export function AboutPage() {
         value={t("settings.demoData.description")}
         href="/settings/demo-data"
       />
+      <SettingsRow
+        title={t("settings.debugConsole.title")}
+        value={t("settings.debugConsole.description")}
+        href="/settings/debug-console"
+      />
     </Screen>
   )
 }

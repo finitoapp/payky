@@ -1,6 +1,11 @@
-import { createConsole, createNativeConsoleOutput } from "@evolu/common"
+import {
+  createConsole,
+  createMultiOutput,
+  createNativeConsoleOutput,
+} from "@evolu/common"
 import { createRun, lockManager } from "@evolu/react-native"
 import { createEvoluDeps } from "@evolu/react-native/expo-sqlite"
+import { createConsoleOutputHistory } from "@payky/app-shared/console-history"
 
 /**
  * The native composition root's app-lifetime run and its one lock authority.
@@ -8,10 +13,16 @@ import { createEvoluDeps } from "@evolu/react-native/expo-sqlite"
  * the app has a single JS runtime: a headless task or worker would need its
  * own review before it may write.
  */
+/** The last 1000 console entries, in memory only, for the debug console screen. */
+export const nativeConsoleHistory = createConsoleOutputHistory({ limit: 1000 })
+
 export const nativeConsole = createConsole({
   // Debug output names owners and relays; a release build logs warnings only.
   level: __DEV__ ? "debug" : "warn",
-  output: createNativeConsoleOutput(),
+  output: createMultiOutput([
+    createNativeConsoleOutput(),
+    nativeConsoleHistory,
+  ]),
 })
 
 export const nativeRun = createRun({

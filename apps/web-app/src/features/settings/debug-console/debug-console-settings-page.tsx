@@ -1,3 +1,4 @@
+import { formatConsoleArgs } from "@payky/app-shared/console-history"
 import { format } from "date-fns"
 import { Pause, Play, Trash2 } from "lucide-react"
 import { Suspense, useEffect, useMemo, useState } from "react"
@@ -156,26 +157,6 @@ const methodClassNames = {
   error: "bg-destructive/15 text-destructive",
 } satisfies Record<ConsoleOutputHistoryEntry["method"], string>
 
-function formatConsoleArgs(args: ReadonlyArray<unknown>): string {
-  return args.map(formatConsoleArg).join(" ")
-}
-
 function formatConsoleEntryTime(createdAt: number): string {
   return format(createdAt, "HH:mm:ss.SSS")
-}
-
-function formatConsoleArg(arg: unknown): string {
-  if (typeof arg === "string") return arg
-  if (typeof arg === "undefined") return "undefined"
-  if (typeof arg === "bigint") return `${arg.toString()}n`
-  if (typeof arg === "symbol") return arg.toString()
-  if (typeof arg === "function") return `[Function ${arg.name || "anonymous"}]`
-  if (arg instanceof Error) return arg.stack ?? arg.message
-
-  try {
-    const json = JSON.stringify(arg, null, 2)
-    return json ?? String(arg)
-  } catch {
-    return String(arg)
-  }
 }

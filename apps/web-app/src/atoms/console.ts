@@ -1,68 +1,17 @@
 import {
-  type ConsoleEntry,
-  type ConsoleOutput,
   createConsole,
   createMultiOutput,
   createNativeConsoleOutput,
 } from "@evolu/common"
+import { createConsoleOutputHistory } from "@payky/app-shared/console-history"
 import { atom } from "jotai"
 
+export type {
+  ConsoleOutputHistory,
+  ConsoleOutputHistoryEntry,
+} from "@payky/app-shared/console-history"
+
 const consoleOutputHistoryLimit = 1000
-
-export interface ConsoleOutputHistory extends ConsoleOutput {
-  readonly getEntries: () => ReadonlyArray<ConsoleOutputHistoryEntry>
-  readonly clearEntries: () => void
-  readonly subscribe: (listener: () => void) => () => void
-}
-
-export interface ConsoleOutputHistoryEntry extends ConsoleEntry {
-  readonly createdAt: number
-}
-
-function createConsoleOutputHistory({
-  limit,
-}: {
-  readonly limit: number
-}): ConsoleOutputHistory {
-  const entries: ConsoleOutputHistoryEntry[] = []
-  const listeners = new Set<() => void>()
-
-  const notify = () => {
-    for (const listener of listeners) {
-      listener()
-    }
-  }
-
-  return {
-    write: (entry) => {
-      entries.push({
-        ...entry,
-        createdAt: Date.now(),
-      })
-
-      if (entries.length > limit) {
-        entries.splice(0, entries.length - limit)
-      }
-
-      notify()
-    },
-
-    getEntries: () => [...entries],
-
-    clearEntries: () => {
-      entries.length = 0
-      notify()
-    },
-
-    subscribe: (listener) => {
-      listeners.add(listener)
-
-      return () => {
-        listeners.delete(listener)
-      }
-    },
-  }
-}
 
 export const consoleOutputHistoryAtom = atom(() =>
   createConsoleOutputHistory({

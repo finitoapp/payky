@@ -20,6 +20,13 @@ import { TurnOnWizard } from "./turn-on-wizard.tsx"
  * `AccessSettingsPage`. The route is `admin` (access/0002).
  */
 export function AccessSettingsPage() {
+  const { accountId } = useAccess()
+  // Keyed by account, so an account switch drops the wizard's PIN digits and
+  // its keep-current-PIN approval.
+  return <AccessSettings key={accountId} />
+}
+
+function AccessSettings() {
   const { t } = useTranslation()
   const { data: control } = useEvoluQuery(accessControlQuery)
   const enabled = control[0]?.enabled === 1

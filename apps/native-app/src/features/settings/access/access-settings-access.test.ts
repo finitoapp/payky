@@ -108,3 +108,9 @@ it("asks for the current PIN, awaited, before unblocking, and only for another b
   )
   expect(item).toMatch(/device\.pinBlockedAt !== null && !thisDevice/)
 })
+
+it("drops the wizard state when the account changes, and shows the wizard only while access is off", () => {
+  const page = read("access-settings-page.tsx")
+  expect(page).toMatch(/<AccessSettings key=\{accountId\} \/>/)
+  expect(page).toMatch(/mode === "wizard" && !enabled \? \(\s*<TurnOnWizard/u)
+})

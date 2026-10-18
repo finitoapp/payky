@@ -20,7 +20,10 @@ import {
   catalogItemsQuery,
 } from "@payky/core/modules/catalog-item/catalog-item-queries"
 import type { CategoryFilter } from "@payky/core/modules/catalog-item/catalog-item-types"
-import { getStaffDisplayName } from "@payky/core/modules/catalog-item/catalog-item-utils"
+import {
+  findCatalogItemsByScanCode,
+  getStaffDisplayName,
+} from "@payky/core/modules/catalog-item/catalog-item-utils"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import {
   type FiatCurrency,
@@ -38,6 +41,7 @@ import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
 import { CategoryFilterBar } from "../shared/category-filter-bar.tsx"
@@ -48,6 +52,8 @@ import {
 } from "../shared/use-bill-state.ts"
 import { WarningPanel } from "../shared/warning-panel.tsx"
 import { AssignTableDialog } from "./assign-table-dialog.tsx"
+import { BillScanView } from "./bill-scan-view.tsx"
+import { ScanCodeCollisionDialog } from "./scan-code-collision-dialog.tsx"
 import { SplitBillDialog } from "./split-bill-dialog.tsx"
 import { useCartBill } from "./use-cart-bill.ts"
 import { useSplitBill } from "./use-split-bill.ts"
@@ -312,7 +318,13 @@ function BillCart({
     [summaries]
   )
   const cart = useCartBill({ billId, currency, tableId, onTableSeedChange })
+  const toast = useToast()
   const [tablePickerOpen, setTablePickerOpen] = useState(false)
+  const [scanMode, setScanMode] = useState(false)
+  const [lastScanned, setLastScanned] = useState<CatalogItemRow | null>(null)
+  const [collisionCandidates, setCollisionCandidates] = useState<
+    ReadonlyArray<CatalogItemRow>
+  >([])
   const [splitOpen, setSplitOpen] = useState(false)
   const split = useSplitBill({
     billId,
@@ -362,6 +374,21 @@ function BillCart({
     [catalogItems, currency]
   )
   const categories = useEvoluQuery(catalogCategoriesQuery).data
+
+  const addScanned = (item: CatalogItemRow) => {
+    setLastScanned(item)
+    void cart.addOne(item)
+  }
+  // A code matching one item adds it, several ask which one. An unknown code
+  // only says so until the create-from-scan flow lands.
+  const handleScan = (rawValue: string) => {
+    const matches = findCatalogItemsByScanCode(currencyItems, rawValue)
+    const [first] = matches
+    if (first === undefined)
+      toast.error(t("bill.scan.unknown.description", { code: rawValue }))
+    else if (matches.length > 1) setCollisionCandidates(matches)
+    else addScanned(first)
+  }
   const usedCategoryIds = useMemo(
     () => new Set(currencyItems.map((item) => item.categoryId)),
     [currencyItems]
@@ -423,7 +450,12 @@ function BillCart({
         <Text color="muted-foreground">{tableName}</Text>
       )}
 
-      {/* Search and scan mode arrive with H02. */}
+      <AppButton
+        variant={scanMode ? "primary" : "secondary"}
+        label={t("bill.scan.toggle.aria")}
+        onPress={() => setScanMode((on) => !on)}
+      />
+      {/* Search arrives later. */}
       <CategoryFilterBar
         categories={categories}
         usedCategoryIds={usedCategoryIds}
@@ -433,35 +465,61 @@ function BillCart({
         uncategorizedLabel={t("bill.category.uncategorized")}
         extraOptions={inBillFilterOptions}
       />
-      <FlatList
-        style={{ flex: 1 }}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 8 }}
-        contentContainerStyle={{ gap: 8 }}
-        data={gridItems}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={
-          currencyItems.length === 0 ? (
-            <CatalogEmpty />
-          ) : (
-            <EmptyView
-              message={t(
-                categoryFilter === "inBill"
-                  ? "bill.filter.inBill.empty"
-                  : "bill.emptySearch"
-              )}
+      {scanMode ? (
+        <BillScanView
+          paused={collisionCandidates.length > 0}
+          onScan={handleScan}
+          lastScanned={
+            lastScanned === null ? null : (
+              <ItemBrick
+                catalogItem={lastScanned}
+                summaries={summaries}
+                locale={locale}
+                onAdd={() => void cart.addOne(lastScanned)}
+                onRemove={(summary) => void cart.removeOne(summary)}
+              />
+            )
+          }
+        />
+      ) : (
+        <FlatList
+          style={{ flex: 1 }}
+          numColumns={2}
+          columnWrapperStyle={{ gap: 8 }}
+          contentContainerStyle={{ gap: 8 }}
+          data={gridItems}
+          keyExtractor={(item) => item.id}
+          ListEmptyComponent={
+            currencyItems.length === 0 ? (
+              <CatalogEmpty />
+            ) : (
+              <EmptyView
+                message={t(
+                  categoryFilter === "inBill"
+                    ? "bill.filter.inBill.empty"
+                    : "bill.emptySearch"
+                )}
+              />
+            )
+          }
+          renderItem={({ item }) => (
+            <ItemBrick
+              catalogItem={item}
+              summaries={summaries}
+              locale={locale}
+              onAdd={() => void cart.addOne(item)}
+              onRemove={(summary) => void cart.removeOne(summary)}
             />
-          )
-        }
-        renderItem={({ item }) => (
-          <ItemBrick
-            catalogItem={item}
-            summaries={summaries}
-            locale={locale}
-            onAdd={() => void cart.addOne(item)}
-            onRemove={(summary) => void cart.removeOne(summary)}
-          />
-        )}
+          )}
+        />
+      )}
+      <ScanCodeCollisionDialog
+        candidates={collisionCandidates}
+        onClose={() => setCollisionCandidates([])}
+        onSelect={(item) => {
+          setCollisionCandidates([])
+          addScanned(item)
+        }}
       />
 
       <FlatList

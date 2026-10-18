@@ -34,10 +34,13 @@ export function ScanCodeScanner({
   onScan,
   types = ALL_SCAN_TYPES,
   repeatDelayMs = DEFAULT_REPEAT_DELAY_MS,
+  paused = false,
 }: {
   readonly onScan: (rawValue: string) => void | Promise<void>
   readonly types?: ReadonlyArray<BarcodeType>
   readonly repeatDelayMs?: number
+  /** Ignores every code while true, e.g. behind an open dialog. */
+  readonly paused?: boolean
 }) {
   const { t } = useTranslation()
   const [permission, requestPermission] = useCameraPermissions()
@@ -63,7 +66,7 @@ export function ScanCodeScanner({
   const handle = useCallback(
     async (rawValue: string) => {
       const now = Date.now()
-      if (busyRef.current) return
+      if (paused || busyRef.current) return
       if (!shouldAcceptScan(lastRef.current, rawValue, now, repeatDelayMs))
         return
       lastRef.current = { value: rawValue, at: now }
@@ -74,7 +77,7 @@ export function ScanCodeScanner({
         busyRef.current = false
       }
     },
-    [onScan, repeatDelayMs]
+    [onScan, repeatDelayMs, paused]
   )
 
   const view = scanPermissionView(permission)

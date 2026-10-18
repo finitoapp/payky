@@ -1,4 +1,12 @@
 import { Capacitor } from "@capacitor/core"
+import {
+  accessPresetOrder,
+  checkNewPin,
+  presetOf,
+  sanitizePinInput,
+  withPermission,
+  wizardDeviceDefaults,
+} from "@payky/app-shared/access-form"
 import { accessSessionAtom } from "@payky/app-shared/access-state"
 import { pinPadAttribute } from "@payky/app-shared/error-scrubbing"
 import {
@@ -17,7 +25,6 @@ import {
   decodePermissions,
   decodePinHash,
   type Pin,
-  PinSchema,
 } from "@payky/core/modules/access/access-utils"
 import {
   removeDevice,
@@ -90,25 +97,6 @@ import {
   permissionDescriptionKeys,
   permissionLabelKeys,
 } from "@/i18n/access-labels.ts"
-
-const presetOrder: ReadonlyArray<AccessPreset> = [
-  "none",
-  "basic",
-  "staff",
-  "shiftLead",
-  "manager",
-  "owner",
-]
-
-/** The preset a set of permissions equals, if any. */
-const presetOf = (granted: ReadonlySet<Permission>): AccessPreset | null =>
-  presetOrder.find((preset) => {
-    const presetPermissions = accessPresets[preset]
-    return (
-      presetPermissions.length === granted.size &&
-      presetPermissions.every((permission) => granted.has(permission))
-    )
-  }) ?? null
 
 /**
  * Settings → Access (access/0001, access/0004): switching access control on
@@ -226,19 +214,17 @@ function NewPinFields({
   const repeatId = useId()
   const [pin, setPin] = useState("")
   const [repeat, setRepeat] = useState("")
-  const parsed = PinSchema.safeParse(pin)
-  const mismatch = repeat !== "" && repeat !== pin
+  const { invalid, mismatch } = checkNewPin(pin, repeat)
 
   const update = (nextPin: string, nextRepeat: string) => {
     setPin(nextPin)
     setRepeat(nextRepeat)
-    const next = PinSchema.safeParse(nextPin)
-    onChange(next.success && nextPin === nextRepeat ? next.data : null)
+    onChange(checkNewPin(nextPin, nextRepeat).pin)
   }
 
   return (
     <FieldGroup {...{ [pinPadAttribute]: "" }}>
-      <Field data-invalid={pin !== "" && !parsed.success}>
+      <Field data-invalid={invalid}>
         <FieldLabel htmlFor={pinId}>{t("access.newPin.label")}</FieldLabel>
         <Input
           id={pinId}
@@ -248,7 +234,7 @@ function NewPinFields({
           maxLength={8}
           value={pin}
           onChange={(event) =>
-            update(event.currentTarget.value.replaceAll(/\D/gu, ""), repeat)
+            update(sanitizePinInput(event.currentTarget.value), repeat)
           }
         />
         <FieldDescription>{t("access.newPin.description")}</FieldDescription>
@@ -263,7 +249,7 @@ function NewPinFields({
           maxLength={8}
           value={repeat}
           onChange={(event) =>
-            update(pin, event.currentTarget.value.replaceAll(/\D/gu, ""))
+            update(pin, sanitizePinInput(event.currentTarget.value))
           }
         />
         <FieldError>{mismatch ? t("access.newPin.mismatch") : null}</FieldError>
@@ -351,10 +337,7 @@ function TurnOnWizard({
       const result = await run(
         enableAccessControl({
           pin,
-          devices: devices.map((device) => ({
-            id: device.id,
-            permissions: accessPresets[presets[device.id] ?? "basic"],
-          })),
+          devices: wizardDeviceDefaults(devices, presets),
         })
       )
       if (!result.ok) return "access.wizard.noPin"
@@ -486,7 +469,7 @@ function PresetSelect({
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {presetOrder.map((preset) => (
+        {accessPresetOrder.map((preset) => (
           <SelectItem key={preset} value={preset}>
             {t(accessPresetLabelKeys[preset])}
           </SelectItem>
@@ -696,14 +679,11 @@ function PermissionsDialog({
                 <Checkbox
                   id={id}
                   checked={granted.has(permission)}
-                  onCheckedChange={(checked) => {
-                    setGranted((current) => {
-                      const next = new Set(current)
-                      if (checked === true) next.add(permission)
-                      else next.delete(permission)
-                      return next
-                    })
-                  }}
+                  onCheckedChange={(checked) =>
+                    setGranted((current) =>
+                      withPermission(current, permission, checked === true)
+                    )
+                  }
                 />
                 <div className="flex flex-col gap-0.5">
                   <FieldLabel htmlFor={id}>

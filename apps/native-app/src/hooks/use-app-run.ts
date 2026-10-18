@@ -1,14 +1,9 @@
-import { err } from "@evolu/common"
 import { lockManager } from "@evolu/react-native"
 import { createDateDep } from "@payky/core/deps"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
 import { createYadioApiDep } from "@payky/core/integrations/yadio/yadio-client"
 import { createSparkWalletDep } from "@payky/core/spark/spark-wallet"
-import {
-  createSwitchioUnavailableError,
-  type SwitchioTerminalDep,
-} from "@payky/core/switchio"
 import { useAtomValue, useStore } from "jotai"
 import { useCallback } from "react"
 import { accountAtom } from "../atoms/account.ts"
@@ -18,20 +13,7 @@ import { evoluAtom } from "../atoms/evolu.ts"
 import { nativeEnv } from "../core/native-env.ts"
 import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
 import { createFetchDep } from "../platform/native-deps.ts"
-
-/**
- * Native has no SwitchioPay bridge yet (its ECR protocol is Android-intent
- * only), so the dep answers with the domain's own "unavailable" error, which
- * `payPaymentWithSwitchioCard` already maps to a message. The card tab is not
- * offered natively until a plugin exists; this only keeps the dep list equal
- * to web's.
- */
-const unsupportedSwitchioTerminalDep: SwitchioTerminalDep = {
-  switchioTerminal: {
-    pay: async () =>
-      err(createSwitchioUnavailableError({ reason: "notInstalled" })),
-  },
-}
+import { createSwitchioTerminalDep } from "../platform/switchio.ts"
 
 /**
  * Native composition root for Task actions, the counterpart of web's
@@ -60,7 +42,7 @@ function useAppRunDeps() {
       ...fetchDep,
       ...createSparkWalletDep(),
       ...createYadioApiDep(),
-      ...unsupportedSwitchioTerminalDep,
+      ...createSwitchioTerminalDep(),
       ...createEetApiDep(
         { ...dateDep, ...fetchDep },
         { productionUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL }

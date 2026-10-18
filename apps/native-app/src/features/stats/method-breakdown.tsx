@@ -1,0 +1,346 @@
+import { paymentMethodLabelKey } from "@payky/app-shared/activity-labels"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import type {
+  ExpectedCash,
+  MethodBreakdown as MethodBreakdownRow,
+  MethodShare,
+  SalesKpis,
+} from "@payky/core/modules/sales-stats/sales-stats-utils"
+import type { Currency } from "@payky/core/modules/shared/schema"
+import { useState } from "react"
+import Svg, { Circle } from "react-native-svg"
+import { Text, useTheme, XStack, YStack } from "tamagui"
+import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { BreakdownLine } from "./kpi-tiles.tsx"
+import {
+  CurrencyGroup,
+  StatsBar,
+  StatsSection,
+  TipsLine,
+  useStatsMoney,
+} from "./stats-section.tsx"
+
+/**
+ * One colour per method, the same in every period so a method is
+ * recognisable at a glance.
+ */
+const methodColors = {
+  cashRegister: "#e36b2c",
+  cardSwitchio: "#2a9d8f",
+  iban: "#4f7cac",
+  spark: "#e9c46a",
+  onchain: "#9b5de5",
+  cashu: "#43aa8b",
+  unknown: "#888888",
+} satisfies Record<MethodShare["method"], string>
+
+const methodLabelKey = (method: MethodShare["method"]): TranslationKey =>
+  method === "unknown" ? "stats.methods.unknown" : paymentMethodLabelKey[method]
+
+/**
+ * Amount and share per method that settled the period's sales, per
+ * currency: a donut of the shares with the total inside, then the methods
+ * with a bar each, which also serve as the donut's legend. Under them, how
+ * the total comes out of the same sales as net revenue. A duplicate
+ * settlement makes the methods exceed revenue; the note names the excess.
+ */
+export function MethodBreakdown({
+  methods,
+  kpis,
+}: {
+  readonly methods: ReadonlyArray<MethodBreakdownRow>
+  readonly kpis: ReadonlyArray<SalesKpis>
+}) {
+  const { t } = useTranslation()
+  const money = useStatsMoney()
+  const excess = methods.filter((row) => row.excess > 0)
+
+  return (
+    <StatsSection
+      title={t("stats.methods.title")}
+      note={
+        excess.length === 0
+          ? undefined
+          : excess
+              .map((row) =>
+                t("stats.methods.excess", {
+                  amount: money(row.excess, row.currency),
+                })
+              )
+              .join(" ")
+      }
+    >
+      {methods.map((row) => (
+        <CurrencyGroup
+          key={row.currency}
+          currency={row.currency}
+          showCurrency={methods.length > 1}
+        >
+          <MethodDonut row={row} />
+          {row.methods.map((method) => (
+            <MethodRow
+              key={method.method}
+              method={method}
+              currency={row.currency}
+            />
+          ))}
+          <ReceivedBreakdown
+            row={row}
+            kpis={kpis.find((kpi) => kpi.currency === row.currency)}
+          />
+        </CurrencyGroup>
+      ))}
+    </StatsSection>
+  )
+}
+
+/**
+ * Sales + tips (+ a duplicate settlement's excess) = the donut's total: the
+ * same sales net revenue starts from, before refunds.
+ */
+function ReceivedBreakdown({
+  row,
+  kpis,
+}: {
+  readonly row: MethodBreakdownRow
+  readonly kpis: SalesKpis | undefined
+}) {
+  const { t } = useTranslation()
+  const money = useStatsMoney()
+
+  if (kpis === undefined) return null
+
+  return (
+    <YStack gap="1" pt="3" borderTopWidth={1} borderColor="border-color">
+      <BreakdownLine label={t("stats.kpi.breakdown.sales")}>
+        {money(kpis.gross, row.currency)}
+      </BreakdownLine>
+      <BreakdownLine label={`+ ${t("stats.kpi.breakdown.tips")}`}>
+        {money(kpis.tipsReceived, row.currency)}
+      </BreakdownLine>
+      {row.excess === 0 ? null : (
+        <BreakdownLine label={`+ ${t("stats.kpi.breakdown.excess")}`}>
+          {money(row.excess, row.currency)}
+        </BreakdownLine>
+      )}
+      <BreakdownLine label={`= ${t("stats.kpi.breakdown.received")}`} total>
+        {money(kpis.gross + kpis.tipsReceived + row.excess, row.currency)}
+      </BreakdownLine>
+      {kpis.tipRefundAmount === 0 ? null : (
+        <Text fontSize={12} color="muted-foreground">
+          {t("stats.kpi.breakdown.tipRefunds", {
+            amount: money(kpis.tipRefundAmount, row.currency),
+          })}
+        </Text>
+      )}
+    </YStack>
+  )
+}
+
+const donutSize = 200
+const donutStroke = 28
+
+/** The shares as arcs of one ring with the total inside; tap an arc for its figures. */
+function MethodDonut({ row }: { readonly row: MethodBreakdownRow }) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const theme = useTheme()
+  const money = useStatsMoney()
+  const [selected, setSelected] = useState<MethodShare["method"] | null>(null)
+  const radius = (donutSize - donutStroke) / 2
+  const circumference = 2 * Math.PI * radius
+  const gap = row.methods.length > 1 ? 4 : 0
+  const track = theme["border-color"]?.val ?? "#ddd"
+  const chosen = row.methods.find((method) => method.method === selected)
+
+  let offset = 0
+  const arcs = row.methods.map((method) => {
+    const length = Math.max(0, method.share * circumference - gap)
+    const arc = { method, length, offset }
+    offset += method.share * circumference
+    return arc
+  })
+
+  return (
+    <YStack items="center" gap="2">
+      <YStack width={donutSize} height={donutSize}>
+        <Svg width={donutSize} height={donutSize}>
+          <Circle
+            cx={donutSize / 2}
+            cy={donutSize / 2}
+            r={radius}
+            stroke={track}
+            strokeOpacity={0.4}
+            strokeWidth={donutStroke}
+            fill="none"
+          />
+          {arcs.map(({ method, length, offset: start }) => (
+            <Circle
+              key={method.method}
+              cx={donutSize / 2}
+              cy={donutSize / 2}
+              r={radius}
+              stroke={methodColors[method.method]}
+              strokeWidth={
+                method.method === selected ? donutStroke + 6 : donutStroke
+              }
+              strokeDasharray={`${length} ${circumference - length}`}
+              strokeDashoffset={-start}
+              fill="none"
+              rotation={-90}
+              origin={`${donutSize / 2}, ${donutSize / 2}`}
+              onPress={() =>
+                setSelected(method.method === selected ? null : method.method)
+              }
+            />
+          ))}
+        </Svg>
+        <YStack
+          position="absolute"
+          t={0}
+          l={0}
+          r={0}
+          b={0}
+          items="center"
+          justify="center"
+          pointerEvents="none"
+        >
+          <Text fontSize="sm" color="muted-foreground">
+            {t("stats.kpi.breakdown.received")}
+          </Text>
+          <Text fontSize={18} fontWeight="700">
+            {money(row.total, row.currency)}
+          </Text>
+        </YStack>
+      </YStack>
+      {chosen === undefined ? null : (
+        <YStack gap="1" accessibilityLiveRegion="polite" width="100%">
+          <Text fontWeight="600">{t(methodLabelKey(chosen.method))}</Text>
+          <Text fontSize={13}>
+            {`${new Intl.NumberFormat(locale, {
+              style: "percent",
+              maximumFractionDigits: 0,
+            }).format(chosen.share)} · ${money(chosen.amount, row.currency)}`}
+          </Text>
+        </YStack>
+      )}
+    </YStack>
+  )
+}
+
+function MethodRow({
+  method,
+  currency,
+}: {
+  readonly method: MethodShare
+  readonly currency: Currency
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const money = useStatsMoney()
+
+  return (
+    <YStack gap="1.5">
+      <XStack items="center" gap="2">
+        <YStack
+          width={10}
+          height={10}
+          rounded={2}
+          style={{ backgroundColor: methodColors[method.method] }}
+        />
+        <Text flex={1} numberOfLines={1}>
+          {t(methodLabelKey(method.method))}
+        </Text>
+        <Text fontSize={12} color="muted-foreground">
+          {new Intl.NumberFormat(locale, {
+            style: "percent",
+            maximumFractionDigits: 0,
+          }).format(method.share)}
+        </Text>
+        <Text fontWeight="600">{money(method.amount, currency)}</Text>
+      </XStack>
+      {method.tips === 0 ? null : (
+        <TipsLine>{money(method.tips, currency)}</TipsLine>
+      )}
+      <StatsBar
+        share={method.share}
+        tipsShare={method.amount === 0 ? 0 : method.tips / method.amount}
+      />
+    </YStack>
+  )
+}
+
+/** The drawer's movement over the period, per currency that had any cash. */
+export function ExpectedCashSummary({
+  cash,
+}: {
+  readonly cash: ReadonlyArray<ExpectedCash>
+}) {
+  const { t } = useTranslation()
+  const money = useStatsMoney()
+
+  if (cash.length === 0) return null
+
+  return (
+    <StatsSection title={t("stats.cash.title")} note={t("stats.cash.note")}>
+      {cash.map((row) => (
+        <CurrencyGroup
+          key={row.currency}
+          currency={row.currency}
+          showCurrency={cash.length > 1}
+        >
+          {/* The figure the drawer is counted against, then where it comes from. */}
+          <YStack gap="0.5">
+            <Text fontSize={12} color="muted-foreground">
+              {t("stats.cash.expected")}
+            </Text>
+            <Text fontSize={30} fontWeight="700">
+              {money(row.expected, row.currency)}
+            </Text>
+          </YStack>
+          <YStack
+            gap="1.5"
+            pt="3"
+            borderTopWidth={1}
+            borderColor="border-color"
+          >
+            <CashLine label={t("stats.cash.in")}>
+              {money(row.cashIn, row.currency)}
+            </CashLine>
+            <CashLine label={t("stats.tips.ofWhich")} sub>
+              {money(row.cashTips, row.currency)}
+            </CashLine>
+            <CashLine label={t("stats.cash.refunds")}>
+              {money(-row.cashRefunds, row.currency)}
+            </CashLine>
+          </YStack>
+        </CurrencyGroup>
+      ))}
+    </StatsSection>
+  )
+}
+
+function CashLine({
+  label,
+  sub = false,
+  children,
+}: {
+  readonly label: string
+  readonly sub?: boolean
+  readonly children: string
+}) {
+  return (
+    <XStack justify="space-between" gap="2" pl={sub ? 16 : 0}>
+      <Text
+        flex={1}
+        fontSize={sub ? 12 : 14}
+        color={sub ? "muted-foreground" : "color"}
+      >
+        {label}
+      </Text>
+      <Text fontSize={sub ? 12 : 14} color={sub ? "muted-foreground" : "color"}>
+        {children}
+      </Text>
+    </XStack>
+  )
+}

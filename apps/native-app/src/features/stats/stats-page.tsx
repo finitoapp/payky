@@ -13,6 +13,7 @@ import { ScreenHeader } from "../../components/screen-header.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { formatStatsRange, KpiTiles } from "./kpi-tiles.tsx"
+import { ExpectedCashSummary, MethodBreakdown } from "./method-breakdown.tsx"
 import { PeriodSelector } from "./period-selector.tsx"
 import { RevenueChart } from "./revenue-chart.tsx"
 import { SalesHeatmap } from "./sales-heatmap.tsx"
@@ -129,6 +130,7 @@ function PeriodStats({
   return (
     <>
       <KpiTiles kpis={stats.kpis} comparisonKpis={stats.comparisonKpis} />
+      <ExpectedCashSummary cash={stats.cash} />
       {primary === undefined ? null : (
         <RevenueChart
           hourRows={stats.hourRows}
@@ -138,6 +140,7 @@ function PeriodStats({
           now={now}
         />
       )}
+      <MethodBreakdown methods={stats.methods} kpis={stats.kpis} />
       {primary === undefined ? null : (
         <SalesHeatmap stats={stats} currency={primary.currency} />
       )}

@@ -1,8 +1,8 @@
 import { formatMoney } from "@payky/app-shared/format-money"
 import { type Currency, Integer } from "@payky/core/modules/shared/schema"
 import type { ReactNode } from "react"
-import { Text, YStack } from "tamagui"
-import { useLocale } from "../../hooks/use-translation.ts"
+import { Text, XStack, YStack } from "tamagui"
+import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 
 /** One block of the statistics screen: a titled card, an optional note under it. */
 export function StatsSection({
@@ -61,6 +61,97 @@ export function CurrencyGroup({
         </Text>
       ) : null}
       {children}
+    </YStack>
+  )
+}
+
+/**
+ * "of which tips" under a row whose amount holds them, the same sub-line
+ * the expected cash shows.
+ */
+export function TipsLine({ children }: { readonly children: string }) {
+  const { t } = useTranslation()
+
+  return (
+    <XStack justify="space-between" gap="2" pl={24}>
+      <Text fontSize={12} color="muted-foreground">
+        {t("stats.tips.ofWhich")}
+      </Text>
+      <Text fontSize={12} color="muted-foreground">
+        {children}
+      </Text>
+    </XStack>
+  )
+}
+
+/**
+ * A row's bar: `share` of the full width, its last `tipsShare` in the
+ * lighter tips shade the revenue chart stacks on top of its bars. Tall
+ * enough for a few-percent tip to show at all.
+ */
+export function StatsBar({
+  share,
+  tipsShare = 0,
+}: {
+  /** 0..1 */
+  readonly share: number
+  /** 0..1 of the bar */
+  readonly tipsShare?: number
+}) {
+  return (
+    <YStack height={10} rounded={5} overflow="hidden" bg="border-color">
+      <XStack
+        height={10}
+        rounded={5}
+        overflow="hidden"
+        width={`${(share * 100).toFixed(1)}%`}
+      >
+        <YStack flex={1} bg="primary" />
+        {tipsShare > 0 ? (
+          <YStack
+            bg="primary"
+            opacity={0.45}
+            width={`${(tipsShare * 100).toFixed(1)}%`}
+          />
+        ) : null}
+      </XStack>
+    </YStack>
+  )
+}
+
+export function StatsBarRow({
+  label,
+  detail,
+  value,
+  tips,
+  share,
+  tipsShare,
+}: {
+  readonly label: string
+  readonly detail?: string
+  readonly value: string
+  /** The tips inside `value`, formatted; the line hides for none. */
+  readonly tips?: string
+  /** 0..1 */
+  readonly share: number
+  /** 0..1, the part of the row's own amount that is tips. */
+  readonly tipsShare?: number
+}) {
+  return (
+    <YStack gap="1.5">
+      <XStack items="center" gap="2">
+        <Text flex={1} numberOfLines={1}>
+          {label}
+        </Text>
+        {detail === undefined ? null : (
+          <Text fontSize={12} color="muted-foreground">
+            {detail}
+          </Text>
+        )}
+        <Text fontWeight="600">{value}</Text>
+      </XStack>
+      {tips === undefined ? null : <TipsLine>{tips}</TipsLine>}
+      <StatsBar share={share} tipsShare={tipsShare ?? 0} />
     </YStack>
   )
 }

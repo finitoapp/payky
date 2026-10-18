@@ -7,7 +7,7 @@ import { StatusBar } from "expo-status-bar"
 import { createStore, Provider } from "jotai"
 import { Suspense, useState } from "react"
 import { ActivityIndicator, useColorScheme } from "react-native"
-import { TamaguiProvider } from "tamagui"
+import { TamaguiProvider, Theme } from "tamagui"
 import { AccessGate } from "../src/components/access-gate.tsx"
 import {
   AppEvoluConsumers,
@@ -19,6 +19,8 @@ import { DeviceRegistration } from "../src/components/device-registration.tsx"
 import { PinPromptHost } from "../src/components/pin-prompt-host.tsx"
 import { SentryController } from "../src/components/sentry-controller.tsx"
 import { ToastHost } from "../src/components/toast-host.tsx"
+import { resolveTheme } from "../src/core/theme-preference.ts"
+import { useThemePreference } from "../src/hooks/use-theme-preference.ts"
 import { tamaguiConfig } from "../tamagui.config.ts"
 
 /**
@@ -39,7 +41,6 @@ export function ErrorBoundary({
 
 export default function RootLayout() {
   const [store] = useState(createStore)
-  const theme = useColorScheme() === "dark" ? "dark" : "light"
   const [fontsLoaded, fontError] = useFonts({ Inter, InterSemiBold, InterBold })
   if (fontError) throw fontError
   if (!fontsLoaded)
@@ -47,7 +48,27 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
+      <Suspense fallback={null}>
+        <ThemedApp />
+      </Suspense>
+    </Provider>
+  )
+}
+
+/**
+ * Everything under the Tamagui theme, which follows the device theme
+ * preference (settings): `system` the OS scheme, light/dark forced. The
+ * preference lives in the device database, so this suspends until it is
+ * open; nothing is drawn before then, so there is no wrong-theme flash.
+ */
+function ThemedApp() {
+  const preference = useThemePreference()
+  const systemScheme = useColorScheme()
+  const theme = resolveTheme(preference, systemScheme)
+
+  return (
+    <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
+      <Theme name={theme}>
         <StatusBar style={theme === "dark" ? "light" : "dark"} />
         <AccessGate>
           <Stack screenOptions={{ headerShown: false }} />
@@ -61,7 +82,7 @@ export default function RootLayout() {
           <SentryController />
           <DeviceRegistration />
         </Suspense>
-      </TamaguiProvider>
-    </Provider>
+      </Theme>
+    </TamaguiProvider>
   )
 }

@@ -2,8 +2,10 @@ import { Text, YStack } from "tamagui"
 import { languageOptions } from "../../components/language-options.ts"
 import { Screen } from "../../components/screen.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
+import { useThemePreference } from "../../hooks/use-theme-preference.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { SettingsRow, type SettingsRowData } from "./settings-row.tsx"
+import { themeLabelKeys } from "./theme/theme-settings-page.tsx"
 
 function SettingsGroup({
   title,
@@ -35,11 +37,17 @@ function SettingsGroup({
  */
 export function SettingsPage() {
   const { language, t } = useTranslation()
+  const theme = useThemePreference()
   const appearanceRows: ReadonlyArray<SettingsRowData> = [
     {
       title: t("settings.language.title"),
       value: languageOptions.find((option) => option.value === language)?.label,
       href: "/settings/language",
+    },
+    {
+      title: t("settings.theme.title"),
+      value: t(themeLabelKeys[theme]),
+      href: "/settings/theme",
     },
   ]
 

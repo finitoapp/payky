@@ -25,6 +25,7 @@ export type NativeRoutePath =
   | "/cashu-withdraw/:withdrawalId"
   | "/settings"
   | "/settings/language"
+  | "/settings/theme"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -64,6 +65,8 @@ export const routeAccess = {
   "/settings": "free",
   // Like web's `_terminal/settings/language`.
   "/settings/language": "free",
+  // Like web's `_terminal/settings/theme`.
+  "/settings/theme": "free",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

@@ -53,5 +53,6 @@ describe("native route access", () => {
     expect(requiredPermission("/cashu-withdraw/abc123")).toBe("admin")
     expect(requiredPermission("/settings")).toBeNull()
     expect(requiredPermission("/settings/language")).toBeNull()
+    expect(requiredPermission("/settings/theme")).toBeNull()
   })
 })

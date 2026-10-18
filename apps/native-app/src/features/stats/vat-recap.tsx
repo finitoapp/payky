@@ -1,0 +1,56 @@
+import { rowsByCurrency } from "@payky/app-shared/stats-sections"
+import { hasTaxableLines } from "@payky/core/modules/bill-line/bill-line-tax-utils"
+import { taxRecapQuery } from "@payky/core/modules/sales-stats/sales-stats-queries"
+import { salesTaxRecap } from "@payky/core/modules/sales-stats/sales-stats-utils"
+import { taxRatesQuery } from "@payky/core/modules/tax-rate/tax-rate-queries"
+import { YStack } from "tamagui"
+import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { TaxRecap } from "../shared/tax-recap.tsx"
+import { CurrencyGroup } from "./stats-section.tsx"
+import { type SalesStats, useStatsRows } from "./use-sales-stats.ts"
+
+/**
+ * The VAT of what closed bills sold, per rate, through the bill's own
+ * `TaxRecap`. `TaxRecap` titles itself, so the card has no heading of its
+ * own; a shop that is not a VAT payer sees nothing.
+ */
+export function VatRecap({ stats }: { readonly stats: SalesStats }) {
+  const { data: rates } = useEvoluQuery(taxRatesQuery)
+  const rows = useStatsRows(
+    "taxRecap",
+    taxRecapQuery,
+    stats.ranges.range,
+    stats.live
+  )
+
+  if (rows === undefined) return null
+
+  const groups = rowsByCurrency(rows, stats.accountCurrency)
+    .map(({ currency }) => ({
+      currency,
+      recap: salesTaxRecap({ rows, currency, rates }),
+    }))
+    .filter((group) => hasTaxableLines(group.recap))
+
+  if (groups.length === 0) return null
+
+  return (
+    <YStack
+      gap="4"
+      p="3"
+      rounded="lg"
+      borderWidth={1}
+      borderColor="border-color"
+    >
+      {groups.map((group) => (
+        <CurrencyGroup
+          key={group.currency}
+          currency={group.currency}
+          showCurrency={groups.length > 1}
+        >
+          <TaxRecap rows={group.recap} currency={group.currency} />
+        </CurrencyGroup>
+      ))}
+    </YStack>
+  )
+}

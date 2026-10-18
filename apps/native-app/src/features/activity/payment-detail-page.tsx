@@ -41,6 +41,7 @@ import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
+import { TaxRecap } from "../shared/tax-recap.tsx"
 import {
   useBillLineSummaries,
   useBillStatus,
@@ -55,7 +56,6 @@ import {
   OptionalRow,
   paymentStatusTone,
   StatusBadge,
-  TaxRecap,
   Technical,
 } from "./detail-parts.tsx"
 import { PaymentRefunds } from "./payment-refunds.tsx"

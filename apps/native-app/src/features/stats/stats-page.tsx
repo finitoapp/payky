@@ -29,6 +29,7 @@ import {
   useStatsLoadedAt,
   useStatsNow,
 } from "./use-sales-stats.ts"
+import { VatRecap } from "./vat-recap.tsx"
 
 /**
  * The sales statistics screen (access/0008): the period selector, then one
@@ -164,6 +165,7 @@ function PeriodStats({
         <SalesHeatmap stats={stats} currency={primary.currency} />
       )}
       <Signals stats={stats} />
+      <VatRecap stats={stats} />
     </>
   )
 }

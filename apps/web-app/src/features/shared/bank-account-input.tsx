@@ -1,20 +1,12 @@
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
-  czechBankNameForIban,
-  czechIbanToBban,
-} from "@payky/core/modules/shared/iban-utils"
+  type BankAccountDisplayFormat,
+  czechBankForDraft,
+  formatBankAccount,
+} from "@payky/app-shared/bank-account-codecs"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { BankAccountInputIbanSchema } from "@payky/core/modules/shared/schema"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-
-export type BankAccountDisplayFormat = "iban" | "bban"
-
-export const formatBankAccount = {
-  iban: (value: string) => value,
-  // Czech accounts read as the account number people know them by; any other
-  // IBAN has no such form and stays as it is.
-  bban: (value: string) => czechIbanToBban(value) ?? value,
-} satisfies Record<BankAccountDisplayFormat, (value: string) => string>
 
 /**
  * The account-number / IBAN switch beside a bank account input. Switching
@@ -72,12 +64,11 @@ export function BankAccountDescription({
   readonly descriptionKey?: TranslationKey
 }) {
   const { t } = useTranslation()
-  const parsed = BankAccountInputIbanSchema.safeParse(draft)
+  const czechBank = czechBankForDraft(draft)
   const bank =
-    parsed.success && parsed.data.startsWith("CZ")
-      ? (czechBankNameForIban(parsed.data) ??
-        t("settings.fiatBankAccount.iban.unknownBank"))
-      : undefined
+    czechBank === undefined
+      ? undefined
+      : (czechBank ?? t("settings.fiatBankAccount.iban.unknownBank"))
 
   return (
     <>

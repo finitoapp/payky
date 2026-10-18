@@ -75,5 +75,6 @@ describe("native route access", () => {
     expect(requiredPermission("/settings/access")).toBe("admin")
     expect(requiredPermission("/settings/access/add-device")).toBe("admin")
     expect(requiredPermission("/settings/payment-accounts")).toBe("admin")
+    expect(requiredPermission("/settings/payment-accounts/iban")).toBe("admin")
   })
 })

@@ -1,26 +1,26 @@
+import {
+  type BankAccountDisplayFormat,
+  bankQrFormatCodec,
+  fiatBankAccountQrFormatOptions,
+  fiatCurrencyCodec,
+  optionalIbanCodecs,
+} from "@payky/app-shared/bank-account-codecs"
 import { fiatCurrencyOptions } from "@payky/app-shared/fiat-currency-options"
-import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { saveFiatBankAccount } from "@payky/core/modules/account/account-actions"
 import { fiatBankAccountQuery } from "@payky/core/modules/account/account-queries"
 import type { BankQrFormat } from "@payky/core/modules/account/account-types"
-import { BankQrFormatSchema } from "@payky/core/modules/account/account-types"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
-import { bankQrFormats } from "@payky/core/modules/payment/payment-iban-qr-payload-utils"
 import {
   czechIbanToBban,
   isFioBankIban,
-  isValidIban,
 } from "@payky/core/modules/shared/iban-utils"
-import {
-  BankAccountInputIbanSchema,
-  FiatCurrencySchema,
-  type FiatCurrency as FiatCurrencyType,
-  type Iban,
+import type {
+  FiatCurrency as FiatCurrencyType,
+  Iban,
 } from "@payky/core/modules/shared/schema"
 import { ChevronDown, Plug, TriangleAlert } from "lucide-react"
 import { useState } from "react"
-import { z } from "zod"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import {
   Card,
@@ -40,72 +40,11 @@ import { InlineEditField } from "@/features/settings/inline-edit-field.tsx"
 import { InlineEditSelect } from "@/features/settings/inline-edit-select.tsx"
 import {
   BankAccountDescription,
-  type BankAccountDisplayFormat,
   BankAccountFormatToggle,
-  formatBankAccount,
 } from "@/features/shared/bank-account-input.tsx"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-
-/**
- * A codec's output side can't be a `.transform()` schema (`z.encode` runs it
- * backwards, and a transform has no backwards to run) — which rules out
- * `IbanSchema` itself, since it normalizes on the way in. This validates the
- * same way (`isValidIban`) without transforming; `decode` below does the
- * actual normalizing before handing off to it.
- */
-const ValidatedIbanSchema = z.string().refine(isValidIban).brand<"Iban">()
-
-/**
- * Accepts any bank account input format (IBAN or a Czech account number) and
- * normalizes to IBAN, same as the onboarding flow's validation — but as a
- * codec, so it can drive an `InlineEditField` directly. Blank means "not set
- * yet", matching `optionalDateCodec`'s shape. Decode never throws: an
- * unparseable value passes through untouched so `ValidatedIbanSchema` is the
- * one thing deciding valid vs. invalid, per this file's other codecs. One
- * codec per display format, since only `encode` differs.
- */
-const createOptionalIbanCodec = (format: BankAccountDisplayFormat) =>
-  z.codec(z.string(), ValidatedIbanSchema.nullable(), {
-    decode: (value) => {
-      const trimmed = value.trim()
-      if (trimmed === "") return null
-
-      const parsed = BankAccountInputIbanSchema.safeParse(trimmed)
-      return parsed.success ? parsed.data : trimmed
-    },
-    encode: (value) => (value === null ? "" : formatBankAccount[format](value)),
-  })
-
-const optionalIbanCodecs = {
-  iban: createOptionalIbanCodec("iban"),
-  bban: createOptionalIbanCodec("bban"),
-} satisfies Record<BankAccountDisplayFormat, unknown>
-
-// Every option value comes from a fixed, locally-built option list (never
-// user input), so this cannot realistically fail — a decode error here would
-// mean the codec and its options list disagree, not bad input.
-const fiatCurrencyCodec = z.codec(z.string(), FiatCurrencySchema, {
-  decode: (value) => value as FiatCurrencyType,
-  encode: (value) => value,
-})
-
-const bankQrFormatCodec = z.codec(z.string(), BankQrFormatSchema, {
-  decode: (value) => value as BankQrFormat,
-  encode: (value) => value,
-})
-
-interface FiatBankAccountQrFormatOption {
-  readonly value: BankQrFormat
-  readonly label: TranslationKey
-}
-
-const fiatBankAccountQrFormatOptions: ReadonlyArray<FiatBankAccountQrFormatOption> =
-  bankQrFormats.map((format) => ({
-    value: format,
-    label: `settings.fiatBankAccount.qrFormat.${format}`,
-  }))
 
 export function FiatBankAccountSettingsPage() {
   const appRun = useAppRun()

@@ -1,8 +1,12 @@
 import { router } from "expo-router"
+import ArrowLeft from "lucide-react-native/icons/arrow-left"
+import Check from "lucide-react-native/icons/check"
+import ChevronRight from "lucide-react-native/icons/chevron-right"
 import { useEffect, useState } from "react"
 import { ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Button, Text, useTheme, View } from "tamagui"
+import { Icon } from "../../components/ui/icon.tsx"
 import { checkSharedLogic } from "../../core/check-shared-logic.ts"
 import { checkLockAuthority } from "../../core/native-runtime.ts"
 import { BootstrapDiagnostics } from "./bootstrap-diagnostics.tsx"
@@ -30,6 +34,11 @@ export function NativePreviewPage() {
           <Text color="muted-foreground">
             Expo, React Native and Tamagui are ready.
           </Text>
+          <View flexDirection="row" gap="4" items="center">
+            <Icon icon={ArrowLeft} size={20} color="primary" strokeWidth={3} />
+            <Icon icon={Check} color="success" />
+            <Icon icon={ChevronRight} size={20} color="muted-foreground" />
+          </View>
           <View
             backgroundColor="card"
             borderColor="border-color"

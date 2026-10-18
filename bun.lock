@@ -98,6 +98,7 @@
         "expo-status-bar": "58.0.3",
         "expo-system-ui": "58.0.6",
         "jotai": "3.0.1",
+        "lucide-react-native": "1.57.0",
         "react": "19.3.0",
         "react-native": "0.88.0",
         "react-native-get-random-values": "2.0.0",
@@ -2607,6 +2608,8 @@
     "lru-cache": ["lru-cache@6.0.0", "", { "dependencies": { "yallist": "^4.0.0" } }, "sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA=="],
 
     "lucide-react": ["lucide-react@1.57.0", "", { "peerDependencies": { "@types/react": "*", "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-bXFZEucYhAzLD62Jse76AbTR6LiSLTn3Tqir2f1n8rZrWAdLodYy7jnRZSPIT89dRLk/IseMOUWG82wJtTyTTw=="],
+
+    "lucide-react-native": ["lucide-react-native@1.57.0", "", { "peerDependencies": { "@types/react": "*", "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-native": "*", "react-native-svg": "^12.0.0 || ^13.0.0 || ^14.0.0 || ^15.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-IIFTqlr+g5hn65AQSeLxzndXa/m/Cw1Kcu9XbE3nPnLlm3IXeDFriS0wKaPRhbY4+Oq/6+CzsCglU13dfkAmeQ=="],
 
     "lzma1": ["lzma1@0.4.0", "", {}, "sha512-6AP1zxycZ2bmfaX1GDex1k4eme5NINXvsViA15oZNCvyzc1F9408YwxC/jW5w8uqs6+h1jZeziB444xykOrK7A=="],
 

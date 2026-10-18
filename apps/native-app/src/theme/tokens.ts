@@ -27,13 +27,10 @@ export const fontSize = {
   "3xl": 30,
 } as const
 
-/**
- * `font-normal`/`medium`/`semibold`/`bold`. Only Inter 400, 600 and 700 are
- * loaded, so `medium` (500 on web) renders as 600 until Inter 500 is added.
- */
+/** `font-normal`/`medium`/`semibold`/`bold`; each weight is a loaded Inter face. */
 export const fontWeight = {
   normal: "400",
-  medium: "600",
+  medium: "500",
   semibold: "600",
   bold: "700",
 } as const

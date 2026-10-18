@@ -7,6 +7,7 @@ const inter = {
   family: "Inter",
   face: {
     400: { normal: "Inter" },
+    500: { normal: "InterMedium" },
     600: { normal: "InterSemiBold" },
     700: { normal: "InterBold" },
   },

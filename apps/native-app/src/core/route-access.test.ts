@@ -35,6 +35,7 @@ describe("native route access", () => {
     expect(requiredPermission("/onboarding")).toBeNull()
     expect(requiredPermission("/restore-account")).toBeNull()
     expect(requiredPermission("/settings/access/add-device")).toBe("admin")
+    expect(requiredPermission("/settings/accounts")).toBe("admin")
   })
 
   it("matches a dynamic segment and prefers the static sibling", () => {
@@ -79,6 +80,7 @@ describe("native route access", () => {
     expect(requiredPermission("/settings/tables/abc123")).toBe("settings")
     expect(requiredPermission("/settings/access")).toBe("admin")
     expect(requiredPermission("/settings/access/add-device")).toBe("admin")
+    expect(requiredPermission("/settings/accounts")).toBe("admin")
     expect(requiredPermission("/settings/payment-accounts")).toBe("admin")
     expect(requiredPermission("/settings/payment-accounts/iban")).toBe("admin")
     expect(

@@ -44,6 +44,7 @@ export type NativeRoutePath =
   | "/settings/tables"
   | "/settings/tables/new"
   | "/settings/tables/:tableId"
+  | "/settings/accounts"
   | "/settings/access"
   | "/settings/access/add-device"
   | "/settings/security"
@@ -134,6 +135,8 @@ export const routeAccess = {
   // Like web's `_terminal/settings/tables/$tableId`.
   "/settings/tables/:tableId": "settings",
   // Like web's `_terminal/settings/access`: the Access section is owner-only (access/0002).
+  // Like web's `_terminal/settings/accounts`: switching and removing accounts is owner-only.
+  "/settings/accounts": "admin",
   "/settings/access": "admin",
   // Like web's `_terminal/settings/access_/add-device`: sends the account away, owner-only.
   "/settings/access/add-device": "admin",

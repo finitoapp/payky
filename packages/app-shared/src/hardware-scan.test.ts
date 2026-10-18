@@ -3,7 +3,7 @@ import {
   emptyScanBuffer,
   MAX_SCAN_KEY_GAP_MS,
   readScanKey,
-} from "@/hooks/use-hardware-scanner.ts"
+} from "./hardware-scan.ts"
 
 const feed = (
   keys: ReadonlyArray<readonly [key: string, timeStamp: number]>

@@ -40,6 +40,7 @@ import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-paymen
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
+import { CategoryFilterBar } from "../shared/category-filter-bar.tsx"
 import {
   useBillLineSummaries,
   useBillStatus,
@@ -47,7 +48,6 @@ import {
 } from "../shared/use-bill-state.ts"
 import { WarningPanel } from "../shared/warning-panel.tsx"
 import { AssignTableDialog } from "./assign-table-dialog.tsx"
-import { CategoryFilterBar } from "./category-filter-bar.tsx"
 import { SplitBillDialog } from "./split-bill-dialog.tsx"
 import { useCartBill } from "./use-cart-bill.ts"
 import { useSplitBill } from "./use-split-bill.ts"

@@ -57,6 +57,9 @@ export function SettingsPage() {
   const [legalEntity] = useEvoluQuery(legalEntityQuery).data
   const enabledHomeModes = parseEnabledHomeModes(settings?.enabledHomeModesJson)
   const fiatCurrency = getFiatCurrency(settings)
+  const catalogRows: ReadonlyArray<SettingsRowData> = [
+    { title: t("settings.items.title"), href: "/settings/items" },
+  ]
   const paymentRows: ReadonlyArray<SettingsRowData> = [
     {
       title: t("settings.legalEntity.title"),
@@ -111,6 +114,7 @@ export function SettingsPage() {
         value={profile.data?.name ?? t("settings.profile.setName")}
         href="/settings/profile"
       />
+      <SettingsGroup title={t("settings.catalog")} rows={catalogRows} />
       <SettingsGroup title={t("settings.payments")} rows={paymentRows} />
       <SettingsGroup title={t("settings.taxesGroup")} rows={taxRows} />
       <SettingsGroup title={t("settings.appearance")} rows={appearanceRows} />

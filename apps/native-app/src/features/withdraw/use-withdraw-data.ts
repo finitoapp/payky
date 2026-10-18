@@ -9,7 +9,6 @@ import type { AccountId } from "@payky/core/modules/account/account-types"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import { satsToFiat } from "@payky/core/modules/shared/money"
-import { useEffect, useState } from "react"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useAsyncValue } from "../../hooks/use-async-value.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -76,16 +75,6 @@ export function useBtcFiat() {
         ? null
         : `≈ ${formatAmount(satsToFiat({ sats, exchangeRate: rate }), currency, locale)}`,
   }
-}
-
-/** `value` once it has stayed the same for `ms`. */
-export function useDebouncedValue<T>(value: T, ms: number): T {
-  const [debounced, setDebounced] = useState(value)
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), ms)
-    return () => clearTimeout(timer)
-  }, [value, ms])
-  return debounced
 }
 
 /** The LNURL-pay metadata behind a Lightning address, `null` waiting for one. */

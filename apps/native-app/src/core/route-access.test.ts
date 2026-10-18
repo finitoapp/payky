@@ -62,5 +62,6 @@ describe("native route access", () => {
     expect(requiredPermission("/settings/payment-number-series")).toBe(
       "settings"
     )
+    expect(requiredPermission("/settings/items")).toBe("settings")
   })
 })

@@ -28,12 +28,9 @@ import {
   ScanCodeScanner,
 } from "../../components/scan-code-scanner.tsx"
 import { useAppRun } from "../../hooks/use-app-run.ts"
+import { useDebouncedValue } from "../../hooks/use-debounced-value.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import {
-  useBtcFiat,
-  useDebouncedValue,
-  useLnurlPayMetadata,
-} from "./use-withdraw-data.ts"
+import { useBtcFiat, useLnurlPayMetadata } from "./use-withdraw-data.ts"
 import { Collapsible, LightningAddress } from "./withdraw-parts.tsx"
 
 /**

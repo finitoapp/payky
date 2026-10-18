@@ -37,6 +37,8 @@ describe("native route access", () => {
     expect(requiredPermission("/settings/access/add-device")).toBe("admin")
     expect(requiredPermission("/settings/accounts")).toBe("admin")
     expect(requiredPermission("/settings/eet")).toBe("admin")
+    expect(requiredPermission("/settings/donations")).toBeNull()
+    expect(requiredPermission("/settings/donations-invoice")).toBeNull()
   })
 
   it("matches a dynamic segment and prefers the static sibling", () => {
@@ -83,6 +85,8 @@ describe("native route access", () => {
     expect(requiredPermission("/settings/access/add-device")).toBe("admin")
     expect(requiredPermission("/settings/accounts")).toBe("admin")
     expect(requiredPermission("/settings/eet")).toBe("admin")
+    expect(requiredPermission("/settings/donations")).toBeNull()
+    expect(requiredPermission("/settings/donations-invoice")).toBeNull()
     expect(requiredPermission("/settings/payment-accounts")).toBe("admin")
     expect(requiredPermission("/settings/payment-accounts/iban")).toBe("admin")
     expect(

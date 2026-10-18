@@ -24,6 +24,8 @@ export type NativeRoutePath =
   | "/cashu-withdraw/new"
   | "/cashu-withdraw/:withdrawalId"
   | "/settings"
+  | "/settings/donations"
+  | "/settings/donations-invoice"
   | "/settings/about"
   | "/settings/about/terms"
   | "/settings/about/privacy"
@@ -95,6 +97,9 @@ export const routeAccess = {
   "/cashu-withdraw/:withdrawalId": "admin",
   // Like web's `_terminal/settings/` index: the menu is free, each destination has its own gate.
   "/settings": "free",
+  // Like web's `_terminal/settings/donations*`: donating spends no shop money, free.
+  "/settings/donations": "free",
+  "/settings/donations-invoice": "free",
   // About exposes only public build metadata and links to no gated feature.
   "/settings/about": "free",
   // Terms are public text, like the web About child route.

@@ -4,8 +4,8 @@ import type { WithdrawalView } from "@payky/core/modules/withdraw/withdraw-queri
 import { type ReactNode, useState } from "react"
 import { Pressable, Text as RNText } from "react-native"
 import { Text, useTheme, XStack, YStack } from "tamagui"
+import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import { useBtcFiat } from "./use-withdraw-data.ts"
 
 /** The building blocks of the withdrawal screens. */
 

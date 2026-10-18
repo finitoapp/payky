@@ -21,15 +21,12 @@ import { Text, useTheme, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { useCashuWalletSnapshot } from "../shared/cashu/use-cashu-wallet-snapshot.ts"
 import { useCashuAccountId } from "./use-cashu-withdraw-data.ts"
-import {
-  useBtcFiat,
-  useSparkAccountId,
-  useSparkBalance,
-} from "./use-withdraw-data.ts"
+import { useSparkAccountId, useSparkBalance } from "./use-withdraw-data.ts"
 import { WithdrawalStatusBadge } from "./withdraw-parts.tsx"
 import { withdrawRoutes } from "./withdraw-routes.ts"
 

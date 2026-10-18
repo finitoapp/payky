@@ -26,6 +26,7 @@ export type NativeRoutePath =
   | "/settings"
   | "/settings/about"
   | "/settings/about/terms"
+  | "/settings/about/privacy"
   | "/settings/language"
   | "/settings/theme"
   | "/settings/home-screen"
@@ -93,6 +94,8 @@ export const routeAccess = {
   "/settings/about": "free",
   // Terms are public text, like the web About child route.
   "/settings/about/terms": "free",
+  // Like web's `_terminal/settings/about/privacy`: a device consent, free (access/0002).
+  "/settings/about/privacy": "free",
   // Like web's `_terminal/settings/language`.
   "/settings/language": "free",
   // Like web's `_terminal/settings/theme`.

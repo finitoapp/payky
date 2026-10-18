@@ -31,6 +31,11 @@ export function AboutPage() {
         ) : null}
       </YStack>
       <SettingsRow
+        title={t("settings.about.privacy.title")}
+        value={t("settings.about.privacy.description")}
+        href="/settings/about/privacy"
+      />
+      <SettingsRow
         title={t("settings.about.terms.title")}
         value={t("settings.about.terms.description")}
         href="/settings/about/terms"

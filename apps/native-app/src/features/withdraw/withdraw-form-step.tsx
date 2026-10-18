@@ -23,6 +23,10 @@ import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
+import {
+  QR_SCAN_TYPES,
+  ScanCodeScanner,
+} from "../../components/scan-code-scanner.tsx"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import {
@@ -130,6 +134,7 @@ export function WithdrawFormFields({
   const fiat = useBtcFiat()
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const [scanning, setScanning] = useState(false)
   // `pending` lags a render behind: a second tap must not quote twice.
   const pendingRef = useRef(false)
 
@@ -210,6 +215,21 @@ export function WithdrawFormFields({
             onDraftChange(draftWithDestination(draft, value))
           }}
         />
+        <AppButton
+          variant="secondary"
+          label={t("withdraw.destination.scan")}
+          onPress={() => setScanning((on) => !on)}
+        />
+        {scanning ? (
+          // A scan only fills the field: parsing, review and PIN run as usual.
+          <ScanCodeScanner
+            types={QR_SCAN_TYPES}
+            onScan={(raw) => {
+              setScanning(false)
+              update({ ...draftWithDestination(draft, raw.trim()) })
+            }}
+          />
+        ) : null}
         {destination?.kind === "lightning-address" ? (
           <LightningAddress address={destination.address} />
         ) : null}

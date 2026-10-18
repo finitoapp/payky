@@ -1,4 +1,4 @@
-import { createAppOwner, hexToBytes } from "@evolu/common"
+import { bytesToHex, createAppOwner, hexToBytes } from "@evolu/common"
 import { createDateDep } from "@payky/core/deps"
 import { createOrSelectAccount } from "@payky/core/evolu/device-account"
 import {
@@ -9,7 +9,7 @@ import {
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
 import { deriveEvoluOwnerSecret } from "@payky/core/modules/shared/key-derivation"
 import { parsePairUri } from "@payky/core/modules/shared/payky-uri"
-import { useLocalSearchParams } from "expo-router"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import { useAtomValue, useSetAtom, useStore } from "jotai"
 import { useEffect, useState } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -19,6 +19,10 @@ import {
   evoluCounterAtom,
   reloadAppEvoluAtom,
 } from "../../atoms/evolu-counter.ts"
+import {
+  QR_SCAN_TYPES,
+  ScanCodeScanner,
+} from "../../components/scan-code-scanner.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
 
@@ -41,6 +45,8 @@ type View_ =
 export function PairTargetPage() {
   const theme = useTheme()
   const { hex } = useLocalSearchParams<{ hex?: string }>()
+  const router = useRouter()
+  const [scanning, setScanning] = useState(false)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const reload = useSetAtom(reloadAppEvoluAtom)
   const { require } = useRequirePermission()
@@ -71,6 +77,19 @@ export function PairTargetPage() {
         <Text fontWeight="700" fontSize={24}>
           Pair target
         </Text>
+        <Button onPress={() => setScanning((on) => !on)}>Scan QR</Button>
+        {scanning ? (
+          <ScanCodeScanner
+            types={QR_SCAN_TYPES}
+            onScan={(raw) => {
+              // Same path as the deep link: validated by parsePairUri in the effect.
+              setScanning(false)
+              router.setParams({
+                hex: bytesToHex(new TextEncoder().encode(raw.trim())),
+              })
+            }}
+          />
+        ) : null}
         <Text testID="pair-phase">phase: {view.phase}</Text>
         {view.phase === "invalid" && <Text>error: {view.error}</Text>}
         {view.phase === "code" ? (

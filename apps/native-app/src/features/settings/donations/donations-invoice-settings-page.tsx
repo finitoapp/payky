@@ -9,6 +9,7 @@ import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useAsyncValue } from "../../../hooks/use-async-value.ts"
+import { useCopyToClipboard } from "../../../hooks/use-copy-to-clipboard.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 const VERIFY_POLL_INTERVAL_MS = 2_000
@@ -45,6 +46,7 @@ function DonationsInvoiceSettingsPage({
   readonly verify: string
 }) {
   const appRun = useAppRun()
+  const copy = useCopyToClipboard()
   const { t } = useTranslation()
   const canVerify = invoice.length > 0 && verify.length > 0
 
@@ -113,6 +115,16 @@ function DonationsInvoiceSettingsPage({
             onPress={() => {
               void Linking.openURL(`lightning:${invoice}`)
             }}
+          />
+          <AppButton
+            label={t("settings.donations.invoice.copy")}
+            variant="secondary"
+            onPress={() =>
+              void copy(invoice, {
+                copied: t("settings.donations.invoice.copied"),
+                failed: t("settings.donations.invoice.copyFailed"),
+              })
+            }
           />
         </>
       ) : null}

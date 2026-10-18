@@ -12,6 +12,7 @@ import { AppButton } from "../../../components/app-button.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
+import { useCopyToClipboard } from "../../../hooks/use-copy-to-clipboard.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import {
   useNostrIdentity,
@@ -30,6 +31,7 @@ import { pickProfilePicture } from "../../../platform/pick-profile-picture.ts"
 export function ProfileSettingsPage() {
   const { t } = useTranslation()
   const identity = useNostrIdentity()
+  const copy = useCopyToClipboard()
   const [attempt, setAttempt] = useState(0)
   const profile = useNostrProfile(identity.pubkey, attempt)
 
@@ -59,6 +61,16 @@ export function ProfileSettingsPage() {
         <NativeText selectable style={{ fontSize: 12, opacity: 0.7 }}>
           {identity.npub}
         </NativeText>
+        <AppButton
+          label={t("settings.profile.npub.copy")}
+          variant="secondary"
+          onPress={() =>
+            void copy(identity.npub, {
+              copied: t("settings.profile.npub.copied"),
+              failed: t("settings.profile.npub.copyFailed"),
+            })
+          }
+        />
       </YStack>
     </Screen>
   )

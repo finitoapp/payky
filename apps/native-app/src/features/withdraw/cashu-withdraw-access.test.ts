@@ -25,7 +25,8 @@ it("asks for the PIN, then re-checks the account, before the melt Task", () => {
 
   expectInOrder(
     confirm,
-    /const accountVersion = jotaiStore\.get\(evoluCounterAtom\)/,
+    /jotaiStore\.get\(evoluCounterAtom\) === accountVersion/,
+    /if \(!isCurrentAccount\(\)\) \{\s*setReview\(null\)/,
     /const pinDetail = cashuWithdrawPinDetail\(\{ quote, t, locale \}\)/,
     // Moving money always asks for the PIN (access/0007), awaited.
     /await requirePin\(\s*"access\.action\.withdraw",\s*pinDetail\s*\)/,
@@ -37,11 +38,20 @@ it("asks for the PIN, then re-checks the account, before the melt Task", () => {
     /await run\(\s*executeCashuWithdrawal\(\s*\{[^}]*quote,/u
   )
   // The PIN names the quote the melt then uses: the one captured at the press.
-  expect(confirm).toMatch(/\{ quote \}: CashuReview/)
+  expect(confirm).toMatch(/quote,\s*accountVersion,?\s*\}: CashuReview/)
   expect(confirm.match(/\bquote\b/gu)?.length).toBeGreaterThan(2)
   // Access control being on is read when confirming, not when rendering.
   expect(page).toMatch(/accessEnabledRef\.current = access\.enabled/)
   expect(confirm).toMatch(/accessEnabledRef\.current\s*\?/)
+})
+
+it("binds the review to the account it was quoted on", () => {
+  // Captured when the quote is made, not when Confirm is pressed.
+  expect(page).toMatch(/readonly accountVersion: number/)
+  expect(page).toMatch(
+    /setReview\(\{[^}]*quote,\s*accountVersion: jotaiStore\.get\(evoluCounterAtom\),?\s*\}\)/u
+  )
+  expect(page).not.toMatch(/const accountVersion = jotaiStore\.get/)
 })
 
 it("melts a quote once per press and never offers a retry after the melt may have been sent", () => {

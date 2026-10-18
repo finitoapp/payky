@@ -24,7 +24,9 @@ it("asks for the PIN, then re-checks the account, before the send Task", () => {
 
   expectInOrder(
     confirm,
-    /const accountVersion = jotaiStore\.get\(evoluCounterAtom\)/,
+    /const accountVersion = reviewAccountVersionRef\.current/,
+    /jotaiStore\.get\(evoluCounterAtom\) === accountVersion/,
+    /if \(!isCurrentAccount\(\)\) \{\s*dispatch\(\{ type: "BACK" \}\)/,
     /const pinDetail = withdrawPinDetail\(/,
     // Moving money always asks for the PIN (access/0007), awaited.
     /await requirePin\(\s*"access\.action\.withdraw",\s*pinDetail\s*\)/,
@@ -36,6 +38,16 @@ it("asks for the PIN, then re-checks the account, before the send Task", () => {
   // Access control being on is read when confirming, not when rendering.
   expect(page).toMatch(/accessEnabledRef\.current = access\.enabled/)
   expect(confirm).toMatch(/accessEnabledRef\.current\s*\?/)
+})
+
+it("binds the review to the account it was quoted on", () => {
+  const page = read("withdraw-page.tsx")
+  // Captured when the quote is made, not when Confirm is pressed.
+  expectInOrder(
+    page,
+    /reviewAccountVersionRef\.current = jotaiStore\.get\(evoluCounterAtom\)/,
+    /dispatch\(\{ type: "OPEN_REVIEW"/
+  )
 })
 
 it("sends a quote once per press and never offers a retry after a send started", () => {

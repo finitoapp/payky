@@ -96,6 +96,8 @@ function WithdrawFlow({
   // `state.confirming` lags a render behind: a second press before it lands
   // must not send the same quote twice.
   const confirmingRef = useRef(false)
+  // The account the review was quoted on: a review never outlives a switch.
+  const reviewAccountVersionRef = useRef(0)
   // Read when confirming, not when the handler was made (access/0007).
   const accessEnabledRef = useRef(access.enabled)
   accessEnabledRef.current = access.enabled
@@ -123,9 +125,14 @@ function WithdrawFlow({
   const confirmReviewedWithdrawal = async (
     review: WithdrawReviewState
   ): Promise<boolean> => {
-    const accountVersion = jotaiStore.get(evoluCounterAtom)
+    const accountVersion = reviewAccountVersionRef.current
     const isCurrentAccount = () =>
       jotaiStore.get(evoluCounterAtom) === accountVersion
+    // Quoted on another account: drop the review, send nothing.
+    if (!isCurrentAccount()) {
+      dispatch({ type: "BACK" })
+      return true
+    }
     const markUncertain = () => {
       setUncertain(true)
       dispatch({
@@ -226,9 +233,10 @@ function WithdrawFlow({
           availableSats={availableSats}
           draft={draft}
           onDraftChange={setDraft}
-          onReview={(request, quote) =>
+          onReview={(request, quote) => {
+            reviewAccountVersionRef.current = jotaiStore.get(evoluCounterAtom)
             dispatch({ type: "OPEN_REVIEW", request, quote })
-          }
+          }}
         />
       ) : (
         <WithdrawReviewStep

@@ -42,6 +42,8 @@ import { withdrawRoutes } from "./withdraw-routes.ts"
 interface CashuReview {
   readonly request: CashuWithdrawRequest
   readonly quote: CashuWithdrawalQuote
+  /** The account the quote was made on: a review never outlives a switch. */
+  readonly accountVersion: number
 }
 
 /**
@@ -147,10 +149,17 @@ function CashuWithdrawFlow({
   }
 
   /** `true` when nothing was sent and the review may be confirmed again. */
-  const confirmReviewed = async ({ quote }: CashuReview): Promise<boolean> => {
-    const accountVersion = jotaiStore.get(evoluCounterAtom)
+  const confirmReviewed = async ({
+    quote,
+    accountVersion,
+  }: CashuReview): Promise<boolean> => {
     const isCurrentAccount = () =>
       jotaiStore.get(evoluCounterAtom) === accountVersion
+    // Quoted on another account: drop the review, send nothing.
+    if (!isCurrentAccount()) {
+      setReview(null)
+      return true
+    }
     const finishUnsent = (error: string | null) => {
       if (mountedRef.current) {
         setConfirming(false)
@@ -250,7 +259,11 @@ function CashuWithdrawFlow({
           onDraftChange={setDraft}
           onReview={(request, quote) => {
             setConfirmError(null)
-            setReview({ request, quote })
+            setReview({
+              request,
+              quote,
+              accountVersion: jotaiStore.get(evoluCounterAtom),
+            })
           }}
         />
       ) : (

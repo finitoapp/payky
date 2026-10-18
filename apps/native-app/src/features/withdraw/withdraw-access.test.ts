@@ -40,13 +40,22 @@ it("asks for the PIN, then re-checks the account, before the send Task", () => {
   expect(confirm).toMatch(/accessEnabledRef\.current\s*\?/)
 })
 
-it("binds the review to the account it was quoted on", () => {
+it("binds the review to the account it was quoted on, and does not confirm while requoting", () => {
   const page = read("withdraw-page.tsx")
   // Captured when the quote is made, not when Confirm is pressed.
   expectInOrder(
     page,
     /reviewAccountVersionRef\.current = jotaiStore\.get\(evoluCounterAtom\)/,
     /dispatch\(\{ type: "OPEN_REVIEW"/
+  )
+  expectInOrder(
+    page,
+    /const confirmWithdrawal = async/,
+    /requotingRef\.current\s*\)\s*return/,
+    /const requote = async/,
+    /requotingRef\.current = true/,
+    /result\.ok && !confirmingRef\.current/,
+    /requotingRef\.current = false/
   )
 })
 
@@ -59,7 +68,7 @@ it("sends a quote once per press and never offers a retry after a send started",
 
   expectInOrder(
     confirm,
-    /confirmingRef\.current\) return/,
+    /confirmingRef\.current\s*\|\|\s*requotingRef\.current\s*\)\s*return/,
     /confirmingRef\.current = true/,
     /retryable = await confirmReviewedWithdrawal\(/,
     /if \(retryable\) confirmingRef\.current = false/

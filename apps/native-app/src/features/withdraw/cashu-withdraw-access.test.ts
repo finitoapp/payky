@@ -45,13 +45,22 @@ it("asks for the PIN, then re-checks the account, before the melt Task", () => {
   expect(confirm).toMatch(/accessEnabledRef\.current\s*\?/)
 })
 
-it("binds the review to the account it was quoted on", () => {
+it("binds the review to the account it was quoted on, and does not confirm while requoting", () => {
   // Captured when the quote is made, not when Confirm is pressed.
   expect(page).toMatch(/readonly accountVersion: number/)
   expect(page).toMatch(
     /setReview\(\{[^}]*quote,\s*accountVersion: jotaiStore\.get\(evoluCounterAtom\),?\s*\}\)/u
   )
   expect(page).not.toMatch(/const accountVersion = jotaiStore\.get/)
+  expectInOrder(
+    page,
+    /const confirm = async/,
+    /requotingRef\.current\) return/,
+    /const requote = async/,
+    /requotingRef\.current = true/,
+    /result\.ok && !confirmingRef\.current/,
+    /requotingRef\.current = false/
+  )
 })
 
 it("melts a quote once per press and never offers a retry after the melt may have been sent", () => {
@@ -61,7 +70,7 @@ it("melts a quote once per press and never offers a retry after the melt may hav
   )
   expectInOrder(
     confirm,
-    /confirmingRef\.current\) return/,
+    /confirmingRef\.current\s*\|\|\s*requotingRef\.current\s*\)\s*return/,
     /confirmingRef\.current = true/,
     /retryable = await confirmReviewed\(/,
     /if \(retryable\) confirmingRef\.current = false/

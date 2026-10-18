@@ -118,6 +118,8 @@ function CashuWithdrawFlow({
   // `confirming` lags a render behind: a second press before it lands must
   // not melt the same quote twice.
   const confirmingRef = useRef(false)
+  // A requote in flight: confirming then could melt a quote about to be replaced.
+  const requotingRef = useRef(false)
   // Read when confirming, not when the handler was made (access/0007).
   const accessEnabledRef = useRef(access.enabled)
   accessEnabledRef.current = access.enabled
@@ -137,7 +139,7 @@ function CashuWithdrawFlow({
   })
 
   const confirm = async () => {
-    if (review === null || confirmingRef.current) return
+    if (review === null || confirmingRef.current || requotingRef.current) return
     confirmingRef.current = true
     // Stays locked after a melt was started: only a retryable end unlocks.
     let retryable = true
@@ -231,16 +233,20 @@ function CashuWithdrawFlow({
 
   const requote = async () => {
     if (review === null || confirmingRef.current) return
+    requotingRef.current = true
     setRequoting(true)
     setConfirmError(null)
     try {
       await using run = await cashuAppRun()
       const result = await run(quoteCashuWithdrawal(review.request))
-      if (result.ok) setReview({ ...review, quote: result.value })
+      if (result.ok && !confirmingRef.current)
+        setReview({ ...review, quote: result.value })
+      else if (result.ok) return
       else setConfirmError(cashuQuoteErrorMessage(result.error, t))
     } catch {
       setConfirmError(t("withdraw.quoteError.generic"))
     } finally {
+      requotingRef.current = false
       setRequoting(false)
     }
   }

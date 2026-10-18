@@ -96,6 +96,8 @@ function WithdrawFlow({
   // `state.confirming` lags a render behind: a second press before it lands
   // must not send the same quote twice.
   const confirmingRef = useRef(false)
+  // A requote in flight: confirming then could send a quote about to be replaced.
+  const requotingRef = useRef(false)
   // The account the review was quoted on: a review never outlives a switch.
   const reviewAccountVersionRef = useRef(0)
   // Read when confirming, not when the handler was made (access/0007).
@@ -110,7 +112,12 @@ function WithdrawFlow({
   }, [])
 
   const confirmWithdrawal = async () => {
-    if (state.step !== "review" || confirmingRef.current) return
+    if (
+      state.step !== "review" ||
+      confirmingRef.current ||
+      requotingRef.current
+    )
+      return
     confirmingRef.current = true
     // Stays locked after a send was started: only a retryable end unlocks.
     let retryable = true
@@ -200,13 +207,14 @@ function WithdrawFlow({
 
   const requote = async () => {
     if (state.step !== "review" || confirmingRef.current) return
+    requotingRef.current = true
     setRequoting(true)
     try {
       await using run = appRun()
       const result = await run(quoteWithdrawal({ accountId, ...state.request }))
-      if (result.ok) {
+      if (result.ok && !confirmingRef.current) {
         dispatch({ type: "REQUOTED", quote: result.value })
-      } else {
+      } else if (!result.ok) {
         dispatch({
           type: "CONFIRM_FAILED",
           error: quoteErrorMessage(result.error, t),
@@ -218,6 +226,7 @@ function WithdrawFlow({
         error: t("withdraw.quoteError.generic"),
       })
     } finally {
+      requotingRef.current = false
       setRequoting(false)
     }
   }

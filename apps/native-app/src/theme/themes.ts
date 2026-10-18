@@ -7,8 +7,8 @@ type Tones = Record<
   | "button-outline-border"
   | "button-outline-pressed"
   | "button-ghost-pressed"
-  | "button-destructive"
-  | "button-destructive-pressed"
+  | "destructive-tint"
+  | "destructive-tint-pressed"
   | "input-bg"
   | "input-disabled",
   string
@@ -25,9 +25,9 @@ const lightTones = (colors: Palette): Tones => ({
   "button-outline-pressed": colors.muted,
   // ui/button ghost: `hover:bg-muted`
   "button-ghost-pressed": colors.muted,
-  // ui/button destructive: `bg-destructive/10 hover:bg-destructive/20`
-  "button-destructive": colors["destructive-10"],
-  "button-destructive-pressed": colors["destructive-20"],
+  // ui/button and ui/badge destructive: `bg-destructive/10`, button `hover:bg-destructive/20`
+  "destructive-tint": colors["destructive-10"],
+  "destructive-tint-pressed": colors["destructive-20"],
   // ui/input: `bg-transparent disabled:bg-input/50`
   "input-bg": "transparent",
   "input-disabled": colors["input-50"],
@@ -41,8 +41,8 @@ const darkTones = (colors: Palette): Tones => ({
   // `dark:hover:bg-muted/50`
   "button-ghost-pressed": colors["muted-50"],
   // `dark:bg-destructive/20 dark:hover:bg-destructive/30`
-  "button-destructive": colors["destructive-20"],
-  "button-destructive-pressed": colors["destructive-30"],
+  "destructive-tint": colors["destructive-20"],
+  "destructive-tint-pressed": colors["destructive-30"],
   // `dark:bg-input/30 dark:disabled:bg-input/80`
   "input-bg": colors["input-30"],
   "input-disabled": colors["input-80"],

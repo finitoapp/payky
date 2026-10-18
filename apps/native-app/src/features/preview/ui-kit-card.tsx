@@ -3,6 +3,7 @@ import Check from "lucide-react-native/icons/check"
 import ChevronRight from "lucide-react-native/icons/chevron-right"
 import Plus from "lucide-react-native/icons/plus"
 import { Text, View } from "tamagui"
+import { Badge } from "../../components/ui/badge.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import {
   Card,
@@ -23,6 +24,8 @@ import {
 } from "../../components/ui/field.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { Input } from "../../components/ui/input.tsx"
+import { Separator } from "../../components/ui/separator.tsx"
+import { Skeleton } from "../../components/ui/skeleton.tsx"
 import { Textarea } from "../../components/ui/textarea.tsx"
 
 const variants = [
@@ -81,6 +84,28 @@ export function UiKitCard() {
           <Button variant="outline" label="Footer" />
         </CardFooter>
       </Card>
+      <View flexDirection="row" gap="2" flexWrap="wrap">
+        {(["default", "secondary", "destructive", "outline"] as const).map(
+          (variant) => (
+            <Badge
+              key={variant}
+              variant={variant}
+              label={variant}
+              icon={Check}
+            />
+          )
+        )}
+      </View>
+      <Separator />
+      <View flexDirection="row" gap="3" items="center" h={40}>
+        <Skeleton w={40} h={40} rounded={9999} />
+        <View flex={1} gap="2">
+          <Skeleton h={12} />
+          <Skeleton h={12} w="60%" />
+        </View>
+        <Separator orientation="vertical" />
+        <Text>Vertical</Text>
+      </View>
       <Input placeholder="Input" />
       <Input placeholder="Invalid" invalid />
       <Input placeholder="Disabled" disabled />

@@ -48,8 +48,8 @@ import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { AppButton } from "../../components/app-button.tsx"
+import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
 import { Field } from "../../components/field.tsx"
-import { QrCode } from "../../components/qr-code.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { EmptyView } from "../../components/state-views.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
@@ -520,7 +520,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       ) : active.id === "spark" ? (
         <YStack gap="3" items="center">
           {sparkInvoice !== null ? (
-            <QrCode value={sparkInvoice} />
+            <CopyableQrCode value={sparkInvoice} />
           ) : (
             <YStack items="center" gap="2">
               <ActivityIndicator />

@@ -6,7 +6,7 @@ import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { CopyLink } from "../../components/copy-link.tsx"
-import { QrCode } from "../../components/qr-code.tsx"
+import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 const qrFormatShortKeys = {
@@ -51,7 +51,7 @@ export function IbanPaymentTab({
   return (
     <YStack gap="3" items="center">
       {qrPayload !== null ? (
-        <QrCode value={qrPayload} />
+        <CopyableQrCode value={qrPayload} />
       ) : preparing ? (
         <YStack items="center" gap="2">
           <ActivityIndicator />

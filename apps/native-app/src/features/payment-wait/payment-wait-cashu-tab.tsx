@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react"
 import { ActivityIndicator } from "react-native"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
-import { QrCode } from "../../components/qr-code.tsx"
+import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { cashuArrivalMessage } from "./cashu-arrival.ts"
 
@@ -62,6 +62,6 @@ export function CashuPaymentTab({
       <Text color="muted-foreground">{t("paymentWait.preparing.cashu")}</Text>
     </YStack>
   ) : (
-    <QrCode value={qrPayload} />
+    <CopyableQrCode value={qrPayload} />
   )
 }

@@ -27,6 +27,7 @@ export type NativeRoutePath =
   | "/settings"
   | "/settings/debug-console"
   | "/settings/support"
+  | "/settings/assistant"
   | "/settings/demo-data"
   | "/settings/donations"
   | "/settings/donations-invoice"
@@ -103,6 +104,8 @@ export const routeAccess = {
   "/cashu-withdraw/:withdrawalId": "admin",
   // Like web's `_terminal/settings/` index: the menu is free, each destination has its own gate.
   "/settings": "free",
+  // Like web's `_terminal/settings/assistant` (access/0002: `activity`); the screen itself needs the device's consent (ai/0004).
+  "/settings/assistant": "activity",
   // Like web's `_terminal/settings/support` (access/0002: `settings`).
   "/settings/support": "settings",
   // Like web's `_terminal/settings/debug-console`: logs can name owners and relays, owner-only.

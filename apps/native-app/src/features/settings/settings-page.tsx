@@ -25,6 +25,7 @@ import { useThemePreference } from "../../hooks/use-theme-preference.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { useEetSettings } from "../shared/use-eet-settings.ts"
 import { homeModeLabelKeys } from "./home-screen/home-screen-settings-page.tsx"
+import { usePrivacySettings } from "./privacy/use-privacy-settings.ts"
 import { SettingsRow, type SettingsRowData } from "./settings-row.tsx"
 import { themeLabelKeys } from "./theme/theme-settings-page.tsx"
 
@@ -65,6 +66,7 @@ export function SettingsPage() {
   const [cash] = useEvoluQuery(cashRegisterAccountQuery).data
   const [bank] = useEvoluQuery(fiatBankAccountQuery).data
   const eet = useEetSettings()
+  const { aiAssistantAccess } = usePrivacySettings()
   const [spark] = useEvoluQuery(sparkAccountQuery).data
   const [card] = useEvoluQuery(cardSwitchioAccountQuery).data
   const enabledMethods = [
@@ -160,6 +162,15 @@ export function SettingsPage() {
     },
   ]
   const supportRows: ReadonlyArray<SettingsRowData> = [
+    ...(aiAssistantAccess === "off"
+      ? []
+      : [
+          {
+            title: t("settings.assistant.title"),
+            value: t("settings.assistant.description"),
+            href: "/settings/assistant",
+          },
+        ]),
     {
       title: t("settings.supportChat.title"),
       value: t("settings.supportChat.description"),

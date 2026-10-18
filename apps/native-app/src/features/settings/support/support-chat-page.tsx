@@ -18,9 +18,9 @@ import {
   useNostrMemberProfile,
 } from "../../../hooks/use-nostr-profile.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
+import { ChatComposer } from "../../shared/chat-composer.tsx"
 import { WarningPanel } from "../../shared/warning-panel.tsx"
 import { DmInboxWarning } from "./dm-inbox-warning.tsx"
-import { SupportChatComposer } from "./support-chat-composer.tsx"
 import { useSendSupportMessage } from "./use-send-support-message.ts"
 import {
   useDmInbox,
@@ -126,7 +126,10 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
           onPublish={dmRelayList.publish}
         />
       ) : null}
-      <SupportChatComposer
+      <ChatComposer
+        label={t("settings.supportChat.message.label")}
+        placeholder={t("settings.supportChat.message.placeholder")}
+        sendLabel={t("settings.supportChat.send")}
         disabled={team.data === undefined}
         onSend={(text) => {
           void sendAndOpenReplies(text)

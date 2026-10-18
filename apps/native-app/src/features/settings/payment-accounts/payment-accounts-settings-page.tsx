@@ -1,5 +1,6 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
+  saveCardSwitchioAccount,
   saveCashRegisterAccount,
   saveCashuAccount,
   saveFiatBankAccount,
@@ -29,6 +30,10 @@ import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useCashuRunToast, useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import {
+  isSwitchioInstalled,
+  isSwitchioSupported,
+} from "../../../platform/switchio.ts"
 
 interface PaymentMethodRowState {
   readonly title: TranslationKey
@@ -51,9 +56,7 @@ interface PaymentMethodRowState {
 /**
  * The payment methods in the order customers see them, as web's
  * `PaymentAccountsSettingsPage`. There is no separate default: the first
- * available one is the tab the payment screen opens on. The payment card is
- * listed (and can be ordered) but not configurable here: its SwitchioPay
- * terminal has no native bridge yet.
+ * available one is the tab the payment screen opens on.
  */
 export function PaymentAccountsSettingsPage() {
   const runToast = useRunToast()
@@ -143,12 +146,24 @@ export function PaymentAccountsSettingsPage() {
       title: "settings.paymentAccounts.method.cardSwitchio",
       switchLabel: "settings.cardSwitchioAccount.enabled.label",
       enabled: cardEnabled,
-      // The terminal cannot be driven from this app, so the tab is not offered.
-      available: false,
-      canEnable: false,
-      status: t("settings.paymentAccounts.status.unavailableHere"),
-      href: null,
-      saveEnabled: null,
+      // The terminal is driven through Android intents, which needs the module.
+      available:
+        isSwitchioSupported() && cardEnabled && card.currency === appCurrency,
+      canEnable: true,
+      status: !isSwitchioSupported()
+        ? t("settings.cardSwitchioAccount.nativeRuntimeWarning")
+        : !isSwitchioInstalled()
+          ? t("settings.cardSwitchioAccount.notInstalledWarning")
+          : cardEnabled
+            ? currencyMismatch(card.currency)
+            : null,
+      href: "/settings/payment-accounts/card-switchio",
+      saveEnabled: (enabled) =>
+        runToast(async (run) => {
+          await run.ok(
+            saveCardSwitchioAccount({ enabled, currency: appCurrency })
+          )
+        }),
     },
     cashu: {
       title: "settings.paymentAccounts.method.cashu",

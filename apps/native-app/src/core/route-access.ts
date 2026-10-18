@@ -65,6 +65,7 @@ export type NativeRoutePath =
   | "/settings/payment-accounts/cashu/mints/new"
   | "/settings/payment-accounts/cashu/mints/:mint"
   | "/settings/payment-accounts/spark"
+  | "/settings/payment-accounts/card-switchio"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -183,6 +184,8 @@ export const routeAccess = {
   "/settings/payment-accounts/cashu/mints/:mint": "admin",
   // Like web's `_terminal/settings/payment-accounts/spark` (owner-only).
   "/settings/payment-accounts/spark": "admin",
+  // Like web's `_terminal/settings/payment-accounts/card-switchio` (owner-only).
+  "/settings/payment-accounts/card-switchio": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

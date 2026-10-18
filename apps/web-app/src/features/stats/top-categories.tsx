@@ -1,15 +1,11 @@
+import { rowsByCurrency } from "@payky/app-shared/stats-sections"
 import type {
   CategorySalesRow,
   KeypadSalesRow,
 } from "@payky/core/modules/sales-stats/sales-stats-queries"
 import type { Currency } from "@payky/core/modules/shared/schema"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import {
-  CurrencyGroup,
-  rowsByCurrency,
-  StatsBarRow,
-  useStatsMoney,
-} from "./stats-section.tsx"
+import { CurrencyGroup, StatsBarRow, useStatsMoney } from "./stats-section.tsx"
 
 export interface CategoryShare {
   readonly key: string

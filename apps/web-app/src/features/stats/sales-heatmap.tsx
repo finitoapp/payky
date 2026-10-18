@@ -1,3 +1,4 @@
+import { heatmapOpacity } from "@payky/app-shared/stats-sections"
 import { salesHeatmap } from "@payky/core/modules/sales-stats/sales-stats-utils"
 import type { Currency } from "@payky/core/modules/shared/schema"
 import { addDays, differenceInCalendarDays, setHours } from "date-fns"
@@ -10,14 +11,6 @@ import type { SalesStats } from "./use-sales-stats.ts"
 /** 1 January 2024 was a Monday: the heatmap's first row. */
 const aMonday = new Date(2024, 0, 1)
 const hours = Array.from({ length: 24 }, (_, hour) => hour)
-
-/**
- * A cell's opacity of the chart colour: the busiest cell is solid, every
- * other in proportion with a visible floor, an empty one `0` (the muted
- * background shows instead).
- */
-export const heatmapOpacity = (gross: number, max: number): number =>
-  gross <= 0 || max <= 0 ? 0 : 0.15 + 0.85 * (gross / max)
 
 /**
  * Gross sales by local weekday (Monday first) and hour, for periods of

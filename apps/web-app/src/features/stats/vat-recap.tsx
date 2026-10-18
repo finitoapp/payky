@@ -1,3 +1,4 @@
+import { rowsByCurrency } from "@payky/app-shared/stats-sections"
 import { hasTaxableLines } from "@payky/core/modules/bill-line/bill-line-tax-utils"
 import { taxRecapQuery } from "@payky/core/modules/sales-stats/sales-stats-queries"
 import { salesTaxRecap } from "@payky/core/modules/sales-stats/sales-stats-utils"
@@ -7,7 +8,7 @@ import { TaxRecap } from "@/features/shared/tax-recap.tsx"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { cn } from "@/lib/utils.ts"
-import { CurrencyGroup, rowsByCurrency } from "./stats-section.tsx"
+import { CurrencyGroup } from "./stats-section.tsx"
 import { type SalesStats, useStatsRows } from "./use-sales-stats.ts"
 
 /**

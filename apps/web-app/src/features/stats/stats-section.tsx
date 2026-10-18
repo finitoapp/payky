@@ -1,4 +1,3 @@
-import { orderCurrencies } from "@payky/core/modules/sales-stats/sales-stats-utils"
 import { type Currency, Integer } from "@payky/core/modules/shared/schema"
 import type { ReactNode } from "react"
 import {
@@ -34,25 +33,6 @@ export function StatsSection({
     </section>
   )
 }
-
-/**
- * Rows split per currency, the account currency first, as the KPI tiles do.
- * Sections never add amounts across currencies.
- */
-export const rowsByCurrency = <R extends { readonly currency: Currency }>(
-  rows: ReadonlyArray<R>,
-  accountCurrency: Currency
-): ReadonlyArray<{
-  readonly currency: Currency
-  readonly rows: ReadonlyArray<R>
-}> =>
-  orderCurrencies(
-    rows.map((row) => row.currency),
-    accountCurrency
-  ).map((currency) => ({
-    currency,
-    rows: rows.filter((row) => row.currency === currency),
-  }))
 
 export const useStatsMoney = () => {
   const locale = useLocale()

@@ -15,6 +15,7 @@ import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { formatStatsRange, KpiTiles } from "./kpi-tiles.tsx"
 import { PeriodSelector } from "./period-selector.tsx"
 import { RevenueChart } from "./revenue-chart.tsx"
+import { SalesHeatmap } from "./sales-heatmap.tsx"
 import {
   useSalesStats,
   useStatsLoadedAt,
@@ -136,6 +137,9 @@ function PeriodStats({
           currency={primary.currency}
           now={now}
         />
+      )}
+      {primary === undefined ? null : (
+        <SalesHeatmap stats={stats} currency={primary.currency} />
       )}
     </>
   )

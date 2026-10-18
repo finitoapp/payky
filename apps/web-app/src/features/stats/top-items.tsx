@@ -1,4 +1,5 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { rowsByCurrency } from "@payky/app-shared/stats-sections"
 import type { ItemSalesRow } from "@payky/core/modules/sales-stats/sales-stats-queries"
 import type { Currency } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
@@ -6,12 +7,7 @@ import { Button } from "@/components/ui/button.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import {
-  CurrencyGroup,
-  rowsByCurrency,
-  StatsBarRow,
-  useStatsMoney,
-} from "./stats-section.tsx"
+import { CurrencyGroup, StatsBarRow, useStatsMoney } from "./stats-section.tsx"
 
 export type TopItemsMetric = "quantity" | "amount"
 

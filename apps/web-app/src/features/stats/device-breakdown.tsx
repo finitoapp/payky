@@ -1,9 +1,9 @@
+import { rowsByCurrency } from "@payky/app-shared/stats-sections"
 import { salesByDeviceQuery } from "@payky/core/modules/sales-stats/sales-stats-queries"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import {
   CurrencyGroup,
-  rowsByCurrency,
   StatsBarRow,
   StatsSection,
   useStatsMoney,

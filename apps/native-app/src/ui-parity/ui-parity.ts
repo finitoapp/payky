@@ -52,6 +52,8 @@ const kitModuleOf = (file: string, specifier: string): string | undefined => {
   const module = path.posix
     .relative(`${srcRoot}/components`, resolved)
     .replace(/\.tsx?$/u, "")
+  // Native `ui/icon` wraps a lucide icon, which web renders directly.
+  if (module === "ui/icon") return undefined
   if (module.startsWith("ui/") || module.startsWith("reui/")) return module
   return rootKitModules.has(module) ? module : undefined
 }

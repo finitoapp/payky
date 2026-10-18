@@ -4,6 +4,7 @@ import ChevronRight from "lucide-react-native/icons/chevron-right"
 import Plus from "lucide-react-native/icons/plus"
 import { useState } from "react"
 import { Text, View } from "tamagui"
+import { OptionToggleGroup } from "../../components/option-toggle-group.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import {
@@ -30,6 +31,10 @@ import { Separator } from "../../components/ui/separator.tsx"
 import { Skeleton } from "../../components/ui/skeleton.tsx"
 import { Switch } from "../../components/ui/switch.tsx"
 import { Textarea } from "../../components/ui/textarea.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
 
 const variants = [
   "default",
@@ -43,6 +48,7 @@ const variants = [
 /** Dev-only: every ui kit component in one place, to eyeball on the device. */
 export function UiKitCard() {
   const [on, setOn] = useState(true)
+  const [choice, setChoice] = useState<"a" | "b" | "c" | null>("a")
   return (
     <View
       bg="card"
@@ -133,6 +139,45 @@ export function UiKitCard() {
           accessibilityLabel="Disabled checkbox"
         />
       </View>
+      <ToggleGroup value={choice} onValueChange={setChoice} variant="outline">
+        <ToggleGroupItem value="a">One</ToggleGroupItem>
+        <ToggleGroupItem value="b">Two</ToggleGroupItem>
+        <ToggleGroupItem value="c">Three</ToggleGroupItem>
+      </ToggleGroup>
+      <ToggleGroup
+        value={choice}
+        onValueChange={setChoice}
+        variant="outline"
+        size="sm"
+        spacing={0}
+      >
+        <ToggleGroupItem value="a">Joined</ToggleGroupItem>
+        <ToggleGroupItem value="b">Segments</ToggleGroupItem>
+        <ToggleGroupItem value="c">Here</ToggleGroupItem>
+      </ToggleGroup>
+      <ToggleGroup
+        value={choice}
+        onValueChange={setChoice}
+        variant="outline"
+        columns={2}
+      >
+        <ToggleGroupItem value="a">Grid A</ToggleGroupItem>
+        <ToggleGroupItem value="b">Grid B</ToggleGroupItem>
+        <ToggleGroupItem value="c">Grid C</ToggleGroupItem>
+      </ToggleGroup>
+      <OptionToggleGroup
+        value={choice}
+        onChange={setChoice}
+        options={[
+          {
+            value: "a",
+            title: "Option A",
+            description: "Has a description",
+            icon: Plus,
+          },
+          { value: "b", title: "Option B" },
+        ]}
+      />
       <Input placeholder="Input" />
       <Input placeholder="Invalid" invalid />
       <Input placeholder="Disabled" disabled />

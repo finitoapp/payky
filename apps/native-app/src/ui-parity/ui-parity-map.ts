@@ -99,6 +99,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "pending",
   },
   {
+    native: "src/components/option-toggle-group.tsx",
+    web: ["apps/web-app/src/components/option-toggle-group.tsx"],
+    status: "matched",
+  },
+  {
     native: "src/components/option-select.tsx",
     web: ["apps/web-app/src/components/option-toggle-group.tsx"],
     status: "pending",

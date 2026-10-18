@@ -94,6 +94,7 @@ const derive = (selector: string): Record<string, string> => {
     ...base,
     "card-ring": alpha("foreground", 0.1),
     "primary-pressed": alpha("primary", 0.8),
+    "primary-5": alpha("primary", 0.05),
     "secondary-hover": oklchToHex(
       mixOklch(color("secondary"), color("foreground"), 0.05)
     ),

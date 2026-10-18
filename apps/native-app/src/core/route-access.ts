@@ -25,6 +25,7 @@ export type NativeRoutePath =
   | "/cashu-withdraw/:withdrawalId"
   | "/settings"
   | "/settings/about"
+  | "/settings/about/terms"
   | "/settings/language"
   | "/settings/theme"
   | "/settings/home-screen"
@@ -88,6 +89,8 @@ export const routeAccess = {
   "/settings": "free",
   // About exposes only public build metadata and links to no gated feature.
   "/settings/about": "free",
+  // Terms are public text, like the web About child route.
+  "/settings/about/terms": "free",
   // Like web's `_terminal/settings/language`.
   "/settings/language": "free",
   // Like web's `_terminal/settings/theme`.

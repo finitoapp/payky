@@ -4,6 +4,7 @@ import { Text, YStack } from "tamagui"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { SettingsRow } from "../settings-row.tsx"
 
 export function AboutPage() {
   const { t } = useTranslation()
@@ -29,6 +30,11 @@ export function AboutPage() {
           </Text>
         ) : null}
       </YStack>
+      <SettingsRow
+        title={t("settings.about.terms.title")}
+        value={t("settings.about.terms.description")}
+        href="/settings/about/terms"
+      />
     </Screen>
   )
 }

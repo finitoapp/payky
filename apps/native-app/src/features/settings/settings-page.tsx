@@ -88,6 +88,9 @@ export function SettingsPage() {
       href: "/settings/payment-number-series",
     },
   ]
+  const accountRows: ReadonlyArray<SettingsRowData> = [
+    { title: t("access.title"), href: "/settings/access" },
+  ]
   const appearanceRows: ReadonlyArray<SettingsRowData> = [
     {
       title: t("settings.language.title"),
@@ -119,6 +122,7 @@ export function SettingsPage() {
       <SettingsGroup title={t("settings.catalog")} rows={catalogRows} />
       <SettingsGroup title={t("settings.payments")} rows={paymentRows} />
       <SettingsGroup title={t("settings.taxesGroup")} rows={taxRows} />
+      <SettingsGroup title={t("settings.accountAndSync")} rows={accountRows} />
       <SettingsGroup title={t("settings.appearance")} rows={appearanceRows} />
     </Screen>
   )

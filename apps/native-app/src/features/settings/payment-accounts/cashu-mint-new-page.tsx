@@ -30,17 +30,22 @@ export function CashuMintNewPage() {
     if (!(await require("admin", "access.action.cashuMints"))) return
     setPending(true)
     setErrorKey(null)
-    let added = false
+    let added: string | null = null
     await runToast(async (run) => {
       const result = await run(addKnownCashuMint(url))
       if (!result.ok) {
         setErrorKey(cashuMintAddErrorKeys[result.error.type])
         return
       }
-      added = true
+      added = result.value
     })
     setPending(false)
-    if (added) router.back()
+    if (added !== null) {
+      router.replace({
+        pathname: "/settings/payment-accounts/cashu/mints/[mint]",
+        params: { mint: added },
+      })
+    }
   }
 
   return (

@@ -116,6 +116,14 @@ function MintRow({
       rounded="lg"
       borderWidth={1}
       borderColor="border-color"
+      accessibilityRole="button"
+      accessibilityLabel={formatMintLabel(mint)}
+      onPress={() =>
+        router.push({
+          pathname: "/settings/payment-accounts/cashu/mints/[mint]",
+          params: { mint },
+        })
+      }
     >
       <YStack flex={1} gap="1">
         <Text>{formatMintLabel(mint)}</Text>

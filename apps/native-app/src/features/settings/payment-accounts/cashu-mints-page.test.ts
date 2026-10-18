@@ -10,6 +10,10 @@ const newPage = readFileSync(
   new URL("./cashu-mint-new-page.tsx", import.meta.url),
   "utf8"
 )
+const detailPage = readFileSync(
+  new URL("./cashu-mint-detail-page.tsx", import.meta.url),
+  "utf8"
+)
 const knownMints = readFileSync(
   new URL("../../shared/cashu/use-cashu-known-mints.ts", import.meta.url),
   "utf8"
@@ -56,4 +60,28 @@ it("scopes known mints to both the Linky and device account", () => {
   expect(knownMints).toContain("cashuDeviceKnownMintsQuery(account.id)")
   expect(knownMints).toContain("subscribeToCashuWalletSnapshot")
   expect(subscription).toContain("stopAdditional?.()")
+})
+
+it("removes a mint only through core's Task, after the owner gate and a confirmation", () => {
+  expect(requiredPermission("/settings/payment-accounts/cashu/mints/new")).toBe(
+    "admin"
+  )
+  expect(
+    requiredPermission(
+      "/settings/payment-accounts/cashu/mints/https%3A%2F%2Fx.y"
+    )
+  ).toBe("admin")
+  const gate = detailPage.indexOf(
+    'require("admin", "access.action.cashuMints")'
+  )
+  const ask = detailPage.indexOf("await confirm({")
+  const task = detailPage.indexOf("run(removeKnownCashuMint(mint))")
+  expect(gate).toBeGreaterThan(-1)
+  expect(ask).toBeGreaterThan(gate)
+  expect(task).toBeGreaterThan(ask)
+  // The refusal core returns is shown, not swallowed.
+  expect(detailPage).toContain('"settings.cashuMints.removeError.inUse"')
+  expect(detailPage).not.toMatch(
+    /cashuShardStore|loadProofs|removeCashuMint\(|deviceEvolu|loadCashuWallet|new Wallet|new Mint/u
+  )
 })

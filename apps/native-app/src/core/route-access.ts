@@ -26,6 +26,7 @@ export type NativeRoutePath =
   | "/settings"
   | "/settings/language"
   | "/settings/theme"
+  | "/settings/home-screen"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -67,6 +68,8 @@ export const routeAccess = {
   "/settings/language": "free",
   // Like web's `_terminal/settings/theme`.
   "/settings/theme": "free",
+  // Like web's `_terminal/settings/home-screen`: the modes are a business choice.
+  "/settings/home-screen": "settings",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

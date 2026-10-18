@@ -1,9 +1,13 @@
+import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
+import { parseEnabledHomeModes } from "@payky/core/modules/app-settings/app-settings-utils"
 import { Text, YStack } from "tamagui"
 import { languageOptions } from "../../components/language-options.ts"
 import { Screen } from "../../components/screen.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
+import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useThemePreference } from "../../hooks/use-theme-preference.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
+import { homeModeLabelKeys } from "./home-screen/home-screen-settings-page.tsx"
 import { SettingsRow, type SettingsRowData } from "./settings-row.tsx"
 import { themeLabelKeys } from "./theme/theme-settings-page.tsx"
 
@@ -38,6 +42,8 @@ function SettingsGroup({
 export function SettingsPage() {
   const { language, t } = useTranslation()
   const theme = useThemePreference()
+  const [settings] = useEvoluQuery(settingsQuery).data
+  const enabledHomeModes = parseEnabledHomeModes(settings?.enabledHomeModesJson)
   const appearanceRows: ReadonlyArray<SettingsRowData> = [
     {
       title: t("settings.language.title"),
@@ -48,6 +54,13 @@ export function SettingsPage() {
       title: t("settings.theme.title"),
       value: t(themeLabelKeys[theme]),
       href: "/settings/theme",
+    },
+    {
+      title: t("settings.homeScreen.title"),
+      value: enabledHomeModes
+        .map((mode) => t(homeModeLabelKeys[mode]))
+        .join(", "),
+      href: "/settings/home-screen",
     },
   ]
 

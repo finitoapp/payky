@@ -54,5 +54,6 @@ describe("native route access", () => {
     expect(requiredPermission("/settings")).toBeNull()
     expect(requiredPermission("/settings/language")).toBeNull()
     expect(requiredPermission("/settings/theme")).toBeNull()
+    expect(requiredPermission("/settings/home-screen")).toBe("settings")
   })
 })

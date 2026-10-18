@@ -132,6 +132,19 @@ export const interpretSwitchioPaymentResult = ({
     return result.success ? result.data : null
   })()
 
+  // Android answers 0 (RESULT_CANCELED) with no data when the terminal app
+  // crashes, is killed, or, with the reorder-to-front flag, was already
+  // running and takes the card after the result has come back. Without the
+  // terminal's own words that is not a decline: the card may be charged.
+  if (resultCode === switchioResultCode.failure && parsed === null) {
+    return err(
+      createSwitchioResultUnreadableError({
+        resultCode,
+        rawResult: transactionResult,
+      })
+    )
+  }
+
   if (resultCode !== switchioResultCode.success) {
     return err(
       createSwitchioPaymentFailedError({

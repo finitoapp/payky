@@ -93,18 +93,34 @@ describe("interpretSwitchioPaymentResult", () => {
     })
   })
 
-  test("reports a failure result code with no payload as a failed payment", () => {
+  test("reports a failure result code with no payload as an unknown outcome, not a decline", () => {
+    for (const transactionResult of [null, "", "not json"]) {
+      const result = interpretSwitchioPaymentResult({
+        resultCode: 0,
+        transactionResult,
+      })
+
+      expect(result.ok).toBe(false)
+      expect(!result.ok && result.error).toMatchObject({
+        type: "SwitchioResultUnreadable",
+        resultCode: 0,
+      })
+    }
+  })
+
+  test("still reports a failure result code with the terminal's own answer as declined", () => {
     const result = interpretSwitchioPaymentResult({
       resultCode: 0,
-      transactionResult: null,
+      transactionResult: JSON.stringify({
+        responseCode: "DECLINED",
+        responseMessage: "Card declined",
+      }),
     })
 
-    expect(result.ok).toBe(false)
     expect(!result.ok && result.error).toMatchObject({
       type: "SwitchioPaymentFailed",
       resultCode: 0,
-      responseCode: null,
-      responseMessage: null,
+      responseCode: "DECLINED",
     })
   })
 

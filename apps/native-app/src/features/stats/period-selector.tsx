@@ -5,9 +5,8 @@ import {
 } from "@payky/app-shared/stats-search"
 import type { StatsPeriod } from "@payky/core/modules/sales-stats/sales-stats-types"
 import { useState } from "react"
-import { XStack, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { z } from "zod"
-import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
@@ -35,16 +34,33 @@ export function PeriodSelector({
 
   return (
     <YStack gap="3" accessibilityLabel={t("stats.period.label")}>
-      <XStack gap="1" flexWrap="wrap">
+      <XStack gap="1">
         {statsPeriodKinds.map((kind) => (
-          <YStack key={kind} flex={1} minW={64}>
-            <AppButton
-              label={t(periodLabelKeys[kind])}
-              variant={period.kind === kind ? "primary" : "secondary"}
-              onPress={() => {
-                if (period.kind !== kind) onChange({ period: kind })
-              }}
-            />
+          <YStack
+            key={kind}
+            flex={1}
+            minH={44}
+            px="1"
+            justify="center"
+            items="center"
+            rounded="lg"
+            borderWidth={1}
+            borderColor={period.kind === kind ? "primary" : "border-color"}
+            bg={period.kind === kind ? "primary" : "background"}
+            accessibilityRole="button"
+            accessibilityState={{ selected: period.kind === kind }}
+            onPress={() => {
+              if (period.kind !== kind) onChange({ period: kind })
+            }}
+          >
+            <Text
+              fontSize={13}
+              fontWeight="600"
+              numberOfLines={1}
+              color={period.kind === kind ? "primary-foreground" : "color"}
+            >
+              {t(periodLabelKeys[kind])}
+            </Text>
           </YStack>
         ))}
       </XStack>

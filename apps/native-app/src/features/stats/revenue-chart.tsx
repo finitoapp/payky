@@ -90,7 +90,10 @@ export function RevenueChart({
   const plotWidth = Math.max(0, width - axisWidth)
   const plotHeight = chartHeight - axisHeight
   const slot = points.length === 0 ? 0 : plotWidth / points.length
-  const y = (value: number) => plotHeight - (value / max) * plotHeight
+  // A little headroom so the top axis label is not cut off.
+  const topPad = 8
+  const y = (value: number) =>
+    topPad + (1 - value / max) * (plotHeight - topPad)
   const tick = (start: number) =>
     unit === "hour"
       ? new Date(start).toLocaleTimeString(locale, { hour: "numeric" })
@@ -215,11 +218,7 @@ export function RevenueChart({
           </Svg>
         )}
       </YStack>
-      {point === undefined ? (
-        <Text fontSize={12} color="muted-foreground">
-          {t("stats.chart.title")}
-        </Text>
-      ) : (
+      {point === undefined ? null : (
         <RevenueDetail
           point={point}
           title={bucketLabel(point.start)}

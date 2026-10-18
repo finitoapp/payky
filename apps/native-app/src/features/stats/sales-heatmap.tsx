@@ -10,8 +10,6 @@ import type { SalesStats } from "./use-sales-stats.ts"
 
 /** 1 January 2024 was a Monday: the heatmap's first row. */
 const aMonday = new Date(2024, 0, 1)
-const hours = Array.from({ length: 24 }, (_, hour) => hour)
-
 /**
  * Gross sales by local weekday (Monday first) and hour, for periods of seven
  * days and longer, since a shorter one has a single sample per cell at best.
@@ -108,15 +106,15 @@ export function SalesHeatmap({
           </XStack>
         ))}
         <XStack gap="1" pl={32}>
-          {hours.map((hour) => (
+          {[0, 6, 12, 18].map((hour) => (
             <Text
               key={hour}
-              flex={1}
-              fontSize={9}
+              flex={6}
+              fontSize={10}
               color="muted-foreground"
               numberOfLines={1}
             >
-              {hour % 6 === 0 ? hourLabel(hour) : ""}
+              {hourLabel(hour)}
             </Text>
           ))}
         </XStack>

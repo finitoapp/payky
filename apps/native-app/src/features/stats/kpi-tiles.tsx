@@ -18,12 +18,16 @@ export const formatStatsRange = (range: StatsRange, locale: string) => {
   const from = new Date(range.fromIso)
   const to = new Date(range.toIso)
   const wholeDays = startOfDay(to).getTime() === to.getTime()
-  return new Intl.DateTimeFormat(
+  const format = new Intl.DateTimeFormat(
     locale,
     wholeDays
       ? { dateStyle: "medium" }
       : { dateStyle: "medium", timeStyle: "short" }
-  ).formatRange(from, wholeDays ? subMilliseconds(to, 1) : to)
+  )
+  // Hermes has no `Intl.DateTimeFormat.formatRange`: join the two ends.
+  const start = format.format(from)
+  const end = format.format(wholeDays ? subMilliseconds(to, 1) : to)
+  return start === end ? start : `${start} – ${end}`
 }
 
 interface Tile {

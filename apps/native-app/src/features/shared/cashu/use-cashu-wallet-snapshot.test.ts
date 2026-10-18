@@ -10,11 +10,12 @@ function deferred<T>() {
   return { promise, resolve }
 }
 
-it("does not lose store changes while a wallet snapshot read is pending", async () => {
+it("does not lose store or device-mint changes while a snapshot read is pending", async () => {
   const queryClient = new QueryClient()
   const queryKey = ["cashuWalletSnapshot", "owner"]
   const changes = new Set<() => void>()
   const hydration = new Set<() => void>()
+  const deviceMintChanges = new Set<() => void>()
   const [firstRead, secondRead, thirdRead] = [
     deferred<number>(),
     deferred<number>(),
@@ -49,11 +50,16 @@ it("does not lose store changes while a wallet snapshot read is pending", async 
     queryKey,
     async () => {
       await fetchSnapshot()
+    },
+    (listener) => {
+      deviceMintChanges.add(listener)
+      return () => deviceMintChanges.delete(listener)
     }
   )
 
   await vi.waitFor(() => expect(readIndex).toBe(2))
   for (const listener of changes) listener()
+  for (const listener of deviceMintChanges) listener()
   secondRead.resolve(1)
   await vi.waitFor(() => expect(readIndex).toBe(3))
   thirdRead.resolve(2)
@@ -67,5 +73,6 @@ it("does not lose store changes while a wallet snapshot read is pending", async 
   subscription.dispose()
   expect(changes.size).toBe(0)
   expect(hydration.size).toBe(0)
+  expect(deviceMintChanges.size).toBe(0)
   queryClient.clear()
 })

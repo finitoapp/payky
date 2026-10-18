@@ -14,7 +14,8 @@ export function subscribeToCashuWalletSnapshot(
     }) => Promise<void>
   },
   queryKey: QueryKey,
-  refetch: () => Promise<unknown>
+  refetch: () => Promise<unknown>,
+  subscribeAdditional?: (listener: () => void) => () => void
 ) {
   let active = true
   let requested = false
@@ -46,6 +47,7 @@ export function subscribeToCashuWalletSnapshot(
   const notify = () => void refresh().catch(() => undefined)
   const stopChanges = store.subscribe(notify)
   const stopHydration = store.subscribeHydration(notify)
+  const stopAdditional = subscribeAdditional?.(notify)
   void refresh().catch(() => undefined)
 
   return {
@@ -54,6 +56,7 @@ export function subscribeToCashuWalletSnapshot(
       active = false
       stopChanges()
       stopHydration()
+      stopAdditional?.()
     },
   }
 }

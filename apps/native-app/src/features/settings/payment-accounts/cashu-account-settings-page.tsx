@@ -78,6 +78,11 @@ function CashuAccountSettingsContent() {
             )}
           </YStack>
           <SettingsRow
+            title={t("settings.cashuAccount.mints")}
+            value={t("settings.cashuAccount.mintsDescription")}
+            href="/settings/payment-accounts/cashu/mints"
+          />
+          <SettingsRow
             title={t("settings.cashuAccount.withdraw")}
             value={t("settings.cashuAccount.withdrawDescription")}
             href="/cashu-withdraw"

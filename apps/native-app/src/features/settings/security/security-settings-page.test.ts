@@ -29,7 +29,10 @@ it("shows the recovery phrase only on request, behind the owner permission, neve
   expect(card).toMatch(
     /await require\("admin", "access\.action\.revealRecoveryPhrase"\)/
   )
-  expect(card).toMatch(/endsSessionOnAppState\(state\)\) setRevealed\(false\)/)
+  expect(card).toMatch(/state !== "active"\) setRevealed\(false\)/)
+  expect(card).not.toMatch(/accessibilityLabel/)
+  const revealed = card.slice(card.indexOf("function RevealedPhrase"))
+  expect(revealed).toMatch(/usePreventScreenCapture\(\)/)
   expect(card).toMatch(/gcTime: 0/)
   expect(card).toMatch(/userSelect="none"/)
   expect(card).not.toMatch(

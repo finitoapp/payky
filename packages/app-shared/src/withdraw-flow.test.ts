@@ -1,5 +1,6 @@
 import { BitcoinAddress, FiatCurrency } from "@payky/core/modules/shared/schema"
 import type {
+  LightningWithdrawalQuote,
   OnchainWithdrawalQuote,
   SupportedWithdrawDestination,
   WithdrawalQuote,
@@ -309,6 +310,26 @@ describe("withdrawPinDetail", () => {
     })
     expect(detail).toContain("20,000")
     expect(detail).toContain(address)
+  })
+
+  test("names an address-less invoice by its shortened form and the amount", () => {
+    const invoice = `lnbc10u1${"q".repeat(80)}xyz`
+    const quote = {
+      kind: "lightning",
+      lightningAddress: null,
+      amountSats: 1000,
+      invoice: { invoice },
+    } as unknown as LightningWithdrawalQuote
+    const detail = withdrawPinDetail({
+      quote,
+      exitSpeed: "medium",
+      t,
+      locale: "en-US",
+    })
+    expect(detail).toContain("1,000")
+    expect(detail).toContain(t("withdraw.destination.kind.lightningInvoice"))
+    expect(detail).toContain(`${invoice.slice(0, 12)}…${invoice.slice(-8)}`)
+    expect(detail).not.toContain(invoice)
   })
 })
 

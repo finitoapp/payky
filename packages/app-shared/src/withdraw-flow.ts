@@ -34,6 +34,7 @@ import {
   withdrawalRecipientSats,
 } from "@payky/core/modules/withdraw/withdraw-utils"
 import type { SparkExitSpeed } from "@payky/core/spark/spark-wallet"
+import { shortenMiddle } from "@payky/core/utils/shorten-middle"
 import { formatSatsAmount } from "./format-money.ts"
 import type { TranslationKey } from "./i18n/resources.ts"
 import type { createTranslate } from "./i18n/translate.ts"
@@ -382,7 +383,7 @@ export const withdrawPinDetail = ({
       quote.kind === "onchain"
         ? quote.onchainAddress
         : (quote.lightningAddress ??
-          t("withdraw.destination.kind.lightningInvoice")),
+          `${t("withdraw.destination.kind.lightningInvoice")} ${shortenMiddle(quote.invoice.invoice, 12, 8)}`),
   })
 
 /**

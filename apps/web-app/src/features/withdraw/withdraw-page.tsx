@@ -70,6 +70,9 @@ function WithdrawFlow({
   const locale = useLocale()
   const [state, dispatch] = useReducer(withdrawReducer, initialWithdrawState)
   const [requoting, setRequoting] = useState(false)
+  // A send may or may not have happened: nothing is confirmed again from this
+  // review until the merchant has gone back (withdraw/0007).
+  const [uncertain, setUncertain] = useState(false)
   const [draft, setDraft] = useState(() =>
     createWithdrawDraft(initialDestination)
   )
@@ -82,14 +85,19 @@ function WithdrawFlow({
   const confirmWithdrawal = async () => {
     if (state.step !== "review" || confirmingRef.current) return
     confirmingRef.current = true
+    // Stays locked after a send was started: only a retryable end unlocks.
+    let retryable = true
     try {
-      await confirmReviewedWithdrawal(state)
+      retryable = await confirmReviewedWithdrawal(state)
     } finally {
-      confirmingRef.current = false
+      if (retryable) confirmingRef.current = false
     }
   }
 
-  const confirmReviewedWithdrawal = async (review: WithdrawReviewState) => {
+  /** `true` when nothing was sent and the review may be confirmed again. */
+  const confirmReviewedWithdrawal = async (
+    review: WithdrawReviewState
+  ): Promise<boolean> => {
     dispatch({ type: "CONFIRM_STARTED" })
 
     // Moving money always asks for the PIN, session or not (access/0007).
@@ -105,7 +113,7 @@ function WithdrawFlow({
       : await require("admin", "access.action.withdraw")
     if (!allowed) {
       dispatch({ type: "CONFIRM_FINISHED" })
-      return
+      return true
     }
 
     try {
@@ -128,14 +136,19 @@ function WithdrawFlow({
           to: "/settings/payment-accounts/spark/withdrawals/$withdrawalId",
           params: { withdrawalId: outcome.withdrawalId },
         })
-        return
+        return false
       }
       dispatch({ type: "CONFIRM_FAILED", error: outcome.message })
+      return true
     } catch {
+      // Thrown after the money may have moved is indistinguishable from
+      // thrown before it: never offer a retry.
+      setUncertain(true)
       dispatch({
         type: "CONFIRM_FAILED",
-        error: t("withdraw.review.error.generic"),
+        error: t("withdraw.review.error.uncertain"),
       })
+      return false
     }
   }
 
@@ -185,12 +198,21 @@ function WithdrawFlow({
       confirming={state.confirming}
       requoting={requoting}
       confirmError={state.confirmError}
+      uncertain={uncertain}
       onExitSpeedChange={(exitSpeed) =>
         dispatch({ type: "SET_EXIT_SPEED", exitSpeed })
       }
-      onBack={() => dispatch({ type: "BACK" })}
+      onBack={() => {
+        if (confirmingRef.current && !uncertain) return
+        setUncertain(false)
+        confirmingRef.current = false
+        dispatch({ type: "BACK" })
+      }}
       onConfirm={() => void confirmWithdrawal()}
       onNewQuote={() => void requote()}
+      onOpenHistory={() =>
+        void navigate({ to: "/settings/payment-accounts/spark/withdrawals" })
+      }
       locale={locale}
     />
   )

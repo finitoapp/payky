@@ -71,11 +71,14 @@ const EXPIRY_WARNING_MS = 60_000
 function OnchainReview({
   quote,
   exitSpeed,
+  confirming,
   onExitSpeedChange,
   locale,
 }: {
   readonly quote: OnchainWithdrawalQuote
   readonly exitSpeed: SparkExitSpeed
+  /** The fee shown must not change while a send is being confirmed. */
+  readonly confirming: boolean
   readonly onExitSpeedChange: (exitSpeed: SparkExitSpeed) => void
   readonly locale: string
 }) {
@@ -109,7 +112,9 @@ function OnchainReview({
             <ToggleGroupItem
               key={option.value}
               value={option.value}
-              disabled={isExitSpeedUnavailable(quote, option.value)}
+              disabled={
+                isExitSpeedUnavailable(quote, option.value) || confirming
+              }
               className="h-auto w-full justify-between px-4 py-2"
             >
               <span className="flex flex-col items-start">
@@ -252,9 +257,11 @@ export function WithdrawReviewCard({
   expired,
   confirming,
   requoting,
+  uncertain = false,
   onBack,
   onConfirm,
   onNewQuote,
+  onOpenHistory,
 }: {
   readonly children: ReactNode
   /** The LUD-12 comment sent to the recipient. */
@@ -266,9 +273,13 @@ export function WithdrawReviewCard({
   readonly expired: boolean
   readonly confirming: boolean
   readonly requoting: boolean
+  /** A send may or may not have happened: nothing may be confirmed again from here. */
+  readonly uncertain?: boolean
   readonly onBack: () => void
   readonly onConfirm: () => void
   readonly onNewQuote: () => void
+  /** Where an uncertain send is checked; needed when `uncertain` can be true. */
+  readonly onOpenHistory?: () => void
 }) {
   const { t } = useTranslation()
   return (
@@ -296,7 +307,7 @@ export function WithdrawReviewCard({
           </p>
 
           <FieldError>{error}</FieldError>
-          {error !== null || nearlyExpired ? (
+          {!uncertain && (error !== null || nearlyExpired) ? (
             <Button
               type="button"
               variant="outline"
@@ -324,17 +335,23 @@ export function WithdrawReviewCard({
           <ArrowLeftIcon />
           {t("withdraw.review.back")}
         </Button>
-        <Button
-          type="button"
-          className="flex-1"
-          onClick={onConfirm}
-          disabled={confirming || requoting || expired}
-        >
-          {confirming ? <LoaderCircleIcon className="animate-spin" /> : null}
-          {confirming
-            ? t("withdraw.review.confirming")
-            : t("withdraw.review.confirm")}
-        </Button>
+        {uncertain ? (
+          <Button type="button" className="flex-1" onClick={onOpenHistory}>
+            {t("withdraw.history.title")}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            className="flex-1"
+            onClick={onConfirm}
+            disabled={confirming || requoting || expired}
+          >
+            {confirming ? <LoaderCircleIcon className="animate-spin" /> : null}
+            {confirming
+              ? t("withdraw.review.confirming")
+              : t("withdraw.review.confirm")}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   )
@@ -347,10 +364,12 @@ export function WithdrawReviewStep({
   confirming,
   requoting,
   confirmError,
+  uncertain,
   onExitSpeedChange,
   onBack,
   onConfirm,
   onNewQuote,
+  onOpenHistory,
   locale,
 }: {
   readonly quote: WithdrawalQuote
@@ -360,10 +379,12 @@ export function WithdrawReviewStep({
   readonly confirming: boolean
   readonly requoting: boolean
   readonly confirmError: string | null
+  readonly uncertain: boolean
   readonly onExitSpeedChange: (exitSpeed: SparkExitSpeed) => void
   readonly onBack: () => void
   readonly onConfirm: () => void
   readonly onNewQuote: () => void
+  readonly onOpenHistory: () => void
   readonly locale: string
 }) {
   const { t } = useTranslation()
@@ -391,14 +412,17 @@ export function WithdrawReviewStep({
       expired={expired}
       confirming={confirming}
       requoting={requoting}
+      uncertain={uncertain}
       onBack={onBack}
       onConfirm={onConfirm}
       onNewQuote={onNewQuote}
+      onOpenHistory={onOpenHistory}
     >
       {quote.kind === "onchain" ? (
         <OnchainReview
           quote={quote}
           exitSpeed={exitSpeed}
+          confirming={confirming}
           onExitSpeedChange={onExitSpeedChange}
           locale={locale}
         />

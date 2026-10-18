@@ -50,6 +50,7 @@ export default defineConfig({
             "apps/native-app/src/core/**/*.test.ts",
             "apps/native-app/src/atoms/**/*.test.ts",
             "apps/native-app/src/features/**/*.test.ts",
+            "apps/native-app/src/hooks/**/*.test.ts",
           ],
         },
       },

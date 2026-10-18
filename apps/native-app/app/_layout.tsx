@@ -16,6 +16,7 @@ import {
 } from "../src/components/app-background-jobs.tsx"
 import { AppErrorScreen } from "../src/components/app-error-screen.tsx"
 import { ConfirmHost } from "../src/components/confirm-host.tsx"
+import { DemoDataSeed } from "../src/components/demo-data-seed.tsx"
 import { DeviceRegistration } from "../src/components/device-registration.tsx"
 import { PinPromptHost } from "../src/components/pin-prompt-host.tsx"
 import { SentryController } from "../src/components/sentry-controller.tsx"
@@ -93,6 +94,7 @@ function ThemedApp() {
           <Suspense fallback={null}>
             <SentryController />
             <DeviceRegistration />
+            <DemoDataSeed />
           </Suspense>
         </Theme>
       </TamaguiProvider>

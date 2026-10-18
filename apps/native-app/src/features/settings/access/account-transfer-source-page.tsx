@@ -40,6 +40,13 @@ import {
   InputOTPSeparator,
   InputOTPSlot,
 } from "../../../components/ui/input-otp.tsx"
+import {
+  Stepper,
+  StepperIndicator,
+  StepperItem,
+  StepperNav,
+  StepperSeparator,
+} from "../../../components/ui/stepper.tsx"
 import { nativeEnv } from "../../../core/native-env.ts"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -55,6 +62,15 @@ const failureKeys = {
 } satisfies Record<FailureReason, TranslationKey>
 
 const TRANSFER_CODE_LENGTH = 6
+
+const stepByPhase = {
+  waiting: 1,
+  expired: 1,
+  locked: 2,
+  sending: 3,
+  done: 3,
+  failed: 0,
+} satisfies Record<TransferSourceState["phase"], number>
 const codeGroups = [
   [0, 1, 2],
   [3, 4, 5],
@@ -140,6 +156,22 @@ export function AccountTransferSourcePage() {
   return (
     <Screen>
       <ScreenHeader title={t("accountTransfer.source.title")} />
+
+      {state !== null && stepByPhase[state.phase] > 0 ? (
+        <Stepper value={stepByPhase[state.phase]}>
+          <StepperNav>
+            {[1, 2, 3].map((step) => (
+              <StepperItem key={step} step={step} last={step === 3}>
+                <StepperIndicator
+                  size={8}
+                  inactiveColor="muted-foreground-30"
+                />
+                {step < 3 ? <StepperSeparator /> : null}
+              </StepperItem>
+            ))}
+          </StepperNav>
+        </Stepper>
+      ) : null}
 
       {state === null ? (
         <YStack gap="3">

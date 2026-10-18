@@ -77,6 +77,10 @@ export const palette = {
     "warning-4": "#f0b1000a",
     "warning-30": "#f0b1004c",
     "invert-foreground-70": "#fafafab2",
+    "muted-foreground-30": "#6e757e4c",
+    "primary-10": "#c04a001a",
+    "primary-20": "#c04a0033",
+    "muted-20": "#f6f4f033",
   },
   dark: {
     background: "#101214",
@@ -140,5 +144,9 @@ export const palette = {
     "warning-4": "#f674000a",
     "warning-30": "#f674004c",
     "invert-foreground-70": "#fafafab2",
+    "muted-foreground-30": "#bdc3c74c",
+    "primary-10": "#e36b2c1a",
+    "primary-20": "#e36b2c33",
+    "muted-20": "#393d4333",
   },
 } as const satisfies Record<"light" | "dark", Record<string, string>>

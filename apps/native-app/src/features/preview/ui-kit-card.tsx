@@ -64,6 +64,13 @@ import {
 } from "../../components/ui/select.tsx"
 import { Separator } from "../../components/ui/separator.tsx"
 import { Skeleton } from "../../components/ui/skeleton.tsx"
+import {
+  Stepper,
+  StepperIndicator,
+  StepperItem,
+  StepperNav,
+  StepperSeparator,
+} from "../../components/ui/stepper.tsx"
 import { Switch } from "../../components/ui/switch.tsx"
 import {
   Tabs,
@@ -72,6 +79,16 @@ import {
   TabsTrigger,
 } from "../../components/ui/tabs.tsx"
 import { Textarea } from "../../components/ui/textarea.tsx"
+import {
+  Timeline,
+  TimelineContent,
+  TimelineDate,
+  TimelineHeader,
+  TimelineIndicator,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineTitle,
+} from "../../components/ui/timeline.tsx"
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -302,6 +319,34 @@ export function UiKitCard() {
           <AlertDescription>Alert description</AlertDescription>
         </Alert>
       ))}
+      <Stepper value={2}>
+        <StepperNav>
+          {[1, 2, 3].map((step) => (
+            <StepperItem key={step} step={step} last={step === 3}>
+              <StepperIndicator size={8} inactiveColor="muted-foreground-30" />
+              {step < 3 ? <StepperSeparator /> : null}
+            </StepperItem>
+          ))}
+        </StepperNav>
+      </Stepper>
+      <Timeline value={2}>
+        {[1, 2, 3].map((step) => (
+          <TimelineItem key={step} step={step} last={step === 3}>
+            <TimelineHeader>
+              <TimelineDate>{`Date ${step}`}</TimelineDate>
+              <TimelineTitle>
+                {`Timeline step ${step}`}
+                <Badge variant="secondary" label="Badge" />
+              </TimelineTitle>
+            </TimelineHeader>
+            <TimelineIndicator />
+            <TimelineSeparator />
+            <TimelineContent>
+              <Text color="muted-foreground">Timeline content</Text>
+            </TimelineContent>
+          </TimelineItem>
+        ))}
+      </Timeline>
       <Alert variant="warning">
         <AlertDescription>Without icon, with an action</AlertDescription>
         <AlertAction>

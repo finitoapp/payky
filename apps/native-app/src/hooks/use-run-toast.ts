@@ -1,6 +1,11 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { useCallback } from "react"
-import { type NativeAppRun, useAppRun } from "./use-app-run.ts"
+import {
+  type NativeAppRun,
+  type NativeCashuAppRun,
+  useAppRun,
+  useCashuAppRun,
+} from "./use-app-run.ts"
 import { useToast } from "./use-toast.ts"
 import { useTranslation } from "./use-translation.ts"
 
@@ -12,16 +17,26 @@ import { useTranslation } from "./use-translation.ts"
  * Resolves `true` only when `action` completed without a message.
  */
 export function useRunToast() {
+  return useRunToastWith<NativeAppRun>(useAppRun())
+}
+
+/** `useRunToast` over `useCashuAppRun`, for the Cashu screens. */
+export function useCashuRunToast() {
+  return useRunToastWith<NativeCashuAppRun>(useCashuAppRun())
+}
+
+function useRunToastWith<Run extends AsyncDisposable>(
+  appRun: () => Run | Promise<Run>
+) {
   const { t } = useTranslation()
   const toast = useToast()
-  const appRun = useAppRun()
 
   return useCallback(
     async (
-      action: (run: NativeAppRun) => Promise<TranslationKey | undefined>
+      action: (run: Run) => Promise<TranslationKey | undefined>
     ): Promise<boolean> => {
       try {
-        await using run = appRun()
+        await using run = await appRun()
         const errorKey = await action(run)
         if (errorKey !== undefined) {
           toast.error(t(errorKey))

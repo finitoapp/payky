@@ -9,9 +9,10 @@ import {
   createSwitchioUnavailableError,
   type SwitchioTerminalDep,
 } from "@payky/core/switchio"
-import { useAtomValue } from "jotai"
+import { useAtomValue, useStore } from "jotai"
 import { useCallback } from "react"
 import { accountAtom } from "../atoms/account.ts"
+import { cashuShardStoreAtom, cashuWalletDepAtom } from "../atoms/cashu.ts"
 import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
 import { evoluAtom } from "../atoms/evolu.ts"
 import { nativeEnv } from "../core/native-env.ts"
@@ -37,9 +38,10 @@ const unsupportedSwitchioTerminalDep: SwitchioTerminalDep = {
  * `useAppRun`: the same dependency set (console, evolu, deviceEvolu,
  * evoluOwner, masterKey, lockManager, date, fetch, sparkWallet, yadioApi,
  * switchioTerminal, eetApi, nostr), built fresh for each run. Use as
- * `await using run = appRun()`. The Cashu wallet arrives with P08.
+ * `await using run = appRun()`. The Cashu wallet comes from `useCashuAppRun`.
  */
-export function useAppRun() {
+/** Every app dependency but the Cashu ones, built fresh for each run. */
+function useAppRunDeps() {
   const evolu = useAtomValue(evoluAtom)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const account = useAtomValue(accountAtom)
@@ -47,7 +49,7 @@ export function useAppRun() {
   return useCallback(() => {
     const dateDep = createDateDep()
     const fetchDep = createFetchDep()
-    return nativeRun.create({
+    return {
       console: nativeConsole,
       evolu,
       deviceEvolu,
@@ -64,8 +66,39 @@ export function useAppRun() {
         { productionUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL }
       ),
       ...createNostrDep(nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS),
-    })
+    }
   }, [account.masterKey, deviceEvolu, evolu])
 }
 
+export function useAppRun() {
+  const appRunDeps = useAppRunDeps()
+  return useCallback(() => nativeRun.create(appRunDeps()), [appRunDeps])
+}
+
+/**
+ * `useAppRun` plus the shared Cashu wallet (`cashuShardStore`, `cashuWallet`),
+ * for the Cashu actions only: `await using run = await cashuAppRun()`. The
+ * Cashu atoms are read when a run is made, never while rendering, so a wallet
+ * that fails to start, or never does, holds up no screen; the call that
+ * needed it rejects instead.
+ */
+export function useCashuAppRun() {
+  const appRunDeps = useAppRunDeps()
+  const jotaiStore = useStore()
+  return useCallback(async () => {
+    const [cashuShardStore, cashuWalletDep] = await Promise.all([
+      jotaiStore.get(cashuShardStoreAtom),
+      jotaiStore.get(cashuWalletDepAtom),
+    ])
+    return nativeRun.create({
+      ...appRunDeps(),
+      cashuShardStore,
+      ...cashuWalletDep,
+    })
+  }, [appRunDeps, jotaiStore])
+}
+
 export type NativeAppRun = ReturnType<ReturnType<typeof useAppRun>>
+export type NativeCashuAppRun = Awaited<
+  ReturnType<ReturnType<typeof useCashuAppRun>>
+>

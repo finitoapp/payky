@@ -1,6 +1,9 @@
 import { useCountdown } from "@dedalik/use-react"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
-import { isExitSpeedUnavailable } from "@payky/app-shared/withdraw-flow"
+import {
+  isExitSpeedUnavailable,
+  quoteConfirmDeadline,
+} from "@payky/app-shared/withdraw-flow"
 import type {
   LightningWithdrawalQuote,
   OnchainWithdrawalQuote,
@@ -8,7 +11,6 @@ import type {
 } from "@payky/core/modules/withdraw/withdraw-actions"
 import {
   computeTotalDebitedSats,
-  WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS,
   withdrawalRecipientSats,
 } from "@payky/core/modules/withdraw/withdraw-utils"
 import type { SparkExitSpeed } from "@payky/core/spark/spark-wallet"
@@ -366,10 +368,7 @@ export function WithdrawReviewStep({
 }) {
   const { t } = useTranslation()
   const { msLeft, expired, nearlyExpired } = useQuoteCountdown(
-    (quote.kind === "lightning"
-      ? quote.invoice.expiresAt
-      : Date.parse(quote.feeQuote.expiresAt)) -
-      WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS
+    quoteConfirmDeadline(quote)
   )
   const error =
     confirmError ??

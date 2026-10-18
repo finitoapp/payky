@@ -28,6 +28,7 @@ import type { WithdrawalId } from "@payky/core/modules/withdraw/withdraw-types"
 import {
   isOnchainWithdrawAllBelowMinimum,
   WITHDRAWAL_CHECK_WINDOW_MS,
+  WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS,
   WITHDRAWAL_SEND_TIMEOUT_MS,
   WITHDRAWAL_SEND_TIMEOUT_OTHER_DEVICE_MS,
   withdrawalRecipientSats,
@@ -506,3 +507,12 @@ export const pendingLightningText = ({
     ? t("withdraw.detail.pending.unknownDevice")
     : t("withdraw.detail.pending.otherDevice", { device: deviceName })
 }
+
+/**
+ * The moment confirming is refused, not the invoice's own expiry: the
+ * invoice's, or the on-chain fee quote's, less the margin the send needs.
+ */
+export const quoteConfirmDeadline = (quote: WithdrawalQuote): number =>
+  (quote.kind === "lightning"
+    ? quote.invoice.expiresAt
+    : Date.parse(quote.feeQuote.expiresAt)) - WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS

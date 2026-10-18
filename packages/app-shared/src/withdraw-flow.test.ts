@@ -2,8 +2,10 @@ import { BitcoinAddress, FiatCurrency } from "@payky/core/modules/shared/schema"
 import type {
   OnchainWithdrawalQuote,
   SupportedWithdrawDestination,
+  WithdrawalQuote,
 } from "@payky/core/modules/withdraw/withdraw-actions"
 import type { WithdrawalId } from "@payky/core/modules/withdraw/withdraw-types"
+import { WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS } from "@payky/core/modules/withdraw/withdraw-utils"
 import { describe, expect, test } from "vitest"
 import { createTranslate } from "./i18n/translate.ts"
 import {
@@ -16,6 +18,7 @@ import {
   initialWithdrawState,
   pendingLightningText,
   pendingLightningTimes,
+  quoteConfirmDeadline,
   withdrawAllUnavailableKey,
   withdrawPinDetail,
   withdrawReducer,
@@ -339,6 +342,25 @@ describe("pendingLightningText", () => {
     )
     expect(text(createdAt, false, null)).toBe(
       t("withdraw.detail.pending.unknownDevice")
+    )
+  })
+})
+
+describe("quoteConfirmDeadline", () => {
+  test("is the invoice's or the fee quote's expiry less the send margin", () => {
+    const lightning = {
+      kind: "lightning",
+      invoice: { expiresAt: 1_000_000 },
+    } as unknown as WithdrawalQuote
+    const onchain = {
+      kind: "onchain",
+      feeQuote: { expiresAt: "2026-06-05T12:05:00.000Z" },
+    } as unknown as WithdrawalQuote
+    expect(quoteConfirmDeadline(lightning)).toBe(
+      1_000_000 - WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS
+    )
+    expect(quoteConfirmDeadline(onchain)).toBe(
+      Date.parse("2026-06-05T12:05:00.000Z") - WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS
     )
   })
 })

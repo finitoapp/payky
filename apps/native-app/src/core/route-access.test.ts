@@ -34,6 +34,7 @@ describe("native route access", () => {
     expect(requiredPermission("/bill")).toBe("sell")
     expect(requiredPermission("/onboarding")).toBeNull()
     expect(requiredPermission("/restore-account")).toBeNull()
+    expect(requiredPermission("/settings/access/add-device")).toBe("admin")
   })
 
   it("matches a dynamic segment and prefers the static sibling", () => {

@@ -2,6 +2,7 @@ import { disableAccessControl } from "@payky/core/modules/access/access-actions"
 import { accessControlQuery } from "@payky/core/modules/access/access-queries"
 import { decodePinHash } from "@payky/core/modules/access/access-utils"
 import { devicesQuery } from "@payky/core/modules/device/device-queries"
+import { router } from "expo-router"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
@@ -119,6 +120,12 @@ function DevicesCard() {
           thisDevice={device.id === deviceId}
         />
       ))}
+      {/* Sends this account to the new device by QR (account/0001). */}
+      <AppButton
+        variant="secondary"
+        label={t("access.devices.add")}
+        onPress={() => router.push("/settings/access/add-device")}
+      />
     </YStack>
   )
 }

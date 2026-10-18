@@ -18,9 +18,8 @@ export function ScreenHeader({ title }: { readonly title: string }) {
         hitSlop={12}
         onPress={goBack}
       >
-        <Text fontSize={28} lineHeight={32}>
-          ‹
-        </Text>
+        {/* No `lineHeight`: Tamagui resolves a bare number to a size token (32 is ~2000px), stretching the row to the screen. */}
+        <Text fontSize={28}>‹</Text>
       </Pressable>
       <Text flex={1} fontSize={22} fontWeight="700" numberOfLines={1}>
         {title}

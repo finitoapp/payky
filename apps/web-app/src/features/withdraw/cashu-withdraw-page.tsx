@@ -93,6 +93,9 @@ function CashuWithdrawFlow({
   const [confirming, setConfirming] = useState(false)
   const [requoting, setRequoting] = useState(false)
   const [confirmError, setConfirmError] = useState<string | null>(null)
+  // A melt may or may not have happened: nothing is confirmed again from this
+  // review until the merchant has gone back (withdraw/0007).
+  const [uncertain, setUncertain] = useState(false)
   // `confirming` lags a render behind: a second press before it lands must
   // not melt the same quote twice.
   const confirmingRef = useRef(false)
@@ -110,7 +113,8 @@ function CashuWithdrawFlow({
       params: { withdrawalId },
     })
 
-  const confirmReviewed = async ({ quote }: CashuReview) => {
+  /** `true` when nothing was melted and the review may be confirmed again. */
+  const confirmReviewed = async ({ quote }: CashuReview): Promise<boolean> => {
     setConfirming(true)
     setConfirmError(null)
     // Moving money always asks for the PIN, session or not (access/0007).
@@ -121,7 +125,7 @@ function CashuWithdrawFlow({
       : await require("admin", "access.action.withdraw")
     if (!allowed) {
       setConfirming(false)
-      return
+      return true
     }
 
     try {
@@ -140,27 +144,35 @@ function CashuWithdrawFlow({
       if (outcome.kind === "recorded") {
         // Sent: its detail follows what the mint does next.
         await openDetail(outcome.withdrawalId)
-        return
+        return false
       }
       setConfirmError(outcome.message)
+      setConfirming(false)
+      return true
     } catch {
-      setConfirmError(t("withdraw.review.error.generic"))
+      // Thrown after the melt may have been submitted is indistinguishable
+      // from thrown before it: never offer a retry.
+      setUncertain(true)
+      setConfirmError(t("withdraw.review.error.uncertain"))
+      setConfirming(false)
+      return false
     }
-    setConfirming(false)
   }
 
   const confirm = async () => {
     if (review === null || confirmingRef.current) return
     confirmingRef.current = true
+    // Stays locked after a melt was started: only a retryable end unlocks.
+    let retryable = true
     try {
-      await confirmReviewed(review)
+      retryable = await confirmReviewed(review)
     } finally {
-      confirmingRef.current = false
+      if (retryable) confirmingRef.current = false
     }
   }
 
   const requote = async () => {
-    if (review === null) return
+    if (review === null || confirmingRef.current) return
     setRequoting(true)
     setConfirmError(null)
     try {
@@ -198,9 +210,16 @@ function CashuWithdrawFlow({
       confirming={confirming}
       requoting={requoting}
       confirmError={confirmError}
-      onBack={() => setReview(null)}
+      uncertain={uncertain}
+      onBack={() => {
+        if (confirmingRef.current && !uncertain) return
+        setUncertain(false)
+        confirmingRef.current = false
+        setReview(null)
+      }}
       onConfirm={() => void confirm()}
       onNewQuote={() => void requote()}
+      onOpenHistory={() => void navigate({ to: withdrawRoutes.cashu.history })}
     />
   )
 }

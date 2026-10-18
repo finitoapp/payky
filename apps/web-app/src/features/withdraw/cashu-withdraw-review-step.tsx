@@ -22,9 +22,11 @@ export function CashuWithdrawReviewStep({
   confirming,
   requoting,
   confirmError,
+  uncertain,
   onBack,
   onConfirm,
   onNewQuote,
+  onOpenHistory,
 }: {
   readonly quote: CashuWithdrawalQuote
   /** The merchant's own note, saved with the withdrawal. */
@@ -34,7 +36,9 @@ export function CashuWithdrawReviewStep({
   readonly confirmError: string | null
   readonly onBack: () => void
   readonly onConfirm: () => void
+  readonly uncertain: boolean
   readonly onNewQuote: () => void
+  readonly onOpenHistory: () => void
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -52,6 +56,8 @@ export function CashuWithdrawReviewStep({
       expired={expired}
       confirming={confirming}
       requoting={requoting}
+      uncertain={uncertain}
+      onOpenHistory={onOpenHistory}
       onBack={onBack}
       onConfirm={onConfirm}
       onNewQuote={onNewQuote}

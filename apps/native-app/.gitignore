@@ -1,3 +1,5 @@
 .expo/
-android/
-ios/
+/android/
+/ios/
+# Gradle output of the local Expo modules
+modules/*/android/build/

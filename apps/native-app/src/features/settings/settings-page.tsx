@@ -19,6 +19,7 @@ import { ScreenHeader } from "../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useThemePreference } from "../../hooks/use-theme-preference.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
+import { useEetSettings } from "../shared/use-eet-settings.ts"
 import { homeModeLabelKeys } from "./home-screen/home-screen-settings-page.tsx"
 import {
   useNostrIdentity,
@@ -63,6 +64,7 @@ export function SettingsPage() {
   const [legalEntity] = useEvoluQuery(legalEntityQuery).data
   const [cash] = useEvoluQuery(cashRegisterAccountQuery).data
   const [bank] = useEvoluQuery(fiatBankAccountQuery).data
+  const eet = useEetSettings()
   const [spark] = useEvoluQuery(sparkAccountQuery).data
   const [card] = useEvoluQuery(cardSwitchioAccountQuery).data
   const enabledMethods = [
@@ -96,6 +98,17 @@ export function SettingsPage() {
       title: t("settings.paymentAccounts.title"),
       value: paymentMethodsValue,
       href: "/settings/payment-accounts",
+    },
+    {
+      title: t("settings.eet.title"),
+      value: t(
+        !eet.isEnabled
+          ? "settings.eet.nav.off"
+          : eet.isSandboxActive
+            ? "settings.eet.nav.sandbox"
+            : "settings.eet.nav.production"
+      ),
+      href: "/settings/eet",
     },
     {
       title: t("settings.tips.title"),

@@ -23,10 +23,8 @@ import { ScreenHeader } from "../../components/screen-header.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import {
-  useCashuAccountId,
-  useCashuWalletSnapshot,
-} from "./use-cashu-withdraw-data.ts"
+import { useCashuWalletSnapshot } from "../shared/cashu/use-cashu-wallet-snapshot.ts"
+import { useCashuAccountId } from "./use-cashu-withdraw-data.ts"
 import {
   useBtcFiat,
   useSparkAccountId,
@@ -110,7 +108,7 @@ function CashuBalanceSummary() {
 }
 
 function CashuBalanceLine() {
-  const snapshot = useCashuWalletSnapshot()
+  const { snapshot } = useCashuWalletSnapshot()
   return (
     <BalanceSummary
       balance={

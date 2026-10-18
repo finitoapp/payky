@@ -45,6 +45,7 @@ export type NativeRoutePath =
   | "/settings/payment-accounts"
   | "/settings/payment-accounts/iban"
   | "/settings/payment-accounts/iban/fio-plugin"
+  | "/settings/payment-accounts/cashu"
   | "/settings/payment-accounts/spark"
 
 /**
@@ -125,6 +126,8 @@ export const routeAccess = {
   "/settings/payment-accounts/iban": "admin",
   // Like web's `_terminal/settings/payment-accounts/iban/fio-plugin` (owner-only).
   "/settings/payment-accounts/iban/fio-plugin": "admin",
+  // Like web's `_terminal/settings/payment-accounts/cashu` (access/0009).
+  "/settings/payment-accounts/cashu": "admin",
   // Like web's `_terminal/settings/payment-accounts/spark` (owner-only).
   "/settings/payment-accounts/spark": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.

@@ -157,8 +157,8 @@ export function PaymentAccountsSettingsPage() {
       available: cashuEnabled,
       canEnable: true,
       status: null,
-      // Its own screens are not here yet.
-      href: null,
+      // Like web, the account page appears once its row has been created.
+      href: cashu === undefined ? null : "/settings/payment-accounts/cashu",
       experimental: true,
       saveEnabled: (enabled) =>
         cashuRunToast(async (run) => {

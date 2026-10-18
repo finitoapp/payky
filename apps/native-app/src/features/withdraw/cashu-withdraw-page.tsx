@@ -31,12 +31,10 @@ import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useAccess, useRequirePermission } from "../../core/use-access.ts"
 import { useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { useCashuWalletSnapshot } from "../shared/cashu/use-cashu-wallet-snapshot.ts"
 import { CashuWithdrawFormStep } from "./cashu-withdraw-form-step.tsx"
 import { CashuWithdrawReviewStep } from "./cashu-withdraw-review-step.tsx"
-import {
-  useCashuAccountId,
-  useCashuWalletSnapshot,
-} from "./use-cashu-withdraw-data.ts"
+import { useCashuAccountId } from "./use-cashu-withdraw-data.ts"
 import { withdrawRoutes } from "./withdraw-routes.ts"
 
 interface CashuReview {
@@ -103,7 +101,7 @@ function CashuWithdrawFlow({
   const jotaiStore = useStore()
   const { t } = useTranslation()
   const locale = useLocale()
-  const snapshot = useCashuWalletSnapshot()
+  const { snapshot } = useCashuWalletSnapshot()
   const [draft, setDraft] = useState(() =>
     createWithdrawDraft(initialDestination)
   )

@@ -7,7 +7,7 @@ export interface EvoluExportShareIo {
     readonly filename: string
     readonly bytes: Uint8Array
   }) => Promise<string>
-  /** Resolves when the system share sheet closes, whatever the user picked. */
+  /** Resolves when the share sheet closes; a completed share and a dismissal look the same. */
   readonly share: (uri: string, filename: string) => Promise<void>
   readonly removeTemp: (folder: string) => void
 }
@@ -16,10 +16,14 @@ export type EvoluExportShareOutcome = "shared" | "unavailable"
 
 /**
  * The export holds every secret in the app database, so the file lives only in
- * the app's private cache, in a folder named by a random id, and is deleted
- * once the share sheet closes — whether the user shared, dismissed it, or the
- * write or share failed. Nothing is written when sharing is unavailable. A
- * failure is thrown; the bytes and the URI are never logged.
+ * the app's private cache (not backed up), in a folder named by a random id.
+ * Once handed to the share sheet the file is deliberately left in place: the
+ * target app (Gmail, Drive, Signal) may read it lazily, after the sheet has
+ * closed, and deleting it then would silently lose the export. The next
+ * export and the next app start clear stale folders. A file that was never
+ * handed over (write failed) is removed at once; nothing is written when
+ * sharing is unavailable. A failure is thrown; the bytes and the URI are never
+ * logged.
  */
 export async function shareEvoluExport({
   io,
@@ -35,15 +39,17 @@ export async function shareEvoluExport({
 }): Promise<EvoluExportShareOutcome> {
   if (!(await io.isSharingAvailable())) return "unavailable"
 
+  let uri: string
   try {
-    const uri = await io.writeTemp({ folder, filename, bytes })
-    await io.share(uri, filename)
-    return "shared"
-  } finally {
+    uri = await io.writeTemp({ folder, filename, bytes })
+  } catch (error) {
     try {
       io.removeTemp(folder)
     } catch {
-      // Nothing left to do; the next export clears stale folders too.
+      // Nothing left to do; the next cleanup clears it.
     }
+    throw error
   }
+  await io.share(uri, filename)
+  return "shared"
 }

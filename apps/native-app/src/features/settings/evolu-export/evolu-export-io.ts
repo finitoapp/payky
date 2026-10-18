@@ -10,7 +10,7 @@ const evoluExportMimeType = "application/vnd.sqlite3"
 export const createExportFolder = (): string =>
   `${folderPrefix}${Crypto.randomUUID()}`
 
-const removeStaleFolders = (): void => {
+export const removeStaleExportFolders = (): void => {
   for (const entry of Paths.cache.list()) {
     if (entry instanceof Directory && entry.name.startsWith(folderPrefix)) {
       entry.delete()
@@ -23,7 +23,7 @@ export const evoluExportShareIo: EvoluExportShareIo = {
   isSharingAvailable: () => Sharing.isAvailableAsync(),
   writeTemp: async ({ folder, filename, bytes }) => {
     // Clear anything an earlier export left behind (app killed mid-share).
-    removeStaleFolders()
+    removeStaleExportFolders()
     const directory = new Directory(Paths.cache, folder)
     directory.create({ intermediates: true })
     const file = new File(directory, filename)

@@ -6,7 +6,7 @@ import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { createStore, Provider } from "jotai"
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { ActivityIndicator, useColorScheme } from "react-native"
 import { TamaguiProvider, Theme } from "tamagui"
 import { AccessGate } from "../src/components/access-gate.tsx"
@@ -22,6 +22,7 @@ import { SentryController } from "../src/components/sentry-controller.tsx"
 import { ToastHost } from "../src/components/toast-host.tsx"
 import { queryClient } from "../src/core/query-client.ts"
 import { resolveTheme } from "../src/core/theme-preference.ts"
+import { removeStaleExportFolders } from "../src/features/settings/evolu-export/evolu-export-io.ts"
 import { useThemePreference } from "../src/hooks/use-theme-preference.ts"
 import { tamaguiConfig } from "../tamagui.config.ts"
 
@@ -44,6 +45,14 @@ export function ErrorBoundary({
 export default function RootLayout() {
   const [store] = useState(createStore)
   const [fontsLoaded, fontError] = useFonts({ Inter, InterSemiBold, InterBold })
+  // Once per process: clear Evolu export files an earlier run left in the cache.
+  useEffect(() => {
+    try {
+      removeStaleExportFolders()
+    } catch {
+      // Best effort; the next export clears them too.
+    }
+  }, [])
   if (fontError) throw fontError
   if (!fontsLoaded)
     return <ActivityIndicator accessibilityLabel="Loading fonts" />

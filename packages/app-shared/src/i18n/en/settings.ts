@@ -367,6 +367,8 @@ export const enSettings = {
   "settings.evoluExport.options.title": "Export settings",
   "settings.evoluExport.status.createdAt": "Created at {createdAt}",
   "settings.evoluExport.status.error": "Export failed.",
+  "settings.evoluExport.status.handedOff":
+    "The share sheet was closed. Check that the file arrived before relying on this backup.",
   "settings.evoluExport.status.success": "Export completed.",
   "settings.evoluExport.status.title": "Export status",
   "settings.evoluExport.title": "Evolu Export",

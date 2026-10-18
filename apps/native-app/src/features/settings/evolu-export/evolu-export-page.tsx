@@ -1,8 +1,4 @@
-import {
-  createEvoluExportFilename,
-  formatBytes,
-  formatExportCreatedAt,
-} from "@payky/app-shared/evolu-export"
+import { createEvoluExportFilename } from "@payky/app-shared/evolu-export"
 import { useAtomValue } from "jotai"
 import { useState } from "react"
 import { Switch } from "react-native"
@@ -16,11 +12,6 @@ import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { createExportFolder, evoluExportShareIo } from "./evolu-export-io.ts"
 import { shareEvoluExport } from "./evolu-export-share.ts"
-
-interface LastExport {
-  readonly createdAt: Date
-  readonly size: number
-}
 
 const warningKeys = [
   "settings.evoluExport.warning.businessData",
@@ -39,7 +30,7 @@ export function EvoluExportPage() {
   const [acceptedWarning, setAcceptedWarning] = useState(false)
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
-  const [lastExport, setLastExport] = useState<LastExport | null>(null)
+  const [handedOff, setHandedOff] = useState(false)
 
   const exportDatabase = async () => {
     if (!acceptedWarning || pending) return
@@ -49,6 +40,7 @@ export function EvoluExportPage() {
     const createdAt = new Date()
     setPending(true)
     setFailed(false)
+    setHandedOff(false)
     try {
       const bytes = await evolu.exportDatabase()
       const outcome = await shareEvoluExport({
@@ -62,8 +54,10 @@ export function EvoluExportPage() {
         toast.error(t("settings.evoluExport.status.error"))
         return
       }
-      setLastExport({ createdAt, size: bytes.byteLength })
-      toast.success(t("settings.evoluExport.status.success"))
+      // expo-sharing resolves the same for a completed share and a dismissed
+      // chooser, so show a neutral status instead of success (the toast has no
+      // neutral variant).
+      setHandedOff(true)
     } catch {
       // The error can name paths; the screen shows only the generic failure.
       setFailed(true)
@@ -128,7 +122,7 @@ export function EvoluExportPage() {
           onPress={() => void exportDatabase()}
         />
 
-        {lastExport !== null || failed ? (
+        {handedOff || failed ? (
           <YStack
             gap="1"
             p="3"
@@ -143,17 +137,10 @@ export function EvoluExportPage() {
               <Text color="red-600" accessibilityRole="alert">
                 {t("settings.evoluExport.status.error")}
               </Text>
-            ) : lastExport === null ? null : (
-              <>
-                <Text color="muted-foreground">
-                  {t("settings.evoluExport.status.createdAt", {
-                    createdAt: formatExportCreatedAt(lastExport.createdAt),
-                  })}
-                </Text>
-                <Text color="muted-foreground">
-                  {`${t("settings.evoluExport.database.app")} · ${formatBytes(lastExport.size)}`}
-                </Text>
-              </>
+            ) : (
+              <Text color="muted-foreground">
+                {t("settings.evoluExport.status.handedOff")}
+              </Text>
             )}
           </YStack>
         ) : null}

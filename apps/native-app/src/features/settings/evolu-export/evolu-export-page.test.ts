@@ -22,13 +22,23 @@ it("awaits the permission before serializing, then shares", () => {
   expect(page.match(/evolu\.exportDatabase\(\)/g)).toHaveLength(1)
 })
 
-it("removes the temp folder in a finally and logs or stores nothing", () => {
+it("keeps the file after a hand-off and reports it neutrally", () => {
   const share = read("evolu-export-share.ts")
-  expect(share).toMatch(/finally \{\s*try \{\s*io\.removeTemp\(folder\)/u)
+  const afterShare = share.slice(share.indexOf("await io.share("))
+  expect(afterShare).not.toMatch(/removeTemp|finally/u)
+  expect(share).toMatch(
+    /catch \(error\) \{\s*try \{\s*io\.removeTemp\(folder\)/u
+  )
+  const page = read("evolu-export-page.tsx")
+  expect(page).toContain("settings.evoluExport.status.handedOff")
+  expect(page).not.toMatch(/toast\.success|status\.success|status\.createdAt/u)
   const io = read("evolu-export-io.ts")
   expect(io).toMatch(/new Directory\(Paths\.cache, folder\)/)
   expect(io).not.toMatch(/Paths\.document|Paths\.bundle|Directory\.pictures/u)
-  for (const source of [share, io, read("evolu-export-page.tsx")]) {
+  expect(read("../../../../app/_layout.tsx")).toContain(
+    "removeStaleExportFolders()"
+  )
+  for (const source of [share, io, page]) {
     expect(source).not.toMatch(
       /console\.|Clipboard|localStorage|AsyncStorage|SecureStore|MMKV|Blob|URL\.createObjectURL/u
     )

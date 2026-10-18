@@ -29,10 +29,10 @@ const makeIo = (overrides: Partial<EvoluExportShareIo> = {}) => {
 const input = { bytes: new Uint8Array([1]), filename: "x.sqlite", folder: "f" }
 
 describe("shareEvoluExport", () => {
-  it("writes, shares, then removes the temp folder", async () => {
+  it("writes and shares, leaving the file for the next cleanup", async () => {
     const { io, calls } = makeIo()
     await expect(shareEvoluExport({ io, ...input })).resolves.toBe("shared")
-    expect(calls).toEqual(["available", "write", "share", "remove"])
+    expect(calls).toEqual(["available", "write", "share"])
   })
 
   it("writes nothing when sharing is unavailable", async () => {
@@ -43,14 +43,14 @@ describe("shareEvoluExport", () => {
     expect(calls).toEqual([])
   })
 
-  it("removes the temp folder when the share fails", async () => {
+  it("leaves the file in place when the share throws", async () => {
     const { io, calls } = makeIo({
       share: async () => {
         throw new Error("boom")
       },
     })
     await expect(shareEvoluExport({ io, ...input })).rejects.toThrow("boom")
-    expect(calls).toContain("remove")
+    expect(calls).not.toContain("remove")
   })
 
   it("removes the temp folder when the write fails", async () => {
@@ -65,12 +65,17 @@ describe("shareEvoluExport", () => {
     expect(calls).toEqual(["available", "remove"])
   })
 
-  it("keeps the share outcome when removal itself throws", async () => {
+  it("still reports the write failure when removal itself throws", async () => {
     const { io } = makeIo({
+      writeTemp: async () => {
+        throw new Error("disk full")
+      },
       removeTemp: () => {
         throw new Error("busy")
       },
     })
-    await expect(shareEvoluExport({ io, ...input })).resolves.toBe("shared")
+    await expect(shareEvoluExport({ io, ...input })).rejects.toThrow(
+      "disk full"
+    )
   })
 })

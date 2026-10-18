@@ -367,6 +367,8 @@ export const csSettings = {
   "settings.evoluExport.options.title": "Nastavení exportu",
   "settings.evoluExport.status.createdAt": "Vytvořeno {createdAt}",
   "settings.evoluExport.status.error": "Export selhal.",
+  "settings.evoluExport.status.handedOff":
+    "Sdílecí nabídka byla zavřena. Ověřte, že soubor dorazil, než se na tuto zálohu spolehnete.",
   "settings.evoluExport.status.success": "Export dokončen.",
   "settings.evoluExport.status.title": "Stav exportu",
   "settings.evoluExport.title": "Evolu Export",

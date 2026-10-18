@@ -370,6 +370,8 @@ export const skSettings = {
   "settings.evoluExport.options.title": "Nastavenia exportu",
   "settings.evoluExport.status.createdAt": "Vytvorené {createdAt}",
   "settings.evoluExport.status.error": "Export zlyhal.",
+  "settings.evoluExport.status.handedOff":
+    "Zdieľacia ponuka bola zatvorená. Overte, že súbor dorazil, skôr ako sa na túto zálohu spoľahnete.",
   "settings.evoluExport.status.success": "Export dokončený.",
   "settings.evoluExport.status.title": "Stav exportu",
   "settings.evoluExport.title": "Evolu Export",

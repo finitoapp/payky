@@ -8,7 +8,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "bundle": "expo export --platform android --platform ios",
-    "check:ts": "tsc -b"
+    "check:ts": "tsc -b",
+    "ui-parity": "bun scripts/ui-parity.ts"
   },
   "dependencies": {
     "@evolu/common": "8.23.0",

@@ -14,11 +14,13 @@ import {
   removeDeviceAccount,
   resolveTransportUrl,
   storableNostrPicture,
+  updateDeviceSettings,
 } from "./device-account.ts"
 import {
   createDeviceQuery,
   type DeviceAccountId,
   type DeviceEvolu,
+  deviceSettingsId,
 } from "./device-client.ts"
 
 // Shaped like a real one: 22 Base64Url characters.
@@ -247,5 +249,28 @@ describe("insertDemoAccount", () => {
     await expect
       .poll(() => deviceEvolu.loadQuery(activeAccountQuery))
       .toMatchObject([{ id: accountId, demo: "seeded" }])
+  })
+})
+
+describe("updateDeviceSettings", () => {
+  test("changes only the given columns of the one settings row", async () => {
+    await using test = await createTestDeviceEvolu()
+    const { deviceEvolu } = test
+    const loadRow = () =>
+      deviceEvolu.loadQuery(
+        createDeviceQuery((db) =>
+          db
+            .selectFrom("deviceSettings")
+            .select(["id", "language", "theme"])
+            .where("id", "=", deviceSettingsId)
+        )
+      )
+
+    updateDeviceSettings(deviceEvolu, { language: "cs" })
+    updateDeviceSettings(deviceEvolu, { theme: "dark" })
+
+    await expect
+      .poll(loadRow)
+      .toEqual([{ id: deviceSettingsId, language: "cs", theme: "dark" }])
   })
 })

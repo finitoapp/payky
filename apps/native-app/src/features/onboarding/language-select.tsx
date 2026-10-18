@@ -1,16 +1,6 @@
-import type { Language } from "@payky/app-shared/i18n/resources"
 import { Text, XStack } from "tamagui"
+import { languageOptions } from "../../components/language-options.ts"
 import { useSetLanguage, useTranslation } from "../../hooks/use-translation.ts"
-
-/** Names stay in their own language; same list as web's `languageOptions`. */
-const languageOptions: ReadonlyArray<{
-  readonly value: Language
-  readonly label: string
-}> = [
-  { value: "en", label: "English" },
-  { value: "cs", label: "Čeština" },
-  { value: "sk", label: "Slovenčina" },
-]
 
 export function LanguageSelect({ disabled }: { readonly disabled?: boolean }) {
   const { language, t } = useTranslation()

@@ -1,3 +1,4 @@
+import { updateDeviceSettings } from "@payky/core/evolu/device-account"
 import {
   createDefaultDeviceSettings,
   createDeviceQuery,
@@ -67,10 +68,7 @@ export function useUpdateDeviceSettings() {
 
   return React.useCallback(
     (patch: Partial<Omit<DeviceSettings, "id">>) => {
-      deviceEvolu.update("deviceSettings", {
-        id: deviceSettingsId,
-        ...patch,
-      })
+      updateDeviceSettings(deviceEvolu, patch)
     },
     [deviceEvolu]
   )

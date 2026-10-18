@@ -1,4 +1,5 @@
 import { Text, YStack } from "tamagui"
+import { languageOptions } from "../../components/language-options.ts"
 import { Screen } from "../../components/screen.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
@@ -33,8 +34,14 @@ function SettingsGroup({
  * The route is `free`; each destination carries its own gate.
  */
 export function SettingsPage() {
-  const { t } = useTranslation()
-  const appearanceRows: ReadonlyArray<SettingsRowData> = []
+  const { language, t } = useTranslation()
+  const appearanceRows: ReadonlyArray<SettingsRowData> = [
+    {
+      title: t("settings.language.title"),
+      value: languageOptions.find((option) => option.value === language)?.label,
+      href: "/settings/language",
+    },
+  ]
 
   return (
     <Screen>

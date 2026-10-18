@@ -22,6 +22,8 @@ import {
   type DemoAccountState,
   type DeviceAccountId,
   type DeviceEvolu,
+  type DeviceSettings,
+  deviceSettingsId,
 } from "./device-client.ts"
 
 export interface DeviceAccount {
@@ -390,6 +392,22 @@ export function selectAccount(
       id: accountId,
       lastUseAt: Date.now(),
     },
+    options
+  )
+}
+
+/**
+ * Writes the given device settings (language, theme, locale, ...) onto the
+ * device's single settings row; the other columns keep their value.
+ */
+export function updateDeviceSettings(
+  deviceEvolu: DeviceEvolu,
+  patch: Partial<Omit<DeviceSettings, "id">>,
+  options?: MutationOptions
+) {
+  deviceEvolu.update(
+    "deviceSettings",
+    { id: deviceSettingsId, ...patch },
     options
   )
 }

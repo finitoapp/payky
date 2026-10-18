@@ -1,5 +1,6 @@
 import type { Language } from "@payky/app-shared/i18n/resources"
 import { createTranslate } from "@payky/app-shared/i18n/translate"
+import { updateDeviceSettings } from "@payky/core/evolu/device-account"
 import {
   createDeviceQuery,
   type DeviceLocale,
@@ -44,7 +45,7 @@ export function useSetLanguage() {
 
   return useCallback(
     (language: Language) => {
-      deviceEvolu.update("deviceSettings", { id: deviceSettingsId, language })
+      updateDeviceSettings(deviceEvolu, { language })
     },
     [deviceEvolu]
   )
@@ -56,7 +57,7 @@ export function useSetLocale() {
 
   return useCallback(
     (locale: DeviceLocale) => {
-      deviceEvolu.update("deviceSettings", { id: deviceSettingsId, locale })
+      updateDeviceSettings(deviceEvolu, { locale })
     },
     [deviceEvolu]
   )

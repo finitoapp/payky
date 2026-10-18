@@ -165,6 +165,11 @@ interface ButtonBaseProps extends FrameProps {
   readonly pending?: boolean
   readonly disabled?: boolean
   readonly onPress?: () => void
+  /**
+   * Recolors the label and icons, for the few web call sites that recolor a
+   * button with a class (the destructive confirm in `ui/alert-dialog`).
+   */
+  readonly labelColor?: ThemeColor
 }
 
 /** An icon-only button has no text TalkBack could read, so it must be named. */
@@ -185,11 +190,12 @@ export function Button({
   disabled = false,
   onPress,
   accessibilityLabel,
+  labelColor,
   ...frameProps
 }: ButtonProps) {
   const theme = useTheme()
   const inactive = disabled || pending
-  const color = textColors[variant]
+  const color = labelColor ?? textColors[variant]
   const iconSize = iconSizes[size]
   const content = label ?? children
   return (
@@ -210,7 +216,12 @@ export function Button({
         <Icon icon={iconStart} size={iconSize} color={color} />
       )}
       {typeof content === "string" ? (
-        <ButtonText numberOfLines={1}>{content}</ButtonText>
+        <ButtonText
+          numberOfLines={1}
+          {...(labelColor === undefined ? {} : { color: labelColor })}
+        >
+          {content}
+        </ButtonText>
       ) : (
         content
       )}

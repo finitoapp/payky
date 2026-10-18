@@ -18,6 +18,14 @@ import {
 } from "../../components/ui/card.tsx"
 import { Checkbox } from "../../components/ui/checkbox.tsx"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog.tsx"
+import {
   Field,
   FieldDescription,
   FieldError,
@@ -54,6 +62,7 @@ const variants = [
 /** Dev-only: every ui kit component in one place, to eyeball on the device. */
 export function UiKitCard() {
   const [on, setOn] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [choice, setChoice] = useState<"a" | "b" | "c" | null>("a")
   return (
     <View
@@ -196,6 +205,28 @@ export function UiKitCard() {
           <Text>Second content</Text>
         </TabsContent>
       </Tabs>
+      <Button
+        variant="outline"
+        label="Open dialog"
+        onPress={() => setDialogOpen(true)}
+      />
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent closeLabel="Close">
+          <DialogHeader>
+            <DialogTitle>Dialog title</DialogTitle>
+            <DialogDescription>Dialog description</DialogDescription>
+          </DialogHeader>
+          <Input placeholder="Keyboard check" />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              label="Cancel"
+              onPress={() => setDialogOpen(false)}
+            />
+            <Button label="Save" onPress={() => setDialogOpen(false)} />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Input placeholder="Input" />
       <Input placeholder="Invalid" invalid />
       <Input placeholder="Disabled" disabled />

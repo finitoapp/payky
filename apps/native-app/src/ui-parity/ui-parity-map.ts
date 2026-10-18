@@ -40,7 +40,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/app/confirm-host.tsx",
     web: ["apps/web-app/src/components/app/confirm-dialog-host.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/app/demo-data-seed.tsx",

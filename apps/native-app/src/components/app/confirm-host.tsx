@@ -1,16 +1,27 @@
 import { useAtomValue, useSetAtom } from "jotai"
 import { useEffect } from "react"
-import { Modal } from "react-native"
-import { Text, YStack } from "tamagui"
 import {
   clearConfirmsAtom,
   confirmQueueAtom,
   settleConfirmAtom,
 } from "../../atoms/confirm.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
-import { AppButton } from "../app-button.tsx"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog.tsx"
 
-/** Shows the head of the queue; mount once inside the providers. */
+/**
+ * Shows the head of the queue; mount once inside the providers. As web's
+ * `ConfirmDialogHost`: Cancel (outline) and Confirm (solid destructive when
+ * the request asks for it), both `lg`; back settles with false.
+ */
 export function ConfirmHost() {
   const head = useAtomValue(confirmQueueAtom)[0]
   const settle = useSetAtom(settleConfirmAtom)
@@ -23,34 +34,38 @@ export function ConfirmHost() {
   useEffect(() => clear, [accountVersion, clear])
 
   return (
-    <Modal
-      visible={head !== undefined}
-      transparent
-      animationType="fade"
-      onRequestClose={() => settle(false)}
+    <AlertDialog
+      open={head !== undefined}
+      onOpenChange={(open) => {
+        if (!open) settle(false)
+      }}
     >
-      <YStack flex={1} justify="center" p="4" bg="rgba(0,0,0,0.5)">
-        {head === undefined ? null : (
-          <YStack bg="card" rounded="6" p="4" gap="3" accessibilityViewIsModal>
-            <Text fontSize="lg" fontWeight="700" accessibilityRole="header">
-              {head.title}
-            </Text>
-            <Text>{head.description}</Text>
-            <AppButton
-              label={head.confirmLabel}
-              variant={
-                head.variant === "destructive" ? "destructive" : "primary"
-              }
-              onPress={() => settle(true)}
-            />
-            <AppButton
+      {head === undefined ? null : (
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{head.title}</AlertDialogTitle>
+            <AlertDialogDescription>{head.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              size="lg"
               label={head.cancelLabel}
-              variant="secondary"
               onPress={() => settle(false)}
             />
-          </YStack>
-        )}
-      </YStack>
-    </Modal>
+            <AlertDialogAction
+              size="lg"
+              label={head.confirmLabel}
+              onPress={() => settle(true)}
+              {...(head.variant === "destructive"
+                ? {
+                    bg: "destructive press:destructive-90",
+                    labelColor: "destructive-foreground",
+                  }
+                : {})}
+            />
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      )}
+    </AlertDialog>
   )
 }

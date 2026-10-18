@@ -64,6 +64,7 @@ export const palette = {
     "destructive-10": "#ba2e171a",
     "destructive-20": "#ba2e1733",
     "destructive-30": "#ba2e174d",
+    "destructive-90": "#ba2e17e6",
     "muted-50": "#f6f4f080",
   },
   dark: {
@@ -115,6 +116,7 @@ export const palette = {
     "destructive-10": "#da44531a",
     "destructive-20": "#da445333",
     "destructive-30": "#da44534d",
+    "destructive-90": "#da4453e6",
     "muted-50": "#393d4380",
   },
 } as const satisfies Record<"light" | "dark", Record<string, string>>

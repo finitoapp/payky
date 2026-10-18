@@ -27,8 +27,8 @@ import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { useCatalogItemOptions } from "../../shared/use-catalog-item-options.ts"
 import { ScanCodeButton } from "./scan-code-button.tsx"
-import { useCatalogItemOptions } from "./use-catalog-item-options.ts"
 
 /**
  * Adds a catalog item, as web's `NewCatalogItemPage`: a submit-and-go-back

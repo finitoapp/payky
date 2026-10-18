@@ -35,9 +35,9 @@ import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { useCatalogItemOptions } from "../../shared/use-catalog-item-options.ts"
 import { SettingsFormEmptyState } from "../settings-form-empty-state.tsx"
 import { ScanCodeButton } from "./scan-code-button.tsx"
-import { useCatalogItemOptions } from "./use-catalog-item-options.ts"
 
 const categoryCodec = optionalIdCodec<CatalogCategoryId>()
 const taxRateCodec = optionalIdCodec<TaxRateId>()

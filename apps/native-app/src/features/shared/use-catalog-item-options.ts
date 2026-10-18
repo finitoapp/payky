@@ -7,9 +7,9 @@ import {
   filterSelectableTaxRates,
   formatTaxRateLabel,
 } from "@payky/core/modules/tax-rate/tax-rate-utils"
-import type { SelectOption } from "../../../components/option-select.tsx"
-import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
-import { useTranslation } from "../../../hooks/use-translation.ts"
+import type { SelectOption } from "../../components/option-select.tsx"
+import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useTranslation } from "../../hooks/use-translation.ts"
 
 /**
  * The category and tax-rate option lists both item forms build the same way,

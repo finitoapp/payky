@@ -39,9 +39,10 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
-import { useToast } from "../../hooks/use-toast.ts"
+import { useProductLookup } from "../../hooks/use-product-lookup.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
 import { CategoryFilterBar } from "../shared/category-filter-bar.tsx"
@@ -53,6 +54,7 @@ import {
 import { WarningPanel } from "../shared/warning-panel.tsx"
 import { AssignTableDialog } from "./assign-table-dialog.tsx"
 import { BillScanView } from "./bill-scan-view.tsx"
+import { CreateCatalogItemDialog } from "./create-catalog-item-dialog.tsx"
 import { ScanCodeCollisionDialog } from "./scan-code-collision-dialog.tsx"
 import { SplitBillDialog } from "./split-bill-dialog.tsx"
 import { useCartBill } from "./use-cart-bill.ts"
@@ -318,13 +320,18 @@ function BillCart({
     [summaries]
   )
   const cart = useCartBill({ billId, currency, tableId, onTableSeedChange })
-  const toast = useToast()
+  const confirm = useConfirm()
   const [tablePickerOpen, setTablePickerOpen] = useState(false)
   const [scanMode, setScanMode] = useState(false)
   const [lastScanned, setLastScanned] = useState<CatalogItemRow | null>(null)
   const [collisionCandidates, setCollisionCandidates] = useState<
     ReadonlyArray<CatalogItemRow>
   >([])
+  const [createCode, setCreateCode] = useState<string | null>(null)
+  // Set as soon as an unknown code is scanned, so the lookup runs while the
+  // confirmation is open and the form opens prefilled.
+  const [lookupCode, setLookupCode] = useState<string | null>(null)
+  const productLookup = useProductLookup(lookupCode)
   const [splitOpen, setSplitOpen] = useState(false)
   const split = useSplitBill({
     billId,
@@ -379,14 +386,22 @@ function BillCart({
     setLastScanned(item)
     void cart.addOne(item)
   }
-  // A code matching one item adds it, several ask which one. An unknown code
-  // only says so until the create-from-scan flow lands.
-  const handleScan = (rawValue: string) => {
+  // A code matching one item adds it, several ask which one, an unknown one
+  // offers to create the item (prefilled from the product lookup) and add it.
+  const handleScan = async (rawValue: string) => {
     const matches = findCatalogItemsByScanCode(currencyItems, rawValue)
     const [first] = matches
-    if (first === undefined)
-      toast.error(t("bill.scan.unknown.description", { code: rawValue }))
-    else if (matches.length > 1) setCollisionCandidates(matches)
+    if (first === undefined) {
+      setLookupCode(rawValue)
+      const confirmed = await confirm({
+        title: t("bill.scan.unknown.title"),
+        description: t("bill.scan.unknown.description", { code: rawValue }),
+        confirmLabel: t("bill.scan.unknown.create"),
+        cancelLabel: t("bill.scan.unknown.cancel"),
+      })
+      if (confirmed) setCreateCode(rawValue)
+      else setLookupCode(null)
+    } else if (matches.length > 1) setCollisionCandidates(matches)
     else addScanned(first)
   }
   const usedCategoryIds = useMemo(
@@ -467,7 +482,7 @@ function BillCart({
       />
       {scanMode ? (
         <BillScanView
-          paused={collisionCandidates.length > 0}
+          paused={collisionCandidates.length > 0 || createCode !== null}
           onScan={handleScan}
           lastScanned={
             lastScanned === null ? null : (
@@ -513,6 +528,20 @@ function BillCart({
           )}
         />
       )}
+      <CreateCatalogItemDialog
+        scanCode={createCode}
+        productLookup={productLookup}
+        currency={currency}
+        onClose={() => {
+          setCreateCode(null)
+          setLookupCode(null)
+        }}
+        onCreated={(item) => {
+          setCreateCode(null)
+          setLookupCode(null)
+          addScanned(item)
+        }}
+      />
       <ScanCodeCollisionDialog
         candidates={collisionCandidates}
         onClose={() => setCollisionCandidates([])}

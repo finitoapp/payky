@@ -21,6 +21,7 @@ export type NativeRoutePath =
   | "/withdraw/new"
   | "/withdraw/:withdrawalId"
   | "/cashu-withdraw"
+  | "/cashu-withdraw/new"
   | "/cashu-withdraw/:withdrawalId"
 
 /**
@@ -55,6 +56,7 @@ export const routeAccess = {
   "/withdraw/:withdrawalId": "admin",
   // Like web's Cashu `withdrawals` routes: the same owner-only gate (access/0002).
   "/cashu-withdraw": "admin",
+  "/cashu-withdraw/new": "admin",
   "/cashu-withdraw/:withdrawalId": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",

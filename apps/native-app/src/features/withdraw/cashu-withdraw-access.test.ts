@@ -1,0 +1,105 @@
+import { readdirSync, readFileSync } from "node:fs"
+import { expect, it } from "vitest"
+
+const read = (name: string) =>
+  readFileSync(new URL(`./${name}`, import.meta.url), "utf8")
+
+const expectInOrder = (source: string, ...patterns: ReadonlyArray<RegExp>) => {
+  let remainder = source
+  for (const pattern of patterns) {
+    const match = remainder.match(pattern)
+    expect(match, `missing ${pattern}`).not.toBeNull()
+    if (match === null) return
+    if (match.index === undefined) throw new Error(`no index for ${pattern}`)
+    remainder = remainder.slice(match.index + match[0].length)
+  }
+}
+
+const page = read("cashu-withdraw-page.tsx")
+
+it("asks for the PIN, then re-checks the account, before the melt Task", () => {
+  const confirm = page.slice(
+    page.indexOf("const confirmReviewed"),
+    page.indexOf("const requote")
+  )
+
+  expectInOrder(
+    confirm,
+    /const accountVersion = jotaiStore\.get\(evoluCounterAtom\)/,
+    /const pinDetail = cashuWithdrawPinDetail\(\{ quote, t, locale \}\)/,
+    // Moving money always asks for the PIN (access/0007), awaited.
+    /await requirePin\(\s*"access\.action\.withdraw",\s*pinDetail\s*\)/,
+    /await require\(\s*"admin",\s*"access\.action\.withdraw"\s*\)/,
+    /if \(!allowed \|\| !mountedRef\.current \|\| !isCurrentAccount\(\)\)/,
+    /await jotaiStore\.get\(accountAtom\)/,
+    /await using run = prepared/,
+    /if \(!isCurrentAccount\(\)\)/,
+    /await run\(\s*executeCashuWithdrawal\(\s*\{[^}]*quote,/u
+  )
+  // The PIN names the quote the melt then uses: the one captured at the press.
+  expect(confirm).toMatch(/\{ quote \}: CashuReview/)
+  expect(confirm.match(/\bquote\b/gu)?.length).toBeGreaterThan(2)
+  // Access control being on is read when confirming, not when rendering.
+  expect(page).toMatch(/accessEnabledRef\.current = access\.enabled/)
+  expect(confirm).toMatch(/accessEnabledRef\.current\s*\?/)
+})
+
+it("melts a quote once per press and never offers a retry after the melt may have been sent", () => {
+  const confirm = page.slice(
+    page.indexOf("const confirm = async"),
+    page.indexOf("/** `true` when nothing was sent")
+  )
+  expectInOrder(
+    confirm,
+    /confirmingRef\.current\) return/,
+    /confirmingRef\.current = true/,
+    /retryable = await confirmReviewed\(/,
+    /if \(retryable\) confirmingRef\.current = false/
+  )
+  // Anything thrown from the melt Task on is an uncertain outcome.
+  expectInOrder(
+    page,
+    /\} catch \{\s*\/\/ Thrown after the melt/,
+    /setUncertain\(true\)/,
+    /return false/
+  )
+  // A recorded withdrawal replaces the review, so back cannot confirm it again.
+  expect(page).toMatch(
+    /router\.replace\(\{\s*pathname: withdrawRoutes\.cashu\.detail/
+  )
+  // The resume of a lost melt is the Cashu job's (withdraw/0013): none here.
+  expect(page).not.toMatch(/resumeCashuMelt|settleCashuWithdrawal/)
+})
+
+it("ignores Back while a confirm is in flight, and the review offers no confirm when uncertain", () => {
+  expectInOrder(
+    page,
+    /onBack=\{\(\) => \{/,
+    /if \(confirmingRef\.current && !uncertain\) return/,
+    /confirmingRef\.current = false/
+  )
+  expect(read("cashu-withdraw-review-step.tsx")).toMatch(
+    /uncertain=\{uncertain\}[\s\S]*onOpenHistory=\{onOpenHistory\}/
+  )
+  const footer = read("withdraw-review-step.tsx")
+  expectInOrder(
+    footer,
+    /\{uncertain \? \(/,
+    /onPress=\{onOpenHistory\}/,
+    /onPress=\{onConfirm\}/
+  )
+})
+
+it("calls executeCashuWithdrawal from the Cashu review's confirm handler only", () => {
+  const offenders = readdirSync(new URL("../..", import.meta.url), {
+    recursive: true,
+  })
+    .map(String)
+    .filter((file) => /\.tsx?$/u.test(file) && !/\.test\.tsx?$/u.test(file))
+    .filter((file) =>
+      /\bexecuteCashuWithdrawal\(/u.test(
+        readFileSync(new URL(`../../${file}`, import.meta.url), "utf8")
+      )
+    )
+  expect(offenders).toEqual(["features/withdraw/cashu-withdraw-page.tsx"])
+})

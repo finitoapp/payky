@@ -1,0 +1,103 @@
+import {
+  type CashuWithdrawRequest,
+  cashuQuoteErrorMessage,
+  formatMintLabel,
+} from "@payky/app-shared/cashu-withdraw-flow"
+import { formatSatsAmount } from "@payky/app-shared/format-money"
+import type { WithdrawDraft } from "@payky/app-shared/withdraw-flow"
+import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
+import {
+  type CashuWithdrawalQuote,
+  quoteCashuWithdrawal,
+} from "@payky/core/modules/withdraw/withdraw-cashu-actions"
+import { Pressable } from "react-native"
+import { Text, XStack, YStack } from "tamagui"
+import { useCashuAppRun } from "../../hooks/use-app-run.ts"
+import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { WithdrawFormFields } from "./withdraw-form-step.tsx"
+
+/**
+ * The Cashu withdrawal form: which mint, then the same destination, amount,
+ * "withdraw all" and options as Spark's, minus on-chain and amountless
+ * invoices (withdraw/0011, withdraw/0014).
+ */
+export function CashuWithdrawFormStep({
+  funded,
+  mint,
+  onMintChange,
+  draft,
+  onDraftChange,
+  onReview,
+}: {
+  /** The mints holding ecash, with their balances. */
+  readonly funded: ReadonlyArray<readonly [MintUrl, number]>
+  readonly mint: MintUrl | null
+  readonly onMintChange: (mint: MintUrl) => void
+  readonly draft: WithdrawDraft
+  readonly onDraftChange: (draft: WithdrawDraft) => void
+  readonly onReview: (
+    request: CashuWithdrawRequest,
+    quote: CashuWithdrawalQuote
+  ) => void
+}) {
+  const cashuAppRun = useCashuAppRun()
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const mintBalance =
+    funded.find(([candidate]) => candidate === mint)?.[1] ?? null
+
+  return (
+    <WithdrawFormFields
+      method="cashu"
+      availableSats={mintBalance}
+      draft={draft}
+      onDraftChange={onDraftChange}
+      canSubmit={mint !== null}
+      beforeDestination={
+        <YStack gap="1.5">
+          <Text fontWeight="600">{t("withdraw.cashu.mint")}</Text>
+          {funded.length === 0 ? (
+            <Text color="muted-foreground">{t("withdraw.cashu.noFunds")}</Text>
+          ) : (
+            funded.map(([candidate, balance]) => (
+              <Pressable
+                key={candidate}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: candidate === mint }}
+                onPress={() => onMintChange(candidate)}
+              >
+                <XStack
+                  justify="space-between"
+                  items="center"
+                  gap="3"
+                  p="3"
+                  rounded="lg"
+                  borderWidth={candidate === mint ? 2 : 1}
+                  borderColor={candidate === mint ? "primary" : "border-color"}
+                >
+                  <Text flex={1} numberOfLines={1}>
+                    {formatMintLabel(candidate)}
+                  </Text>
+                  <Text>
+                    {t("withdraw.sats", {
+                      amount: formatSatsAmount(balance, locale),
+                    })}
+                  </Text>
+                </XStack>
+              </Pressable>
+            ))
+          )}
+        </YStack>
+      }
+      onQuote={async (built) => {
+        if (mint === null) return null
+        const request: CashuWithdrawRequest = { mint, ...built }
+        await using run = await cashuAppRun()
+        const result = await run(quoteCashuWithdrawal(request))
+        if (!result.ok) return cashuQuoteErrorMessage(result.error, t)
+        onReview(request, result.value)
+        return null
+      }}
+    />
+  )
+}

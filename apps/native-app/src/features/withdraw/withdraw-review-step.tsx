@@ -59,7 +59,7 @@ const exitSpeedOptions: ReadonlyArray<{
 ]
 
 /** Under this much time left the countdown turns into a warning. */
-const EXPIRY_WARNING_MS = 60_000
+export const EXPIRY_WARNING_MS = 60_000
 
 function OnchainReview({
   quote,
@@ -200,7 +200,7 @@ function LightningReview({
 }
 
 /** How long the quote can still be confirmed, red in its last minute. */
-function ExpiryRow({ msLeft }: { readonly msLeft: number }) {
+export function ExpiryRow({ msLeft }: { readonly msLeft: number }) {
   const { t } = useTranslation()
   return (
     <Row label={t("withdraw.review.expiresIn")}>
@@ -212,13 +212,90 @@ function ExpiryRow({ msLeft }: { readonly msLeft: number }) {
 }
 
 /** Milliseconds until `deadline`, ticking each second. */
-const useMsLeft = (deadline: number): number => {
+export const useMsLeft = (deadline: number): number => {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
   }, [])
   return Math.max(0, deadline - now)
+}
+
+/**
+ * The warning, the error and the buttons every review ends with. An
+ * uncertain send (withdraw/0007) offers no confirm or new quote, only the
+ * history to check the result in.
+ */
+export function ReviewFooter({
+  error,
+  nearlyExpired,
+  expired,
+  confirming,
+  requoting,
+  uncertain,
+  onBack,
+  onConfirm,
+  onNewQuote,
+  onOpenHistory,
+}: {
+  readonly error: string | null
+  readonly nearlyExpired: boolean
+  readonly expired: boolean
+  readonly confirming: boolean
+  readonly requoting: boolean
+  /** A send may or may not have happened: nothing may be confirmed again from here. */
+  readonly uncertain: boolean
+  readonly onBack: () => void
+  readonly onConfirm: () => void
+  readonly onNewQuote: () => void
+  readonly onOpenHistory: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Text color="muted-foreground">{t("withdraw.review.warning")}</Text>
+
+      {error === null ? null : (
+        <Text color="red-600" accessibilityRole="alert">
+          {error}
+        </Text>
+      )}
+      {uncertain ? (
+        <AppButton
+          label={t("withdraw.history.title")}
+          onPress={onOpenHistory}
+        />
+      ) : (
+        <>
+          {error !== null || nearlyExpired ? (
+            <AppButton
+              label={t("withdraw.review.newQuote")}
+              variant="secondary"
+              disabled={confirming}
+              pending={requoting}
+              onPress={onNewQuote}
+            />
+          ) : null}
+          <AppButton
+            label={
+              confirming
+                ? t("withdraw.review.confirming")
+                : t("withdraw.review.confirm")
+            }
+            pending={confirming}
+            disabled={requoting || expired}
+            onPress={onConfirm}
+          />
+        </>
+      )}
+      <AppButton
+        label={t("withdraw.review.back")}
+        variant="secondary"
+        disabled={confirming}
+        onPress={onBack}
+      />
+    </>
+  )
 }
 
 export function WithdrawReviewStep({
@@ -294,46 +371,17 @@ export function WithdrawReviewStep({
         </Row>
       )}
 
-      <Text color="muted-foreground">{t("withdraw.review.warning")}</Text>
-
-      {error === null ? null : (
-        <Text color="red-600" accessibilityRole="alert">
-          {error}
-        </Text>
-      )}
-      {uncertain ? (
-        <AppButton
-          label={t("withdraw.history.title")}
-          onPress={onOpenHistory}
-        />
-      ) : (
-        <>
-          {error !== null || nearlyExpired ? (
-            <AppButton
-              label={t("withdraw.review.newQuote")}
-              variant="secondary"
-              disabled={confirming}
-              pending={requoting}
-              onPress={onNewQuote}
-            />
-          ) : null}
-          <AppButton
-            label={
-              confirming
-                ? t("withdraw.review.confirming")
-                : t("withdraw.review.confirm")
-            }
-            pending={confirming}
-            disabled={requoting || expired}
-            onPress={onConfirm}
-          />
-        </>
-      )}
-      <AppButton
-        label={t("withdraw.review.back")}
-        variant="secondary"
-        disabled={confirming}
-        onPress={onBack}
+      <ReviewFooter
+        error={error}
+        nearlyExpired={nearlyExpired}
+        expired={expired}
+        confirming={confirming}
+        requoting={requoting}
+        uncertain={uncertain}
+        onBack={onBack}
+        onConfirm={onConfirm}
+        onNewQuote={onNewQuote}
+        onOpenHistory={onOpenHistory}
       />
     </Card>
   )

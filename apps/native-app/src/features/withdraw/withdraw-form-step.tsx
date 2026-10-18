@@ -7,6 +7,7 @@ import {
   draftWithDestination,
   quoteErrorMessage,
   type WithdrawDraft,
+  type WithdrawMethod,
   type WithdrawRequest,
   withdrawAllUnavailableKey,
 } from "@payky/app-shared/withdraw-flow"
@@ -17,7 +18,7 @@ import {
 } from "@payky/core/modules/withdraw/withdraw-actions"
 import { parseWithdrawDestination } from "@payky/core/modules/withdraw/withdraw-destination-utils"
 import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@payky/core/modules/withdraw/withdraw-utils"
-import { useRef, useState } from "react"
+import { type ReactNode, useRef, useState } from "react"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
@@ -36,9 +37,9 @@ import { Collapsible, LightningAddress } from "./withdraw-parts.tsx"
  * that can be paid), its hint or error, and for a Lightning address the range
  * and comment length its LNURL metadata allows.
  */
-function useWithdrawDestination(raw: string) {
+function useWithdrawDestination(raw: string, method: WithdrawMethod) {
   const parsed = parseWithdrawDestination(raw)
-  const { hint, error } = describeDestination(raw, parsed, "spark")
+  const { hint, error } = describeDestination(raw, parsed, method)
   const destination = parsed.ok && error === null ? parsed.value : null
 
   const lightningAddress = useDebouncedValue(
@@ -84,6 +85,47 @@ export function WithdrawFormStep({
 }) {
   const appRun = useAppRun()
   const { t } = useTranslation()
+  return (
+    <WithdrawFormFields
+      method="spark"
+      availableSats={availableSats}
+      draft={draft}
+      onDraftChange={onDraftChange}
+      onQuote={async (request) => {
+        await using run = appRun()
+        const result = await run(quoteWithdrawal({ accountId, ...request }))
+        if (!result.ok) return quoteErrorMessage(result.error, t)
+        onReview(request, result.value)
+        return null
+      }}
+    />
+  )
+}
+
+/**
+ * The form both wallets share: destination, amount, "withdraw all" and
+ * options. `onQuote` fetches the wallet's quote and opens the review; it
+ * returns the message to show, or `null` once the review is open.
+ */
+export function WithdrawFormFields({
+  method,
+  availableSats,
+  draft,
+  onDraftChange,
+  onQuote,
+  beforeDestination,
+  canSubmit = true,
+}: {
+  readonly method: WithdrawMethod
+  readonly availableSats: number | null
+  readonly draft: WithdrawDraft
+  readonly onDraftChange: (draft: WithdrawDraft) => void
+  readonly onQuote: (request: WithdrawRequest) => Promise<string | null>
+  /** The wallet's own field above the destination, such as Cashu's mint. */
+  readonly beforeDestination?: ReactNode
+  readonly canSubmit?: boolean
+}) {
+  const { t } = useTranslation()
   const locale = useLocale()
   const fiat = useBtcFiat()
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -96,7 +138,7 @@ export function WithdrawFormStep({
     onDraftChange({ ...draft, ...patch })
   }
 
-  const state = useWithdrawDestination(draft.destination)
+  const state = useWithdrawDestination(draft.destination, method)
   const { destination, invoiceAmountSats } = state
   const withdrawAllUnavailable = withdrawAllUnavailableKey(destination)
   const effectiveWithdrawAll =
@@ -135,13 +177,7 @@ export function WithdrawFormStep({
     pendingRef.current = true
     setPending(true)
     try {
-      await using run = appRun()
-      const result = await run(quoteWithdrawal({ accountId, ...built.value }))
-      if (!result.ok) {
-        setSubmitError(quoteErrorMessage(result.error, t))
-        return
-      }
-      onReview(built.value, result.value)
+      setSubmitError(await onQuote(built.value))
     } catch {
       setSubmitError(t("withdraw.quoteError.generic"))
     } finally {
@@ -152,7 +188,14 @@ export function WithdrawFormStep({
 
   return (
     <YStack gap="4">
-      <Text color="muted-foreground">{t("withdraw.form.description")}</Text>
+      <Text color="muted-foreground">
+        {t(
+          method === "spark"
+            ? "withdraw.form.description"
+            : "withdraw.cashu.form.description"
+        )}
+      </Text>
+      {beforeDestination}
 
       <YStack gap="1.5">
         <Field
@@ -315,6 +358,7 @@ export function WithdrawFormStep({
       <AppButton
         label={pending ? t("withdraw.quotePending") : t("withdraw.continue")}
         pending={pending}
+        disabled={!canSubmit}
         onPress={() => void submit()}
       />
     </YStack>

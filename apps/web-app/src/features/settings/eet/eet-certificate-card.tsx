@@ -6,6 +6,7 @@ import {
   type EetCertificateFile,
   readEetCertificateFile,
 } from "@payky/core/integrations/eet/eet-certificate"
+import { fetchPlaygroundCertificates } from "@payky/core/integrations/eet/playground-certificates-client"
 import { storeEetCertificate } from "@payky/core/modules/eet/eet-actions"
 import type { EetEnvironment } from "@payky/core/modules/eet/eet-types"
 import { deriveEetCertificateExpiry } from "@payky/core/modules/eet/eet-utils"
@@ -35,7 +36,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { fetchPlaygroundCertificates } from "@/core/integrations/eet/playground-certificates-client.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import { useEetSettings } from "@/features/shared/use-eet-settings.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
@@ -264,7 +265,9 @@ function EetOfficialTestCertificates() {
     staleTime: Number.POSITIVE_INFINITY,
     queryFn: async () => {
       await using run = appRun()
-      const result = await run(fetchPlaygroundCertificates())
+      const result = await run(
+        fetchPlaygroundCertificates(apiUrl("/api/eet/playground-certificates"))
+      )
       if (!result.ok) throw result.error
       return result.value
     },

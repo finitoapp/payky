@@ -35,6 +35,7 @@ import { useToast } from "../../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { useEetSettings } from "../../shared/use-eet-settings.ts"
 import { WarningPanel } from "../../shared/warning-panel.tsx"
+import { EetOfficialTestCertificates } from "./eet-official-test-certificates.tsx"
 
 const establishmentIdCodec = z.codec(
   z.string(),
@@ -93,7 +94,7 @@ export function EetSettingsPage() {
         isProductionAvailable={eet.isProductionAvailable}
         isTestCertificate={eet.isTestCertificate}
       />
-      <StoredCertificate />
+      <StoredCertificate environment={eet.environment} />
     </Screen>
   )
 }
@@ -289,7 +290,11 @@ function EnvironmentSection({
   )
 }
 
-function StoredCertificate() {
+function StoredCertificate({
+  environment,
+}: {
+  readonly environment: EetEnvironment
+}) {
   const { t } = useTranslation()
   const locale = useLocale()
   const { settings } = useEetSettings()
@@ -317,6 +322,7 @@ function StoredCertificate() {
           locale={locale}
         />
       )}
+      {environment === "playground" ? <EetOfficialTestCertificates /> : null}
     </Section>
   )
 }

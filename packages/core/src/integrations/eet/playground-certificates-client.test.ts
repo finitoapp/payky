@@ -48,7 +48,11 @@ describe("fetchPlaygroundCertificates", () => {
     const server = answering(body)
     await using run = testCreateRun({ ...server, ...createTestDateDep() })
 
-    const result = await run(fetchPlaygroundCertificates())
+    const result = await run(
+      fetchPlaygroundCertificates(
+        "https://payky.me/api/eet/playground-certificates"
+      )
+    )
 
     expect(result).toEqual({
       ok: true,
@@ -72,7 +76,13 @@ describe("fetchPlaygroundCertificates", () => {
     const server = answering({ status: "ERROR" }, 502)
     await using run = testCreateRun({ ...server, ...createTestDateDep() })
 
-    await expect(run(fetchPlaygroundCertificates())).resolves.toMatchObject({
+    await expect(
+      run(
+        fetchPlaygroundCertificates(
+          "https://payky.me/api/eet/playground-certificates"
+        )
+      )
+    ).resolves.toMatchObject({
       ok: false,
       error: {
         type: "PlaygroundCertificatesHttpError",
@@ -87,7 +97,11 @@ describe("fetchPlaygroundCertificates", () => {
     const server = answering({ ...body, password: "not-the-password" })
     await using run = testCreateRun({ ...server, ...createTestDateDep() })
 
-    const result = await run(fetchPlaygroundCertificates())
+    const result = await run(
+      fetchPlaygroundCertificates(
+        "https://payky.me/api/eet/playground-certificates"
+      )
+    )
 
     expect(result).toEqual({
       ok: false,

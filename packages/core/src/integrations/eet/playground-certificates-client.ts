@@ -14,7 +14,6 @@ import {
 import { EetBase64Schema } from "@payky/core/modules/eet/eet-types"
 import { eetBase64ToBytes } from "@payky/core/modules/eet/eet-utils"
 import { z } from "zod"
-import { apiUrl } from "@/core/app-env.ts"
 
 const PlaygroundCertificatesResponseSchema = z.object({
   password: z.string().min(1),
@@ -59,8 +58,11 @@ export type PlaygroundCertificatesError =
   | PlaygroundCertificateUnreadableError
   | FetchError
 
+/** `url` is this app's own `/api/eet/playground-certificates`, absolute on native. */
 export const fetchPlaygroundCertificates =
-  (): Task<
+  (
+    url: string
+  ): Task<
     ReadonlyArray<EetCertificateFile>,
     PlaygroundCertificatesError,
     FetchDep & DateDep
@@ -68,7 +70,7 @@ export const fetchPlaygroundCertificates =
   async (run) => {
     const response = await run(
       fetchAndValidateJson({
-        url: apiUrl("/api/eet/playground-certificates"),
+        url,
         schema: PlaygroundCertificatesResponseSchema,
         // Both errors leave the body out on purpose. A successful body is
         // the test certificates and their password, so one that failed

@@ -23,6 +23,7 @@ export type NativeRoutePath =
   | "/cashu-withdraw"
   | "/cashu-withdraw/new"
   | "/cashu-withdraw/:withdrawalId"
+  | "/settings"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -58,6 +59,8 @@ export const routeAccess = {
   "/cashu-withdraw": "admin",
   "/cashu-withdraw/new": "admin",
   "/cashu-withdraw/:withdrawalId": "admin",
+  // Like web's `_terminal/settings/` index: the menu is free, each destination has its own gate.
+  "/settings": "free",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>

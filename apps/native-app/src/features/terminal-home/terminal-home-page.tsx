@@ -47,12 +47,19 @@ export function TerminalHomePage() {
               />
             </XStack>
           ))}
-        {/* The way into the history, as web's header link; Settings has no native screen yet. */}
+        {/* The ways into the history and the settings, as web's header links. */}
         <XStack flex={enabledModes.length > 1 ? undefined : 1}>
           <AppButton
             label={t("nav.activity")}
             variant="secondary"
             onPress={() => router.push("/activity")}
+          />
+        </XStack>
+        <XStack flex={enabledModes.length > 1 ? undefined : 1}>
+          <AppButton
+            label={t("nav.settings")}
+            variant="secondary"
+            onPress={() => router.push("/settings")}
           />
         </XStack>
       </XStack>

@@ -1,4 +1,4 @@
-import { decode } from "nostr-tools/nip19"
+import { decode, npubEncode } from "nostr-tools/nip19"
 
 /**
  * An npub as its hex pubkey, or `null` for anything else. Imports nothing
@@ -12,3 +12,6 @@ export const npubToHex = (value: string): string | null => {
     return null
   }
 }
+
+/** A hex pubkey as its npub. */
+export const hexToNpub = (pubkey: string): string => npubEncode(pubkey)

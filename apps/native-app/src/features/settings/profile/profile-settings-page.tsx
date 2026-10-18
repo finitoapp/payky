@@ -12,9 +12,12 @@ import { AppButton } from "../../../components/app-button.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { ScreenHeader } from "../../../components/screen-header.tsx"
+import {
+  useNostrIdentity,
+  useNostrProfile,
+} from "../../../hooks/use-nostr-profile.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { useNostrIdentity, useNostrProfile } from "./use-nostr-profile.ts"
 
 /**
  * Edits the name of the account's Nostr profile, as web's

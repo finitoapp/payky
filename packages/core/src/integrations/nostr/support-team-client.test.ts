@@ -1,10 +1,11 @@
 import { testCreateRun } from "@evolu/common"
-import type { FetchDep } from "@payky/core/deps"
 import { npubEncode } from "nostr-tools/nip19"
 import { describe, expect, test } from "vitest"
+import type { FetchDep } from "../../deps.ts"
 
 import { fetchSupportTeam } from "./support-team-client.ts"
 
+const url = "https://payky.me/api/support-team"
 const current = "a".repeat(64)
 const former = "b".repeat(64)
 
@@ -29,7 +30,7 @@ describe("support team client", () => {
     })
     await using run = testCreateRun(server.deps)
 
-    expect(await run(fetchSupportTeam())).toEqual({
+    expect(await run(fetchSupportTeam(url))).toEqual({
       ok: true,
       value: {
         pubkeys: [current],
@@ -51,7 +52,7 @@ describe("support team client", () => {
       }).deps
     )
 
-    expect(await run(fetchSupportTeam())).toMatchObject({
+    expect(await run(fetchSupportTeam(url))).toMatchObject({
       ok: false,
       error: { type: "SupportTeamResponseError" },
     })
@@ -62,7 +63,7 @@ describe("support team client", () => {
       serving({ status: "ERROR", reason: "down" }, 503).deps
     )
 
-    expect(await run(fetchSupportTeam())).toMatchObject({
+    expect(await run(fetchSupportTeam(url))).toMatchObject({
       ok: false,
       error: { type: "SupportTeamHttpError", status: 503 },
     })

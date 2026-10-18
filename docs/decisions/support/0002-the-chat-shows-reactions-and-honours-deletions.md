@@ -39,5 +39,5 @@ reaction nor its removal. The chat shows reactions without who gave them.
 
 - `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > reads support's reaction to a message, and drops one that names no message`
 - `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > reads a deletion by a support member however it is tagged, but none by a stranger`
-- `apps/web-app/src/features/settings/support/support-chat-timeline.test.ts > support chat timeline > shows each reaction under the message it reacts to, each emoji once`
-- `apps/web-app/src/features/settings/support/support-chat-timeline.test.ts > support chat timeline > drops what its own author deleted, a deleted message's reactions with it`
+- `packages/app-shared/src/support-chat-timeline.test.ts > support chat timeline > shows each reaction under the message it reacts to, each emoji once`
+- `packages/app-shared/src/support-chat-timeline.test.ts > support chat timeline > drops what its own author deleted, a deleted message's reactions with it`

@@ -8,9 +8,10 @@ import {
   type SupportTeam,
   subscribeSupportMessages,
 } from "@payky/core/integrations/nostr/nostr-support-chat"
+import { fetchSupportTeam } from "@payky/core/integrations/nostr/support-team-client"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { fetchSupportTeam } from "@/core/integrations/nostr/support-team-client.ts"
+import { apiUrl } from "@/core/app-env.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
 
@@ -33,7 +34,7 @@ export const useSupportTeam = () => {
     queryKey: ["supportTeam"],
     queryFn: async () => {
       await using run = appRun()
-      const result = await run(fetchSupportTeam())
+      const result = await run(fetchSupportTeam(apiUrl("/api/support-team")))
       if (!result.ok) throw result.error
       return result.value
     },

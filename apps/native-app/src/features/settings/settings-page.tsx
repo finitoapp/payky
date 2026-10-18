@@ -17,14 +17,14 @@ import { languageOptions } from "../../components/language-options.ts"
 import { Screen } from "../../components/screen.tsx"
 import { ScreenHeader } from "../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import {
+  useNostrIdentity,
+  useNostrProfile,
+} from "../../hooks/use-nostr-profile.ts"
 import { useThemePreference } from "../../hooks/use-theme-preference.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { useEetSettings } from "../shared/use-eet-settings.ts"
 import { homeModeLabelKeys } from "./home-screen/home-screen-settings-page.tsx"
-import {
-  useNostrIdentity,
-  useNostrProfile,
-} from "./profile/use-nostr-profile.ts"
 import { SettingsRow, type SettingsRowData } from "./settings-row.tsx"
 import { themeLabelKeys } from "./theme/theme-settings-page.tsx"
 
@@ -160,6 +160,11 @@ export function SettingsPage() {
     },
   ]
   const supportRows: ReadonlyArray<SettingsRowData> = [
+    {
+      title: t("settings.supportChat.title"),
+      value: t("settings.supportChat.description"),
+      href: "/settings/support",
+    },
     {
       title: t("settings.donations.title"),
       value: t("settings.donations.description"),

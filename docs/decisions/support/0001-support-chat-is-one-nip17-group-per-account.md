@@ -154,8 +154,8 @@ is no unread state and no push notification.
 - `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > drops a message whose seal was signed by someone else than its author`
 - `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > ignores a 1:1 with a single member of the support team`
 - `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > keeps a former team's room in the chat once the team has grown`
-- `apps/web-app/src/core/integrations/nostr/support-team-client.test.ts > support team client > reads the team from Payky's API with its npubs as hex pubkeys`
-- `apps/web-app/src/core/integrations/nostr/support-team-client.test.ts > support team client > rejects a team with something other than an npub`
+- `packages/core/src/integrations/nostr/support-team-client.test.ts > support team client > reads the team from Payky's API with its npubs as hex pubkeys`
+- `packages/core/src/integrations/nostr/support-team-client.test.ts > support team client > rejects a team with something other than an npub`
 - `apps/web-app/api/support-team.test.ts > handleSupportTeamRequest > serves the team with its former line-ups and relays, cached for five minutes`
 - `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > ignores direct messages from outside the support team`
 - `packages/core/src/integrations/nostr/nostr-support-chat.test.ts > support chat > loads the last ninety days from the team's relays and the account's DM inbox`

@@ -1,5 +1,12 @@
 import { Capacitor } from "@capacitor/core"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { splitMentions } from "@payky/app-shared/support-chat-mentions"
+import {
+  buildTimeline,
+  type ChatEntry,
+  type TimelineItem,
+  toChatEntries,
+} from "@payky/app-shared/support-chat-timeline"
 import { shortenNpub } from "@payky/core/integrations/nostr/nostr-client"
 import {
   type DmInbox,
@@ -32,13 +39,6 @@ import {
   ChatScrollArea,
 } from "@/features/settings/chat/chat-layout.tsx"
 import { ProfileAvatar } from "@/features/settings/profile/profile-avatar.tsx"
-import { splitMentions } from "@/features/settings/support/support-chat-mentions.ts"
-import {
-  buildTimeline,
-  type ChatEntry,
-  type TimelineItem,
-  toChatEntries,
-} from "@/features/settings/support/support-chat-timeline.ts"
 import {
   supportMessagesQueryKey,
   useDmInbox,

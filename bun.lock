@@ -206,6 +206,7 @@
         "@evolu/common": "8.23.0",
         "@payky/core": "workspace:*",
         "date-fns": "4.4.0",
+        "nostr-tools": "2.25.2",
       },
       "devDependencies": {
         "@types/react": "19.3.0",

@@ -1,14 +1,13 @@
 import type { Task } from "@evolu/common"
+import { z } from "zod"
 import {
   type FetchDep,
   type FetchError,
   fetchAndValidateJson,
-} from "@payky/core/deps"
-import { defineError } from "@payky/core/error"
-import type { SupportTeam } from "@payky/core/integrations/nostr/nostr-support-chat"
-import { npubToHex } from "@payky/core/integrations/nostr/npub"
-import { z } from "zod"
-import { apiUrl } from "@/core/app-env.ts"
+} from "../../deps.ts"
+import { defineError } from "../../error.ts"
+import type { SupportTeam } from "./nostr-support-chat.ts"
+import { npubToHex } from "./npub.ts"
 
 /** An npub as the hex pubkey the chat compares and tags. */
 const NpubSchema = z.string().transform((value, context) => {
@@ -53,10 +52,14 @@ export type SupportTeamError =
  * write to and says so (support/0001).
  */
 export const fetchSupportTeam =
-  (): Task<SupportTeam, SupportTeamError, FetchDep> => (run) =>
+  (
+    /** This app's own `/api/support-team`, absolute on native. */
+    url: string
+  ): Task<SupportTeam, SupportTeamError, FetchDep> =>
+  (run) =>
     run(
       fetchAndValidateJson({
-        url: apiUrl("/api/support-team"),
+        url,
         schema: SupportTeamResponseSchema,
         onHttpError: ({ status, responseBody }) =>
           createSupportTeamHttpError({

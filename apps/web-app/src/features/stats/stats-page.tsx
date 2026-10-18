@@ -1,3 +1,7 @@
+import {
+  type StatsSearch,
+  statsPeriodFromSearch,
+} from "@payky/app-shared/stats-search"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import type { StatsPeriod } from "@payky/core/modules/sales-stats/sales-stats-types"
@@ -20,7 +24,6 @@ import { PeriodSelector } from "./period-selector.tsx"
 import { RevenueChart } from "./revenue-chart.tsx"
 import { SalesHeatmap } from "./sales-heatmap.tsx"
 import { Signals } from "./signals.tsx"
-import { type StatsSearch, statsPeriodFromSearch } from "./stats-search.ts"
 import { TopSales } from "./top-sales.tsx"
 import {
   useSalesStats,

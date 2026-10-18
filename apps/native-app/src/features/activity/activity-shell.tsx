@@ -29,7 +29,11 @@ export function ActivityShell({
       style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
     >
       <ScreenHeader title={t("activity.title")} />
-      {/* Stats link: arrives with the stats screen (A08). */}
+      <AppButton
+        label={t("stats.title")}
+        variant="secondary"
+        onPress={() => router.push("/stats")}
+      />
       <XStack gap="2" mb="2">
         <XStack flex={1}>
           <AppButton

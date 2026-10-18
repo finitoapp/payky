@@ -1,7 +1,6 @@
+import { StatsSearchSchema } from "@payky/app-shared/stats-search"
 import { createFileRoute } from "@tanstack/react-router"
-
 import { StatsPage } from "@/features/stats/stats-page.tsx"
-import { StatsSearchSchema } from "@/features/stats/stats-search.ts"
 
 export const Route = createFileRoute("/_terminal/stats")({
   component: StatsRoute,

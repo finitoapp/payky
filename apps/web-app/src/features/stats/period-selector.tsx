@@ -1,9 +1,12 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import {
+  type StatsSearch,
+  statsPeriodKinds,
+} from "@payky/app-shared/stats-search"
 import type { StatsPeriod } from "@payky/core/modules/sales-stats/sales-stats-types"
 import { Input } from "@/components/ui/input.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
 import { useTranslation } from "@/hooks/use-translation.ts"
-import { type StatsSearch, statsPeriodKinds } from "./stats-search.ts"
 
 const periodLabelKeys = {
   today: "stats.period.today",

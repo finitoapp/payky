@@ -46,6 +46,12 @@ export const SqliteTrueSchema = z.literal(1)
 
 export const WssUrlSchema = z
   .url({ protocol: /^wss$/ })
+  // `wss://user:pass@host` would put a credential into a stored, synced and
+  // shown URL (and into error payloads); relays here are reached anonymously.
+  .refine((value) => {
+    const { username, password } = new URL(value)
+    return username === "" && password === ""
+  }, "A relay URL must not carry credentials.")
   .brand<"NonEmpty", "inout">()
   .brand<"WssUrl", "inout">()
 export type WssUrl = z.output<typeof WssUrlSchema>

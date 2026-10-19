@@ -391,6 +391,15 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
+    native: "src/features/bill/item-quantity-controls.tsx",
+    web: ["apps/web-app/src/features/bill/item-quantity-controls.tsx"],
+    status: "matched",
+    allowedDifferences: {
+      DialogClose:
+        "the kit has no DialogClose; Cancel is a plain outline Button that closes through onOpenChange",
+    },
+  },
+  {
     native: "src/features/bill/scan-code-collision-dialog.tsx",
     web: ["apps/web-app/src/features/bill/scan-code-collision-dialog.tsx"],
     status: "matched",

@@ -29,6 +29,7 @@ import {
   type FiatCurrency,
   Integer,
   NonNegativeInteger,
+  type PositiveNumber,
 } from "@payky/core/modules/shared/schema"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { TableId } from "@payky/core/modules/table/table-types"
@@ -92,6 +93,7 @@ import {
 import { AssignTableDialog } from "./assign-table-dialog.tsx"
 import { BillScanView } from "./bill-scan-view.tsx"
 import { CreateCatalogItemDialog } from "./create-catalog-item-dialog.tsx"
+import { ItemQuantityDialog } from "./item-quantity-controls.tsx"
 import { ScanCodeCollisionDialog } from "./scan-code-collision-dialog.tsx"
 import { SplitBillDialog } from "./split-bill-dialog.tsx"
 import { useCartBill } from "./use-cart-bill.ts"
@@ -612,6 +614,9 @@ function BillCart({
                   summaries={summaries}
                   locale={locale}
                   onAdd={() => void cart.addOne(lastScanned)}
+                  onAddQuantity={(quantity) =>
+                    void cart.addQuantity(lastScanned, quantity)
+                  }
                   onRemove={(summary) => void cart.removeOne(summary)}
                 />
               )
@@ -646,6 +651,9 @@ function BillCart({
                   summaries={summaries}
                   locale={locale}
                   onAdd={() => void cart.addOne(item)}
+                  onAddQuantity={(quantity) =>
+                    void cart.addQuantity(item, quantity)
+                  }
                   onRemove={(summary) => void cart.removeOne(summary)}
                 />
               </View>
@@ -1004,15 +1012,18 @@ function ItemBrick({
   summaries,
   locale,
   onAdd,
+  onAddQuantity,
   onRemove,
 }: {
   readonly catalogItem: CatalogItemRow
   readonly summaries: ReadonlyArray<BillLineSummary>
   readonly locale: string
   readonly onAdd: () => void
+  readonly onAddQuantity: (quantity: PositiveNumber) => void
   readonly onRemove: (summary: BillLineSummary) => void
 }) {
   const { t } = useTranslation()
+  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
   const name = getStaffDisplayName(catalogItem)
   const quantity = summaries.reduce(
     (sum, summary) =>
@@ -1055,18 +1066,18 @@ function ItemBrick({
         >
           {name}
         </Text>
-        <YStack
+        <Button
+          size="sm"
           shrink={0}
           h={28}
           minW={28}
           px={8}
           rounded={radius.full}
-          bg="primary"
-          items="center"
-          justify="center"
           opacity={inCart ? 1 : 0}
-          pointerEvents="none"
+          disabled={!inCart}
           accessibilityElementsHidden={!inCart}
+          accessibilityLabel={t("bill.brick.quantity.trigger.aria", { name })}
+          onPress={() => setQuantityDialogOpen(true)}
         >
           <Text
             fontSize={12.8}
@@ -1076,7 +1087,7 @@ function ItemBrick({
           >
             {quantity}
           </Text>
-        </YStack>
+        </Button>
       </XStack>
       <XStack
         items="flex-end"
@@ -1112,6 +1123,12 @@ function ItemBrick({
           }}
         />
       </XStack>
+      <ItemQuantityDialog
+        name={name}
+        open={quantityDialogOpen}
+        onOpenChange={setQuantityDialogOpen}
+        onAddQuantity={onAddQuantity}
+      />
     </Card>
   )
 }

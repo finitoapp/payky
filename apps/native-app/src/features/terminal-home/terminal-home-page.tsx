@@ -1,15 +1,24 @@
 import { sqliteTrue } from "@evolu/common"
+import {
+  findOwnerRelays,
+  initialSyncIdleLimitMs,
+  isInitialSyncPending,
+} from "@payky/core/evolu/initial-sync-state"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
 import { createRandomBillId } from "@payky/core/modules/bill/bill-types"
 import { Redirect, router } from "expo-router"
+import { useAtomValue } from "jotai"
 import Calculator from "lucide-react-native/icons/calculator"
 import Clock3 from "lucide-react-native/icons/clock-3"
 import LayoutGrid from "lucide-react-native/icons/layout-grid"
 import Settings from "lucide-react-native/icons/settings"
-import { Suspense } from "react"
+import { Suspense, useEffect, useState, useSyncExternalStore } from "react"
+import { ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, View, XStack } from "tamagui"
+import { accountAtom } from "../../atoms/account.ts"
+import { evoluAtom } from "../../atoms/evolu.ts"
 import { LoadingView } from "../../components/loading-view.tsx"
 import { SlidingPillSegmentContent } from "../../components/sliding-pill.tsx"
 import { Button } from "../../components/ui/button.tsx"
@@ -18,6 +27,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "../../components/ui/toggle-group.tsx"
+import { nativeRun } from "../../core/native-runtime.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
@@ -54,7 +64,7 @@ export function TerminalHomePage() {
       }),
   })
 
-  if (settings === undefined) return <Redirect href="/onboarding" />
+  if (settings === undefined) return <NotOnboarded />
 
   return (
     <SafeAreaView
@@ -132,5 +142,45 @@ export function TerminalHomePage() {
         />
       )}
     </SafeAreaView>
+  )
+}
+
+/**
+ * As web's `NotOnboarded`: a missing appSettings row means nothing while the
+ * account's first sync is still transferring (a paired or restored account
+ * reopened mid-sync), so this waits for that before sending the account to
+ * onboarding, where finishing would overwrite the synced settings. An
+ * account that does not sync (no transports, or a demo) never registers its
+ * owner, so it goes straight on; one that does gets
+ * `initialSyncIdleLimitMs` for the owner to be reported.
+ */
+function NotOnboarded() {
+  const { t } = useTranslation()
+  const theme = useTheme()
+  const account = useAtomValue(accountAtom)
+  const evolu = useAtomValue(evoluAtom)
+  const { syncState } = nativeRun.deps
+  const state = useSyncExternalStore(syncState.subscribe, syncState.get)
+  const relays = findOwnerRelays(state, evolu.name, evolu.appOwner.id)
+  const syncs = account.demo === null && account.transports.length > 0
+  const ownerUnknown = syncs && relays === null
+  const [ownerTimedOut, setOwnerTimedOut] = useState(false)
+  useEffect(() => {
+    if (!ownerUnknown) return
+    const id = setTimeout(() => setOwnerTimedOut(true), initialSyncIdleLimitMs)
+    return () => clearTimeout(id)
+  }, [ownerUnknown])
+  const waitingForSync =
+    syncs && (relays === null ? !ownerTimedOut : isInitialSyncPending(relays))
+
+  if (!waitingForSync) return <Redirect href="/onboarding" />
+  return (
+    <View flex={1} items="center" justify="center" bg="background">
+      <ActivityIndicator
+        size="large"
+        color={theme["muted-foreground"]?.val}
+        accessibilityLabel={t("accountRestore.syncing")}
+      />
+    </View>
   )
 }

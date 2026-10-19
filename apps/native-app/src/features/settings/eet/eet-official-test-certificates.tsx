@@ -58,12 +58,19 @@ export function EetOfficialTestCertificates() {
 
   if (!requested) {
     return (
-      <YStack gap="2">
-        <Text color="muted-foreground">
+      <YStack
+        gap="2"
+        p="3"
+        rounded="lg"
+        borderWidth={1}
+        borderColor="border-color"
+        borderStyle="dashed"
+      >
+        <Text fontSize="sm" color="muted-foreground">
           {t("settings.eet.officialTest.description")}
         </Text>
         <Button
-          size="lg"
+          size="sm"
           label={t("settings.eet.officialTest.show")}
           variant="outline"
           onPress={() => setRequested(true)}
@@ -87,7 +94,7 @@ export function EetOfficialTestCertificates() {
 
   if (certificatesQuery.data === undefined) {
     return (
-      <Text color="muted-foreground">
+      <Text color="muted-foreground" fontSize="sm">
         {t("settings.eet.officialTest.loading")}
       </Text>
     )
@@ -95,7 +102,9 @@ export function EetOfficialTestCertificates() {
 
   return (
     <YStack gap="2">
-      <Text fontWeight="600">{t("settings.eet.officialTest.title")}</Text>
+      <Text fontSize="sm" fontWeight="600">
+        {t("settings.eet.officialTest.title")}
+      </Text>
       {certificatesQuery.data.map((certificate) => (
         <XStack
           key={certificate.eic}
@@ -107,9 +116,15 @@ export function EetOfficialTestCertificates() {
           borderColor="border-color"
         >
           <YStack flex={1}>
-            <Text fontWeight="700">{certificate.eic}</Text>
+            <Text
+              fontSize="sm"
+              fontWeight="600"
+              style={{ fontFamily: "monospace" }}
+            >
+              {certificate.eic}
+            </Text>
             {certificate.description === null ? null : (
-              <Text fontSize={12} color="muted-foreground">
+              <Text fontSize="xs" color="muted-foreground">
                 {certificate.description}
               </Text>
             )}
@@ -118,6 +133,9 @@ export function EetOfficialTestCertificates() {
             size="sm"
             variant="default"
             label={t("settings.eet.officialTest.useShort")}
+            accessibilityLabel={t("settings.eet.officialTest.use", {
+              name: certificate.eic,
+            })}
             disabled={storingEic !== null}
             pending={storingEic === certificate.eic}
             onPress={() => {

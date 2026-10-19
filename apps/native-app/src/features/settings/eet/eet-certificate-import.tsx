@@ -4,10 +4,18 @@ import {
   readEetCertificateFile,
 } from "@payky/core/integrations/eet/eet-certificate"
 import { storeEetCertificate } from "@payky/core/modules/eet/eet-actions"
+import Upload from "lucide-react-native/icons/upload"
 import { useState } from "react"
-import { Text, YStack } from "tamagui"
-import { Field } from "../../../components/field.tsx"
+import { XStack } from "tamagui"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -89,54 +97,57 @@ export function EetCertificateImport() {
   }
 
   return (
-    <YStack gap="3">
-      <YStack gap="1">
-        <Text fontSize="sm" fontWeight="600">
-          {t("settings.eet.certificate.file.label")}
-        </Text>
+    <FieldGroup>
+      <Field>
+        <FieldLabel>{t("settings.eet.certificate.file.label")}</FieldLabel>
         <Button
-          size="lg"
           label={
             picked === null
               ? t("settings.eet.certificate.file.label")
               : picked.name
           }
           variant="outline"
+          iconStart={Upload}
           disabled={pending}
           onPress={() => {
             void choose()
           }}
         />
-        <Text fontSize={12} color="muted-foreground">
+        <FieldDescription>
           {t("settings.eet.certificate.file.description")}
-        </Text>
-      </YStack>
-      <Field
-        label={t("settings.eet.certificate.password.label")}
-        value={password}
-        disabled={pending}
-        secureTextEntry
-        autoCapitalize="none"
-        autoCorrect={false}
-        autoComplete="off"
-        spellCheck={false}
-        importantForAutofill="no"
-        keyboardType="visible-password"
-        contextMenuHidden
-        error={error === null ? undefined : t(error)}
-        onChangeText={(next) => {
-          setPassword(next)
-          setError(null)
-        }}
-      />
-      <Button
-        size="lg"
-        label={t("settings.eet.certificate.import")}
-        pending={pending}
-        onPress={() => {
-          void importCertificate()
-        }}
-      />
-    </YStack>
+        </FieldDescription>
+      </Field>
+      <Field>
+        <FieldLabel>{t("settings.eet.certificate.password.label")}</FieldLabel>
+        <Input
+          value={password}
+          invalid={error !== null}
+          disabled={pending}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          spellCheck={false}
+          importantForAutofill="no"
+          keyboardType="visible-password"
+          contextMenuHidden
+          onChangeText={(next) => {
+            setPassword(next)
+            setError(null)
+          }}
+        />
+        <FieldError>{error === null ? undefined : t(error)}</FieldError>
+      </Field>
+      <XStack justify="flex-end">
+        <Button
+          label={t("settings.eet.certificate.import")}
+          iconStart={Upload}
+          pending={pending}
+          onPress={() => {
+            void importCertificate()
+          }}
+        />
+      </XStack>
+    </FieldGroup>
   )
 }

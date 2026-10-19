@@ -8,6 +8,13 @@ import { Integer } from "@payky/core/modules/shared/schema"
 import { parseISO } from "date-fns"
 import { router } from "expo-router"
 import { Text, XStack, YStack } from "tamagui"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { EetSaleStatusLabel } from "../../shared/eet-sale-status.tsx"
@@ -18,14 +25,6 @@ export function EetUnconfirmedSales() {
   const locale = useLocale()
   const { data: sales } = useEvoluQuery(unconfirmedEetSalesQuery)
   const { data: reversals } = useEvoluQuery(unconfirmedEetReversalsQuery)
-
-  if (sales.length === 0 && reversals.length === 0) {
-    return (
-      <Text color="muted-foreground">
-        {t("settings.eet.unconfirmed.empty")}
-      </Text>
-    )
-  }
 
   const rows = [
     ...sales.map((sale) => ({
@@ -51,30 +50,48 @@ export function EetUnconfirmedSales() {
   ]
 
   return (
-    <YStack gap="2">
-      {rows.map(({ key, testID, sale, title }) => (
-        <XStack
-          key={key}
-          testID={testID}
-          minH={56}
-          items="center"
-          gap="3"
-          p="3"
-          rounded="lg"
-          borderWidth={1}
-          borderColor="border-color"
-          accessibilityRole="button"
-          onPress={() => router.push(`/activity/${sale.paymentId}`)}
-        >
-          <YStack flex={1}>
-            <Text fontWeight="600">{title}</Text>
-            <Text fontSize={12} color="muted-foreground">
-              {formatDateTime(parseISO(sale.saleAt), locale)}
-            </Text>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.eet.unconfirmed.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.eet.unconfirmed.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {rows.length === 0 ? (
+          <Text color="muted-foreground" fontSize="sm">
+            {t("settings.eet.unconfirmed.empty")}
+          </Text>
+        ) : (
+          <YStack gap="2">
+            {rows.map(({ key, testID, sale, title }) => (
+              <XStack
+                key={key}
+                testID={testID}
+                minH={56}
+                items="center"
+                gap="3"
+                p="3"
+                rounded="lg"
+                borderWidth={1}
+                borderColor="border-color"
+                accessibilityRole="button"
+                onPress={() => router.push(`/activity/${sale.paymentId}`)}
+              >
+                <YStack flex={1}>
+                  <Text fontSize="sm" fontWeight="500">
+                    {title}
+                  </Text>
+                  <Text fontSize="xs" color="muted-foreground">
+                    {formatDateTime(parseISO(sale.saleAt), locale)}
+                  </Text>
+                </YStack>
+                <EetSaleStatusLabel sale={sale} />
+              </XStack>
+            ))}
           </YStack>
-          <EetSaleStatusLabel sale={sale} />
-        </XStack>
-      ))}
-    </YStack>
+        )}
+      </CardContent>
+    </Card>
   )
 }

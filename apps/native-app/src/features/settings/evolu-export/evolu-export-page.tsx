@@ -1,12 +1,33 @@
 import { createEvoluExportFilename } from "@payky/app-shared/evolu-export"
 import { useAtomValue } from "jotai"
+import Download from "lucide-react-native/icons/download"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
-import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import { Checkbox } from "../../../components/ui/checkbox.tsx"
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "../../../components/ui/field.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -71,79 +92,106 @@ export function EvoluExportPage() {
     <Screen>
       <FadeHeader title={t("settings.evoluExport.title")} />
       <YStack gap="4">
-        <YStack
-          gap="2"
-          p="4"
-          rounded="lg"
-          borderWidth={1}
-          borderColor="destructive"
-        >
-          <Text fontWeight="700">
-            {t("settings.evoluExport.warning.title")}
-          </Text>
-          <Text color="muted-foreground">
-            {t("settings.evoluExport.warning.description")}
-          </Text>
-          {warningKeys.map((key) => (
-            <Text key={key} color="muted-foreground">
-              {`• ${t(key)}`}
-            </Text>
-          ))}
-        </YStack>
+        <Card>
+          <CardHeader>
+            <XStack gap="3" items="flex-start">
+              <Icon icon={TriangleAlert} color="destructive" />
+              <YStack gap="1" flex={1}>
+                <CardTitle>{t("settings.evoluExport.warning.title")}</CardTitle>
+                <CardDescription>
+                  {t("settings.evoluExport.warning.description")}
+                </CardDescription>
+              </YStack>
+            </XStack>
+          </CardHeader>
+          <CardContent>
+            <YStack gap="1" pl="5">
+              {warningKeys.map((key) => (
+                <Text key={key} color="muted-foreground" fontSize="sm">
+                  {`• ${t(key)}`}
+                </Text>
+              ))}
+            </YStack>
+          </CardContent>
+        </Card>
 
-        <XStack gap="3" items="center">
-          <Switch
-            accessibilityLabel={t("settings.evoluExport.confirm.label")}
-            value={acceptedWarning}
-            disabled={pending}
-            onValueChange={setAcceptedWarning}
-          />
-          <YStack flex={1}>
-            <Text fontWeight="600">
-              {t("settings.evoluExport.confirm.label")}
-            </Text>
-            <Text fontSize={13} color="muted-foreground">
-              {t("settings.evoluExport.confirm.description")}
-            </Text>
-          </YStack>
-        </XStack>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.evoluExport.options.title")}</CardTitle>
+            <CardDescription>
+              {t("settings.evoluExport.options.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <FieldSet>
+                <FieldLegend>
+                  {t("settings.evoluExport.options.format")}
+                </FieldLegend>
+                <XStack items="center" gap="2">
+                  <Badge
+                    variant="secondary"
+                    label={t("settings.evoluExport.format.sqlite")}
+                  />
+                  <Text color="muted-foreground" fontSize="sm">
+                    {t("settings.evoluExport.format.description")}
+                  </Text>
+                </XStack>
+              </FieldSet>
 
-        <Text color="muted-foreground" accessibilityLiveRegion="polite">
-          {t("settings.evoluExport.destination.capacitor")}
-        </Text>
-        <Button
-          size="lg"
-          label={t(
-            pending
-              ? "settings.evoluExport.action.pending"
-              : "settings.evoluExport.action"
-          )}
-          disabled={!acceptedWarning}
-          pending={pending}
-          onPress={() => void exportDatabase()}
-        />
+              <Field orientation="horizontal">
+                <Checkbox
+                  checked={acceptedWarning}
+                  disabled={pending}
+                  accessibilityLabel={t("settings.evoluExport.confirm.label")}
+                  onCheckedChange={setAcceptedWarning}
+                />
+                <FieldContent>
+                  <FieldLabel>
+                    {t("settings.evoluExport.confirm.label")}
+                  </FieldLabel>
+                  <FieldDescription>
+                    {t("settings.evoluExport.confirm.description")}
+                  </FieldDescription>
+                </FieldContent>
+              </Field>
+            </FieldGroup>
+          </CardContent>
+          <CardFooter flexDirection="column" items="stretch" gap="3">
+            <Text color="muted-foreground" accessibilityLiveRegion="polite">
+              {t("settings.evoluExport.destination.capacitor")}
+            </Text>
+            <Button
+              label={t(
+                pending
+                  ? "settings.evoluExport.action.pending"
+                  : "settings.evoluExport.action"
+              )}
+              iconStart={Download}
+              disabled={!acceptedWarning}
+              pending={pending}
+              onPress={() => void exportDatabase()}
+            />
+          </CardFooter>
+        </Card>
 
         {handedOff || failed ? (
-          <YStack
-            gap="1"
-            p="3"
-            rounded="lg"
-            borderWidth={1}
-            borderColor="border-color"
-          >
-            <Text fontWeight="700">
-              {t("settings.evoluExport.status.title")}
-            </Text>
-            {failed ? (
-              <Text color="destructive" accessibilityRole="alert">
-                {t("settings.evoluExport.status.error")}
-              </Text>
-            ) : (
-              <Text color="muted-foreground">
-                {t("settings.evoluExport.status.handedOff")}
-              </Text>
-            )}
-          </YStack>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("settings.evoluExport.status.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {failed ? (
+                <Text color="destructive" accessibilityRole="alert">
+                  {t("settings.evoluExport.status.error")}
+                </Text>
+              ) : (
+                <Text color="muted-foreground">
+                  {t("settings.evoluExport.status.handedOff")}
+                </Text>
+              )}
+            </CardContent>
+          </Card>
         ) : null}
       </YStack>
     </Screen>

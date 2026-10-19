@@ -21,9 +21,12 @@ import {
   deriveEetCertificateExpiry,
   findEetConfigurationGaps,
 } from "@payky/core/modules/eet/eet-utils"
+import FlaskConical from "lucide-react-native/icons/flask-conical"
+import Landmark from "lucide-react-native/icons/landmark"
+import Store from "lucide-react-native/icons/store"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
-import { Switch } from "react-native"
-import { Text, XStack, YStack } from "tamagui"
+import Users from "lucide-react-native/icons/users"
+import { Text, YStack } from "tamagui"
 import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
@@ -34,6 +37,22 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../../../components/ui/alert.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Switch } from "../../../components/ui/switch.tsx"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -124,13 +143,15 @@ function Section({
   readonly children: React.ReactNode
 }) {
   return (
-    <YStack gap="3">
-      <YStack gap="1">
-        <Text fontWeight="700">{title}</Text>
-        <Text color="muted-foreground">{description}</Text>
-      </YStack>
-      {children}
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <YStack gap="3">{children}</YStack>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -162,42 +183,44 @@ function ReportingSection({
       title={t("settings.eet.reporting.title")}
       description={t("settings.eet.reporting.description")}
     >
-      <InlineEditField
-        label={t("settings.eet.establishment.label")}
-        description={t("settings.eet.establishment.description")}
-        keyboardType="number-pad"
-        defaultValue={establishmentId}
-        codec={establishmentIdCodec}
-        errorKey="settings.eet.establishment.invalid"
-        onSave={(next) =>
-          runToast(async (run) => {
-            if (next === null) return undefined
-            await run.ok(saveEetEstablishmentId(next))
-          })
-        }
-      />
-      <XStack gap="3" items="center">
-        <Switch
-          accessibilityLabel={t("settings.eet.enabled.label")}
-          value={enabled.value}
-          disabled={cannotEnable || enabled.saving}
-          onValueChange={(checked) => {
-            void enabled.choose(checked)
-          }}
+      <FieldGroup>
+        <InlineEditField
+          label={t("settings.eet.establishment.label")}
+          description={t("settings.eet.establishment.description")}
+          keyboardType="number-pad"
+          defaultValue={establishmentId}
+          codec={establishmentIdCodec}
+          errorKey="settings.eet.establishment.invalid"
+          onSave={(next) =>
+            runToast(async (run) => {
+              if (next === null) return undefined
+              await run.ok(saveEetEstablishmentId(next))
+            })
+          }
         />
-        <YStack flex={1}>
-          <Text fontWeight="600">{t("settings.eet.enabled.label")}</Text>
-          <Text fontSize={13} color="muted-foreground">
-            {cannotEnable
-              ? t("settings.eet.enabled.missing", {
-                  missing: gaps
-                    .map((gap) => t(configurationGapKeys[gap]))
-                    .join(", "),
-                })
-              : t("settings.eet.enabled.description")}
-          </Text>
-        </YStack>
-      </XStack>
+        <Field orientation="horizontal">
+          <Switch
+            accessibilityLabel={t("settings.eet.enabled.label")}
+            checked={enabled.value}
+            disabled={cannotEnable || enabled.saving}
+            onCheckedChange={(checked) => {
+              void enabled.choose(checked)
+            }}
+          />
+          <FieldContent>
+            <FieldLabel>{t("settings.eet.enabled.label")}</FieldLabel>
+            <FieldDescription>
+              {cannotEnable
+                ? t("settings.eet.enabled.missing", {
+                    missing: gaps
+                      .map((gap) => t(configurationGapKeys[gap]))
+                      .join(", "),
+                  })
+                : t("settings.eet.enabled.description")}
+            </FieldDescription>
+          </FieldContent>
+        </Field>
+      </FieldGroup>
     </Section>
   )
 }
@@ -216,27 +239,32 @@ function TipSection({ tipOwner }: { readonly tipOwner: EetTipOwner }) {
       title={t("settings.eet.tip.title")}
       description={t("settings.eet.tip.description")}
     >
-      <OptionToggleGroup<EetTipOwner>
-        value={choice.value}
-        options={[
-          {
-            value: "business",
-            title: t("settings.eet.tip.business.title"),
-            description: t("settings.eet.tip.business.description"),
-          },
-          {
-            value: "employees",
-            title: t("settings.eet.tip.employees.title"),
-            description: t("settings.eet.tip.employees.description"),
-          },
-        ]}
-        onChange={(next) => {
-          void choice.choose(next)
-        }}
-      />
-      <Text fontSize={13} color="muted-foreground">
-        {t("settings.eet.tip.note")}
-      </Text>
+      <FieldGroup>
+        <Field>
+          <FieldLabel>{t("settings.eet.tip.label")}</FieldLabel>
+          <OptionToggleGroup<EetTipOwner>
+            value={choice.value}
+            options={[
+              {
+                value: "business",
+                icon: Store,
+                title: t("settings.eet.tip.business.title"),
+                description: t("settings.eet.tip.business.description"),
+              },
+              {
+                value: "employees",
+                icon: Users,
+                title: t("settings.eet.tip.employees.title"),
+                description: t("settings.eet.tip.employees.description"),
+              },
+            ]}
+            onChange={(next) => {
+              void choice.choose(next)
+            }}
+          />
+          <FieldDescription>{t("settings.eet.tip.note")}</FieldDescription>
+        </Field>
+      </FieldGroup>
     </Section>
   )
 }
@@ -283,24 +311,32 @@ function EnvironmentSection({
       title={t("settings.eet.environment.title")}
       description={t("settings.eet.environment.description")}
     >
-      <OptionToggleGroup<EetEnvironment>
-        value={choice.value}
-        options={[
-          {
-            value: "production",
-            title: t("settings.eet.environment.production.title"),
-            description: productionDescription,
-          },
-          {
-            value: "playground",
-            title: t("settings.eet.environment.playground.title"),
-            description: t("settings.eet.environment.playground.description"),
-          },
-        ]}
-        onChange={(next) => {
-          void choice.choose(next)
-        }}
-      />
+      <Field>
+        <FieldGroup>
+          <OptionToggleGroup<EetEnvironment>
+            value={choice.value}
+            options={[
+              {
+                value: "production",
+                icon: Landmark,
+                title: t("settings.eet.environment.production.title"),
+                description: productionDescription,
+              },
+              {
+                value: "playground",
+                icon: FlaskConical,
+                title: t("settings.eet.environment.playground.title"),
+                description: t(
+                  "settings.eet.environment.playground.description"
+                ),
+              },
+            ]}
+            onChange={(next) => {
+              void choice.choose(next)
+            }}
+          />
+        </FieldGroup>
+      </Field>
     </Section>
   )
 }
@@ -373,23 +409,31 @@ function StoredCertificateDetails({
         <Text fontSize={12} color="muted-foreground">
           {t("settings.eet.certificate.eic")}
         </Text>
-        <Text fontWeight="700" testID="eet-certificate-eic">
+        <Text
+          fontSize="sm"
+          fontWeight="600"
+          style={{ fontFamily: "monospace" }}
+          testID="eet-certificate-eic"
+        >
           {eic}
         </Text>
         {description === null ? null : (
-          <Text fontSize={12} color="muted-foreground">
+          <Text fontSize="xs" color="muted-foreground">
             {description}
           </Text>
         )}
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" color="muted-foreground">
           {t("settings.eet.certificate.validTo", {
             date: new Intl.DateTimeFormat(locale).format(new Date(validTo)),
           })}
         </Text>
         {isTest ? (
-          <Text fontSize={12} fontWeight="600">
-            {t("settings.eet.certificate.testBadge")}
-          </Text>
+          <Badge
+            variant="secondary"
+            label={t("settings.eet.certificate.testBadge")}
+            bg="info-10"
+            labelColor="info"
+          />
         ) : null}
       </YStack>
       {expiry === "valid" ? null : (

@@ -17,13 +17,28 @@ import {
   Integer,
 } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
+import HeartHandshake from "lucide-react-native/icons/heart-handshake"
 import { useEffect, useState } from "react"
-import { Text, YStack } from "tamagui"
+import { Text } from "tamagui"
 import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { nativeEnv } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useBtcFiat, useLnurlPayMetadata } from "../../../hooks/use-btc-fiat.ts"
@@ -155,65 +170,82 @@ export function DonationsSettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.donations.title")} />
-      <YStack gap="1">
-        <Text fontWeight="700">{t("settings.donations.form.title")}</Text>
-        <Text color="muted-foreground">
-          {t("settings.donations.form.description")}
-        </Text>
-      </YStack>
-      <Field
-        label={t("settings.donations.fiat.label")}
-        value={fiatInput}
-        keyboardType="decimal-pad"
-        onChangeText={(next) => {
-          setEditedAmount("fiat")
-          setFiatInput(next)
-        }}
-      />
-      <Text fontSize={12} color="muted-foreground">
-        {t("settings.donations.fiat.description")}
-      </Text>
-      <Field
-        label={t("settings.donations.sats.label")}
-        value={satsInput}
-        keyboardType="number-pad"
-        error={visibleAmountError === null ? undefined : t(visibleAmountError)}
-        onChangeText={(next) => {
-          setEditedAmount("sats")
-          setSatsInput(next)
-        }}
-      />
-      <Text fontSize={12} color="muted-foreground">
-        {metadata === null
-          ? t("settings.donations.sats.description")
-          : t("settings.donations.sats.range", {
-              min: metadata.minSendableSats,
-              max: metadata.maxSendableSats,
-            })}
-      </Text>
-      {loadErrorKey === null ? null : (
-        <Text color="destructive" accessibilityRole="alert">
-          {t(loadErrorKey)}
-        </Text>
-      )}
-      {invoiceFailed ? (
-        <Text color="destructive" accessibilityRole="alert">
-          {t("settings.donations.invoice.error")}
-        </Text>
-      ) : null}
-      <Button
-        size="lg"
-        label={t(
-          creating
-            ? "settings.donations.create.pending"
-            : "settings.donations.create"
-        )}
-        disabled={!canCreate || isLoading}
-        pending={creating}
-        onPress={() => {
-          void createInvoice()
-        }}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.donations.form.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.donations.form.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Field>
+              <FieldLabel>{t("settings.donations.fiat.label")}</FieldLabel>
+              <Input
+                value={fiatInput}
+                keyboardType="decimal-pad"
+                invalid={visibleAmountError !== null}
+                onChangeText={(next) => {
+                  setEditedAmount("fiat")
+                  setFiatInput(next)
+                }}
+              />
+              <FieldDescription>
+                {t("settings.donations.fiat.description")}
+              </FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel>{t("settings.donations.sats.label")}</FieldLabel>
+              <Input
+                value={satsInput}
+                keyboardType="number-pad"
+                invalid={visibleAmountError !== null}
+                onChangeText={(next) => {
+                  setEditedAmount("sats")
+                  setSatsInput(next)
+                }}
+              />
+              <FieldDescription>
+                {metadata === null
+                  ? t("settings.donations.sats.description")
+                  : t("settings.donations.sats.range", {
+                      min: metadata.minSendableSats,
+                      max: metadata.maxSendableSats,
+                    })}
+              </FieldDescription>
+              <FieldError>
+                {visibleAmountError === null
+                  ? undefined
+                  : t(visibleAmountError)}
+              </FieldError>
+            </Field>
+            {loadErrorKey === null ? null : (
+              <Text color="destructive" accessibilityRole="alert">
+                {t(loadErrorKey)}
+              </Text>
+            )}
+            {invoiceFailed ? (
+              <Text color="destructive" accessibilityRole="alert">
+                {t("settings.donations.invoice.error")}
+              </Text>
+            ) : null}
+            <Button
+              size="lg"
+              label={t(
+                creating
+                  ? "settings.donations.create.pending"
+                  : "settings.donations.create"
+              )}
+              iconStart={HeartHandshake}
+              disabled={!canCreate || isLoading}
+              pending={creating}
+              onPress={() => {
+                void createInvoice()
+              }}
+            />
+          </FieldGroup>
+        </CardContent>
+      </Card>
       <DonationHistory />
     </Screen>
   )

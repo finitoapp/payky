@@ -771,7 +771,8 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/donations/donation-history.tsx",
     web: ["apps/web-app/src/features/settings/donations/donation-history.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "Native keeps its explicit load-more control; web loads pages as the history scrolls.",
   },
   {
     native:
@@ -779,48 +780,111 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/donations/donations-invoice-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      CopyableQrCode:
+        "Native retains the donation-specific copy button and toast messages below the QR, while web copies by tapping the QR itself.",
+    },
   },
   {
     native: "src/features/settings/donations/donations-settings-page.tsx",
     web: [
       "apps/web-app/src/features/settings/donations/donations-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/eet/eet-certificate-import.tsx",
     web: ["apps/web-app/src/features/settings/eet/eet-certificate-card.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Alert:
+        "The native certificate and expiry warning is rendered by the sibling StoredCertificate component inside the parent certificate card.",
+      AlertDescription:
+        "The native certificate and expiry warning is rendered by the sibling StoredCertificate component inside the parent certificate card.",
+      AlertTitle:
+        "The native certificate and expiry warning is rendered by the sibling StoredCertificate component inside the parent certificate card.",
+      Badge:
+        "The native test-certificate badge is rendered by the sibling StoredCertificate component inside the parent certificate card.",
+      Card: "The native certificate card wraps this import form in the parent EET settings page.",
+      CardContent:
+        "The native certificate card wraps this import form in the parent EET settings page.",
+      CardDescription:
+        "The native certificate card header is rendered by the parent EET settings page.",
+      CardHeader:
+        "The native certificate card header is rendered by the parent EET settings page.",
+      CardTitle:
+        "The native certificate card header is rendered by the parent EET settings page.",
+    },
   },
   {
     native: "src/features/settings/eet/eet-official-test-certificates.tsx",
     web: ["apps/web-app/src/features/settings/eet/eet-certificate-card.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "Certificate file/password fields and the test-certificate badge are siblings within the native parent card, not part of this official-certificate list.",
+      Card: "The native certificate card wraps this official-certificate list in the parent EET settings page.",
+      CardContent:
+        "The native certificate card wraps this official-certificate list in the parent EET settings page.",
+      CardDescription:
+        "The native certificate card header is rendered by the parent EET settings page.",
+      CardHeader:
+        "The native certificate card header is rendered by the parent EET settings page.",
+      CardTitle:
+        "The native certificate card header is rendered by the parent EET settings page.",
+      Field:
+        "The native certificate file/password fields are in the sibling EetCertificateImport component.",
+      FieldDescription:
+        "The native certificate file/password fields are in the sibling EetCertificateImport component.",
+      FieldError:
+        "The native certificate file/password fields are in the sibling EetCertificateImport component.",
+      FieldGroup:
+        "The native certificate file/password fields are in the sibling EetCertificateImport component.",
+      FieldLabel:
+        "The native certificate file/password fields are in the sibling EetCertificateImport component.",
+      Input:
+        "The native certificate file/password fields are in the sibling EetCertificateImport component.",
+    },
   },
   {
     native: "src/features/settings/eet/eet-settings-page.tsx",
-    web: ["apps/web-app/src/features/settings/eet/eet-settings-page.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/settings/eet/eet-settings-page.tsx",
+      "apps/web-app/src/features/settings/eet/eet-certificate-card.tsx",
+      "apps/web-app/src/features/settings/inline-edit-switch.tsx",
+      "apps/web-app/src/features/settings/inline-edit-toggle-group.tsx",
+    ],
+    status: "matched",
+    allowedDifferences: {
+      Button:
+        "The native certificate import action is in the separate EetCertificateImport child; the web source keeps it inline with the settings page.",
+      FieldLabel:
+        "Web's environment label is visually hidden; the native environment choices already announce each option and do not repeat the card title.",
+      FieldError:
+        "The native InlineEditField child renders its validation error internally; the web source inlines that part of the field.",
+      Input:
+        "The native InlineEditField child renders its input internally; the web source inlines that part of the field.",
+    },
   },
   {
     native: "src/features/settings/eet/eet-test-section.tsx",
     web: ["apps/web-app/src/features/settings/eet/eet-test-card.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/eet/eet-unconfirmed-sales.tsx",
     web: [
       "apps/web-app/src/features/settings/eet/eet-unconfirmed-sales-card.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/evolu-export/evolu-export-page.tsx",
     web: [
       "apps/web-app/src/features/settings/evolu-export/evolu-export-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/fio-plugin/fio-plugin-settings-page.tsx",

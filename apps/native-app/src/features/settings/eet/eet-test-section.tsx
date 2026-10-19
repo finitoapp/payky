@@ -9,10 +9,27 @@ import type {
   EetEnvironment,
 } from "@payky/core/modules/eet/eet-types"
 import { useAtomValue } from "jotai"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
+import PlugZap from "lucide-react-native/icons/plug-zap"
+import Receipt from "lucide-react-native/icons/receipt"
 import { useState } from "react"
-import { Text, YStack } from "tamagui"
+import { Text, View, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  useCollapsible,
+} from "../../../components/ui/collapsible.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -56,36 +73,42 @@ export function EetTestSection({
   }
 
   return (
-    <YStack gap="3">
-      <YStack gap="1">
-        <Text fontWeight="700">{t("settings.eet.test.title")}</Text>
-        <Text color="muted-foreground">
-          {t("settings.eet.test.description")}
-        </Text>
-      </YStack>
-      <Button
-        size="lg"
-        label={t("settings.eet.test.connection")}
-        variant="outline"
-        disabled={!canSend}
-        pending={pending}
-        onPress={() => {
-          void send("verification")
-        }}
-      />
-      {environment === "playground" ? (
-        <Button
-          size="lg"
-          label={t("settings.eet.test.sale")}
-          variant="outline"
-          disabled={!canSend}
-          onPress={() => {
-            void send("sale")
-          }}
-        />
-      ) : null}
-      {submission === null ? null : <EetTestResult submission={submission} />}
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.eet.test.title")}</CardTitle>
+        <CardDescription>{t("settings.eet.test.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <YStack gap="4">
+          <XStack gap="2" flexWrap="wrap">
+            <Button
+              label={t("settings.eet.test.connection")}
+              variant="outline"
+              iconStart={PlugZap}
+              disabled={!canSend}
+              pending={pending}
+              onPress={() => {
+                void send("verification")
+              }}
+            />
+            {environment === "playground" ? (
+              <Button
+                label={t("settings.eet.test.sale")}
+                variant="outline"
+                iconStart={Receipt}
+                disabled={!canSend}
+                onPress={() => {
+                  void send("sale")
+                }}
+              />
+            ) : null}
+          </XStack>
+          {submission === null ? null : (
+            <EetTestResult submission={submission} />
+          )}
+        </YStack>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -141,25 +164,37 @@ function RawMessage({
   readonly label: string
   readonly value: string | null
 }) {
-  const [open, setOpen] = useState(false)
   if (value === null) return null
 
   return (
-    <YStack gap="1">
-      <Text
-        fontSize={13}
-        fontWeight="600"
-        color="muted-foreground"
-        accessibilityRole="button"
-        onPress={() => setOpen((current) => !current)}
+    <Collapsible>
+      <CollapsibleTrigger flexDirection="row" items="center" gap="1">
+        <Text fontSize="xs" fontWeight="600" color="muted-foreground">
+          {label}
+        </Text>
+        <RawMessageChevron />
+      </CollapsibleTrigger>
+      <CollapsibleContent
+        mt="2"
+        maxH={256}
+        overflow="scroll"
+        rounded="md"
+        bg="muted"
+        p="2"
       >
-        {`${open ? "▾" : "▸"} ${label}`}
-      </Text>
-      {open ? (
         <Text fontSize={11} userSelect="text">
           {value}
         </Text>
-      ) : null}
-    </YStack>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+function RawMessageChevron() {
+  const { open } = useCollapsible()
+  return (
+    <View rotate={open ? "180deg" : "0deg"}>
+      <Icon icon={ChevronDown} size={14} color="muted-foreground" />
+    </View>
   )
 }

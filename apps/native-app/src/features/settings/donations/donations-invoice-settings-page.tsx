@@ -6,7 +6,16 @@ import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { QrCode } from "../../../components/qr-code.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { SuccessPanel } from "../../../components/success-panel.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useAsyncValue } from "../../../hooks/use-async-value.ts"
 import { useCopyToClipboard } from "../../../hooks/use-copy-to-clipboard.ts"
@@ -69,19 +78,26 @@ function DonationsInvoiceSettingsPage({
     return (
       <Screen>
         <FadeHeader title={t("settings.donations.invoice.title")} />
-        <YStack gap="3" accessibilityLiveRegion="polite">
-          <Text fontSize={24} fontWeight="700">
-            {t("settings.donations.invoice.verify.paid")}
-          </Text>
-          <Text color="muted-foreground">
-            {t("settings.donations.invoice.verify.paid.description")}
-          </Text>
-        </YStack>
-        <Button
-          size="lg"
-          label={t("settings.donations.invoice.backToSettings")}
-          onPress={() => router.dismissTo("/settings")}
-        />
+        <Card>
+          <CardContent>
+            <YStack minH={448} items="center" justify="center">
+              <SuccessPanel
+                title={t("settings.donations.invoice.verify.paid")}
+                description={t(
+                  "settings.donations.invoice.verify.paid.description"
+                )}
+                actions={
+                  <Button
+                    size="lg"
+                    flex={1}
+                    label={t("settings.donations.invoice.backToSettings")}
+                    onPress={() => router.dismissTo("/settings")}
+                  />
+                }
+              />
+            </YStack>
+          </CardContent>
+        </Card>
       </Screen>
     )
   }
@@ -89,48 +105,72 @@ function DonationsInvoiceSettingsPage({
   return (
     <Screen>
       <FadeHeader title={t("settings.donations.invoice.title")} />
-      <Text color="muted-foreground">
-        {invoice.length === 0
-          ? t("settings.donations.invoice.missing")
-          : t("settings.donations.invoice.description")}
-      </Text>
-      {invoice.length > 0 ? (
-        <>
-          <YStack items="center" accessibilityLabel={invoice}>
-            <QrCode value={invoice} size={280} />
-          </YStack>
-          {canVerify ? (
-            <Text
-              color={verification.failed ? "destructive" : "muted-foreground"}
-              accessibilityLiveRegion="polite"
-            >
-              {t(
-                verification.failed
-                  ? "settings.donations.invoice.verify.error"
-                  : "settings.donations.invoice.verify.waiting"
-              )}
-            </Text>
-          ) : null}
-          <Button
-            size="lg"
-            label={t("settings.donations.invoice.openWallet")}
-            onPress={() => {
-              void Linking.openURL(`lightning:${invoice}`)
-            }}
-          />
-          <Button
-            size="lg"
-            label={t("settings.donations.invoice.copy")}
-            variant="outline"
-            onPress={() =>
-              void copy(invoice, {
-                copied: t("settings.donations.invoice.copied"),
-                failed: t("settings.donations.invoice.copyFailed"),
-              })
-            }
-          />
-        </>
-      ) : null}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.donations.invoice.title")}</CardTitle>
+          <CardDescription>
+            {invoice.length === 0
+              ? t("settings.donations.invoice.missing")
+              : t("settings.donations.invoice.description")}
+          </CardDescription>
+        </CardHeader>
+        {invoice.length > 0 ? (
+          <>
+            <CardContent>
+              <YStack items="center" gap="4">
+                <YStack
+                  w="100%"
+                  aspectRatio={1}
+                  items="center"
+                  justify="center"
+                  rounded="xl"
+                  borderWidth={1}
+                  borderColor="card-ring"
+                  p="4"
+                  style={{ backgroundColor: "#fff" }}
+                  accessibilityLabel={invoice}
+                >
+                  <QrCode value={invoice} />
+                </YStack>
+                {canVerify ? (
+                  <Text
+                    color={
+                      verification.failed ? "destructive" : "muted-foreground"
+                    }
+                    accessibilityLiveRegion="polite"
+                  >
+                    {t(
+                      verification.failed
+                        ? "settings.donations.invoice.verify.error"
+                        : "settings.donations.invoice.verify.waiting"
+                    )}
+                  </Text>
+                ) : null}
+                <Button
+                  label={t("settings.donations.invoice.copy")}
+                  variant="outline"
+                  onPress={() =>
+                    void copy(invoice, {
+                      copied: t("settings.donations.invoice.copied"),
+                      failed: t("settings.donations.invoice.copyFailed"),
+                    })
+                  }
+                />
+              </YStack>
+            </CardContent>
+            <CardFooter>
+              <Button
+                size="lg"
+                flex={1}
+                label={t("settings.donations.invoice.openWallet")}
+                onPress={() => {
+                  void Linking.openURL(`lightning:${invoice}`)
+                }}
+              />
+            </CardFooter>
+          </>
+        ) : null}
+      </Card>
     </Screen>
   )
 }

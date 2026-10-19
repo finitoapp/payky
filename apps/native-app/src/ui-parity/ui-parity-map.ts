@@ -438,7 +438,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
     allowedDifferences: {
       AccountTransferTarget:
-        "native keeps its existing no-confirm transfer path and has no restore-with-phrase callback; fallback-account lookup and confirmation are a separate behavior gap",
+        "native keeps its existing no-confirm transfer path; fallback-account lookup and confirmation are a separate behavior gap",
       CancelSetup:
         "native does not look up a fallback device account, so it cannot offer web's cancel-setup action",
     },
@@ -1492,7 +1492,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/shared/account/account-transfer-target.tsx",
     ],
     status: "matched",
-    note: "Native keeps the validated QR scan filter; the source has an optional phrase fallback and a transfer-phase screen wake lock that native does not. These remain behavior gaps. The code text uses the native Inter typeface because the configured native fonts have no mono family.",
+    note: "Native keeps the validated QR scan filter. The code text uses the native Inter typeface because the configured native fonts have no mono family.",
   },
   {
     native: "src/features/shared/bill-cancellation-collision-actions.tsx",

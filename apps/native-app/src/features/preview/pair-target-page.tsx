@@ -1,3 +1,4 @@
+import { router } from "expo-router"
 import { Text, YStack } from "tamagui"
 import { Screen } from "../../components/screen.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
@@ -16,7 +17,17 @@ export function PairTargetPage() {
           {t("accountTransfer.target.description")}
         </Text>
       </YStack>
-      <AccountTransferTarget source="settings" confirmBeforeAdding />
+      <AccountTransferTarget
+        source="settings"
+        confirmBeforeAdding
+        // Back to the accounts screen, which opens its own restore form.
+        onRestoreWithPhrase={() =>
+          router.dismissTo({
+            pathname: "/settings/accounts",
+            params: { restore: "1" },
+          })
+        }
+      />
     </Screen>
   )
 }

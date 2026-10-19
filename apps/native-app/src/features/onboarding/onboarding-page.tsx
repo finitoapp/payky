@@ -298,6 +298,13 @@ export function OnboardingPage() {
             <AccountTransferTarget
               source="onboarding"
               confirmBeforeAdding={false}
+              onRestoreWithPhrase={() =>
+                setForm((current) => ({
+                  ...current,
+                  accountType: "restore",
+                  step: "restore",
+                }))
+              }
             />
           ) : null}
         </YStack>

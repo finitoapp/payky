@@ -7,7 +7,7 @@ import {
   selectAccount,
 } from "@payky/core/evolu/device-account"
 import type { DeviceAccountId } from "@payky/core/evolu/device-client"
-import { router } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue, useSetAtom, useStore } from "jotai"
 import Check from "lucide-react-native/icons/check"
 import KeyRound from "lucide-react-native/icons/key-round"
@@ -15,7 +15,7 @@ import MonitorSmartphone from "lucide-react-native/icons/monitor-smartphone"
 import Plus from "lucide-react-native/icons/plus"
 import QrCode from "lucide-react-native/icons/qr-code"
 import Trash from "lucide-react-native/icons/trash"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Image } from "react-native"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
@@ -55,6 +55,13 @@ export function AccountsSettingsPage() {
   const { data: accounts } = useDeviceEvoluQuery(accountListQuery)
   const [busy, setBusy] = useState(false)
   const [restoreOpen, setRestoreOpen] = useState(false)
+  // `/pair`'s "restore with the recovery phrase instead" comes back here.
+  const { restore } = useLocalSearchParams<{ restore?: string }>()
+  useEffect(() => {
+    if (restore !== "1") return
+    setRestoreOpen(true)
+    router.setParams({ restore: undefined })
+  }, [restore])
   const restoring = useRestoreAccount("settings")
   const stale = () => store.get(evoluCounterAtom) !== accountVersion
 

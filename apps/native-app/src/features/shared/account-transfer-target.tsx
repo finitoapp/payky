@@ -82,10 +82,13 @@ type View =
 export function AccountTransferTarget({
   source,
   confirmBeforeAdding,
+  onRestoreWithPhrase,
 }: {
   readonly source: "onboarding" | "settings"
   /** A device that already has an account confirms before adding another. */
   readonly confirmBeforeAdding: boolean
+  /** Offers the recovery phrase instead, for when no source device is at hand. */
+  readonly onRestoreWithPhrase?: () => void
 }) {
   const { t } = useTranslation()
   const confirm = useConfirm()
@@ -202,6 +205,15 @@ export function AccountTransferTarget({
               {t("accountTransfer.target.warning.description")}
             </AlertDescription>
           </Alert>
+          {onRestoreWithPhrase === undefined ? null : (
+            <Button
+              variant="link"
+              self="flex-start"
+              px={0}
+              label={t("accountTransfer.target.fallback")}
+              onPress={onRestoreWithPhrase}
+            />
+          )}
         </>
       ) : null}
 

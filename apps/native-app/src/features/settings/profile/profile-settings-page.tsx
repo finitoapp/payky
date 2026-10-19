@@ -10,7 +10,7 @@ import ImageIcon from "lucide-react-native/icons/image"
 import Trash from "lucide-react-native/icons/trash"
 import { useState } from "react"
 import { Image, Text as NativeText } from "react-native"
-import { Text, XStack, YStack } from "tamagui"
+import { Text, useTheme, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
@@ -44,6 +44,7 @@ export function ProfileSettingsPage() {
   const { t } = useTranslation()
   const identity = useNostrIdentity()
   const copy = useCopyToClipboard()
+  const theme = useTheme()
   const [attempt, setAttempt] = useState(0)
   const profile = useNostrProfile(identity.pubkey, attempt)
 
@@ -87,7 +88,8 @@ export function ProfileSettingsPage() {
                   style={{
                     flex: 1,
                     fontSize: 12,
-                    opacity: 0.7,
+                    // Web's text-muted-foreground; RN Text has no theme color.
+                    color: theme["muted-foreground"]?.val,
                     fontFamily: "monospace",
                   }}
                 >
@@ -96,6 +98,7 @@ export function ProfileSettingsPage() {
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  labelColor="muted-foreground"
                   accessibilityLabel={t("settings.profile.npub.copy")}
                   iconStart={Copy}
                   onPress={() =>

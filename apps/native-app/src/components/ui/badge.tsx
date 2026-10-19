@@ -90,20 +90,30 @@ export interface BadgeProps
   /** Already translated. */
   readonly label: string
   readonly icon?: LucideIcon
+  /**
+   * Recolors the label and icon, for the web call sites that tint a badge
+   * with a class (`bg-warning/10 text-warning`); pass the tint as `bg`.
+   */
+  readonly labelColor?: ThemeColor
 }
 
 export function Badge({
   variant = "default",
   label,
   icon,
+  labelColor,
   ...frameProps
 }: BadgeProps) {
+  const color = labelColor ?? textColors[variant]
   return (
     <BadgeFrame variant={variant} {...frameProps}>
-      {icon === undefined ? null : (
-        <Icon icon={icon} size={12} color={textColors[variant]} />
-      )}
-      <BadgeText numberOfLines={1}>{label}</BadgeText>
+      {icon === undefined ? null : <Icon icon={icon} size={12} color={color} />}
+      <BadgeText
+        numberOfLines={1}
+        {...(labelColor === undefined ? {} : { color: labelColor })}
+      >
+        {label}
+      </BadgeText>
     </BadgeFrame>
   )
 }

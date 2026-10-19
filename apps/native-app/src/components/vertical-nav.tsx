@@ -3,6 +3,7 @@ import ChevronRight from "lucide-react-native/icons/chevron-right"
 import type { ReactNode } from "react"
 import { Linking } from "react-native"
 import { styled, Text, View } from "tamagui"
+import type { ThemeColor } from "../theme/themes.ts"
 import { fontSize, fontWeight, radius } from "../theme/tokens.ts"
 import { Icon } from "./ui/icon.tsx"
 
@@ -55,6 +56,11 @@ export type VerticalNavItem = NavItemTarget & {
   readonly disableAction?: boolean
   /** TalkBack name when `label` is not a string. */
   readonly accessibilityLabel?: string
+  /**
+   * A 3 px stripe on the row's leading edge, as web's activity rows mark an
+   * issue with `shadow-[inset_3px_0_0_…]` (web passes it as `className`).
+   */
+  readonly stripeColor?: ThemeColor
 }
 
 export function VerticalNav({
@@ -117,6 +123,8 @@ function NavRow({
       py={10}
       borderTopWidth={first ? 0 : 1}
       borderColor="border-color"
+      borderLeftWidth={item.stripeColor === undefined ? 0 : 3}
+      borderLeftColor={item.stripeColor ?? "transparent"}
       bg={interactive ? "transparent press:accent" : "transparent"}
       onPress={onPress}
       accessible={interactive ? true : undefined}

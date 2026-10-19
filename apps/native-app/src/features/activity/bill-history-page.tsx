@@ -13,25 +13,61 @@ import { useNow } from "@payky/app-shared/use-now"
 import { latestBillsQuery } from "@payky/core/modules/bill/bill-queries"
 import type { BillStatus } from "@payky/core/modules/bill/bill-types"
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
-import { router } from "expo-router"
+import type { LucideIcon } from "lucide-react-native"
+import Check from "lucide-react-native/icons/check"
+import RotateCw from "lucide-react-native/icons/rotate-cw"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
+import X from "lucide-react-native/icons/x"
+import { View } from "tamagui"
+import { Icon } from "../../components/ui/icon.tsx"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import type { ThemeColor } from "../../theme/themes.ts"
+import { radius } from "../../theme/tokens.ts"
 import {
   type ActivityGroup,
   ActivityList,
-  paymentMethodsText,
-  type StatusTone,
+  type ActivityRowData,
 } from "./activity-parts.tsx"
 import { ActivityShell } from "./activity-shell.tsx"
 
-const statusPresentation = {
-  closed: { tone: "success", glyph: "✓" },
-  open: { tone: "warning", glyph: "…" },
-  canceled: { tone: "danger", glyph: "✕" },
+const billStatusIcons = {
+  open: { bg: "warning-10", color: "warning", icon: RotateCw },
+  closed: { bg: "success-10", color: "success", icon: Check },
+  canceled: { bg: "destructive-10", color: "destructive", icon: X },
 } as const satisfies Record<
   BillStatus,
-  { readonly tone: StatusTone; readonly glyph: string }
+  {
+    readonly bg: ThemeColor
+    readonly color: ThemeColor
+    readonly icon: LucideIcon
+  }
 >
+
+/** Web's `BillStatusIcon`: the bill's status as a filled 32 circle. */
+function BillStatusIcon({
+  status,
+  hasCancellationCollision,
+}: {
+  readonly status: BillStatus
+  readonly hasCancellationCollision: boolean
+}) {
+  const tone = hasCancellationCollision
+    ? ({ bg: "warning-10", color: "warning", icon: TriangleAlert } as const)
+    : billStatusIcons[status]
+  return (
+    <View
+      w={32}
+      h={32}
+      rounded={radius.full}
+      bg={tone.bg}
+      items="center"
+      justify="center"
+    >
+      <Icon icon={tone.icon} color={tone.color} />
+    </View>
+  )
+}
 
 /** The Activity tab's bills list. */
 export function BillHistoryPage() {
@@ -62,8 +98,7 @@ function BillHistory() {
   }: {
     readonly bill: BillHistoryRow
     readonly summary: ReturnType<typeof summarizeBillHistoryRow>
-  }) => {
-    const presentation = statusPresentation[summary.status]
+  }): ActivityRowData => {
     const tips = sumSettledTips(bill)
     const details = [
       formatTime(new Date(bill.createdAt), locale),
@@ -76,21 +111,22 @@ function BillHistory() {
             ),
           })
         : null,
-      paymentMethodsText(
-        bill.claimedTransactions.map(
-          (transaction) => transaction.transactionKind
-        ),
-        t
-      ),
-    ]
-      .filter((part): part is string => part !== null)
-      .join(" · ")
+    ].filter((part): part is string => part !== null)
 
     return {
       id: bill.id,
       title: bill.label ?? t("bill.list.label", { number: bill.displayNumber }),
       details,
+      methodKinds: bill.claimedTransactions.map(
+        (transaction) => transaction.transactionKind
+      ),
       issues: billHistoryIssueLabels(summary, t),
+      statusIcon: (
+        <BillStatusIcon
+          status={summary.status}
+          hasCancellationCollision={summary.hasCancellationCollision}
+        />
+      ),
       amount: formatMoney(
         { value: summary.billTotal, currency: bill.currency },
         locale
@@ -100,15 +136,10 @@ function BillHistory() {
       isVoid:
         summary.status === "canceled" && !summary.hasCancellationCollision,
       statusLabel: t(billStatusLabelKey[summary.status]),
-      statusTone: summary.hasCancellationCollision
-        ? ("warning" as const)
-        : presentation.tone,
-      statusGlyph: summary.hasCancellationCollision ? "⚠" : presentation.glyph,
-      onPress: () =>
-        router.push({
-          pathname: "/activity/bills/[billId]",
-          params: { billId: bill.id },
-        }),
+      href: {
+        pathname: "/activity/bills/[billId]",
+        params: { billId: bill.id },
+      },
     }
   }
 
@@ -141,6 +172,7 @@ function BillHistory() {
   return (
     <ActivityList
       groups={groups}
+      emptyListTitle={t("billHistory.title")}
       emptyTitle={t("billHistory.empty.title")}
       emptyDescription={t("billHistory.empty.description")}
       hasMore={hasMore}

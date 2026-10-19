@@ -198,8 +198,18 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   },
   {
     native: "src/features/activity/activity-parts.tsx",
-    web: ["apps/web-app/src/features/activity/activity-row.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/activity/activity-row.tsx",
+      "apps/web-app/src/features/activity/activity-history-skeleton.tsx",
+    ],
+    status: "matched",
+    allowedDifferences: {
+      VerticalNav:
+        "native draws each history's day cards here, in the ActivityList both histories share; web draws them in payment-history.tsx and bill-history.tsx",
+      ListSkeleton:
+        "web's pagination placeholder is ActivityHistorySkeleton, a VerticalNav-shaped skeleton; native uses the kit's ListSkeleton",
+      Skeleton: "inside ListSkeleton",
+    },
   },
   {
     native: "src/features/activity/activity-shell.tsx",
@@ -207,7 +217,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/activity/activity-tabs.tsx",
       "apps/web-app/src/features/activity/activity-pages.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      ListSkeleton:
+        "the Suspense fallback; web's is ActivityHistorySkeleton, the same VerticalNav-shaped placeholder",
+    },
   },
   {
     native: "src/features/activity/bill-detail-page.tsx",
@@ -217,7 +231,10 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/activity/bill-history-page.tsx",
     web: ["apps/web-app/src/features/activity/bill-history.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      VerticalNav: "drawn by the shared ActivityList in activity-parts.tsx",
+    },
   },
   {
     native: "src/features/activity/detail-parts.tsx",
@@ -235,12 +252,20 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/activity/payment-history-page.tsx",
     web: ["apps/web-app/src/features/activity/payment-history.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      VerticalNav: "drawn by the shared ActivityList in activity-parts.tsx",
+    },
   },
   {
     native: "src/features/activity/payment-refunds.tsx",
     web: ["apps/web-app/src/features/activity/payment-refunds.tsx"],
     status: "pending",
+  },
+  {
+    native: "src/features/activity/payment-status-display.tsx",
+    web: ["apps/web-app/src/features/activity/payment-status-display.tsx"],
+    status: "matched",
   },
   {
     native: "src/features/bill/assign-table-dialog.tsx",
@@ -788,6 +813,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/shared/eet-sale-status.tsx",
     web: ["apps/web-app/src/features/shared/eet-sale-status.tsx"],
     status: "pending",
+  },
+  {
+    native: "src/features/shared/refund-badge.tsx",
+    web: ["apps/web-app/src/features/shared/refund-badge.tsx"],
+    status: "matched",
   },
   {
     native: "src/features/shared/restore-account-step.tsx",

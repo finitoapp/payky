@@ -4,7 +4,6 @@ import {
   hasAnyIssue,
   type PaymentHistoryRow,
   paymentHistoryIssueLabels,
-  refundBadgeLabel,
   resolvePaymentTitle,
 } from "@payky/app-shared/activity-history"
 import { paymentStatusLabelKey } from "@payky/app-shared/activity-labels"
@@ -13,30 +12,19 @@ import { formatMoney } from "@payky/app-shared/format-money"
 import { groupByDay } from "@payky/app-shared/group-by-day"
 import { useNow } from "@payky/app-shared/use-now"
 import { latestPaymentsQuery } from "@payky/core/modules/payment/payment-queries"
-import type { PaymentStatus } from "@payky/core/modules/payment/payment-types"
 import { refundSummariesQuery } from "@payky/core/modules/refund/refund-queries"
 import { summarizeRefundsByPayment } from "@payky/core/modules/refund/refund-utils"
-import { router } from "expo-router"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { RefundBadge } from "../shared/refund-badge.tsx"
 import {
   type ActivityGroup,
   ActivityList,
-  paymentMethodsText,
-  type StatusTone,
+  type ActivityRowData,
 } from "./activity-parts.tsx"
 import { ActivityShell } from "./activity-shell.tsx"
-
-const statusPresentation = {
-  paid: { tone: "success", glyph: "✓" },
-  pending: { tone: "warning", glyph: "…" },
-  expired: { tone: "muted", glyph: "–" },
-  canceled: { tone: "danger", glyph: "✕" },
-} as const satisfies Record<
-  PaymentStatus,
-  { readonly tone: StatusTone; readonly glyph: string }
->
+import { PaymentStatusIcon } from "./payment-status-display.tsx"
 
 /** The Activity tab's payments list. */
 export function PaymentHistoryPage() {
@@ -60,9 +48,8 @@ function PaymentHistory() {
   // its own or a listed pending payment never becomes Expired.
   const now = useNow(rows.map((row) => row.expiresAt))
 
-  const toRow = (item: PaymentHistoryRow) => {
+  const toRow = (item: PaymentHistoryRow): ActivityRowData => {
     const state = derivePaymentHistoryRowState(item, now)
-    const presentation = statusPresentation[state.status]
     const details = [
       formatTime(new Date(item.createdAt), locale),
       item.tableName,
@@ -74,41 +61,35 @@ function PaymentHistory() {
             ),
           })
         : null,
-      paymentMethodsText(
-        item.ownClaimedTransactions.map(
-          (transaction) => transaction.transactionKind
-        ),
-        t
-      ),
-    ]
-      .filter((part): part is string => part !== null)
-      .join(" · ")
+    ].filter((part): part is string => part !== null)
 
     return {
       id: item.id,
       title: resolvePaymentTitle(item, t),
       details,
+      methodKinds: item.ownClaimedTransactions.map(
+        (transaction) => transaction.transactionKind
+      ),
       issues: hasAnyIssue(state.issueFlags)
         ? paymentHistoryIssueLabels(state.issueFlags, t)
         : [],
-      refundLabel:
-        refundBadgeLabel(refundsByPayment.get(item.id), t, locale) ?? undefined,
+      extra: <RefundBadge summary={refundsByPayment.get(item.id)} />,
+      statusIcon: (
+        <PaymentStatusIcon
+          status={state.status}
+          hasCancellationCollision={state.hasCancellationCollision}
+        />
+      ),
       amount: formatMoney(
         { value: item.amount, currency: item.currency },
         locale
       ),
       isVoid: state.isVoid,
       statusLabel: t(paymentStatusLabelKey[state.status]),
-      // A canceled payment whose money arrived anyway is a warning, not a cross.
-      statusTone: state.hasCancellationCollision
-        ? ("warning" as const)
-        : presentation.tone,
-      statusGlyph: state.hasCancellationCollision ? "⚠" : presentation.glyph,
-      onPress: () =>
-        router.push({
-          pathname: "/activity/[paymentId]",
-          params: { paymentId: item.id },
-        }),
+      href: {
+        pathname: "/activity/[paymentId]",
+        params: { paymentId: item.id },
+      },
     }
   }
 
@@ -136,6 +117,7 @@ function PaymentHistory() {
   return (
     <ActivityList
       groups={groups}
+      emptyListTitle={t("paymentHistory.title")}
       emptyTitle={t("paymentHistory.empty.title")}
       emptyDescription={t("paymentHistory.empty.description")}
       hasMore={hasMore}

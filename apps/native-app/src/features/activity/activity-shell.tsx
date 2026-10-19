@@ -1,18 +1,22 @@
 import { router } from "expo-router"
+import ChartColumn from "lucide-react-native/icons/chart-column"
 import { type ReactNode, Suspense } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useTheme, XStack } from "tamagui"
+import { useTheme, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
-import { LoadingView } from "../../components/state-views.tsx"
+import { ListSkeleton } from "../../components/list-skeleton.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
+import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 type ActivityTab = "payments" | "bills"
 
 /**
- * Header and the payments/bills tabs around a history list. Each tab is its
- * own route, and switching replaces rather than pushes, so back always leaves
- * Activity instead of rewinding through tabs (as web's `ActivityTabs`).
+ * Header and the payments/bills tabs around a history list, as web's
+ * `activity-pages.tsx` and `ActivityTabs`: the stats link is the header's
+ * end icon, and each tab is its own route; switching replaces rather than
+ * pushes, so back always leaves Activity instead of rewinding through tabs.
  */
 export function ActivityShell({
   active,
@@ -26,36 +30,52 @@ export function ActivityShell({
 
   return (
     <SafeAreaView
-      style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
+      style={{
+        flex: 1,
+        paddingHorizontal: 16,
+        backgroundColor: theme.background.val,
+      }}
     >
-      <FadeHeader title={t("activity.title")} />
-      <Button
-        size="lg"
-        label={t("stats.title")}
-        variant="outline"
-        onPress={() => router.push("/stats")}
+      <FadeHeader
+        title={t("activity.title")}
+        endAddon={
+          <Button
+            variant="ghost"
+            accessibilityLabel={t("nav.stats")}
+            onPress={() => router.push("/stats")}
+          >
+            <Icon
+              icon={ChartColumn}
+              size={20}
+              color="primary"
+              strokeWidth={3}
+            />
+          </Button>
+        }
       />
-      <XStack gap="2" mb="2">
-        <XStack flex={1}>
-          <Button
-            size="lg"
-            label={t("activity.tabs.payments")}
-            variant={active === "payments" ? "default" : "outline"}
-            onPress={() => active !== "payments" && router.replace("/activity")}
-          />
-        </XStack>
-        <XStack flex={1}>
-          <Button
-            size="lg"
-            label={t("activity.tabs.bills")}
-            variant={active === "bills" ? "default" : "outline"}
-            onPress={() =>
-              active !== "bills" && router.replace("/activity/bills")
-            }
-          />
-        </XStack>
-      </XStack>
-      <Suspense fallback={<LoadingView />}>{children}</Suspense>
+      <YStack flex={1} gap={32}>
+        <Tabs value={active}>
+          <TabsList>
+            <TabsTrigger
+              value="payments"
+              onPress={() =>
+                active !== "payments" && router.replace("/activity")
+              }
+            >
+              {t("activity.tabs.payments")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="bills"
+              onPress={() =>
+                active !== "bills" && router.replace("/activity/bills")
+              }
+            >
+              {t("activity.tabs.bills")}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Suspense fallback={<ListSkeleton rows={5} />}>{children}</Suspense>
+      </YStack>
     </SafeAreaView>
   )
 }

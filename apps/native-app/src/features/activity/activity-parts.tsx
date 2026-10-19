@@ -1,11 +1,233 @@
 import { paymentMethodLabelKey } from "@payky/app-shared/activity-labels"
 import type { AccountTransactionKind } from "@payky/core/modules/account-transaction/account-transaction-types"
-import { ActivityIndicator, FlatList, Pressable } from "react-native"
-import { Text, XStack, YStack } from "tamagui"
-import { EmptyView } from "../../components/state-views.tsx"
-import type { useTranslation } from "../../hooks/use-translation.ts"
+import type { Href } from "expo-router"
+import Receipt from "lucide-react-native/icons/receipt"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
+import type { ReactNode } from "react"
+import { FlatList } from "react-native"
+import { Text, View, XStack, YStack } from "tamagui"
+import { ListSkeleton } from "../../components/list-skeleton.tsx"
+import { Badge } from "../../components/ui/badge.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
+import { VerticalNav } from "../../components/vertical-nav.tsx"
+import { useTranslation } from "../../hooks/use-translation.ts"
+import type { ThemeColor } from "../../theme/themes.ts"
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
+import { paymentMethodIcon } from "../shared/payment-method-display.ts"
 
-/** The pieces the payment and bill lists share, so the two tabs read the same way. */
+/**
+ * The pieces the payment and bill lists share, so the two activity tabs read
+ * the same way, as web's `activity-row.tsx`: each day is a `VerticalNav`
+ * card titled with the day and its total; a row has its status icon, the
+ * title over a muted details line with the settling methods' icons, the
+ * issue badges, and the amount over its status label.
+ */
+
+export function ActivityIssueBadges({
+  issues,
+}: {
+  readonly issues: ReadonlyArray<string>
+}) {
+  if (issues.length === 0) return null
+  return (
+    <XStack flexWrap="wrap" gap={4}>
+      {issues.map((issue) => (
+        <Badge
+          key={issue}
+          icon={TriangleAlert}
+          bg="warning-10"
+          labelColor="warning"
+          label={issue}
+        />
+      ))}
+    </XStack>
+  )
+}
+
+export function PaymentMethodIcons({
+  kinds,
+}: {
+  readonly kinds: ReadonlyArray<AccountTransactionKind>
+}) {
+  const { t } = useTranslation()
+  if (kinds.length === 0) return null
+  return (
+    <XStack items="center" gap={4}>
+      {Array.from(new Set(kinds), (kind) => (
+        <View
+          key={kind}
+          accessible
+          accessibilityLabel={t(paymentMethodLabelKey[kind])}
+        >
+          <Icon
+            icon={paymentMethodIcon[kind]}
+            size={14}
+            color="muted-foreground"
+          />
+        </View>
+      ))}
+    </XStack>
+  )
+}
+
+/** The row's right column: the amount, bold, over its status label. */
+export function ActivityAmount({
+  amount,
+  isVoid,
+  statusLabel,
+}: {
+  readonly amount: string
+  /** Struck through: money that never arrived and never will. */
+  readonly isVoid: boolean
+  readonly statusLabel: string
+}) {
+  return (
+    <YStack items="flex-end" gap={4}>
+      <Text
+        fontSize={fontSize.sm}
+        fontWeight={fontWeight.semibold}
+        fontVariant={["tabular-nums"]}
+        color={isVoid ? "muted-foreground" : "color"}
+        textDecorationLine={isVoid ? "line-through" : "none"}
+      >
+        {amount}
+      </Text>
+      <Text
+        fontSize={fontSize.xs}
+        fontWeight={fontWeight.medium}
+        color="muted-foreground"
+      >
+        {statusLabel}
+      </Text>
+    </YStack>
+  )
+}
+
+export interface ActivityRowData {
+  readonly id: string
+  /** Already translated or user-entered. */
+  readonly title: string
+  /** Time, table, tip: the parts of the muted details line. */
+  readonly details: ReadonlyArray<string>
+  readonly methodKinds: ReadonlyArray<AccountTransactionKind>
+  readonly issues: ReadonlyArray<string>
+  /** A badge under the details, such as the refund badge. */
+  readonly extra?: ReactNode
+  readonly statusIcon: ReactNode
+  readonly amount: string
+  readonly isVoid: boolean
+  readonly statusLabel: string
+  readonly href: Href
+}
+
+export interface ActivityGroup {
+  readonly key: string
+  /** The day heading with its total. */
+  readonly title: string
+  readonly rows: ReadonlyArray<ActivityRowData>
+}
+
+/** One day card: web's per-day `VerticalNav` of activity rows. */
+function ActivityDay({ group }: { readonly group: ActivityGroup }) {
+  return (
+    <VerticalNav
+      title={group.title}
+      items={group.rows.map((row) => ({
+        id: row.id,
+        kind: "link" as const,
+        href: row.href,
+        accessibilityLabel: `${row.title}, ${row.amount}, ${row.statusLabel}`,
+        stripeColor: row.issues.length > 0 ? ("warning" as const) : undefined,
+        icon: <View p={8}>{row.statusIcon}</View>,
+        label: (
+          <YStack w="100%" gap={4} items="flex-start">
+            <Text fontWeight={fontWeight.bold} numberOfLines={1}>
+              {row.title}
+            </Text>
+            <XStack flexWrap="wrap" items="center" gap={8}>
+              <Text fontSize={fontSize.xs} color="muted-foreground">
+                {row.details.join(" · ")}
+              </Text>
+              <PaymentMethodIcons kinds={row.methodKinds} />
+            </XStack>
+            <ActivityIssueBadges issues={row.issues} />
+            {row.extra}
+          </YStack>
+        ),
+        action: (
+          <ActivityAmount
+            amount={row.amount}
+            isVoid={row.isVoid}
+            statusLabel={row.statusLabel}
+          />
+        ),
+      }))}
+    />
+  )
+}
+
+/**
+ * Day-grouped, paginated list (`useInfinitePages`) as one `FlatList` of day
+ * cards with stable keys, so live updates move rows instead of remounting
+ * the list. An empty history is the titled card with web's empty state.
+ */
+export function ActivityList({
+  groups,
+  emptyListTitle,
+  emptyTitle,
+  emptyDescription,
+  hasMore,
+  isPending,
+  loadMore,
+}: {
+  readonly groups: ReadonlyArray<ActivityGroup>
+  /** The card title of the empty list, e.g. "Payments". */
+  readonly emptyListTitle: string
+  readonly emptyTitle: string
+  readonly emptyDescription: string
+  readonly hasMore: boolean
+  readonly isPending: boolean
+  readonly loadMore: () => void
+}) {
+  return (
+    <FlatList
+      style={{ flex: 1 }}
+      contentContainerStyle={{ gap: 16, paddingBottom: 16 }}
+      data={groups}
+      keyExtractor={(group) => group.key}
+      onEndReachedThreshold={0.5}
+      onEndReached={() => {
+        if (hasMore && !isPending) loadMore()
+      }}
+      ListEmptyComponent={
+        <VerticalNav
+          title={emptyListTitle}
+          items={[]}
+          empty={
+            <YStack items="center" gap={32} py={40} w="100%">
+              <Icon icon={Receipt} size={40} color="muted-foreground" />
+              <Text fontSize={fontSize.lg}>{emptyTitle}</Text>
+              <Text
+                fontSize={fontSize.sm}
+                color="muted-foreground"
+                text="center"
+              >
+                {emptyDescription}
+              </Text>
+            </YStack>
+          }
+        />
+      }
+      ListFooterComponent={
+        hasMore && isPending ? <ListSkeleton rows={5} /> : undefined
+      }
+      renderItem={({ item }) => <ActivityDay group={item} />}
+    />
+  )
+}
+
+// The detail screens' status glyph and method text, until 4.4b/c rebuild
+// them with `PaymentStatusIcon` and the method icons.
 
 export type StatusTone = "success" | "warning" | "danger" | "muted"
 
@@ -14,9 +236,9 @@ const toneColors = {
   warning: "warning",
   danger: "destructive",
   muted: "muted-foreground",
-} as const satisfies Record<StatusTone, string>
+} as const satisfies Record<StatusTone, ThemeColor>
 
-/** The row's status as a ringed glyph; colour never carries it alone (the label is beside it). */
+/** The status as a ringed glyph; colour never carries it alone. */
 export function StatusDot({
   tone,
   glyph,
@@ -26,44 +248,18 @@ export function StatusDot({
 }) {
   return (
     <YStack
-      width={32}
-      height={32}
+      w={32}
+      h={32}
       rounded={16}
       items="center"
       justify="center"
       borderWidth={1.5}
       borderColor={toneColors[tone]}
     >
-      <Text color={toneColors[tone]} fontWeight="700">
+      <Text color={toneColors[tone]} fontWeight={fontWeight.bold}>
         {glyph}
       </Text>
     </YStack>
-  )
-}
-
-export function IssueBadges({
-  issues,
-}: {
-  readonly issues: ReadonlyArray<string>
-}) {
-  if (issues.length === 0) return null
-
-  return (
-    <XStack flexWrap="wrap" gap="1.5">
-      {issues.map((issue) => (
-        <Text
-          key={issue}
-          fontSize={12}
-          color="warning"
-          borderWidth={1}
-          borderColor="warning"
-          rounded="sm"
-          px="2"
-        >
-          {`⚠ ${issue}`}
-        </Text>
-      ))}
-    </XStack>
   )
 }
 
@@ -76,148 +272,4 @@ export function paymentMethodsText(
     t(paymentMethodLabelKey[kind])
   )
   return unique.length === 0 ? null : unique.join(", ")
-}
-
-export interface ActivityRowData {
-  /** Already translated or user-entered. */
-  readonly title: string
-  /** Time, table, tip, methods: one muted line. */
-  readonly details: string
-  readonly issues: ReadonlyArray<string>
-  readonly refundLabel?: string | undefined
-  readonly amount: string
-  /** Struck through: money that never arrived and never will. */
-  readonly isVoid: boolean
-  readonly statusLabel: string
-  readonly statusTone: StatusTone
-  readonly statusGlyph: string
-  readonly onPress: () => void
-}
-
-function ActivityRow({ row }: { readonly row: ActivityRowData }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${row.title}, ${row.amount}, ${row.statusLabel}`}
-      onPress={row.onPress}
-    >
-      <XStack
-        gap="3"
-        py="3"
-        px="3"
-        items="center"
-        borderLeftWidth={row.issues.length > 0 ? 3 : 0}
-        borderLeftColor="warning"
-      >
-        <StatusDot tone={row.statusTone} glyph={row.statusGlyph} />
-        <YStack flex={1} gap="1">
-          <Text fontWeight="600" numberOfLines={1}>
-            {row.title}
-          </Text>
-          <Text fontSize={12} color="muted-foreground">
-            {row.details}
-          </Text>
-          <IssueBadges issues={row.issues} />
-          {row.refundLabel === undefined ? null : (
-            <Text fontSize={12} color="warning">
-              {row.refundLabel}
-            </Text>
-          )}
-        </YStack>
-        <YStack items="flex-end" gap="1">
-          <Text
-            fontWeight="600"
-            color={row.isVoid ? "muted-foreground" : "color"}
-            textDecorationLine={row.isVoid ? "line-through" : "none"}
-          >
-            {row.amount}
-          </Text>
-          <Text fontSize={12} color="muted-foreground">
-            {row.statusLabel}
-          </Text>
-        </YStack>
-      </XStack>
-    </Pressable>
-  )
-}
-
-export interface ActivityGroup {
-  readonly key: string
-  /** The day heading with its total. */
-  readonly title: string
-  readonly rows: ReadonlyArray<{ readonly id: string } & ActivityRowData>
-}
-
-type ListEntry =
-  | { readonly kind: "day"; readonly key: string; readonly title: string }
-  | {
-      readonly kind: "row"
-      readonly key: string
-      readonly row: ActivityRowData
-    }
-
-/**
- * Day-grouped, paginated list (`useInfinitePages`): headings and rows are one
- * flat `FlatList` with stable keys, so live updates move rows instead of
- * remounting the list.
- */
-export function ActivityList({
-  groups,
-  emptyTitle,
-  emptyDescription,
-  hasMore,
-  isPending,
-  loadMore,
-}: {
-  readonly groups: ReadonlyArray<ActivityGroup>
-  readonly emptyTitle: string
-  readonly emptyDescription: string
-  readonly hasMore: boolean
-  readonly isPending: boolean
-  readonly loadMore: () => void
-}) {
-  const entries = groups.flatMap(
-    (group): ReadonlyArray<ListEntry> => [
-      { kind: "day", key: `day:${group.key}`, title: group.title },
-      ...group.rows.map((row) => ({
-        kind: "row" as const,
-        key: row.id,
-        row,
-      })),
-    ]
-  )
-
-  return (
-    <FlatList
-      style={{ flex: 1 }}
-      data={entries}
-      keyExtractor={(entry) => entry.key}
-      onEndReachedThreshold={0.5}
-      onEndReached={() => {
-        if (hasMore && !isPending) loadMore()
-      }}
-      ListEmptyComponent={
-        <EmptyView message={`${emptyTitle}\n${emptyDescription}`} />
-      }
-      ListFooterComponent={
-        hasMore ? <ActivityIndicator style={{ padding: 16 }} /> : undefined
-      }
-      renderItem={({ item }) =>
-        item.kind === "day" ? (
-          <Text
-            fontSize={13}
-            fontWeight="600"
-            color="muted-foreground"
-            pt="4"
-            pb="1"
-            px="3"
-          >
-            {item.title}
-          </Text>
-        ) : (
-          <ActivityRow row={item.row} />
-        )
-      }
-    />
-  )
 }

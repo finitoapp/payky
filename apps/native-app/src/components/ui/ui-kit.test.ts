@@ -14,7 +14,7 @@ const uiDir = import.meta.dirname
 const sourceFiles = (dir: string): ReadonlyArray<string> =>
   readdirSync(dir, { recursive: true })
     .map(String)
-    .filter((file) => /\.tsx?$/u.test(file) && !/\.test\.ts$/u.test(file))
+    .filter((file) => /\.tsx?$/u.test(file) && !/\.test\.tsx?$/u.test(file))
     .map((file) => path.join(dir, file))
 
 const importSpecifiers = (source: string): ReadonlyArray<string> =>
@@ -118,4 +118,94 @@ test("colors come from the web palette, never Tamagui's default color scales", (
     .filter((file) => defaultScale.test(readFileSync(file, "utf8")))
     .map(relativeToSrc)
   expect(violations).toEqual([])
+})
+
+/**
+ * The tamagui and react-native members the kit wraps. A feature importing one
+ * draws a control of its own instead of web's, so it uses `components/ui/*`.
+ * Namespace, default and dynamic imports of either package are refused too:
+ * they would hide which member a feature reaches for.
+ */
+const kitWrapped: Readonly<Record<string, ReadonlySet<string>>> = {
+  tamagui: new Set(["Button", "Card", "Input", "Switch"]),
+  "react-native": new Set(["Switch", "TextInput"]),
+}
+
+const kitBypasses = (source: string): ReadonlyArray<string> => [
+  ...[
+    ...source.matchAll(
+      /\b(?:import|export)\s+(type\s+)?([^"';]*?)\s*from\s+["'](tamagui|react-native)["']/gu
+    ),
+  ].flatMap(([, typeOnly, clause = "", pkg = ""]) => {
+    if (typeOnly !== undefined) return []
+    const named = (/\{([^}]*)\}/u.exec(clause)?.[1] ?? "").replace(
+      /\/\*[\s\S]*?\*\/|\/\/[^\n]*/gu,
+      ""
+    )
+    const unnamed = clause
+      .replace(/\{[^}]*\}/u, "")
+      .replace(/,/gu, "")
+      .trim()
+    return [
+      ...(unnamed === "" ? [] : [`${unnamed} from ${pkg}`]),
+      ...named
+        .split(",")
+        .map((specifier) => specifier.trim())
+        .filter((specifier) => specifier !== "" && !/^type\s/u.test(specifier))
+        .map((specifier) => specifier.split(/\s+as\s+/u)[0] ?? "")
+        .filter((member) => kitWrapped[pkg]?.has(member) === true)
+        .map((member) => `${member} from ${pkg}`),
+    ]
+  }),
+  ...[
+    ...source.matchAll(
+      /\b(?:import|require)\s*\(\s*["'](tamagui|react-native)["']/gu
+    ),
+  ].map(([, pkg]) => `dynamic import of ${pkg}`),
+]
+
+test("features render the kit's Button, Card, Input and Switch, not the raw ones", () => {
+  const violations = sourceFiles(path.join(srcDir, "features")).flatMap(
+    (file) =>
+      kitBypasses(readFileSync(file, "utf8")).map(
+        (bypass) => `${relativeToSrc(file)} imports ${bypass}`
+      )
+  )
+  expect(violations).toEqual([])
+})
+
+test("kitBypasses sees through aliases, namespaces, re-exports and dynamic imports", () => {
+  expect(
+    kitBypasses(`
+      import { Pressable, Switch as Toggle } from "react-native"
+      import {
+        // the toggle
+        Input,
+      } from "tamagui"
+      import { Text, Button } from "tamagui"
+      import * as RN from "react-native"
+      import Tamagui, { YStack } from "tamagui"
+      export { Card } from "tamagui"
+      const { TextInput } = require("react-native")
+    `)
+  ).toEqual([
+    "Switch from react-native",
+    "Input from tamagui",
+    "Button from tamagui",
+    "* as RN from react-native",
+    "Tamagui from tamagui",
+    "Card from tamagui",
+    "dynamic import of react-native",
+  ])
+})
+
+test("kitBypasses allows the rest of both packages and type-only imports", () => {
+  expect(
+    kitBypasses(`
+      import { Pressable, TextInputProps } from "react-native"
+      import type { TextInput } from "react-native"
+      import { type InputProps, Text, XStack } from "tamagui"
+      import { Switch } from "../../components/ui/switch.tsx"
+    `)
+  ).toEqual([])
 })

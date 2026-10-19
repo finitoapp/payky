@@ -31,13 +31,14 @@ import Coins from "lucide-react-native/icons/coins"
 import CreditCard from "lucide-react-native/icons/credit-card"
 import Landmark from "lucide-react-native/icons/landmark"
 import Zap from "lucide-react-native/icons/zap"
-import { Pressable, Switch } from "react-native"
+import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
 import { Icon } from "../../../components/ui/icon.tsx"
+import { Switch } from "../../../components/ui/switch.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useCashuRunToast, useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -331,9 +332,9 @@ function PaymentMethodRow({
       {row.saveEnabled === null ? null : (
         <Switch
           accessibilityLabel={t(row.switchLabel)}
-          value={choice.value}
+          checked={choice.value}
           disabled={!row.canEnable || choice.saving}
-          onValueChange={(next) => {
+          onCheckedChange={(next) => {
             void choice.choose(next)
           }}
         />

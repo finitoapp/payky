@@ -5,13 +5,14 @@ import {
   selectAccount,
 } from "@payky/core/evolu/device-account"
 import { useAtomValue, useSetAtom, useStore } from "jotai"
-import { Button, Text, View } from "tamagui"
+import { Text, View } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import {
   evoluCounterAtom,
   reloadAppEvoluAtom,
 } from "../../atoms/evolu-counter.ts"
+import { Button } from "../../components/ui/button.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useDeviceEvoluQuery } from "../../hooks/use-evolu-query.ts"
 
@@ -36,6 +37,7 @@ export function AccountsCard() {
           </Text>
           {a.id === active.id ? null : (
             <Button
+              variant="outline"
               onPress={async () => {
                 if (!isCurrentAccount()) return
                 if (!(await require("admin", "access.action.switchAccount")))
@@ -51,6 +53,7 @@ export function AccountsCard() {
         </View>
       ))}
       <Button
+        variant="outline"
         onPress={async () => {
           if (!isCurrentAccount()) return
           if (

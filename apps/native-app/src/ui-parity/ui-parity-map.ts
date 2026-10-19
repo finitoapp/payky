@@ -992,6 +992,8 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
         "rendered by the sibling fio-token-form.tsx and fio-token-list.tsx",
       FieldError: "rendered by the sibling fio-token-form.tsx",
       PasswordTextarea: "rendered by the sibling fio-token-form.tsx",
+      Switch:
+        "known control-type gap: native keeps its existing switch (role switch) for the active toggle where web saves the same flag through InlineEditCheckbox, which wraps ui/checkbox; ui/checkbox exists natively, the swap is left for device acceptance",
     },
   },
   {
@@ -1248,6 +1250,10 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/settings/payment-accounts/payment-accounts-settings-page.tsx",
     ],
     status: "matched",
+    allowedDifferences: {
+      Switch:
+        "native renders each method's enable toggle with ui/switch directly; web routes the same immediate save through InlineEditSwitch, which wraps ui/switch",
+    },
   },
   {
     native:
@@ -1256,6 +1262,10 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/settings/payment-accounts/spark-account-settings-page.tsx",
     ],
     status: "matched",
+    allowedDifferences: {
+      Switch:
+        "known control-type gap: native keeps its existing switch (role switch) for privacy mode where web saves the same choice through InlineEditCheckbox, which wraps ui/checkbox; ui/checkbox exists natively, the swap is left for device acceptance",
+    },
   },
   {
     native:

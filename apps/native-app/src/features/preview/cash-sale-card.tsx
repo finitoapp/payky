@@ -15,10 +15,11 @@ import { derivePaymentStatus } from "@payky/core/modules/payment/payment-status-
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { useAtomValue, useStore } from "jotai"
 import { useState } from "react"
-import { Button, Text, View } from "tamagui"
+import { Text, View } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
+import { Button } from "../../components/ui/button.tsx"
 import { nativeRun } from "../../core/native-runtime.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -160,13 +161,13 @@ export function CashSaleCard() {
       <Text accessibilityLiveRegion="polite">
         Last action: {message || "-"}
       </Text>
-      <Button disabled={busy} onPress={create}>
+      <Button variant="outline" disabled={busy} onPress={create}>
         Create payment 123.45 CZK
       </Button>
-      <Button disabled={busy} onPress={() => pay(12000)}>
+      <Button variant="outline" disabled={busy} onPress={() => pay(12000)}>
         Try underpayment 120.00
       </Button>
-      <Button disabled={busy} onPress={() => pay(12300)}>
+      <Button variant="outline" disabled={busy} onPress={() => pay(12300)}>
         Settle 123.00 cash
       </Button>
     </View>

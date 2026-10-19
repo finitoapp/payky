@@ -4,7 +4,8 @@ import {
   createSharedSparkSyncWallet,
 } from "@payky/core/spark/spark-wallet"
 import { useState } from "react"
-import { Button, Text, View } from "tamagui"
+import { Text, View } from "tamagui"
+import { Button } from "../../components/ui/button.tsx"
 
 const short = (value: string) => `${value.slice(0, 8)}…${value.slice(-6)}`
 
@@ -76,7 +77,7 @@ export function SparkCard() {
   return (
     <View gap="2">
       <Text fontWeight="600">Spark (REGTEST, throwaway identity)</Text>
-      <Button disabled={busy} onPress={press}>
+      <Button variant="outline" disabled={busy} onPress={press}>
         Spark: run
       </Button>
       <Text>{text}</Text>

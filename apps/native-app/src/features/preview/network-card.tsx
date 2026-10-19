@@ -2,8 +2,9 @@ import { appFetchAsJson, fetchAndValidateJson } from "@payky/core/deps"
 import { fetchLinkyEvoluRelays } from "@payky/core/integrations/linky/linky-relays-client"
 import { getNetworkStateAsync } from "expo-network"
 import { useEffect, useState } from "react"
-import { Button, Text, View } from "tamagui"
+import { Text, View } from "tamagui"
 import { z } from "zod"
+import { Button } from "../../components/ui/button.tsx"
 import { apiUrl, nativeEnv } from "../../core/native-env.ts"
 import { nativeRun } from "../../core/native-runtime.ts"
 import {
@@ -85,7 +86,11 @@ export function NetworkCard() {
       <Text>onOnline events: {events}</Text>
       {["relays", "http", "validation", "abort"].map((name) => (
         <View key={name}>
-          <Button onPress={() => run(name)}>Network: {name}</Button>
+          <Button
+            variant="outline"
+            label={`Network: ${name}`}
+            onPress={() => run(name)}
+          />
           <Text>
             {name}: {results[name] ?? "-"}
           </Text>

@@ -16,8 +16,9 @@ import {
   createTestPkcs12,
 } from "@payky/core/testing/eet-test-certificates"
 import { useState } from "react"
-import { Button, Text, View } from "tamagui"
+import { Text, View } from "tamagui"
 import { z } from "zod"
+import { Button } from "../../components/ui/button.tsx"
 import { apiUrl } from "../../core/native-env.ts"
 import { nativeRun } from "../../core/native-runtime.ts"
 import { createFetchDep } from "../../platform/native-deps.ts"
@@ -206,10 +207,14 @@ export function EetCard() {
   return (
     <View gap="2">
       <Text fontWeight="600">EET crypto (test certificates)</Text>
-      <Button disabled={busy} onPress={() => press(crypto_)}>
+      <Button variant="outline" disabled={busy} onPress={() => press(crypto_)}>
         EET crypto: run
       </Button>
-      <Button disabled={busy} onPress={() => press(playground)}>
+      <Button
+        variant="outline"
+        disabled={busy}
+        onPress={() => press(playground)}
+      >
         EET playground round trip
       </Button>
       <Text>{text}</Text>

@@ -29,9 +29,10 @@ import {
 import { CashuWalletSeed } from "@payky/core/modules/shared/key-derivation"
 import { useAtomValue } from "jotai"
 import { useState } from "react"
-import { Button, Text, View } from "tamagui"
+import { Text, View } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { Button } from "../../components/ui/button.tsx"
 import { nativeRun } from "../../core/native-runtime.ts"
 
 /*
@@ -337,10 +338,10 @@ export function CashuCard() {
   return (
     <View gap="2">
       <Text fontWeight="600">Cashu (fake mint + vectors)</Text>
-      <Button disabled={busy} onPress={vectorsAndMint}>
+      <Button variant="outline" disabled={busy} onPress={vectorsAndMint}>
         Cashu: vectors + fake mint
       </Button>
-      <Button disabled={busy} onPress={reserve}>
+      <Button variant="outline" disabled={busy} onPress={reserve}>
         Cashu: reserve 5 counters
       </Button>
       <Text>{text}</Text>

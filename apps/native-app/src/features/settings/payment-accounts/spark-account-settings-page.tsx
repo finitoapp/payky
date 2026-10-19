@@ -26,7 +26,6 @@ import ChevronDown from "lucide-react-native/icons/chevron-down"
 import KeyRound from "lucide-react-native/icons/key-round"
 import Wallet from "lucide-react-native/icons/wallet"
 import { useState } from "react"
-import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
@@ -63,6 +62,7 @@ import {
   Field as UiField,
 } from "../../../components/ui/field.tsx"
 import { Icon } from "../../../components/ui/icon.tsx"
+import { Switch } from "../../../components/ui/switch.tsx"
 import { VerticalNav } from "../../../components/vertical-nav.tsx"
 import { useAccess } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
@@ -481,9 +481,9 @@ function SparkPrivacyMode({
       <XStack gap="3" items="center">
         <Switch
           accessibilityLabel={t("settings.sparkAccount.privacyMode.label")}
-          value={choice.value}
+          checked={choice.value}
           disabled={query.isPending || query.isError || mutation.isPending}
-          onValueChange={(next) => {
+          onCheckedChange={(next) => {
             void choice.choose(next)
           }}
         />

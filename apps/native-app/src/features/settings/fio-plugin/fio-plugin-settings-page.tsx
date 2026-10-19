@@ -20,7 +20,6 @@ import {
   PositiveInteger,
 } from "@payky/core/modules/shared/schema"
 import { format, subDays } from "date-fns"
-import { Switch } from "react-native"
 import { YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
@@ -38,6 +37,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "../../../components/ui/field.tsx"
+import { Switch } from "../../../components/ui/switch.tsx"
 import { useAccess } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
@@ -136,9 +136,9 @@ function FioPluginForm() {
             <Field orientation="horizontal">
               <Switch
                 accessibilityLabel={t("settings.fioPlugin.active.label")}
-                value={activeChoice.value}
+                checked={activeChoice.value}
                 disabled={activeChoice.saving}
-                onValueChange={(next) => {
+                onCheckedChange={(next) => {
                   void activeChoice.choose(next)
                 }}
               />

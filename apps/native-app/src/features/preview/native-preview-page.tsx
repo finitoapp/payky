@@ -2,7 +2,8 @@ import { router } from "expo-router"
 import { useEffect, useState } from "react"
 import { ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Button, Text, useTheme, View } from "tamagui"
+import { Text, useTheme, View } from "tamagui"
+import { Button } from "../../components/ui/button.tsx"
 import { checkSharedLogic } from "../../core/check-shared-logic.ts"
 import { checkLockAuthority } from "../../core/native-runtime.ts"
 import { BootstrapDiagnostics } from "./bootstrap-diagnostics.tsx"
@@ -55,10 +56,7 @@ export function NativePreviewPage() {
           </View>
           <UiKitCard />
           <Button
-            backgroundColor="primary"
-            color="primary-foreground"
-            rounded="lg"
-            minHeight={48}
+            size="lg"
             onPress={() => {
               setRoundedAmount(checkSharedLogic())
               setChecks((count) => count + 1)
@@ -68,15 +66,15 @@ export function NativePreviewPage() {
           </Button>
           {/* Temporary entry to the bill until the pos overview (P04). */}
           <Button
-            rounded="lg"
-            minHeight={48}
+            variant="outline"
+            size="lg"
             onPress={() => router.push("/bill")}
           >
             Open new bill
           </Button>
           <Button
-            rounded="lg"
-            minHeight={48}
+            variant="outline"
+            size="lg"
             onPress={() => router.push("/onboarding")}
           >
             Open onboarding

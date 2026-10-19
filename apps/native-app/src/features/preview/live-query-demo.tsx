@@ -4,8 +4,9 @@ import {
 } from "@payky/core/evolu/device-client"
 import { createQuery } from "@payky/core/evolu/schema"
 import { useAtomValue } from "jotai"
-import { Button, Text } from "tamagui"
+import { Text } from "tamagui"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { Button } from "../../components/ui/button.tsx"
 import {
   useDeviceEvoluQuery,
   useEvoluQuery,
@@ -31,6 +32,7 @@ export function LiveQueryDemo() {
       <Text>Live app query, items: {items.length}</Text>
       <Text>Live device query, theme: {theme ?? "unset"}</Text>
       <Button
+        variant="outline"
         onPress={() =>
           deviceEvolu.update("deviceSettings", {
             id: deviceSettingsId,

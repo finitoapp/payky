@@ -3,6 +3,7 @@ import { formatMoney } from "@payky/app-shared/format-money"
 import { useRedirectIfClosedOnOpen } from "@payky/app-shared/use-redirect-if-closed-on-open"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-utils"
+import { cancelBill } from "@payky/core/modules/bill/bill-actions"
 import { claimedPaymentsByBillIdQuery } from "@payky/core/modules/bill/bill-coverage-queries"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
 import { BillId, createRandomBillId } from "@payky/core/modules/bill/bill-types"
@@ -42,6 +43,7 @@ import ScanLine from "lucide-react-native/icons/scan-line"
 import ShoppingBag from "lucide-react-native/icons/shopping-bag"
 import Split from "lucide-react-native/icons/split"
 import Table2 from "lucide-react-native/icons/table-2"
+import Trash2 from "lucide-react-native/icons/trash-2"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import Undo2 from "lucide-react-native/icons/undo-2"
 import X from "lucide-react-native/icons/x"
@@ -73,6 +75,8 @@ import {
   CollapsibleTrigger,
 } from "../../components/ui/collapsible.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
+import { nativeConsole } from "../../core/native-runtime.ts"
+import { useRequirePermission } from "../../core/use-access.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts"
@@ -80,6 +84,7 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
 import { useProductLookup } from "../../hooks/use-product-lookup.ts"
+import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
@@ -200,6 +205,7 @@ function BillPage({
   return (
     <BillCart
       billId={billId}
+      billExists={bill !== undefined}
       tableId={bill === undefined ? pendingTableId : bill.tableId}
       tableName={
         tables.find(
@@ -356,6 +362,7 @@ function BillLocked({
 
 function BillCart({
   billId,
+  billExists,
   tableId,
   tableName,
   onTableSeedChange,
@@ -366,6 +373,8 @@ function BillCart({
   initialScanCode,
 }: {
   readonly billId: BillId
+  /** Whether `billId`'s row is written yet; until then there is nothing to discard. */
+  readonly billExists: boolean
   readonly tableId: TableId | null
   /** The assigned table's name, when there is one. */
   readonly tableName: string | undefined
@@ -385,6 +394,8 @@ function BillCart({
   )
   const cart = useCartBill({ billId, currency, tableId, onTableSeedChange })
   const toast = useToast()
+  const runToast = useRunToast()
+  const { require } = useRequirePermission()
   const confirm = useConfirm()
   const [tablePickerOpen, setTablePickerOpen] = useState(false)
   const [scanMode, setScanMode] = useState(false)
@@ -550,6 +561,28 @@ function BillCart({
     if (await cart.clear(summaries)) {
       showUndoToast(t("bill.summary.clear.toast"))
     }
+  }
+  // As web: confirm first, then `discard` (access/0002), then cancel the bill
+  // and leave it.
+  const handleDiscard = async () => {
+    if (!billExists) return
+    const confirmed = await confirm({
+      title: t("bill.discard.confirm.title"),
+      description: t("bill.discard.confirm.description"),
+      confirmLabel: t("bill.discard.confirm.confirm"),
+      cancelLabel: t("bill.discard.confirm.cancel"),
+      variant: "destructive",
+    })
+    if (!confirmed) return
+    if (!(await require("discard", "access.action.discardBill"))) return
+    await runToast(async (run) => {
+      const result = await run(cancelBill(billId))
+      if (!result.ok) {
+        nativeConsole.error("Failed to discard cart", result.error)
+        return "app.saveFailed"
+      }
+      router.back()
+    })
   }
   const inBillFilterOptions = useMemo(
     () => [{ value: "inBill" as const, label: t("bill.filter.inBill") }],
@@ -811,6 +844,20 @@ function BillCart({
               </CollapsibleContent>
             </Collapsible>
             <XStack items="center" gap={8} pt={16}>
+              <Button
+                variant="outline"
+                size="icon"
+                w={48}
+                h={48}
+                shrink={0}
+                // Kept apart from the everyday buttons beside it.
+                mr={12}
+                iconStart={Trash2}
+                labelColor="destructive"
+                accessibilityLabel={t("bill.discard")}
+                disabled={!billExists}
+                onPress={() => void handleDiscard()}
+              />
               <Button
                 variant="outline"
                 size="icon"

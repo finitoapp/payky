@@ -50,12 +50,12 @@ import {
   useRef,
   useState,
 } from "react"
-import { FlatList, ScrollView } from "react-native"
+import { ActivityIndicator, FlatList, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, View, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
+import { LoadingView } from "../../components/loading-view.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
-import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import {
   Alert,
   AlertDescription,
@@ -172,7 +172,12 @@ function BillPage({
         params: { billId },
       })
   )
-  if (closedOnOpen) return <LoadingView />
+  if (closedOnOpen)
+    return (
+      <YStack flex={1} items="center" justify="center">
+        <ActivityIndicator size="large" />
+      </YStack>
+    )
   if (bill !== undefined && billStatus?.status !== "open")
     return billStatus?.hasCancellationCollision ? (
       <BillCancellationCollisionMessage
@@ -219,7 +224,9 @@ function BillMessage({
   const { t } = useTranslation()
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <EmptyView message={message} />
+      <Text mt={64} px={24} color="muted-foreground" text="center">
+        {message}
+      </Text>
       <YStack p="4" gap="2">
         <Button
           size="lg"
@@ -309,26 +316,32 @@ function BillLocked({
   const { t } = useTranslation()
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <EmptyView message={t("bill.locked")} />
-      <YStack p="4" gap="2">
-        {paymentIds.map((paymentId, index) => (
-          <Button
-            size="lg"
-            key={paymentId}
-            variant="outline"
-            label={
-              paymentIds.length > 1
-                ? t("bill.locked.viewPayment.numbered", { number: index + 1 })
-                : t("bill.locked.viewPayment")
-            }
-            onPress={() =>
-              router.push({
-                pathname: "/payment/[paymentId]",
-                params: { paymentId },
-              })
-            }
-          />
-        ))}
+      <YStack mt={64} px={24} gap={16} items="center">
+        <Text color="muted-foreground" text="center">
+          {t("bill.locked")}
+        </Text>
+        <YStack gap={8}>
+          {paymentIds.map((paymentId, index) => (
+            <Button
+              size="lg"
+              key={paymentId}
+              variant="outline"
+              label={
+                paymentIds.length > 1
+                  ? t("bill.locked.viewPayment.numbered", {
+                      number: index + 1,
+                    })
+                  : t("bill.locked.viewPayment")
+              }
+              onPress={() =>
+                router.push({
+                  pathname: "/payment/[paymentId]",
+                  params: { paymentId },
+                })
+              }
+            />
+          ))}
+        </YStack>
       </YStack>
     </SafeAreaView>
   )

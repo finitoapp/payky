@@ -2,10 +2,16 @@ import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { router } from "expo-router"
 import Plus from "lucide-react-native/icons/plus"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
+import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { FailureView, LoadingView } from "../../../components/state-views.tsx"
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+} from "../../../components/ui/alert.tsx"
 import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
 import { VerticalNav } from "../../../components/vertical-nav.tsx"
@@ -23,17 +29,34 @@ export function CashuMintsPage() {
 
   if (wallet.isError || mints.isError) {
     return (
-      <FailureView
-        messageKey="appError.description"
-        onRetry={() => {
-          void wallet.refetch()
-          void mints.refetch()
-        }}
-      />
+      <YStack flex={1} items="center" justify="center">
+        <Alert variant="destructive" icon={TriangleAlert}>
+          <AlertDescription>
+            <Text accessibilityLiveRegion="polite">
+              {t("appError.description")}
+            </Text>
+          </AlertDescription>
+          <AlertAction>
+            <Button
+              size="lg"
+              variant="outline"
+              label={t("appError.tryAgain")}
+              onPress={() => {
+                void wallet.refetch()
+                void mints.refetch()
+              }}
+            />
+          </AlertAction>
+        </Alert>
+      </YStack>
     )
   }
   if (wallet.isPending || snapshot === null || mints.isPending)
-    return <LoadingView />
+    return (
+      <YStack flex={1} items="center" justify="center">
+        <ActivityIndicator size="large" />
+      </YStack>
+    )
 
   const { known, suggested } = getCashuMintSections(
     snapshot.defaultMint,

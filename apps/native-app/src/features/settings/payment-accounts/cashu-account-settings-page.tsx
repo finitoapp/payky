@@ -2,11 +2,19 @@ import { formatSatsAmount } from "@payky/app-shared/format-money"
 import ArrowUpFromLine from "lucide-react-native/icons/arrow-up-from-line"
 import Coins from "lucide-react-native/icons/coins"
 import Landmark from "lucide-react-native/icons/landmark"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { Suspense } from "react"
+import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
+import { LoadingView } from "../../../components/loading-view.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { FailureView, LoadingView } from "../../../components/state-views.tsx"
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+} from "../../../components/ui/alert.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import {
   Card,
   CardContent,
@@ -36,12 +44,25 @@ function CashuAccountSettingsContent() {
     <Screen>
       <FadeHeader title={t("settings.cashuAccount.title")} />
       {isError ? (
-        <FailureView
-          messageKey="appError.description"
-          onRetry={() => void refetch()}
-        />
+        <Alert variant="destructive" icon={TriangleAlert}>
+          <AlertDescription>
+            <Text accessibilityLiveRegion="polite">
+              {t("appError.description")}
+            </Text>
+          </AlertDescription>
+          <AlertAction>
+            <Button
+              size="lg"
+              variant="outline"
+              label={t("appError.tryAgain")}
+              onPress={() => void refetch()}
+            />
+          </AlertAction>
+        </Alert>
       ) : isPending || snapshot === null ? (
-        <LoadingView />
+        <YStack flex={1} items="center" justify="center">
+          <ActivityIndicator size="large" />
+        </YStack>
       ) : (
         <YStack gap="4">
           <Card>

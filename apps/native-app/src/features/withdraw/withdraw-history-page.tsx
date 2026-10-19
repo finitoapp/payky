@@ -22,7 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { ListSkeleton } from "../../components/list-skeleton.tsx"
-import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { LoadingView } from "../../components/loading-view.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { VerticalNav } from "../../components/vertical-nav.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
@@ -31,6 +31,7 @@ import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { useCashuWalletSnapshot } from "../shared/cashu/use-cashu-wallet-snapshot.ts"
 import { useCashuAccountId } from "./use-cashu-withdraw-data.ts"
 import { useSparkAccountId, useSparkBalance } from "./use-withdraw-data.ts"
+import { WithdrawNoAccountCard } from "./withdraw-no-account-card.tsx"
 import { WithdrawalStatusBadge } from "./withdraw-parts.tsx"
 import { withdrawRoutes } from "./withdraw-routes.ts"
 
@@ -69,20 +70,11 @@ function WithdrawHistoryScreen({
 }
 
 function WithdrawHistoryBody({ method }: { readonly method: WithdrawMethod }) {
-  const { t } = useTranslation()
   const sparkAccountId = useSparkAccountId()
   const cashuAccountId = useCashuAccountId()
   const accountId = method === "spark" ? sparkAccountId : cashuAccountId
   if (accountId === undefined) {
-    return (
-      <EmptyView
-        message={
-          method === "spark"
-            ? `${t("withdraw.noAccount.title")}\n${t("withdraw.noAccount.description")}`
-            : `${t("withdraw.cashu.noAccount.title")}\n${t("withdraw.cashu.noAccount.description")}`
-        }
-      />
-    )
+    return <WithdrawNoAccountCard method={method} />
   }
   return <WithdrawHistory method={method} accountId={accountId} />
 }

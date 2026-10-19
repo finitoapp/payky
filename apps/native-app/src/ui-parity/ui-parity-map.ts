@@ -128,6 +128,12 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     },
   },
   {
+    native: "src/components/loading-view.tsx",
+    web: [],
+    note: "Native-only ActivityIndicator fallback for Suspense; non-Suspense states render in their owning screens.",
+    status: "pending",
+  },
+  {
     native: "src/components/not-found-card.tsx",
     web: ["apps/web-app/src/components/not-found-card.tsx"],
     status: "matched",
@@ -172,14 +178,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/components/sliding-pill.tsx",
     web: ["apps/web-app/src/components/sliding-pill.tsx"],
     status: "matched",
-  },
-  {
-    native: "src/components/state-views.tsx",
-    web: [
-      "apps/web-app/src/components/route-message.tsx",
-      "apps/web-app/src/components/list-skeleton.tsx",
-    ],
-    status: "pending",
   },
   {
     native: "src/components/success-panel.tsx",
@@ -1074,6 +1072,16 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/settings/cashu/cashu-account-settings-page.tsx",
     ],
     status: "matched",
+    allowedDifferences: {
+      Alert:
+        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
+      AlertAction:
+        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
+      AlertDescription:
+        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
+      Button:
+        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
+    },
   },
   {
     native: "src/features/settings/payment-accounts/cashu-mint-detail-page.tsx",
@@ -1103,6 +1111,16 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/settings/payment-accounts/cashu-mints-page.tsx",
     web: ["apps/web-app/src/features/settings/cashu/cashu-mints-page.tsx"],
     status: "matched",
+    allowedDifferences: {
+      Alert:
+        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
+      AlertAction:
+        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
+      AlertDescription:
+        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
+      Button:
+        "Native adds an inline retry action on wallet-query errors; the web keeps its existing snapshot/default rendering.",
+    },
   },
   {
     native:
@@ -1551,7 +1569,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/withdraw/cashu-withdraw-page.tsx",
     web: ["apps/web-app/src/features/withdraw/cashu-withdraw-page.tsx"],
     status: "matched",
-    note: "Native keeps its existing no-account EmptyView; the payment-account CTA is an intentionally recorded navigation gap in this visual pass.",
+    note: "Native uses the web-aligned no-account Card; the payment-account CTA remains a documented navigation gap.",
   },
   {
     native: "src/features/withdraw/cashu-withdraw-review-step.tsx",
@@ -1580,13 +1598,24 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/withdraw/withdraw-history-page.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-history-page.tsx"],
     status: "matched",
-    note: "Native keeps its existing no-account EmptyView; the payment-account CTA and Spark older-transactions link remain documented navigation gaps because their destinations are outside this pass.",
+    note: "Native uses the web-aligned no-account Card; the payment-account CTA and Spark older-transactions link remain documented navigation gaps.",
+  },
+  {
+    native: "src/features/withdraw/withdraw-no-account-card.tsx",
+    web: ["apps/web-app/src/features/withdraw/withdraw-account.tsx"],
+    status: "matched",
+    allowedDifferences: {
+      Button:
+        "Native omits the web Payment Accounts CTA; this existing navigation gap remains.",
+      CardFooter:
+        "Native omits the web Payment Accounts CTA; this existing navigation gap remains.",
+    },
   },
   {
     native: "src/features/withdraw/withdraw-page.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-page.tsx"],
     status: "matched",
-    note: "Native keeps its existing no-account EmptyView; the payment-account CTA is an intentionally recorded navigation gap in this visual pass.",
+    note: "Native uses the web-aligned no-account Card; the payment-account CTA remains a documented navigation gap.",
   },
   {
     native: "src/features/withdraw/withdraw-parts.tsx",

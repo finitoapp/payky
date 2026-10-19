@@ -27,7 +27,7 @@ import { useTheme } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import { FadeHeader } from "../../components/fade-header.tsx"
-import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { LoadingView } from "../../components/loading-view.tsx"
 import { useAccess, useRequirePermission } from "../../core/use-access.ts"
 import { useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -35,6 +35,7 @@ import { useCashuWalletSnapshot } from "../shared/cashu/use-cashu-wallet-snapsho
 import { CashuWithdrawFormStep } from "./cashu-withdraw-form-step.tsx"
 import { CashuWithdrawReviewStep } from "./cashu-withdraw-review-step.tsx"
 import { useCashuAccountId } from "./use-cashu-withdraw-data.ts"
+import { WithdrawNoAccountCard } from "./withdraw-no-account-card.tsx"
 import { withdrawRoutes } from "./withdraw-routes.ts"
 
 interface CashuReview {
@@ -70,15 +71,10 @@ export function CashuWithdrawPage() {
 }
 
 function CashuWithdrawAccount() {
-  const { t } = useTranslation()
   const { destination } = useLocalSearchParams<{ destination?: string }>()
   const accountId = useCashuAccountId()
   if (accountId === undefined) {
-    return (
-      <EmptyView
-        message={`${t("withdraw.cashu.noAccount.title")}\n${t("withdraw.cashu.noAccount.description")}`}
-      />
-    )
+    return <WithdrawNoAccountCard method="cashu" />
   }
   return (
     <CashuWithdrawFlow

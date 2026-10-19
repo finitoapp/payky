@@ -7,7 +7,7 @@ import { ActivityIndicator, FlatList } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
-import { LoadingView } from "../../components/state-views.tsx"
+import { LoadingView } from "../../components/loading-view.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import {

@@ -22,8 +22,8 @@ export default {
   },
   android: {
     package: "me.payky.nativepreview",
-    // The Capacitor app's adaptive icon (apps/native-shell): its foreground
-    // on a transparent background.
+    // The PWA coin on a transparent background, sized to fill the launcher
+    // mask (the visible 72 of 108 dp), so no backdrop shows around it.
     adaptiveIcon: {
       foregroundImage: "./assets/launcher-foreground.png",
       backgroundColor: "#00000000",

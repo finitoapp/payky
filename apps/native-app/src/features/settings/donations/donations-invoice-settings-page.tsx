@@ -3,10 +3,10 @@ import { router, useLocalSearchParams } from "expo-router"
 import { Linking } from "react-native"
 import { Text, YStack } from "tamagui"
 import { z } from "zod"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { QrCode } from "../../../components/qr-code.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useAsyncValue } from "../../../hooks/use-async-value.ts"
 import { useCopyToClipboard } from "../../../hooks/use-copy-to-clipboard.ts"
@@ -77,7 +77,8 @@ function DonationsInvoiceSettingsPage({
             {t("settings.donations.invoice.verify.paid.description")}
           </Text>
         </YStack>
-        <AppButton
+        <Button
+          size="lg"
           label={t("settings.donations.invoice.backToSettings")}
           onPress={() => router.dismissTo("/settings")}
         />
@@ -110,15 +111,17 @@ function DonationsInvoiceSettingsPage({
               )}
             </Text>
           ) : null}
-          <AppButton
+          <Button
+            size="lg"
             label={t("settings.donations.invoice.openWallet")}
             onPress={() => {
               void Linking.openURL(`lightning:${invoice}`)
             }}
           />
-          <AppButton
+          <Button
+            size="lg"
             label={t("settings.donations.invoice.copy")}
-            variant="secondary"
+            variant="outline"
             onPress={() =>
               void copy(invoice, {
                 copied: t("settings.donations.invoice.copied"),

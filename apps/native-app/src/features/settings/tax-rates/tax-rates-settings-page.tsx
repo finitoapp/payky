@@ -14,11 +14,11 @@ import { taxRatePercentageToDecimalString } from "@payky/core/modules/tax-rate/t
 import { useState } from "react"
 import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -284,7 +284,8 @@ function NewTaxRateForm() {
       <Text fontSize={13} color="muted-foreground">
         {t("settings.taxRates.rate.description")}
       </Text>
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.taxRates.add")}
         pending={pending}
         onPress={() => {

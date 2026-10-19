@@ -25,11 +25,11 @@ import { router, useLocalSearchParams } from "expo-router"
 import { useMemo } from "react"
 import { Text, YStack } from "tamagui"
 import { z } from "zod"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useConfirmedRun } from "../../../hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../../hooks/use-hardware-scanner.ts"
@@ -241,7 +241,8 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
           if (parsed.success) void saveItem({ scanCode: parsed.data })
         }}
       />
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.items.delete")}
         variant="destructive"
         onPress={() => {

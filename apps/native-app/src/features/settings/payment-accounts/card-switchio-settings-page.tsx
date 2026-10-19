@@ -1,8 +1,8 @@
 import { Linking } from "react-native"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 const SOFTPOS_URL = "https://switchio.com/try-softpos/"
@@ -27,8 +27,9 @@ export function CardSwitchioSettingsPage() {
         </Text>
         <Text>{`• ${t("settings.cardSwitchioAccount.info.softpos")}`}</Text>
         <Text>{`• ${t("settings.cardSwitchioAccount.info.contract")}`}</Text>
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("settings.cardSwitchioAccount.info.softposLink")}
           onPress={() => void Linking.openURL(SOFTPOS_URL)}
         />

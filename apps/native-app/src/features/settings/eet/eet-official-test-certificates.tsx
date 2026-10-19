@@ -5,12 +5,12 @@ import { useQuery } from "@tanstack/react-query"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import {
   Alert,
   AlertDescription,
   AlertTitle,
 } from "../../../components/ui/alert.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { apiUrl } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -62,9 +62,10 @@ export function EetOfficialTestCertificates() {
         <Text color="muted-foreground">
           {t("settings.eet.officialTest.description")}
         </Text>
-        <AppButton
+        <Button
+          size="lg"
           label={t("settings.eet.officialTest.show")}
-          variant="secondary"
+          variant="outline"
           onPress={() => setRequested(true)}
         />
       </YStack>
@@ -113,7 +114,9 @@ export function EetOfficialTestCertificates() {
               </Text>
             )}
           </YStack>
-          <AppButton
+          <Button
+            size="sm"
+            variant="default"
             label={t("settings.eet.officialTest.useShort")}
             disabled={storingEic !== null}
             pending={storingEic === certificate.eic}

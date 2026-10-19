@@ -1,7 +1,7 @@
 import { changePin } from "@payky/core/modules/access/access-actions"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -43,15 +43,17 @@ export function ChangePinCard({ onDone }: { readonly onDone: () => void }) {
       <NewPinFields state={newPin} disabled={pending} />
       <XStack gap="2">
         <YStack flex={1}>
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="ghost"
             label={t("access.cancel")}
             disabled={pending}
             onPress={onDone}
           />
         </YStack>
         <YStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("access.save")}
             pending={pending}
             disabled={newPin.check.pin === null}

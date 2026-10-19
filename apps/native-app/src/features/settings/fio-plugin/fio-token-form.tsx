@@ -4,8 +4,8 @@ import { addFioPluginToken } from "@payky/core/modules/fio-plugin/fio-plugin-act
 import { fioPluginId } from "@payky/core/modules/fio-plugin/fio-plugin-utils"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { Field } from "../../../components/field.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -65,13 +65,15 @@ export function FioTokenForm() {
       <Text fontSize={13} color="muted-foreground">
         {t("settings.fioPlugin.token.description")}
       </Text>
-      <AppButton
+      <Button
+        size="lg"
         label={t(revealed ? "passwordTextarea.hide" : "passwordTextarea.show")}
-        variant="secondary"
+        variant="outline"
         disabled={pending}
         onPress={() => setRevealed(!revealed)}
       />
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.fioPlugin.tokens.add.submit")}
         pending={pending}
         onPress={() => {

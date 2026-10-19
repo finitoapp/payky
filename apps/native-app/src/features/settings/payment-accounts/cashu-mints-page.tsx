@@ -3,10 +3,10 @@ import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { router } from "expo-router"
 import type { ReactNode } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { FailureView, LoadingView } from "../../../components/state-views.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { useCashuKnownMints } from "../../shared/cashu/use-cashu-known-mints.ts"
 import { useCashuWalletSnapshot } from "../../shared/cashu/use-cashu-wallet-snapshot.ts"
@@ -70,8 +70,9 @@ export function CashuMintsPage() {
           ))}
         </MintSection>
       )}
-      <AppButton
-        variant="secondary"
+      <Button
+        size="lg"
+        variant="outline"
         label={t("settings.cashuMints.add")}
         onPress={() =>
           router.push("/settings/payment-accounts/cashu/mints/new")

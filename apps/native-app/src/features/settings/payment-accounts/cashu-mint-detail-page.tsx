@@ -11,10 +11,10 @@ import { Image } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { cashuWalletDepAtom } from "../../../atoms/cashu.ts"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useCashuRunToast } from "../../../hooks/use-run-toast.ts"
@@ -120,8 +120,9 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
         </Text>
       </YStack>
       {isDefault ? null : (
-        <AppButton
-          variant="destructive"
+        <Button
+          size="lg"
+          variant="ghost"
           label={t("settings.cashuMints.remove")}
           onPress={() => void remove()}
         />

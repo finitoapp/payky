@@ -9,7 +9,6 @@ import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../../atoms/device-evolu.ts"
 import { reloadAppEvoluAtom } from "../../../atoms/evolu-counter.ts"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import {
@@ -17,6 +16,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../../../components/ui/alert.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -82,7 +82,8 @@ export function DemoDataPage() {
           {`• ${t("settings.demoData.warning.duration")}`}
         </AlertDescription>
       </Alert>
-      <AppButton
+      <Button
+        size="lg"
         label={t(
           pending
             ? "settings.demoData.action.pending"

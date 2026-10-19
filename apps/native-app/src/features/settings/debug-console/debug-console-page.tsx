@@ -5,9 +5,9 @@ import {
 import { format } from "date-fns"
 import { useEffect, useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { nativeConsoleHistory } from "../../../core/native-runtime.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -42,20 +42,22 @@ export function DebugConsolePage() {
       <Text fontWeight="700">{t("settings.debugConsole.history.title")}</Text>
       <XStack gap="2">
         <YStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t(
               paused
                 ? "settings.debugConsole.resume"
                 : "settings.debugConsole.pause"
             )}
-            variant="secondary"
+            variant="outline"
             onPress={() => setPaused((value) => !value)}
           />
         </YStack>
         <YStack flex={1}>
-          <AppButton
+          <Button
+            size="sm"
             label={t("settings.debugConsole.clear")}
-            variant="secondary"
+            variant="ghost"
             disabled={entries.length === 0}
             onPress={() => {
               nativeConsoleHistory.clearEntries()

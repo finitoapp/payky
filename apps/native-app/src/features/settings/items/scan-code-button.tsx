@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { ScanCodeScanner } from "../../../components/scan-code-scanner.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 /**
@@ -20,11 +20,12 @@ export function ScanCodeButton({
 
   return (
     <YStack gap="2">
-      <AppButton
+      <Button
+        size="lg"
         label={t(
           open ? "inlineEdit.discard" : "settings.items.form.scanCode.scan.aria"
         )}
-        variant="secondary"
+        variant="outline"
         disabled={disabled}
         onPress={() => setOpen((current) => !current)}
       />

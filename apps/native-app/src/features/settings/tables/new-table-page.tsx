@@ -4,10 +4,10 @@ import { createTableAtEnd } from "@payky/core/modules/table/table-actions"
 import { router } from "expo-router"
 import { useState } from "react"
 import { Text } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -82,7 +82,8 @@ export function NewTablePage() {
           void submit()
         }}
       />
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.tables.form.save.create")}
         pending={pending}
         onPress={() => {

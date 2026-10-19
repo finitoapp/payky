@@ -8,10 +8,10 @@ import {
 import { useState } from "react"
 import { ActivityIndicator, Image, Text as NativeText } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useCopyToClipboard } from "../../../hooks/use-copy-to-clipboard.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import {
@@ -44,9 +44,10 @@ export function ProfileSettingsPage() {
       ) : profile.failed && !profile.loading ? (
         <YStack gap="2" accessibilityRole="alert">
           <Text color="red-600">{t("settings.profile.loadFailed")}</Text>
-          <AppButton
+          <Button
+            size="lg"
             label={t("settings.profile.retry")}
-            variant="secondary"
+            variant="outline"
             onPress={() => setAttempt(attempt + 1)}
           />
         </YStack>
@@ -61,9 +62,10 @@ export function ProfileSettingsPage() {
         <NativeText selectable style={{ fontSize: 12, opacity: 0.7 }}>
           {identity.npub}
         </NativeText>
-        <AppButton
+        <Button
+          size="lg"
           label={t("settings.profile.npub.copy")}
-          variant="secondary"
+          variant="outline"
           onPress={() =>
             void copy(identity.npub, {
               copied: t("settings.profile.npub.copied"),
@@ -138,16 +140,18 @@ function ProfileEditor({ profile }: { readonly profile: NostrProfile }) {
             ) : null}
           </YStack>
           <YStack gap="2" flex={1}>
-            <AppButton
+            <Button
+              size="lg"
               label={t("settings.profile.picture.choose")}
-              variant="secondary"
+              variant="outline"
               disabled={picture.saving}
               onPress={() => void choosePicture()}
             />
             {picture.value !== null ? (
-              <AppButton
+              <Button
+                size="lg"
                 label={t("settings.profile.picture.remove")}
-                variant="secondary"
+                variant="ghost"
                 disabled={picture.saving}
                 onPress={() => {
                   setPictureInvalid(false)

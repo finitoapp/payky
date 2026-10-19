@@ -4,9 +4,9 @@ import { useState } from "react"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -111,7 +111,8 @@ export function EvoluExportPage() {
         <Text color="muted-foreground" accessibilityLiveRegion="polite">
           {t("settings.evoluExport.destination.capacitor")}
         </Text>
-        <AppButton
+        <Button
+          size="lg"
           label={t(
             pending
               ? "settings.evoluExport.action.pending"

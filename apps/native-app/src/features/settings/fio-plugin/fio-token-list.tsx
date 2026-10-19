@@ -5,7 +5,7 @@ import type { FioPluginTokenId } from "@payky/core/modules/fio-plugin/fio-plugin
 import { fioPluginId } from "@payky/core/modules/fio-plugin/fio-plugin-utils"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -58,9 +58,10 @@ export function FioTokenList() {
                 {maskFioToken(token.token)}
               </Text>
             </YStack>
-            <AppButton
+            <Button
+              size="sm"
               label={t("settings.fioPlugin.tokens.remove")}
-              variant="secondary"
+              variant="outline"
               pending={pendingTokenId === token.id}
               disabled={pendingTokenId !== null}
               onPress={() => {

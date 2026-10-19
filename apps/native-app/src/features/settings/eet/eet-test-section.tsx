@@ -12,7 +12,7 @@ import { useAtomValue } from "jotai"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
-import { AppButton } from "../../../components/app-button.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -63,9 +63,10 @@ export function EetTestSection({
           {t("settings.eet.test.description")}
         </Text>
       </YStack>
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.eet.test.connection")}
-        variant="secondary"
+        variant="outline"
         disabled={!canSend}
         pending={pending}
         onPress={() => {
@@ -73,9 +74,10 @@ export function EetTestSection({
         }}
       />
       {environment === "playground" ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("settings.eet.test.sale")}
-          variant="secondary"
+          variant="outline"
           disabled={!canSend}
           onPress={() => {
             void send("sale")

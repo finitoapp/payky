@@ -23,9 +23,9 @@ import {
 import { useEffect, useRef, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { apiUrl } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -92,9 +92,10 @@ function AssistantChat({ access }: { readonly access: Access }) {
     <Screen>
       <FadeHeader title={t("settings.assistant.title")} />
       {turns.length === 0 ? null : (
-        <AppButton
+        <Button
+          size="lg"
           label={t("settings.assistant.newConversation")}
-          variant="secondary"
+          variant="outline"
           onPress={startOver}
         />
       )}
@@ -257,10 +258,11 @@ function EmptyConversation({
         {t(emptyKeys[access])}
       </Text>
       {suggestions[access].map((key) => (
-        <AppButton
+        <Button
+          size="lg"
           key={key}
           label={t(key)}
-          variant="secondary"
+          variant="outline"
           onPress={() => onAsk(t(key))}
         />
       ))}
@@ -292,9 +294,11 @@ function Turn({
         </Text>
       ) : null}
       {turn.status === "failed" ? (
-        <AppButton
+        <Button
+          size="xs"
+          labelColor="destructive"
           label={t("settings.assistant.failed")}
-          variant="secondary"
+          variant="ghost"
           onPress={onRetry}
         />
       ) : null}

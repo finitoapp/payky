@@ -3,7 +3,7 @@ import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { fetchDonationHistory } from "@payky/core/integrations/donations/donations-client"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { apiUrl } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
@@ -48,9 +48,10 @@ export function DonationHistory() {
           <Text color="red-600" accessibilityRole="alert">
             {t("settings.donations.history.error")}
           </Text>
-          <AppButton
+          <Button
+            size="sm"
             label={t("settings.donations.history.retry")}
-            variant="secondary"
+            variant="outline"
             onPress={() => {
               void refetch()
             }}
@@ -95,13 +96,14 @@ export function DonationHistory() {
         </Text>
       ) : null}
       {hasNextPage ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t(
             isFetchNextPageError
               ? "settings.donations.history.retry"
               : "settings.donations.history.more"
           )}
-          variant="secondary"
+          variant="outline"
           pending={isFetchingNextPage}
           onPress={() => {
             void fetchNextPage()

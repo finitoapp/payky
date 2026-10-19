@@ -10,7 +10,6 @@ import { shortenNpub } from "@payky/core/integrations/nostr/nostr-client"
 import { hexToNpub } from "@payky/core/integrations/nostr/npub"
 import CircleAlert from "lucide-react-native/icons/circle-alert"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
@@ -236,9 +235,11 @@ function MessageBubble({
         </Text>
       </YStack>
       {entry.status === "failed" ? (
-        <AppButton
+        <Button
+          size="xs"
+          labelColor="destructive"
           label={t("settings.supportChat.notDelivered")}
-          variant="secondary"
+          variant="ghost"
           onPress={() => onRetry(entry)}
         />
       ) : null}

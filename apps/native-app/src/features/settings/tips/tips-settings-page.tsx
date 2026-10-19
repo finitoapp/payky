@@ -18,10 +18,10 @@ import { Integer } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
@@ -197,13 +197,15 @@ function TipsSettingsForm({
         }
       />
 
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.tips.reset")}
-        variant="secondary"
+        variant="outline"
         disabled={pending}
         onPress={resetToDefaults}
       />
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.tips.save")}
         pending={pending}
         onPress={() => {
@@ -262,9 +264,10 @@ function TipPresetField({
             <Text flex={1} fontWeight="600">
               {text}
             </Text>
-            <AppButton
+            <Button
+              size="lg"
               label={t("settings.tips.preset.remove", { value: text })}
-              variant="secondary"
+              variant="outline"
               disabled={disabled}
               onPress={() => onRemove(value)}
             />
@@ -283,9 +286,10 @@ function TipPresetField({
       <Text fontSize={13} color="muted-foreground">
         {description}
       </Text>
-      <AppButton
+      <Button
+        size="lg"
         label={addLabel}
-        variant="secondary"
+        variant="outline"
         disabled={disabled}
         onPress={onAdd}
       />

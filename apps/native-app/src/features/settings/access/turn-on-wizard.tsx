@@ -10,7 +10,7 @@ import type { DeviceId } from "@payky/core/modules/device/device-types"
 import { useSetAtom } from "jotai"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -90,8 +90,9 @@ export function TurnOnWizard({
           {t("access.wizard.pin.description")}
         </Text>
         {hasPin ? (
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="outline"
             label={t("access.wizard.keepPin")}
             onPress={() => {
               void keepCurrentPin()
@@ -113,14 +114,16 @@ export function TurnOnWizard({
         />
         <XStack gap="2">
           <YStack flex={1}>
-            <AppButton
-              variant="secondary"
+            <Button
+              size="lg"
+              variant="ghost"
               label={t("access.cancel")}
               onPress={onDone}
             />
           </YStack>
           <YStack flex={1}>
-            <AppButton
+            <Button
+              size="lg"
               label={t("access.wizard.next")}
               disabled={keepPin || newPin.check.pin === null}
               onPress={() => setStep("devices")}
@@ -162,8 +165,9 @@ export function TurnOnWizard({
                   setPresets((current) => ({ ...current, [device.id]: preset }))
                 }
               />
-              <AppButton
-                variant="secondary"
+              <Button
+                size="lg"
+                variant="outline"
                 label={t("access.device.rename")}
                 onPress={() => setRenaming(device)}
               />
@@ -173,15 +177,17 @@ export function TurnOnWizard({
       ))}
       <XStack gap="2">
         <YStack flex={1}>
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="ghost"
             label={t("access.wizard.back")}
             disabled={pending}
             onPress={() => setStep("pin")}
           />
         </YStack>
         <YStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("access.turnOn")}
             pending={pending}
             onPress={() => {

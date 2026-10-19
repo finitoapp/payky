@@ -19,7 +19,6 @@ import { Fragment, useEffect, useRef, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { evoluCounterAtom } from "../../../atoms/evolu-counter.ts"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { QrCode } from "../../../components/qr-code.tsx"
 import { Screen } from "../../../components/screen.tsx"
@@ -28,6 +27,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../../../components/ui/alert.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import {
   Field,
   FieldDescription,
@@ -262,7 +262,8 @@ export function AccountTransferSourcePage() {
                 : undefined}
             </FieldError>
           </Field>
-          <AppButton
+          <Button
+            size="lg"
             label={t("accountTransfer.source.code.confirm")}
             disabled={code.length !== TRANSFER_CODE_LENGTH}
             onPress={() => {
@@ -313,28 +314,32 @@ export function AccountTransferSourcePage() {
 
       {state === null ? (
         <>
-          <AppButton
+          <Button
+            size="lg"
             label={t("accountTransfer.source.start")}
             onPress={() => {
               void start()
             }}
           />
-          <AppButton
+          <Button
+            size="lg"
             label={t("accountTransfer.cancel")}
-            variant="secondary"
+            variant="outline"
             onPress={close}
           />
         </>
       ) : null}
       {state?.phase === "waiting" || state?.phase === "locked" ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountTransfer.cancel")}
-          variant="secondary"
+          variant="outline"
           onPress={close}
         />
       ) : null}
       {state?.phase === "expired" ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountTransfer.source.qr.renew")}
           onPress={() => {
             void start()
@@ -343,21 +348,23 @@ export function AccountTransferSourcePage() {
       ) : null}
       {state?.phase === "failed" ? (
         <>
-          <AppButton
+          <Button
+            size="lg"
             label={t("accountTransfer.source.startAgain")}
             onPress={() => {
               void start()
             }}
           />
-          <AppButton
+          <Button
+            size="lg"
             label={t("accountTransfer.close")}
-            variant="secondary"
+            variant="outline"
             onPress={close}
           />
         </>
       ) : null}
       {state?.phase === "done" ? (
-        <AppButton label={t("accountTransfer.done")} onPress={close} />
+        <Button size="lg" label={t("accountTransfer.done")} onPress={close} />
       ) : null}
     </Screen>
   )

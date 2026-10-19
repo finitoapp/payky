@@ -8,10 +8,10 @@ import { catalogCategoryByIdQuery } from "@payky/core/modules/catalog-category/c
 import { CatalogCategoryId } from "@payky/core/modules/catalog-category/catalog-category-types"
 import { router, useLocalSearchParams } from "expo-router"
 import { Text } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useConfirmedRun } from "../../../hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -76,7 +76,8 @@ function EditCatalogCategoryForm({
           })
         }
       />
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.categories.delete")}
         variant="destructive"
         onPress={() => {

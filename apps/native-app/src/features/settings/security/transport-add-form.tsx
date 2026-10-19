@@ -12,8 +12,8 @@ import { useState } from "react"
 import { Text, YStack } from "tamagui"
 import { deviceEvoluAtom } from "../../../atoms/device-evolu.ts"
 import { reloadAppEvoluAtom } from "../../../atoms/evolu-counter.ts"
-import { AppButton } from "../../../components/app-button.tsx"
 import { Field } from "../../../components/field.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -84,9 +84,10 @@ export function TransportAddForm({
           {t("settings.security.transports.saved")}
         </Text>
       ) : null}
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.security.transports.add")}
-        variant="secondary"
+        variant="outline"
         pending={pending}
         onPress={() => void submit()}
       />

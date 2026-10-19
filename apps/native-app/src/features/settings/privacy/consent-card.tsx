@@ -1,5 +1,5 @@
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 
 /** An on/off consent: title, what it sends, its state and the button that flips it. */
 export function ConsentCard({
@@ -27,7 +27,12 @@ export function ConsentCard({
       <Text fontWeight="700">{title}</Text>
       <Text color="muted-foreground">{description}</Text>
       <Text fontWeight="600">{status}</Text>
-      <AppButton variant="secondary" label={actionLabel} onPress={onPress} />
+      <Button
+        size="lg"
+        variant="outline"
+        label={actionLabel}
+        onPress={onPress}
+      />
     </YStack>
   )
 }

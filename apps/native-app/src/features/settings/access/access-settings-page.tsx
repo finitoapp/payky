@@ -5,9 +5,9 @@ import { devicesQuery } from "@payky/core/modules/device/device-queries"
 import { router } from "expo-router"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -84,13 +84,15 @@ function StatusCard({
       <Text color="muted-foreground">{t("access.description")}</Text>
       {enabled ? (
         <>
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="outline"
             label={t("access.changePin")}
             onPress={onChangePin}
           />
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="outline"
             label={t("access.turnOff")}
             onPress={() => {
               void turnOff()
@@ -98,7 +100,7 @@ function StatusCard({
           />
         </>
       ) : (
-        <AppButton label={t("access.turnOn")} onPress={onTurnOn} />
+        <Button size="lg" label={t("access.turnOn")} onPress={onTurnOn} />
       )}
     </YStack>
   )
@@ -121,8 +123,9 @@ function DevicesCard() {
         />
       ))}
       {/* Sends this account to the new device by QR (account/0001). */}
-      <AppButton
-        variant="secondary"
+      <Button
+        size="lg"
+        variant="outline"
         label={t("access.devices.add")}
         onPress={() => router.push("/settings/access/add-device")}
       />

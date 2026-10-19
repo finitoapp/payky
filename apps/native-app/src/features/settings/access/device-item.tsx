@@ -15,7 +15,7 @@ import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { Icon } from "../../../components/ui/icon.tsx"
 import {
   accessPresetLabelKeys,
@@ -96,19 +96,22 @@ export function DeviceItem({
         <RenameForm device={device} onClose={() => setEditor(null)} />
       ) : (
         <YStack gap="2">
-          <AppButton
-            variant="secondary"
+          <Button
+            size="sm"
+            variant="outline"
             label={t("access.device.permissions")}
             onPress={() => setEditor("permissions")}
           />
-          <AppButton
-            variant="secondary"
+          <Button
+            size="sm"
+            variant="outline"
             label={t("access.device.rename")}
             onPress={() => setEditor("rename")}
           />
           {device.pinBlockedAt !== null && !thisDevice ? (
-            <AppButton
-              variant="secondary"
+            <Button
+              size="sm"
+              variant="outline"
               label={t("access.device.unblock")}
               onPress={() => {
                 void unblock()
@@ -116,7 +119,8 @@ export function DeviceItem({
             />
           ) : null}
           {thisDevice ? null : (
-            <AppButton
+            <Button
+              size="sm"
               variant="destructive"
               label={t("access.device.remove")}
               onPress={() => {
@@ -208,15 +212,17 @@ function PermissionsEditor({
       ) : null}
       <XStack gap="2">
         <YStack flex={1}>
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="ghost"
             label={t("access.cancel")}
             disabled={pending}
             onPress={onClose}
           />
         </YStack>
         <YStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("access.save")}
             pending={pending}
             onPress={() => {

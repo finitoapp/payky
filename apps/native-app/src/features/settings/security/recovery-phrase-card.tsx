@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import { AppState } from "react-native"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
-import { AppButton } from "../../../components/app-button.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -52,9 +52,10 @@ export function RecoveryPhraseCard() {
       <Text fontSize={13} color="muted-foreground">
         {t("settings.security.mnemonic.warning")}
       </Text>
-      <AppButton
+      <Button
+        size="lg"
         label={t(revealed ? "passwordTextarea.hide" : "passwordTextarea.show")}
-        variant="secondary"
+        variant="outline"
         onPress={() => {
           if (revealed) {
             setRevealed(false)

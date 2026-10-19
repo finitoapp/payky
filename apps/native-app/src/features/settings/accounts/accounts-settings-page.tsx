@@ -17,9 +17,9 @@ import {
   evoluCounterAtom,
   reloadAppEvoluAtom,
 } from "../../../atoms/evolu-counter.ts"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useDeviceEvoluQuery } from "../../../hooks/use-evolu-query.ts"
@@ -131,9 +131,10 @@ export function AccountsSettingsPage() {
                 {active ? null : (
                   <XStack gap="2">
                     <YStack flex={1}>
-                      <AppButton
+                      <Button
+                        size="sm"
                         label={t("settings.accounts.list.switch")}
-                        variant="secondary"
+                        variant="outline"
                         disabled={busy}
                         onPress={() => {
                           void activate(account.id)
@@ -141,7 +142,8 @@ export function AccountsSettingsPage() {
                       />
                     </YStack>
                     <YStack flex={1}>
-                      <AppButton
+                      <Button
+                        size="lg"
                         label={t("settings.accounts.list.remove")}
                         variant="destructive"
                         disabled={busy}
@@ -160,17 +162,19 @@ export function AccountsSettingsPage() {
 
       <YStack gap="3">
         <Text fontWeight="700">{t("settings.accounts.add.title")}</Text>
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountChoice.new.title")}
-          variant="secondary"
+          variant="outline"
           pending={busy}
           onPress={() => {
             void createNew()
           }}
         />
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountChoice.restore.title")}
-          variant="secondary"
+          variant="outline"
           disabled={busy || restoring.pending}
           onPress={() => setRestoreOpen((open) => !open)}
         />
@@ -184,9 +188,10 @@ export function AccountsSettingsPage() {
             }}
           />
         ) : null}
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountChoice.transfer.title")}
-          variant="secondary"
+          variant="outline"
           disabled={busy}
           onPress={() => router.push("/pair")}
         />
@@ -197,9 +202,10 @@ export function AccountsSettingsPage() {
         <Text color="muted-foreground">
           {t("accountTransfer.settings.source.description")}
         </Text>
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountTransfer.settings.source.title")}
-          variant="secondary"
+          variant="outline"
           disabled={busy}
           onPress={() => router.push("/settings/access/add-device")}
         />

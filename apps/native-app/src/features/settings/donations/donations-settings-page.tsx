@@ -20,10 +20,10 @@ import { router } from "expo-router"
 import { useEffect, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { z } from "zod"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { nativeEnv } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useBtcFiat, useLnurlPayMetadata } from "../../../hooks/use-btc-fiat.ts"
@@ -201,7 +201,8 @@ export function DonationsSettingsPage() {
           {t("settings.donations.invoice.error")}
         </Text>
       ) : null}
-      <AppButton
+      <Button
+        size="lg"
         label={t(
           creating
             ? "settings.donations.create.pending"

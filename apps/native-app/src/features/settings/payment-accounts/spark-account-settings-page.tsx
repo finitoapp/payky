@@ -31,12 +31,12 @@ import {
 } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
-import { AppButton } from "../../../components/app-button.tsx"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useAccess } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
@@ -172,9 +172,10 @@ function SparkWalletSummary({
         <Text fontSize={13} color="muted-foreground">
           {currentDescription}
         </Text>
-        <AppButton
+        <Button
+          size="sm"
           label={t("settings.sparkAccount.wallet.change")}
-          variant="secondary"
+          variant="outline"
           onPress={() => setDialogOpen(true)}
         />
       </YStack>
@@ -196,9 +197,10 @@ function SparkWalletSummary({
       <Text fontSize={13} color="muted-foreground">
         {t("settings.sparkAccount.mnemonic.description")}
       </Text>
-      <AppButton
+      <Button
+        size="lg"
         label={t(revealed ? "passwordTextarea.hide" : "passwordTextarea.show")}
-        variant="secondary"
+        variant="outline"
         onPress={() => setRevealed((current) => !current)}
       />
 
@@ -342,13 +344,14 @@ function ChangeSparkWalletModal({
                       value: wordCount,
                     })}
                   </Text>
-                  <AppButton
+                  <Button
+                    size="lg"
                     label={t(
                       revealed
                         ? "passwordTextarea.hide"
                         : "passwordTextarea.show"
                     )}
-                    variant="secondary"
+                    variant="outline"
                     onPress={() => setRevealed((current) => !current)}
                   />
                 </>
@@ -365,14 +368,16 @@ function ChangeSparkWalletModal({
 
               <XStack gap="2">
                 <YStack flex={1}>
-                  <AppButton
+                  <Button
+                    size="lg"
                     label={t("settings.sparkAccount.wallet.cancel")}
-                    variant="secondary"
+                    variant="outline"
                     onPress={close}
                   />
                 </YStack>
                 <YStack flex={1}>
-                  <AppButton
+                  <Button
+                    size="lg"
                     label={t("settings.sparkAccount.wallet.switch")}
                     disabled={!canSwitch}
                     onPress={() => {

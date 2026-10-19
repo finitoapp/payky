@@ -5,9 +5,9 @@ import type { DeviceListRow } from "@payky/core/modules/device/device-queries"
 import { NonEmptyString255Schema } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { Field } from "../../../components/field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { accessPresetLabelKeys } from "../../../core/access-labels.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -118,15 +118,17 @@ export function RenameForm({
       />
       <XStack gap="2">
         <YStack flex={1}>
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="ghost"
             label={t("access.cancel")}
             disabled={pending}
             onPress={onClose}
           />
         </YStack>
         <YStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("access.save")}
             pending={pending}
             disabled={!parsed.success}

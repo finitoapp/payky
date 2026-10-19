@@ -6,8 +6,8 @@ import {
 import { storeEetCertificate } from "@payky/core/modules/eet/eet-actions"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../../components/app-button.tsx"
 import { Field } from "../../../components/field.tsx"
+import { Button } from "../../../components/ui/button.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -94,13 +94,14 @@ export function EetCertificateImport() {
         <Text fontSize="sm" fontWeight="600">
           {t("settings.eet.certificate.file.label")}
         </Text>
-        <AppButton
+        <Button
+          size="lg"
           label={
             picked === null
               ? t("settings.eet.certificate.file.label")
               : picked.name
           }
-          variant="secondary"
+          variant="outline"
           disabled={pending}
           onPress={() => {
             void choose()
@@ -128,7 +129,8 @@ export function EetCertificateImport() {
           setError(null)
         }}
       />
-      <AppButton
+      <Button
+        size="lg"
         label={t("settings.eet.certificate.import")}
         pending={pending}
         onPress={() => {

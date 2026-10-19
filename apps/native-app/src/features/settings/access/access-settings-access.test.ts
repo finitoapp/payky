@@ -25,7 +25,7 @@ it("asks for confirmation, awaited, before removing a device, and never for this
     /await run\.ok\(removeDevice\(device\.id\)\)/
   )
   expect(item).toMatch(
-    /\{thisDevice \? null : \(\s*<AppButton\s+variant="destructive"/u
+    /\{thisDevice \? null : \(\s*<Button\b[^>]*variant="destructive"/u
   )
 })
 

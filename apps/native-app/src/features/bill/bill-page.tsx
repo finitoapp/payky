@@ -1,4 +1,5 @@
 import { sqliteTrue } from "@evolu/common"
+import { formatDateTime, formatTime } from "@payky/app-shared/format-date"
 import { formatMoney } from "@payky/app-shared/format-money"
 import { useRedirectIfClosedOnOpen } from "@payky/app-shared/use-redirect-if-closed-on-open"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
@@ -34,6 +35,7 @@ import {
 } from "@payky/core/modules/shared/schema"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { TableId } from "@payky/core/modules/table/table-types"
+import { isSameDay } from "date-fns"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
 import ChevronDown from "lucide-react-native/icons/chevron-down"
 import Minus from "lucide-react-native/icons/minus"
@@ -98,6 +100,7 @@ import {
 import { AssignTableDialog } from "./assign-table-dialog.tsx"
 import { BillScanView } from "./bill-scan-view.tsx"
 import { CreateCatalogItemDialog } from "./create-catalog-item-dialog.tsx"
+import { buildItemGridRows } from "./item-grid-rows.ts"
 import { ItemQuantityDialog } from "./item-quantity-controls.tsx"
 import { ScanCodeCollisionDialog } from "./scan-code-collision-dialog.tsx"
 import { SplitBillDialog } from "./split-bill-dialog.tsx"
@@ -157,6 +160,7 @@ function BillPage({
   readonly initialScanCode: string | undefined
 }) {
   const { t } = useTranslation()
+  const locale = useLocale()
   // Only meaningful before the bill row exists: it seeds the table the lazily
   // created row is assigned to. Afterwards `bill.tableId` is the truth.
   const [pendingTableId, setPendingTableId] = useState<TableId | null>(
@@ -165,6 +169,17 @@ function BillPage({
   const tables = useEvoluQuery(tablesQuery).data
   const [settings] = useEvoluQuery(settingsQuery).data
   const [bill] = useEvoluQuery(billByIdQuery(billId)).data
+  // Since when, as web's subtitle: staff keep their bearings without
+  // scrolling to the table button.
+  const openedAt = bill === undefined ? undefined : new Date(bill.createdAt)
+  const opened =
+    openedAt === undefined
+      ? undefined
+      : t("bill.openedAt", {
+          time: isSameDay(openedAt, new Date())
+            ? formatTime(openedAt, locale)
+            : formatDateTime(openedAt, locale),
+        })
   const summaries = useBillLineSummaries(billId)
   const pendingPaymentIds = usePendingPayments(billId)
   const billStatus = useBillStatus(billId)
@@ -206,6 +221,7 @@ function BillPage({
     <BillCart
       billId={billId}
       billExists={bill !== undefined}
+      opened={opened}
       tableId={bill === undefined ? pendingTableId : bill.tableId}
       tableName={
         tables.find(
@@ -363,6 +379,7 @@ function BillLocked({
 function BillCart({
   billId,
   billExists,
+  opened,
   tableId,
   tableName,
   onTableSeedChange,
@@ -375,6 +392,8 @@ function BillCart({
   readonly billId: BillId
   /** Whether `billId`'s row is written yet; until then there is nothing to discard. */
   readonly billExists: boolean
+  /** "Opened at …" once the bill row exists, as web's subtitle. */
+  readonly opened: string | undefined
   readonly tableId: TableId | null
   /** The assigned table's name, when there is one. */
   readonly tableName: string | undefined
@@ -550,6 +569,27 @@ function BillCart({
     [deferredSearch, deferredFilter, deferredInBillIds, currency]
   )
   const gridItems = useEvoluQuery(gridQuery).data
+  const categoriesById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category])),
+    [categories]
+  )
+  // The group an item is headed under; a deleted category's items join the
+  // uncategorized, as the grouped query sorts them.
+  const categoryGroupOf = (item: CatalogItemRow) =>
+    item.categoryId !== null && categoriesById.has(item.categoryId)
+      ? item.categoryId
+      : null
+  // As web: headings on the whole, unsearched catalog, and only when there is
+  // more than one group to tell apart.
+  const showCategoryHeadings =
+    deferredFilter === "all" &&
+    deferredSearch.trim() === "" &&
+    new Set(currencyItems.map(categoryGroupOf)).size > 1
+  const gridRows = buildItemGridRows(
+    gridItems,
+    categoryGroupOf,
+    showCategoryHeadings
+  )
   // The action runs long after this render, so it must not capture it:
   // `cart.undo` reads the top of its stack when it runs, as web's.
   const showUndoToast = (message: string) =>
@@ -598,7 +638,14 @@ function BillCart({
         backgroundColor: theme.background.val,
       }}
     >
-      <FadeHeader title={title} subtitle={tableName} />
+      <FadeHeader
+        title={title}
+        subtitle={
+          [tableName, opened]
+            .filter((part) => part !== undefined)
+            .join(" · ") || undefined
+        }
+      />
 
       <XStack mt={8} gap={8} items="center">
         <YStack flex={1} minW={0}>
@@ -658,39 +705,59 @@ function BillCart({
         ) : (
           <FlatList
             style={{ flex: 1 }}
-            numColumns={2}
-            columnWrapperStyle={{ gap: 8 }}
             contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
-            data={gridItems}
-            keyExtractor={(item) => item.id}
+            data={gridRows}
+            keyExtractor={(row) => row.key}
             ListEmptyComponent={
               currencyItems.length === 0 ? (
                 <CatalogEmpty />
               ) : (
                 <Text mt={40} color="muted-foreground" text="center">
                   {t(
-                    categoryFilter === "inBill"
+                    categoryFilter === "inBill" && search === ""
                       ? "bill.filter.inBill.empty"
                       : "bill.emptySearch"
                   )}
                 </Text>
               )
             }
-            renderItem={({ item }) => (
-              // Half the row at most, so an odd last brick keeps its column.
-              <View flex={1} maxW="50%">
-                <ItemBrick
-                  catalogItem={item}
-                  summaries={summaries}
-                  locale={locale}
-                  onAdd={() => void cart.addOne(item)}
-                  onAddQuantity={(quantity) =>
-                    void cart.addQuantity(item, quantity)
-                  }
-                  onRemove={(summary) => void cart.removeOne(summary)}
-                />
-              </View>
-            )}
+            renderItem={({ item: row, index }) =>
+              row.type === "heading" ? (
+                // Web's `h3 px-1 pt-4 text-sm font-semibold
+                // text-muted-foreground first:pt-0`; the list gap is 8 of it.
+                <Text
+                  role="heading"
+                  px={4}
+                  pt={index === 0 ? 0 : 8}
+                  fontSize={fontSize.sm}
+                  fontWeight={fontWeight.semibold}
+                  color="muted-foreground"
+                >
+                  {row.group === null
+                    ? t("bill.category.uncategorized")
+                    : categoriesById.get(row.group)?.name}
+                </Text>
+              ) : (
+                <XStack gap={8}>
+                  {row.items.map((item) => (
+                    <View key={item.id} flex={1}>
+                      <ItemBrick
+                        catalogItem={item}
+                        summaries={summaries}
+                        locale={locale}
+                        onAdd={() => void cart.addOne(item)}
+                        onAddQuantity={(quantity) =>
+                          void cart.addQuantity(item, quantity)
+                        }
+                        onRemove={(summary) => void cart.removeOne(summary)}
+                      />
+                    </View>
+                  ))}
+                  {/* An odd last brick keeps its column. */}
+                  {row.items.length === 1 ? <View flex={1} /> : null}
+                </XStack>
+              )
+            }
           />
         )}
       </YStack>

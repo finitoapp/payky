@@ -72,7 +72,6 @@ export function Mono({ value }: { readonly value: string }) {
       </RNText>
       <CopyLink
         value={value}
-        label={t("withdraw.detail.copy")}
         accessibilityLabel={t("withdraw.detail.copy")}
         copied={t("withdraw.detail.copied")}
         failed={t("withdraw.detail.copyError")}

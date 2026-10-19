@@ -4,10 +4,13 @@ import { qrPath } from "./qr-matrix.ts"
 
 const quietZone = 2
 
-/** A QR drawn on a white square, whatever the theme: scanners need contrast. */
+/**
+ * A QR drawn on a white square, whatever the theme: scanners need contrast.
+ * Without `size` it fills its parent, as web's `QRCodeSVG className="size-full"`.
+ */
 export function QrCode({
   value,
-  size = 240,
+  size,
 }: {
   readonly value: string
   readonly size?: number
@@ -15,7 +18,11 @@ export function QrCode({
   const { size: modules, path } = useMemo(() => qrPath(value), [value])
   const side = modules + quietZone * 2
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${side} ${side}`}>
+    <Svg
+      width={size ?? "100%"}
+      height={size ?? "100%"}
+      viewBox={`0 0 ${side} ${side}`}
+    >
       <Rect width={side} height={side} fill="#fff" />
       <Path
         d={path}

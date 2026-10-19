@@ -1,11 +1,14 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import Check from "lucide-react-native/icons/check"
+import X from "lucide-react-native/icons/x"
 import { type ComponentProps, useState } from "react"
-import { Text, XStack, YStack } from "tamagui"
+import { View, XStack } from "tamagui"
 import { z } from "zod"
 import { useToast } from "../hooks/use-toast.ts"
 import { useTranslation } from "../hooks/use-translation.ts"
-import { AppButton } from "./app-button.tsx"
-import { Field } from "./field.tsx"
+import { Button } from "./ui/button.tsx"
+import { Field, FieldDescription, FieldError, FieldLabel } from "./ui/field.tsx"
+import { Input } from "./ui/input.tsx"
 
 /**
  * Native counterpart of web's `InlineEditField`: the first keystroke starts an
@@ -15,6 +18,10 @@ import { Field } from "./field.tsx"
  * `@payky/app-shared/inline-edit-codecs` codec web uses; `onSave` resolves
  * `true` once the value is stored (a `useRunToast` result), and a `false` keeps
  * the draft so the user can retry.
+ *
+ * Drawn as web's: label, then the input with Save (a default icon button with
+ * `Check`) and Discard (outline, `X`) inside it on the right while editing,
+ * then the description and the error.
  */
 export function InlineEditField<T extends string | number | null>({
   label,
@@ -33,7 +40,7 @@ export function InlineEditField<T extends string | number | null>({
   /** Already translated. */
   readonly description?: string
   readonly placeholder?: string
-  readonly keyboardType?: ComponentProps<typeof Field>["keyboardType"]
+  readonly keyboardType?: ComponentProps<typeof Input>["keyboardType"]
   readonly defaultValue: T
   readonly codec: z.core.$ZodType<T, string>
   readonly errorKey: TranslationKey
@@ -80,49 +87,52 @@ export function InlineEditField<T extends string | number | null>({
   }
 
   return (
-    <YStack gap="2">
-      <Field
-        label={label}
-        value={draft ?? z.encode(codec, defaultValue)}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        disabled={saving}
-        autoCorrect={false}
-        error={invalid ? t(errorKey) : undefined}
-        onChangeText={(text) => {
-          setDraft(text)
-          setInvalid(false)
-        }}
-        onSubmitEditing={() => {
-          void commit()
-        }}
-      />
-      {description === undefined ? null : (
-        <Text fontSize={13} color="muted-foreground">
-          {description}
-        </Text>
-      )}
-      {draft === null ? null : (
-        <XStack gap="2">
-          <YStack flex={1}>
-            <AppButton
-              label={t("inlineEdit.save")}
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <View>
+        <Input
+          value={draft ?? z.encode(codec, defaultValue)}
+          placeholder={placeholder}
+          keyboardType={keyboardType}
+          disabled={saving}
+          autoCorrect={false}
+          invalid={invalid}
+          accessibilityLabel={label}
+          pr={draft === null ? 10 : 80}
+          onChangeText={(text) => {
+            setDraft(text)
+            setInvalid(false)
+          }}
+          onSubmitEditing={() => {
+            void commit()
+          }}
+        />
+        {draft === null ? null : (
+          <XStack position="absolute" t={0} b={0} r={4} items="center" gap={2}>
+            <Button
+              size="icon"
+              iconStart={Check}
+              accessibilityLabel={t("inlineEdit.save")}
               pending={saving}
               onPress={() => {
                 void commit()
               }}
             />
-          </YStack>
-          <YStack flex={1}>
-            <AppButton
-              label={t("inlineEdit.discard")}
-              variant="secondary"
+            <Button
+              variant="outline"
+              size="icon"
+              iconStart={X}
+              accessibilityLabel={t("inlineEdit.discard")}
               disabled={saving}
               onPress={discard}
             />
-          </YStack>
-        </XStack>
+          </XStack>
+        )}
+      </View>
+      {description === undefined ? null : (
+        <FieldDescription>{description}</FieldDescription>
       )}
-    </YStack>
+      <FieldError>{invalid ? t(errorKey) : undefined}</FieldError>
+    </Field>
   )
 }

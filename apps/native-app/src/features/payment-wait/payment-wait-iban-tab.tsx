@@ -80,7 +80,7 @@ export function IbanPaymentTab({
           <Text>{groupIban(iban)}</Text>
           <CopyLink
             value={iban.replaceAll(/\s+/gu, "")}
-            label={t("withdraw.detail.copy")}
+            size="icon"
             accessibilityLabel={t("paymentWait.ibanDetails.iban.copy")}
             copied={t("paymentWait.ibanDetails.iban.copied")}
             failed={t("paymentWait.ibanDetails.iban.copyError")}
@@ -93,7 +93,7 @@ export function IbanPaymentTab({
               <Text>{variableSymbol}</Text>
               <CopyLink
                 value={variableSymbol}
-                label={t("withdraw.detail.copy")}
+                size="icon"
                 accessibilityLabel={t(
                   "paymentWait.ibanDetails.variableSymbol.copy"
                 )}

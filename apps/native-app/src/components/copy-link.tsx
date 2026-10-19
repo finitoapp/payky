@@ -1,32 +1,34 @@
-import { Pressable } from "react-native"
-import { Text } from "tamagui"
+import Copy from "lucide-react-native/icons/copy"
 import { useCopyToClipboard } from "../hooks/use-copy-to-clipboard.ts"
+import { Button } from "./ui/button.tsx"
 
-/** A small tappable "Copy" next to a value; messages arrive translated. */
+/**
+ * The copy button beside a value, as web draws it in its copy rows (the
+ * payment detail identifiers, the IBAN fields): a ghost icon button with
+ * lucide `Copy`. Messages arrive translated.
+ */
 export function CopyLink({
   value,
-  label,
   accessibilityLabel,
   copied,
   failed,
+  size = "icon-xs",
 }: {
   readonly value: string
-  readonly label: string
   readonly accessibilityLabel: string
   readonly copied: string
   readonly failed: string
+  /** Web's `icon-xs` in detail rows, `icon` in the IBAN fields. */
+  readonly size?: "icon-xs" | "icon"
 }) {
   const copy = useCopyToClipboard()
   return (
-    <Pressable
-      accessibilityRole="button"
+    <Button
+      variant="ghost"
+      size={size}
+      iconStart={Copy}
       accessibilityLabel={accessibilityLabel}
-      hitSlop={8}
       onPress={() => void copy(value, { copied, failed })}
-    >
-      <Text fontSize={13} fontWeight="600" color="primary">
-        {label}
-      </Text>
-    </Pressable>
+    />
   )
 }

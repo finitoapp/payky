@@ -56,7 +56,6 @@ export function DetailRow({
         </RNText>
         <CopyLink
           value={value}
-          label={t("withdraw.detail.copy")}
           accessibilityLabel={t("paymentDetail.copy", { label })}
           copied={t("paymentDetail.copied")}
           failed={t("paymentDetail.copyError")}

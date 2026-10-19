@@ -91,12 +91,15 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/components/copy-link.tsx",
     web: [],
     note: "Native only: web copies through a Button inline.",
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Button: "web inlines this ghost copy Button at each call site",
+    },
   },
   {
     native: "src/components/copyable-qr-code.tsx",
     web: ["apps/web-app/src/components/copyable-qr-code.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/detail-row.tsx",
@@ -116,7 +119,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/inline-edit-field.tsx",
     web: ["apps/web-app/src/features/settings/inline-edit-field.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/list-skeleton.tsx",
@@ -152,7 +155,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/qr-code.tsx",
     web: ["apps/web-app/src/components/copyable-qr-code.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/route-message.tsx",
@@ -196,7 +199,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/table-tile-shell.tsx",
     web: ["apps/web-app/src/features/shared/table-tile.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/vertical-nav.tsx",

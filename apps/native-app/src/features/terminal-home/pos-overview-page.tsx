@@ -20,6 +20,7 @@ import type { TableRow } from "@payky/core/modules/table/table"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import type { TableId } from "@payky/core/modules/table/table-types"
 import { router } from "expo-router"
+import { useAtom } from "jotai"
 import Plus from "lucide-react-native/icons/plus"
 import Users from "lucide-react-native/icons/users"
 import { useEffect, useMemo, useState } from "react"
@@ -34,6 +35,7 @@ import {
 } from "../../components/ui/toggle-group.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { viewStateAtom } from "../../platform/view-state-atom.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 
 const tableFilterLabelKeys = {
@@ -52,6 +54,13 @@ type TFn = ReturnType<typeof useTranslation>["t"]
 
 const billLabel = (bill: OpenBillRow, t: TFn) =>
   bill.label ?? t("bill.list.label", { number: bill.displayNumber })
+
+/** Per-device view state under web's `localStorage` key, as web does. */
+const tableFilterAtom = viewStateAtom<TableFilter>(
+  "payky.posTableFilter",
+  TableFilterSchema,
+  "all"
+)
 
 const openBill = (billId: string) =>
   router.push({ pathname: "/bill", params: { billId } })
@@ -72,15 +81,14 @@ function useNewBill(tableId: TableId | undefined) {
 
 /**
  * The POS home screen as on web: floor stats with a free/occupied filter, a
- * "no table" strip that starts a quick bill, and one tile per table. Web
- * keeps the filter in localStorage; here it is plain screen state.
+ * "no table" strip that starts a quick bill, and one tile per table.
  */
 export function PosOverviewPage() {
   const { t } = useTranslation()
   const locale = useLocale()
   const tables = useEvoluQuery(tablesQuery).data
   const openBills = useEvoluQuery(openBillsQuery).data
-  const [tableFilter, setTableFilter] = useState<TableFilter>("all")
+  const [tableFilter, setTableFilter] = useAtom(tableFilterAtom)
   // ponytail: 30 s tick, as web — an expired invoice's "paying" state can
   // outlive `expiresAt` by up to that.
   const [now, setNow] = useState(Date.now)

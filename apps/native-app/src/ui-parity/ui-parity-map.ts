@@ -58,6 +58,12 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     },
   },
   {
+    native: "src/components/app/app-loader.tsx",
+    web: [],
+    status: "matched",
+    note: "Web's boot loader is the #app-loader markup in apps/web-app/index.html, not a TSX file; native draws the same centered app icon on the theme background.",
+  },
+  {
     native: "src/components/app/confirm-host.tsx",
     web: ["apps/web-app/src/components/app/confirm-dialog-host.tsx"],
     status: "matched",

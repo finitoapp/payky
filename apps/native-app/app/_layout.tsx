@@ -8,7 +8,7 @@ import { Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { createStore, Provider } from "jotai"
 import { Suspense, useEffect, useState } from "react"
-import { ActivityIndicator, useColorScheme } from "react-native"
+import { useColorScheme } from "react-native"
 import { TamaguiProvider, Theme } from "tamagui"
 import { AccessGate } from "../src/components/app/access-gate.tsx"
 import {
@@ -16,6 +16,7 @@ import {
   CashuEvoluConsumers,
 } from "../src/components/app/app-background-jobs.tsx"
 import { AppErrorScreen } from "../src/components/app/app-error-screen.tsx"
+import { AppLoader } from "../src/components/app/app-loader.tsx"
 import { ConfirmHost } from "../src/components/app/confirm-host.tsx"
 import { DemoDataSeed } from "../src/components/app/demo-data-seed.tsx"
 import { DeviceRegistration } from "../src/components/app/device-registration.tsx"
@@ -62,12 +63,11 @@ export default function RootLayout() {
     }
   }, [])
   if (fontError) throw fontError
-  if (!fontsLoaded)
-    return <ActivityIndicator accessibilityLabel="Loading fonts" />
+  if (!fontsLoaded) return <AppLoader />
 
   return (
     <Provider store={store}>
-      <Suspense fallback={null}>
+      <Suspense fallback={<AppLoader />}>
         <ThemedApp />
       </Suspense>
     </Provider>
@@ -78,7 +78,7 @@ export default function RootLayout() {
  * Everything under the Tamagui theme, which follows the device theme
  * preference (settings): `system` the OS scheme, light/dark forced. The
  * preference lives in the device database, so this suspends until it is
- * open; nothing is drawn before then, so there is no wrong-theme flash.
+ * open; `AppLoader` covers that wait on the system scheme's background.
  */
 function ThemedApp() {
   const preference = useThemePreference()

@@ -224,16 +224,3 @@ export function ActivityList({
     />
   )
 }
-
-// The detail screens' method text, until 4.4c shows the method icons there.
-
-/** The methods that settled a payment, once each, as plain labels. */
-export function paymentMethodsText(
-  kinds: ReadonlyArray<AccountTransactionKind>,
-  t: ReturnType<typeof useTranslation>["t"]
-): string | null {
-  const unique = Array.from(new Set(kinds), (kind) =>
-    t(paymentMethodLabelKey[kind])
-  )
-  return unique.length === 0 ? null : unique.join(", ")
-}

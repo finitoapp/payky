@@ -226,7 +226,13 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/activity/bill-detail-page.tsx",
     web: ["apps/web-app/src/features/activity/bill-detail.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "drawn by BillStatusBadge and PaymentStatusBadge, which wrap web's Badge + class maps",
+      CollisionAlert:
+        "web wraps the same CollisionAlert in BillCancellationCollisionPanel; native composes it with BillCancellationCollisionActions in place",
+    },
   },
   {
     native: "src/features/activity/bill-history-page.tsx",

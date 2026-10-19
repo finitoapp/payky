@@ -1,5 +1,4 @@
 import type { InferRow } from "@evolu/common"
-import { refundBadgeLabel } from "@payky/app-shared/activity-history"
 import {
   billStatusLabelKey,
   paymentStatusLabelKey,
@@ -42,15 +41,18 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card.tsx"
+import { Separator } from "../../components/ui/separator.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
+import { RefundBadge } from "../shared/refund-badge.tsx"
 import { TaxRecap } from "../shared/tax-recap.tsx"
 import {
   useBillLineSummaries,
   useBillStatus,
 } from "../shared/use-bill-state.ts"
-import { paymentMethodsText } from "./activity-parts.tsx"
+import { PaymentMethodIcons } from "./activity-parts.tsx"
 import { BillStatusBadge } from "./bill-status-display.tsx"
 import {
   BillCoverageWarning,
@@ -121,7 +123,7 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
         : null
 
   return (
-    <YStack gap="3">
+    <YStack gap={16}>
       {billStatus.status === "open" ? (
         <Button
           size="lg"
@@ -146,27 +148,36 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
           </CardAction>
         </CardHeader>
         <CardContent gap={12}>
-          <YStack gap="1">
-            <Text fontSize={32} fontWeight="700">
+          <YStack gap={4}>
+            <Text
+              fontSize={36}
+              fontWeight={fontWeight.semibold}
+              fontVariant={["tabular-nums"]}
+            >
               {formatMoney(
                 { value: totalAmount, currency: bill.currency },
                 locale
               )}
             </Text>
             {closedOrCanceled === null ? null : (
-              <Text color="muted-foreground">{closedOrCanceled}</Text>
+              <Text fontSize={fontSize.sm} color="muted-foreground">
+                {closedOrCanceled}
+              </Text>
             )}
           </YStack>
 
           {/* Spelled out rather than "—": a counter sale with no table is a fact; "—" is a table row that is gone. */}
-          <DetailRow
-            label={t("billDetail.table")}
-            value={
-              bill.tableId === null
+          <DetailRow label={t("billDetail.table")}>
+            <Text
+              fontSize={fontSize.sm}
+              fontWeight={fontWeight.medium}
+              color={bill.tableId === null ? "muted-foreground" : "color"}
+            >
+              {bill.tableId === null
                 ? t("billDetail.noTable")
-                : (table?.name ?? t("billDetail.emptyValue"))
-            }
-          />
+                : (table?.name ?? t("billDetail.emptyValue"))}
+            </Text>
+          </DetailRow>
 
           {billStatus.hasCancellationCollision ? (
             <CollisionAlert
@@ -177,20 +188,28 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
             </CollisionAlert>
           ) : null}
 
+          <Separator />
+
           <BillLines
             summaries={summaries}
             emptyMessage={t("billDetail.items.empty")}
           />
           {hasTaxableLines(taxRecapRows) ? (
-            <TaxRecap rows={taxRecapRows} currency={bill.currency} />
+            <>
+              <Separator />
+              <TaxRecap rows={taxRecapRows} currency={bill.currency} />
+            </>
           ) : null}
           {coverage === "paid" ? null : (
-            <BillCoverageWarning
-              coverage={coverage}
-              expectedAmount={totalAmount}
-              claimedSum={claimedSum}
-              currency={bill.currency}
-            />
+            <>
+              <Separator />
+              <BillCoverageWarning
+                coverage={coverage}
+                expectedAmount={totalAmount}
+                claimedSum={claimedSum}
+                currency={bill.currency}
+              />
+            </>
           )}
         </CardContent>
       </Card>
@@ -201,11 +220,11 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
         </CardHeader>
         <CardContent gap={12}>
           {payments.length === 0 ? (
-            <Text color="muted-foreground">
+            <Text fontSize={fontSize.sm} color="muted-foreground">
               {t("billDetail.payments.empty")}
             </Text>
           ) : (
-            <YStack gap="1">
+            <YStack>
               {payments.map((payment) => (
                 <BillPaymentRowView
                   key={payment.id}
@@ -261,11 +280,6 @@ function BillPaymentRowView({
     confirmedPaidAt: payment.confirmedPaidAt,
     hasActiveClaim,
   })
-  const refundLabel = refundBadgeLabel(refundSummary, t, locale)
-  const methods = paymentMethodsText(
-    payment.claimedTransactions.map(({ kind }) => kind),
-    t
-  )
   const amount = formatMoney(
     { value: payment.amount, currency: payment.currency },
     locale
@@ -282,29 +296,30 @@ function BillPaymentRowView({
         })
       }
     >
-      <XStack gap="3" py="2" items="center">
+      <XStack gap={12} py={8} items="center">
         <PaymentStatusIcon
           status={status}
           hasCancellationCollision={hasCancellationCollision}
         />
-        <YStack flex={1}>
-          <Text fontWeight="600">{amount}</Text>
-          <Text fontSize={12} color="muted-foreground">
-            {[formatDateTime(new Date(payment.createdAt), locale), methods]
-              .filter((part): part is string => part !== null)
-              .join(" · ")}
+        <YStack flex={1} gap={2}>
+          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+            {amount}
           </Text>
+          <XStack items="center" gap={8}>
+            <Text fontSize={fontSize.xs} color="muted-foreground">
+              {formatDateTime(new Date(payment.createdAt), locale)}
+            </Text>
+            <PaymentMethodIcons
+              kinds={payment.claimedTransactions.map(({ kind }) => kind)}
+            />
+          </XStack>
         </YStack>
-        <YStack items="flex-end" gap="1">
+        <YStack items="flex-end" gap={4}>
           <PaymentStatusBadge
             status={status}
             label={t(paymentStatusLabelKey[status])}
           />
-          {refundLabel === null ? null : (
-            <Text fontSize={12} color="warning">
-              {refundLabel}
-            </Text>
-          )}
+          <RefundBadge summary={refundSummary} />
         </YStack>
       </XStack>
     </Pressable>

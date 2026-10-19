@@ -14,12 +14,20 @@ export default {
   version,
   platforms: ["android", "ios"],
   userInterfaceStyle: "automatic",
+  // The PWA icon; launchers without adaptive icons use it as is.
+  icon: "./assets/payky-icon.png",
   ios: {
     bundleIdentifier: "me.payky.nativepreview",
     supportsTablet: true,
   },
   android: {
     package: "me.payky.nativepreview",
+    // The Capacitor app's adaptive icon (apps/native-shell): its foreground
+    // on a transparent background.
+    adaptiveIcon: {
+      foregroundImage: "./assets/launcher-foreground.png",
+      backgroundColor: "#00000000",
+    },
     allowBackup: false,
     versionCode: year * 1_000_000 + month * 10_000 + micro,
   },

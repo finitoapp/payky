@@ -1,54 +1,62 @@
+import { czechBankForDraft } from "@payky/app-shared/bank-account-codecs"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
-import { Text } from "tamagui"
-import { Field } from "../../components/field.tsx"
+import Landmark from "lucide-react-native/icons/landmark"
+import { XStack, YStack } from "tamagui"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../../components/ui/field.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
+import { Input } from "../../components/ui/input.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
-/** The optional public business name and bank account (a nonblank one turns bank transfers on). */
+/** The optional bank account; a nonblank one turns bank transfers on. */
 export function PaymentsStep({
-  businessName,
-  businessNameError,
   iban,
   ibanError,
   pending,
-  onBusinessNameChange,
   onIbanChange,
 }: {
-  readonly businessName: string
-  readonly businessNameError: TranslationKey | null
   readonly iban: string
   readonly ibanError: TranslationKey | null
   readonly pending: boolean
-  readonly onBusinessNameChange: (name: string) => void
   readonly onIbanChange: (iban: string) => void
 }) {
   const { t } = useTranslation()
+  const czechBank = czechBankForDraft(iban)
+  const bank =
+    czechBank === undefined
+      ? undefined
+      : (czechBank ?? t("settings.fiatBankAccount.iban.unknownBank"))
+
   return (
-    <>
-      <Field
-        label={t("onboarding.businessName.label")}
-        placeholder={t("onboarding.businessName.placeholder")}
-        value={businessName}
-        disabled={pending}
-        autoComplete="organization"
-        error={businessNameError === null ? undefined : t(businessNameError)}
-        onChangeText={onBusinessNameChange}
-      />
-      <Text fontSize="sm" color="muted-foreground">
-        {t("onboarding.businessName.description")}
-      </Text>
-      <Field
-        label={t("onboarding.payments.iban.title")}
-        value={iban}
-        disabled={pending}
-        autoComplete="off"
-        autoCapitalize="characters"
-        autoCorrect={false}
-        error={ibanError === null ? undefined : t(ibanError)}
-        onChangeText={onIbanChange}
-      />
-      <Text fontSize="sm" color="muted-foreground">
-        {t("onboarding.payments.iban.description")}
-      </Text>
-    </>
+    <Field>
+      <XStack gap="3" items="center">
+        <Icon icon={Landmark} size={20} color="muted-foreground" />
+        <FieldLabel>{t("onboarding.payments.iban.title")}</FieldLabel>
+      </XStack>
+      <YStack gap="2" ml={32}>
+        <Input
+          value={iban}
+          disabled={pending}
+          invalid={ibanError !== null}
+          autoComplete="off"
+          autoCapitalize="characters"
+          autoCorrect={false}
+          onChangeText={onIbanChange}
+        />
+        {bank === undefined ? null : (
+          <FieldDescription color="color" fontWeight="500">
+            {bank}
+          </FieldDescription>
+        )}
+        <FieldDescription>
+          {t("onboarding.payments.iban.description")}
+        </FieldDescription>
+        <FieldError>{ibanError === null ? undefined : t(ibanError)}</FieldError>
+      </YStack>
+    </Field>
   )
 }

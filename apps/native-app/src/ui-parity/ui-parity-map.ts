@@ -348,29 +348,49 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/onboarding/account-choice-step.tsx",
     web: ["apps/web-app/src/features/shared/account/account-type-choice.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/onboarding/language-select.tsx",
     web: ["apps/web-app/src/features/onboarding/language-select.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      SelectContent:
+        "the native options open in the kit Dialog sheet rather than an anchored popup",
+      SelectTrigger:
+        "the native kit keeps its outlined trigger; web styles this toolbar trigger borderless",
+    },
   },
   {
     native: "src/features/onboarding/onboarding-page.tsx",
     web: ["apps/web-app/src/features/onboarding/onboarding-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      AccountTransferTarget:
+        "native keeps its existing no-confirm transfer path and has no restore-with-phrase callback; fallback-account lookup and confirmation are a separate behavior gap",
+      CancelSetup:
+        "native does not look up a fallback device account, so it cannot offer web's cancel-setup action",
+    },
   },
   {
     native: "src/features/onboarding/payments-step.tsx",
     web: [
       "apps/web-app/src/features/onboarding/onboarding-steps/payments-step.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/onboarding/restore-sync-page.tsx",
     web: ["apps/web-app/src/features/onboarding/restore-sync-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      ActivityIndicator:
+        "the native page uses React Native's platform spinner while sync is in progress",
+      TransportAddForm:
+        "native restore sync only reports relay status; adding transports remains in settings",
+      TransportToggleList:
+        "native restore sync only reports relay status; toggling transports remains in settings",
+    },
   },
   {
     native: "src/features/payment-tip/payment-tip-page.tsx",

@@ -25,6 +25,9 @@ import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-que
 import { useNetworkState } from "expo-network"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import KeyRound from "lucide-react-native/icons/key-round"
+import RefreshCw from "lucide-react-native/icons/refresh-cw"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useEffect, useState, useSyncExternalStore } from "react"
 import { ActivityIndicator } from "react-native"
 import { Text, YStack } from "tamagui"
@@ -35,6 +38,13 @@ import { evoluAtom } from "../../atoms/evolu.ts"
 import { reloadAppEvoluAtom } from "../../atoms/evolu-counter.ts"
 import { Screen } from "../../components/screen.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
 import { nativeRun } from "../../core/native-runtime.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -210,54 +220,70 @@ export function RestoreSyncPage() {
 
   return (
     <Screen>
-      <YStack gap="2" items="center" accessibilityLiveRegion="polite">
-        {settled ? null : <ActivityIndicator />}
-        <Text fontSize={24} fontWeight="700" accessibilityRole="header">
-          {t(title)}
-        </Text>
-        <Text color="muted-foreground">
-          {t(
-            outcome === "failed" && !online
-              ? "accountRestore.failed.offline"
-              : description
+      <YStack gap="5">
+        <YStack
+          gap="3"
+          items="center"
+          text="center"
+          accessibilityLiveRegion="polite"
+        >
+          {settled ? (
+            <Icon icon={TriangleAlert} size={32} color="destructive" />
+          ) : (
+            <ActivityIndicator size="large" />
           )}
-        </Text>
-      </YStack>
-
-      <YStack gap="2">
-        <Text fontWeight="600">{t("accountRestore.relays.title")}</Text>
-        {(relays ?? []).map((relay) => (
-          <Text key={relay.transport.label}>
-            {relay.transport.label}:{" "}
-            {t(statusKeys[relaySyncStateToStatus(relay).type])}
+          <Text fontSize={24} fontWeight="600" accessibilityRole="header">
+            {t(title)}
           </Text>
-        ))}
-      </YStack>
+          <Text fontSize="sm" color="muted-foreground">
+            {t(
+              outcome === "failed" && !online
+                ? "accountRestore.failed.offline"
+                : description
+            )}
+          </Text>
+        </YStack>
 
-      <YStack gap="2">
-        {settled ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("accountRestore.relays.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <YStack gap="4">
+              {(relays ?? []).map((relay) => (
+                <Text key={relay.transport.label} fontSize="sm">
+                  {relay.transport.label}:{" "}
+                  {t(statusKeys[relaySyncStateToStatus(relay).type])}
+                </Text>
+              ))}
+            </YStack>
+          </CardContent>
+        </Card>
+
+        <YStack gap="2">
+          {settled ? (
+            <Button
+              label={t("accountRestore.action.retry")}
+              iconStart={RefreshCw}
+              onPress={retry}
+            />
+          ) : null}
           <Button
-            size="lg"
-            label={t("accountRestore.action.retry")}
-            onPress={retry}
+            label={t("accountRestore.action.otherPhrase")}
+            iconStart={KeyRound}
+            variant="outline"
+            onPress={switchToAnotherPhrase}
           />
-        ) : null}
-        <Button
-          size="lg"
-          label={t("accountRestore.action.otherPhrase")}
-          variant="outline"
-          onPress={switchToAnotherPhrase}
-        />
-        {settled ? (
-          <Button
-            size="lg"
-            label={t("accountRestore.action.setupNew")}
-            variant="ghost"
-            onPress={() => {
-              void setUpAsNew()
-            }}
-          />
-        ) : null}
+          {settled ? (
+            <Button
+              label={t("accountRestore.action.setupNew")}
+              variant="ghost"
+              onPress={() => {
+                void setUpAsNew()
+              }}
+            />
+          ) : null}
+        </YStack>
       </YStack>
     </Screen>
   )

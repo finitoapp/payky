@@ -6,7 +6,9 @@ import RotateCw from "lucide-react-native/icons/rotate-cw"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import X from "lucide-react-native/icons/x"
 import { View } from "tamagui"
+import { Badge } from "../../components/ui/badge.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
+import type { ThemeColor } from "../../theme/themes.ts"
 import { radius } from "../../theme/tokens.ts"
 
 type Tone = {
@@ -55,5 +57,40 @@ export function PaymentStatusIcon({
     >
       <Icon icon={tone.icon} color={tone.color} />
     </View>
+  )
+}
+
+/**
+ * Web's status badge (`paymentStatusBadgeClassName`): a secondary badge
+ * tinted by status; a canceled payment gets the plain destructive badge.
+ */
+const paymentBadgeTints = {
+  canceled: null,
+  paid: { bg: "success-10", color: "success" },
+  expired: { bg: "muted", color: "muted-foreground" },
+  pending: { bg: "warning-10", color: "warning" },
+} as const satisfies Record<
+  PaymentStatus,
+  { readonly bg: ThemeColor; readonly color: ThemeColor } | null
+>
+
+export function PaymentStatusBadge({
+  status,
+  label,
+}: {
+  readonly status: PaymentStatus
+  /** Already translated. */
+  readonly label: string
+}) {
+  const tint = paymentBadgeTints[status]
+  return tint === null ? (
+    <Badge variant="destructive" label={label} />
+  ) : (
+    <Badge
+      variant="secondary"
+      bg={tint.bg}
+      labelColor={tint.color}
+      label={label}
+    />
   )
 }

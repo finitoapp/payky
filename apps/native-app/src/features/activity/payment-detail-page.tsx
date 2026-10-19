@@ -3,7 +3,6 @@ import {
   derivePaymentBillCoverageNotice,
   derivePaymentDetailState,
 } from "@payky/app-shared/activity-detail"
-import { refundBadgeLabel } from "@payky/app-shared/activity-history"
 import {
   billStatusLabelKey,
   paymentMethodLabelKey,
@@ -28,20 +27,29 @@ import {
 } from "@payky/core/modules/payment/payment-queries"
 import { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { paymentNumberByPaymentIdQuery } from "@payky/core/modules/payment-number/payment-number-queries"
-import { refundSummariesQuery } from "@payky/core/modules/refund/refund-queries"
-import { summarizeRefundsByPayment } from "@payky/core/modules/refund/refund-utils"
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { taxRatesQuery } from "@payky/core/modules/tax-rate/tax-rate-queries"
 import { router, useLocalSearchParams } from "expo-router"
+import ChevronRight from "lucide-react-native/icons/chevron-right"
 import { Suspense } from "react"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { CollisionAlert } from "../../components/collision-alert.tsx"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
-import { LoadingView } from "../../components/state-views.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
+import { Separator } from "../../components/ui/separator.tsx"
+import { Skeleton } from "../../components/ui/skeleton.tsx"
 import {
   Timeline,
   TimelineContent,
@@ -54,23 +62,24 @@ import {
 } from "../../components/ui/timeline.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
+import { paymentMethodIcon } from "../shared/payment-method-display.ts"
 import { TaxRecap } from "../shared/tax-recap.tsx"
 import {
   useBillLineSummaries,
   useBillStatus,
 } from "../shared/use-bill-state.ts"
+import { BillStatusBadge } from "./bill-status-display.tsx"
 import {
   BillCoverageWarning,
   BillLines,
-  Card,
   DetailScreen,
   OptionalRow,
-  paymentStatusTone,
-  StatusBadge,
   Technical,
 } from "./detail-parts.tsx"
 import { PaymentRefunds } from "./payment-refunds.tsx"
+import { PaymentStatusBadge } from "./payment-status-display.tsx"
 import {
   useBillCoverage,
   useBillLineSummaryDiff,
@@ -91,13 +100,23 @@ export function PaymentDetailPage() {
   return (
     <DetailScreen title={t("paymentDetail.title")}>
       {parsed.success ? (
-        <Suspense fallback={<LoadingView />}>
+        <Suspense fallback={<PaymentDetailSkeleton />}>
           <PaymentDetail paymentId={parsed.data} />
         </Suspense>
       ) : (
         <NotFoundCard messageKey="paymentDetail.invalidId" />
       )}
     </DetailScreen>
+  )
+}
+
+/** Web's `PaymentDetailSkeleton`: the summary and bill cards' outlines. */
+export function PaymentDetailSkeleton() {
+  return (
+    <YStack gap={16}>
+      <Skeleton w="100%" h={160} rounded={radius.xl} />
+      <Skeleton w="100%" h={112} rounded={radius.xl} />
+    </YStack>
   )
 }
 
@@ -111,7 +130,6 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
   const [paymentNumber] = useEvoluQuery(
     paymentNumberByPaymentIdQuery(paymentId)
   ).data
-  const refunds = useEvoluQuery(refundSummariesQuery).data
   const collision = usePaymentCollisionActions(paymentId)
   // Nothing writes a row when a payment expires; see `useNow`.
   const now = useNow([payment?.expiresAt ?? null])
@@ -128,14 +146,9 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
     receivedTipAmount,
     paymentMethodKinds,
   } = derivePaymentDetailState({ payment, reconciliations, now })
-  const refundLabel = refundBadgeLabel(
-    summarizeRefundsByPayment(refunds).get(paymentId),
-    t,
-    locale
-  )
 
   return (
-    <YStack gap="3">
+    <YStack gap={16}>
       {status === "pending" ? (
         <YStack gap="1">
           <Button
@@ -158,108 +171,121 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
         </YStack>
       ) : null}
 
-      <Card
-        title={
-          paymentNumber === undefined
-            ? undefined
-            : t("paymentDetail.number", { number: paymentNumber.serialNumber })
-        }
-        subtitle={formatDateTime(new Date(payment.createdAt), locale)}
-        badge={
-          <StatusBadge
-            label={t(paymentStatusLabelKey[status])}
-            tone={paymentStatusTone[status]}
-          />
-        }
-      >
-        <YStack gap="1">
-          <Text fontSize={32} fontWeight="700">
-            {formatMoney(
-              { value: payment.amount, currency: payment.currency },
-              locale
+      <Card>
+        <CardHeader>
+          {paymentNumber === undefined ? null : (
+            <CardTitle>
+              {t("paymentDetail.number", {
+                number: paymentNumber.serialNumber,
+              })}
+            </CardTitle>
+          )}
+          <CardDescription>
+            {formatDateTime(new Date(payment.createdAt), locale)}
+          </CardDescription>
+          <CardAction>
+            <PaymentStatusBadge
+              status={status}
+              label={t(paymentStatusLabelKey[status])}
+            />
+          </CardAction>
+        </CardHeader>
+        <CardContent gap={12}>
+          <YStack gap={4}>
+            <Text
+              fontSize={36}
+              fontWeight={fontWeight.semibold}
+              fontVariant={["tabular-nums"]}
+            >
+              {formatMoney(
+                { value: payment.amount, currency: payment.currency },
+                locale
+              )}
+            </Text>
+            {payment.cashReceivedAmount === null ||
+            payment.cashReceivedAmount === payment.amount ? null : (
+              <Text fontSize={fontSize.sm} color="muted-foreground">
+                {t("paymentDetail.cashReceived", {
+                  amount: formatMoney(
+                    {
+                      value: payment.cashReceivedAmount,
+                      currency: payment.currency,
+                    },
+                    locale
+                  ),
+                })}
+              </Text>
             )}
-          </Text>
-          {payment.cashReceivedAmount === null ||
-          payment.cashReceivedAmount === payment.amount ? null : (
-            <Text color="muted-foreground">
-              {t("paymentDetail.cashReceived", {
-                amount: formatMoney(
-                  {
-                    value: payment.cashReceivedAmount,
-                    currency: payment.currency,
-                  },
-                  locale
-                ),
-              })}
-            </Text>
-          )}
-          {receivedTipAmount > 0 ? (
-            <Text color="muted-foreground">
-              {t("paymentDetail.tipIncluded", {
-                amount: formatMoney(
-                  { value: receivedTipAmount, currency: payment.currency },
-                  locale
-                ),
-              })}
-            </Text>
-          ) : null}
-          {paymentMethodKinds.length > 0 ? (
-            <Text fontWeight="600">
-              {paymentMethodKinds
-                .map((kind) => t(paymentMethodLabelKey[kind]))
-                .join(", ")}
-            </Text>
-          ) : null}
-          {payment.canceledAt === null ? null : (
-            <Text color="muted-foreground">
-              {t("paymentDetail.canceledAtValue", {
-                date: formatDateTime(new Date(payment.canceledAt), locale),
-              })}
-            </Text>
-          )}
-          {refundLabel === null ? null : (
-            <Text color="warning">{refundLabel}</Text>
-          )}
-        </YStack>
+            {receivedTipAmount > 0 ? (
+              <Text fontSize={fontSize.sm} color="muted-foreground">
+                {t("paymentDetail.tipIncluded", {
+                  amount: formatMoney(
+                    { value: receivedTipAmount, currency: payment.currency },
+                    locale
+                  ),
+                })}
+              </Text>
+            ) : null}
+            {paymentMethodKinds.length > 0 ? (
+              <XStack flexWrap="wrap" gap={12} rowGap={4}>
+                {paymentMethodKinds.map((kind) => (
+                  <XStack key={kind} items="center" gap={4}>
+                    <Icon icon={paymentMethodIcon[kind]} />
+                    <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+                      {t(paymentMethodLabelKey[kind])}
+                    </Text>
+                  </XStack>
+                ))}
+              </XStack>
+            ) : null}
+            {payment.canceledAt === null ? null : (
+              <Text fontSize={fontSize.sm} color="muted-foreground">
+                {t("paymentDetail.canceledAtValue", {
+                  date: formatDateTime(new Date(payment.canceledAt), locale),
+                })}
+              </Text>
+            )}
+          </YStack>
 
-        {hasCancellationCollision ? (
-          <CollisionAlert
-            title={t("paymentDetail.collision.title")}
-            description={t("paymentDetail.collision.description")}
-          >
-            <Button
-              size="lg"
-              label={t("paymentDetail.collision.markPaid")}
-              pending={collision.resolvePending}
-              onPress={() => void collision.confirmPaid()}
-            />
-            <Button
-              size="lg"
-              variant="outline"
-              label={t("paymentDetail.collision.refund")}
-              onPress={collision.refund}
-            />
-          </CollisionAlert>
-        ) : null}
-        {hasExcessSettlementCollision ? (
-          <CollisionAlert
-            title={t("paymentDetail.excessCollision.title")}
-            description={t("paymentDetail.excessCollision.description")}
-          >
-            <Button
-              size="lg"
-              label={t("paymentDetail.excessCollision.acknowledge")}
-              pending={collision.excessResolvePending}
-              onPress={() => void collision.acknowledgeExcess()}
-            />
-            <Button
-              size="lg"
-              variant="outline"
-              label={t("paymentDetail.collision.refund")}
-              onPress={collision.refund}
-            />
-          </CollisionAlert>
-        ) : null}
+          {hasCancellationCollision ? (
+            <CollisionAlert
+              title={t("paymentDetail.collision.title")}
+              description={t("paymentDetail.collision.description")}
+            >
+              <Button
+                size="lg"
+                label={t("paymentDetail.collision.markPaid")}
+                pending={collision.resolvePending}
+                onPress={() => void collision.confirmPaid()}
+              />
+              <Button
+                size="lg"
+                variant="outline"
+                label={t("paymentDetail.collision.refund")}
+                onPress={collision.refund}
+              />
+            </CollisionAlert>
+          ) : null}
+          {hasExcessSettlementCollision ? (
+            <CollisionAlert
+              title={t("paymentDetail.excessCollision.title")}
+              description={t("paymentDetail.excessCollision.description")}
+            >
+              <Button
+                size="lg"
+                label={t("paymentDetail.excessCollision.acknowledge")}
+                pending={collision.excessResolvePending}
+                onPress={() => void collision.acknowledgeExcess()}
+              />
+              <Button
+                size="lg"
+                variant="outline"
+                label={t("paymentDetail.collision.refund")}
+                onPress={collision.refund}
+              />
+            </CollisionAlert>
+          ) : null}
+        </CardContent>
       </Card>
 
       <PaymentRefunds
@@ -279,127 +305,136 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
 
       {/* EET sale cards (status, retry) come with the EET task. */}
 
-      <Card title={t("paymentDetail.reconciliations")}>
-        {reconciliations.length === 0 ? (
-          <Text color="muted-foreground">
-            {t("paymentDetail.reconciliations.empty")}
-          </Text>
-        ) : (
-          <Timeline value={reconciliations.length}>
-            {reconciliations.map((reconciliation, index) => (
-              <TimelineItem
-                key={reconciliation.id}
-                step={index + 1}
-                last={index === reconciliations.length - 1}
-              >
-                <TimelineHeader>
-                  <TimelineDate>
-                    {formatDateTime(new Date(reconciliation.claimedAt), locale)}
-                  </TimelineDate>
-                  <TimelineTitle>
-                    {t(paymentMethodLabelKey[reconciliation.transactionKind])}
-                    <Badge
-                      variant="secondary"
-                      label={t(claimSourceLabelKey[reconciliation.source])}
-                    />
-                  </TimelineTitle>
-                </TimelineHeader>
-                <TimelineIndicator />
-                <TimelineSeparator />
-                <TimelineContent>
-                  <YStack
-                    mt={8}
-                    gap={8}
-                    rounded={8.8}
-                    borderWidth={1}
-                    borderColor="border-color"
-                    bg="muted-20"
-                    p={12}
-                  >
-                    <DetailRow
-                      label={t("paymentDetail.transaction.amount")}
-                      value={formatMoney(
-                        {
-                          value: reconciliation.transactionAmount,
-                          currency: reconciliation.transactionCurrency,
-                        },
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("paymentDetail.reconciliations")}</CardTitle>
+        </CardHeader>
+        <CardContent gap={12}>
+          {reconciliations.length === 0 ? (
+            <Text color="muted-foreground">
+              {t("paymentDetail.reconciliations.empty")}
+            </Text>
+          ) : (
+            <Timeline value={reconciliations.length}>
+              {reconciliations.map((reconciliation, index) => (
+                <TimelineItem
+                  key={reconciliation.id}
+                  step={index + 1}
+                  last={index === reconciliations.length - 1}
+                >
+                  <TimelineHeader>
+                    <TimelineDate>
+                      {formatDateTime(
+                        new Date(reconciliation.claimedAt),
                         locale
                       )}
-                      emphasize
-                    />
-                    <OptionalRow
-                      label={t("paymentDetail.transaction.account")}
-                      value={
-                        reconciliation.accountName ?? reconciliation.accountId
-                      }
-                    />
-                    <OptionalRow
-                      label={t("paymentDetail.transaction.variableSymbol")}
-                      value={reconciliation.variableSymbol}
-                    />
-                    <OptionalRow
-                      label={t("paymentDetail.transaction.note")}
-                      value={reconciliation.transactionNote}
-                    />
-                    <Technical>
+                    </TimelineDate>
+                    <TimelineTitle>
+                      {t(paymentMethodLabelKey[reconciliation.transactionKind])}
+                      <Badge
+                        variant="secondary"
+                        label={t(claimSourceLabelKey[reconciliation.source])}
+                      />
+                    </TimelineTitle>
+                  </TimelineHeader>
+                  <TimelineIndicator />
+                  <TimelineSeparator />
+                  <TimelineContent>
+                    <YStack
+                      mt={8}
+                      gap={8}
+                      rounded={8.8}
+                      borderWidth={1}
+                      borderColor="border-color"
+                      bg="muted-20"
+                      p={12}
+                    >
                       <DetailRow
-                        label={t("paymentDetail.transaction.occurredAt")}
-                        value={formatDateTime(
-                          new Date(reconciliation.transactionOccurredAt),
+                        label={t("paymentDetail.transaction.amount")}
+                        value={formatMoney(
+                          {
+                            value: reconciliation.transactionAmount,
+                            currency: reconciliation.transactionCurrency,
+                          },
                           locale
                         )}
+                        emphasize
                       />
-                      {reconciliation.transactionRecordedAt === null ? null : (
+                      <OptionalRow
+                        label={t("paymentDetail.transaction.account")}
+                        value={
+                          reconciliation.accountName ?? reconciliation.accountId
+                        }
+                      />
+                      <OptionalRow
+                        label={t("paymentDetail.transaction.variableSymbol")}
+                        value={reconciliation.variableSymbol}
+                      />
+                      <OptionalRow
+                        label={t("paymentDetail.transaction.note")}
+                        value={reconciliation.transactionNote}
+                      />
+                      <Technical>
                         <DetailRow
-                          label={t("paymentDetail.transaction.recordedAt")}
+                          label={t("paymentDetail.transaction.occurredAt")}
                           value={formatDateTime(
-                            new Date(reconciliation.transactionRecordedAt),
+                            new Date(reconciliation.transactionOccurredAt),
                             locale
                           )}
                         />
-                      )}
-                      {reconciliation.transactionSource === null ? null : (
-                        <DetailRow
-                          label={t("paymentDetail.transaction.source")}
-                          value={t(
-                            claimSourceLabelKey[
-                              reconciliation.transactionSource
-                            ]
-                          )}
+                        {reconciliation.transactionRecordedAt ===
+                        null ? null : (
+                          <DetailRow
+                            label={t("paymentDetail.transaction.recordedAt")}
+                            value={formatDateTime(
+                              new Date(reconciliation.transactionRecordedAt),
+                              locale
+                            )}
+                          />
+                        )}
+                        {reconciliation.transactionSource === null ? null : (
+                          <DetailRow
+                            label={t("paymentDetail.transaction.source")}
+                            value={t(
+                              claimSourceLabelKey[
+                                reconciliation.transactionSource
+                              ]
+                            )}
+                          />
+                        )}
+                        <OptionalRow
+                          mono
+                          label={t("paymentDetail.transaction.id")}
+                          value={reconciliation.accountTransactionId}
                         />
-                      )}
-                      <OptionalRow
-                        mono
-                        label={t("paymentDetail.transaction.id")}
-                        value={reconciliation.accountTransactionId}
-                      />
-                      <OptionalRow
-                        mono
-                        label={t("paymentDetail.transaction.bankReference")}
-                        value={reconciliation.bankReference}
-                      />
-                      <OptionalRow
-                        mono
-                        label={t("paymentDetail.transaction.sparkTransferId")}
-                        value={reconciliation.sparkTransferId}
-                      />
-                      <OptionalRow
-                        mono
-                        label={t("paymentDetail.transaction.paymentHash")}
-                        value={reconciliation.paymentHash}
-                      />
-                      <OptionalRow
-                        mono
-                        label={t("paymentDetail.reconciliation.id")}
-                        value={reconciliation.id}
-                      />
-                    </Technical>
-                  </YStack>
-                </TimelineContent>
-              </TimelineItem>
-            ))}
-          </Timeline>
-        )}
+                        <OptionalRow
+                          mono
+                          label={t("paymentDetail.transaction.bankReference")}
+                          value={reconciliation.bankReference}
+                        />
+                        <OptionalRow
+                          mono
+                          label={t("paymentDetail.transaction.sparkTransferId")}
+                          value={reconciliation.sparkTransferId}
+                        />
+                        <OptionalRow
+                          mono
+                          label={t("paymentDetail.transaction.paymentHash")}
+                          value={reconciliation.paymentHash}
+                        />
+                        <OptionalRow
+                          mono
+                          label={t("paymentDetail.reconciliation.id")}
+                          value={reconciliation.id}
+                        />
+                      </Technical>
+                    </YStack>
+                  </TimelineContent>
+                </TimelineItem>
+              ))}
+            </Timeline>
+          )}
+        </CardContent>
       </Card>
 
       <Technical>
@@ -463,150 +498,173 @@ function PaymentBillCard({
   const taxRecapRows = calculateTaxRecap(summaries, taxRates)
 
   return (
-    <Card
-      title={t("paymentDetail.bill.title")}
-      subtitle={
-        bill.label ?? t("bill.list.label", { number: bill.displayNumber })
-      }
-      badge={
-        <StatusBadge
-          label={t(billStatusLabelKey[billStatus.status])}
-          tone={
-            billStatus.status === "closed"
-              ? "success"
-              : billStatus.status === "open"
-                ? "warning"
-                : "danger"
-          }
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("paymentDetail.bill.title")}</CardTitle>
+        <CardDescription>
+          {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
+        </CardDescription>
+        <CardAction>
+          <Button
+            size="sm"
+            variant="ghost"
+            iconEnd={ChevronRight}
+            label={t("paymentDetail.bill.open")}
+            onPress={() =>
+              router.push({
+                pathname: "/activity/bills/[billId]",
+                params: { billId },
+              })
+            }
+          />
+        </CardAction>
+      </CardHeader>
+      <CardContent gap={12}>
+        <XStack items="flex-start" justify="space-between" gap={16}>
+          <YStack gap={4}>
+            <Text
+              fontSize={fontSize.sm}
+              fontWeight={fontWeight.medium}
+              color="muted-foreground"
+            >
+              {t("paymentDetail.bill.table")}
+            </Text>
+            {/* Spelled out: a counter sale with no table is a fact staff should read. */}
+            <Text
+              fontSize={fontSize.sm}
+              fontWeight={fontWeight.medium}
+              color={bill.tableId === null ? "muted-foreground" : "color"}
+            >
+              {bill.tableId === null
+                ? t("paymentDetail.bill.noTable")
+                : (table?.name ?? t("paymentDetail.emptyValue"))}
+            </Text>
+          </YStack>
+          <BillStatusBadge
+            status={billStatus.status}
+            label={t(billStatusLabelKey[billStatus.status])}
+          />
+        </XStack>
+
+        {billStatus.hasCancellationCollision ? (
+          <CollisionAlert
+            title={t("bill.collision.title")}
+            description={t("bill.collision.description")}
+          >
+            <BillCancellationCollisionActions billId={billId} />
+          </CollisionAlert>
+        ) : null}
+
+        <Separator />
+
+        <BillLines
+          summaries={summaries}
+          emptyMessage={t("paymentDetail.bill.empty")}
         />
-      }
-    >
-      <Button
-        size="sm"
-        variant="ghost"
-        label={t("paymentDetail.bill.open")}
-        onPress={() =>
-          router.push({
-            pathname: "/activity/bills/[billId]",
-            params: { billId },
-          })
-        }
-      />
-      <DetailRow
-        label={t("paymentDetail.bill.table")}
-        value={
-          bill.tableId === null
-            ? t("paymentDetail.bill.noTable")
-            : (table?.name ?? t("paymentDetail.emptyValue"))
-        }
-      />
-
-      {billStatus.hasCancellationCollision ? (
-        <CollisionAlert
-          title={t("bill.collision.title")}
-          description={t("bill.collision.description")}
-        >
-          <BillCancellationCollisionActions billId={billId} />
-        </CollisionAlert>
-      ) : null}
-
-      <BillLines
-        summaries={summaries}
-        emptyMessage={t("paymentDetail.bill.empty")}
-      />
-      {tipAmount > 0 ? (
+        {tipAmount > 0 ? (
+          <DetailRow
+            label={t("paymentDetail.tipAmount")}
+            value={formatMoney(
+              { value: tipAmount, currency: bill.currency },
+              locale
+            )}
+          />
+        ) : null}
+        {hasTaxableLines(taxRecapRows) ? (
+          <>
+            <Separator />
+            <TaxRecap rows={taxRecapRows} currency={bill.currency} />
+          </>
+        ) : null}
+        <Separator />
         <DetailRow
-          label={t("paymentDetail.tipAmount")}
+          emphasize
+          label={t("paymentDetail.bill.total")}
           value={formatMoney(
-            { value: tipAmount, currency: bill.currency },
+            { value: totalAmountWithTip, currency: bill.currency },
             locale
           )}
         />
-      ) : null}
-      {hasTaxableLines(taxRecapRows) ? (
-        <TaxRecap rows={taxRecapRows} currency={bill.currency} />
-      ) : null}
-      <DetailRow
-        emphasize
-        label={t("paymentDetail.bill.total")}
-        value={formatMoney(
-          { value: totalAmountWithTip, currency: bill.currency },
-          locale
-        )}
-      />
 
-      {notice.warning === null ? null : (
-        <BillCoverageWarning
-          coverage={notice.warning}
-          expectedAmount={totalAmount}
-          claimedSum={claimedSum}
-          currency={bill.currency}
-          reason={notice.reason satisfies BillCoverageMismatchReason | null}
-        >
-          {notice.reason === "multiplePayments"
-            ? otherClaimedPaymentIds.map((otherPaymentId, index) => (
-                <Button
-                  size="lg"
-                  key={otherPaymentId}
-                  variant="outline"
-                  label={
-                    otherClaimedPaymentIds.length > 1
-                      ? t("bill.collision.viewPayment.numbered", {
-                          number: index + 1,
-                        })
-                      : t("bill.collision.viewPayment")
-                  }
-                  onPress={() =>
-                    router.push({
-                      pathname: "/activity/[paymentId]",
-                      params: { paymentId: otherPaymentId },
-                    })
-                  }
-                />
-              ))
-            : null}
-          {notice.hasLineDiff && lineDiff !== null ? (
-            <YStack gap="1">
-              <Text fontWeight="600">
-                {t("paymentDetail.bill.coverage.changesTitle")}
-              </Text>
-              {lineDiff.removed.map((summary) => (
-                <DetailRow
-                  key={summary.id}
-                  label={`− ${summary.quantity} × ${summary.name}`}
-                  value={formatMoney(
-                    { value: summary.totalAmount, currency: summary.currency },
-                    locale
-                  )}
-                />
-              ))}
-              {lineDiff.added.map((summary) => (
-                <DetailRow
-                  key={summary.id}
-                  label={`+ ${summary.quantity} × ${summary.name}`}
-                  value={formatMoney(
-                    { value: summary.totalAmount, currency: summary.currency },
-                    locale
-                  )}
-                />
-              ))}
-              {lineDiff.changed.map(({ before, after }) => (
-                <DetailRow
-                  key={after.id}
-                  label={after.name}
-                  value={`${formatMoney(
-                    { value: before.totalAmount, currency: before.currency },
-                    locale
-                  )} → ${formatMoney(
-                    { value: after.totalAmount, currency: after.currency },
-                    locale
-                  )}`}
-                />
-              ))}
-            </YStack>
-          ) : null}
-        </BillCoverageWarning>
-      )}
+        {notice.warning === null ? null : (
+          <BillCoverageWarning
+            coverage={notice.warning}
+            expectedAmount={totalAmount}
+            claimedSum={claimedSum}
+            currency={bill.currency}
+            reason={notice.reason satisfies BillCoverageMismatchReason | null}
+          >
+            {notice.reason === "multiplePayments"
+              ? otherClaimedPaymentIds.map((otherPaymentId, index) => (
+                  <Button
+                    size="lg"
+                    key={otherPaymentId}
+                    variant="outline"
+                    label={
+                      otherClaimedPaymentIds.length > 1
+                        ? t("bill.collision.viewPayment.numbered", {
+                            number: index + 1,
+                          })
+                        : t("bill.collision.viewPayment")
+                    }
+                    onPress={() =>
+                      router.push({
+                        pathname: "/activity/[paymentId]",
+                        params: { paymentId: otherPaymentId },
+                      })
+                    }
+                  />
+                ))
+              : null}
+            {notice.hasLineDiff && lineDiff !== null ? (
+              <YStack gap="1">
+                <Text fontWeight="600">
+                  {t("paymentDetail.bill.coverage.changesTitle")}
+                </Text>
+                {lineDiff.removed.map((summary) => (
+                  <DetailRow
+                    key={summary.id}
+                    label={`− ${summary.quantity} × ${summary.name}`}
+                    value={formatMoney(
+                      {
+                        value: summary.totalAmount,
+                        currency: summary.currency,
+                      },
+                      locale
+                    )}
+                  />
+                ))}
+                {lineDiff.added.map((summary) => (
+                  <DetailRow
+                    key={summary.id}
+                    label={`+ ${summary.quantity} × ${summary.name}`}
+                    value={formatMoney(
+                      {
+                        value: summary.totalAmount,
+                        currency: summary.currency,
+                      },
+                      locale
+                    )}
+                  />
+                ))}
+                {lineDiff.changed.map(({ before, after }) => (
+                  <DetailRow
+                    key={after.id}
+                    label={after.name}
+                    value={`${formatMoney(
+                      { value: before.totalAmount, currency: before.currency },
+                      locale
+                    )} → ${formatMoney(
+                      { value: after.totalAmount, currency: after.currency },
+                      locale
+                    )}`}
+                  />
+                ))}
+              </YStack>
+            ) : null}
+          </BillCoverageWarning>
+        )}
+      </CardContent>
     </Card>
   )
 }

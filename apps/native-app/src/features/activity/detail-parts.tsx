@@ -2,16 +2,16 @@ import type { BillCoverageMismatchReason } from "@payky/app-shared/activity-deta
 import { formatMoney } from "@payky/app-shared/format-money"
 import type { BillLineSummary } from "@payky/core/modules/bill-line/bill-line-summary"
 import { getBillLineSummaryUnitAmount } from "@payky/core/modules/bill-line/bill-line-utils"
-import type { PaymentStatus } from "@payky/core/modules/payment/payment-types"
 import {
   type Currency,
   NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
-import { type ReactNode, useState } from "react"
-import { Pressable, ScrollView } from "react-native"
+import type { ReactNode } from "react"
+import { ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, XStack, YStack } from "tamagui"
+import { Text, useTheme, View, XStack, YStack } from "tamagui"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import {
@@ -19,8 +19,15 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../../components/ui/alert.tsx"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  useCollapsible,
+} from "../../components/ui/collapsible.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import type { StatusTone } from "./activity-parts.tsx"
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
 
 /** The building blocks of the payment and bill detail screens. */
 
@@ -43,89 +50,10 @@ export function DetailScreen({
       }}
     >
       <FadeHeader title={title} />
-      <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 24 }}>
         {children}
       </ScrollView>
     </SafeAreaView>
-  )
-}
-
-export function Card({
-  title,
-  subtitle,
-  badge,
-  children,
-}: {
-  readonly title?: string | undefined
-  readonly subtitle?: string | undefined
-  readonly badge?: ReactNode
-  readonly children: ReactNode
-}) {
-  return (
-    <YStack
-      gap="3"
-      p="3"
-      rounded="xl"
-      borderWidth={1}
-      borderColor="border-color"
-      bg="card"
-    >
-      {title === undefined &&
-      subtitle === undefined &&
-      badge === undefined ? null : (
-        <XStack justify="space-between" items="flex-start" gap="2">
-          <YStack flex={1}>
-            {title === undefined ? null : (
-              <Text fontSize={17} fontWeight="600">
-                {title}
-              </Text>
-            )}
-            {subtitle === undefined ? null : (
-              <Text color="muted-foreground">{subtitle}</Text>
-            )}
-          </YStack>
-          {badge}
-        </XStack>
-      )}
-      {children}
-    </YStack>
-  )
-}
-
-const toneColors = {
-  success: "success",
-  warning: "warning",
-  danger: "destructive",
-  muted: "muted-foreground",
-} as const satisfies Record<StatusTone, string>
-
-export const paymentStatusTone = {
-  paid: "success",
-  pending: "warning",
-  expired: "muted",
-  canceled: "danger",
-} as const satisfies Record<PaymentStatus, StatusTone>
-
-export function StatusBadge({
-  label,
-  tone,
-}: {
-  readonly label: string
-  readonly tone: StatusTone
-}) {
-  return (
-    <Text
-      fontSize={12}
-      fontWeight="600"
-      color={toneColors[tone]}
-      borderWidth={1}
-      borderColor={toneColors[tone]}
-      rounded="sm"
-      px="2"
-      py="0.5"
-    >
-      {label}
-    </Text>
   )
 }
 
@@ -143,24 +71,39 @@ export function OptionalRow({
   return <DetailRow label={label} value={value} mono={mono === true} />
 }
 
-/** Identifiers and bookkeeping staff rarely need, collapsed by default. */
+/**
+ * Identifiers and bookkeeping staff rarely need, collapsed by default, as
+ * web's `PaymentDetailTechnical`: an xs muted trigger with a chevron.
+ */
 export function Technical({ children }: { readonly children: ReactNode }) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-
   return (
-    <YStack gap="2">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        onPress={() => setOpen((current) => !current)}
+    <Collapsible>
+      <CollapsibleTrigger self="flex-start">
+        <TechnicalTriggerLabel label={t("paymentDetail.technical")} />
+      </CollapsibleTrigger>
+      <CollapsibleContent gap={8} pt={8}>
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
+function TechnicalTriggerLabel({ label }: { readonly label: string }) {
+  const { open } = useCollapsible()
+  return (
+    <XStack items="center" gap={4}>
+      <Text
+        fontSize={fontSize.xs}
+        fontWeight={fontWeight.medium}
+        color="muted-foreground"
       >
-        <Text fontSize={13} fontWeight="600" color="muted-foreground">
-          {`${t("paymentDetail.technical")} ${open ? "▴" : "▾"}`}
-        </Text>
-      </Pressable>
-      {open ? <YStack gap="2">{children}</YStack> : null}
-    </YStack>
+        {label}
+      </Text>
+      <View rotate={open ? "180deg" : "0deg"}>
+        <Icon icon={ChevronDown} size={14} color="muted-foreground" />
+      </View>
+    </XStack>
   )
 }
 
@@ -174,17 +117,33 @@ export function BillLines({
   const locale = useLocale()
 
   if (summaries.length === 0)
-    return <Text color="muted-foreground">{emptyMessage}</Text>
+    return (
+      <Text fontSize={fontSize.sm} color="muted-foreground">
+        {emptyMessage}
+      </Text>
+    )
 
   return (
-    <YStack gap="2">
-      {summaries.map((summary) => (
-        <XStack key={summary.id} justify="space-between" gap="3">
-          <YStack flex={1}>
-            <Text numberOfLines={1} fontWeight="600">
+    <YStack>
+      {summaries.map((summary, index) => (
+        <XStack
+          key={summary.id}
+          items="center"
+          justify="space-between"
+          gap={8}
+          py={8}
+          borderTopWidth={index === 0 ? 0 : 1}
+          borderColor="border-color"
+        >
+          <YStack flex={1} minW={0}>
+            <Text
+              numberOfLines={1}
+              fontSize={fontSize.sm}
+              fontWeight={fontWeight.medium}
+            >
               {summary.name}
             </Text>
-            <Text fontSize={12} color="muted-foreground">
+            <Text fontSize={fontSize.xs} color="muted-foreground">
               {`${summary.quantity} × ${formatMoney(
                 {
                   value: getBillLineSummaryUnitAmount(summary),
@@ -194,7 +153,7 @@ export function BillLines({
               )}`}
             </Text>
           </YStack>
-          <Text fontWeight="600">
+          <Text fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
             {formatMoney(
               { value: summary.totalAmount, currency: summary.currency },
               locale

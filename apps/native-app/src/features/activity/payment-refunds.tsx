@@ -1,4 +1,3 @@
-import { refundBadgeLabel } from "@payky/app-shared/activity-history"
 import { formatDateTime } from "@payky/app-shared/format-date"
 import { formatMoney } from "@payky/app-shared/format-money"
 import {
@@ -36,19 +35,47 @@ import type {
   NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import { useAtomValue } from "jotai"
+import Minus from "lucide-react-native/icons/minus"
+import Plus from "lucide-react-native/icons/plus"
+import Undo2 from "lucide-react-native/icons/undo-2"
 import { type ReactNode, useState } from "react"
-import { Modal, Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
-import { Field } from "../../components/field.tsx"
-import { Screen } from "../../components/screen.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog.tsx"
+import {
+  Field,
+  FieldError,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "../../components/ui/field.tsx"
+import { Input } from "../../components/ui/input.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import { Card } from "./detail-parts.tsx"
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
+import { RefundBadge } from "../shared/refund-badge.tsx"
 
 /**
  * Native counterpart of web's `PaymentDetailRefunds`: the refunds already
@@ -109,63 +136,90 @@ export function PaymentRefunds({
 
   if (refunds.length === 0 && !canRefund && !canRefundTip) return null
 
-  const badge = refundBadgeLabel(
-    {
-      refundedAmount: sumGoodsRefundAmounts(refunds),
-      refundableAmount,
-      currency: payment.currency,
-    },
-    t,
-    locale
-  )
+  const refundButtons =
+    canRefund || canRefundTip ? (
+      <YStack gap={8}>
+        {canRefund ? (
+          <Button
+            variant="outline"
+            h={48}
+            iconStart={Undo2}
+            label={t("paymentDetail.refunds.action")}
+            onPress={() => setSheet("goods")}
+          />
+        ) : null}
+        {canRefundTip ? (
+          <Button
+            variant="outline"
+            h={48}
+            iconStart={Undo2}
+            label={t("paymentDetail.refunds.tipAction", {
+              amount: money(refundableTipAmount),
+            })}
+            onPress={() => setSheet("tip")}
+          />
+        ) : null}
+      </YStack>
+    ) : null
 
   return (
-    <Card
-      title={t("paymentDetail.refunds.title")}
-      badge={
-        badge === null ? undefined : (
-          <Text fontSize={12} color="warning">
-            {badge}
-          </Text>
-        )
-      }
-    >
-      {refunds.map((refund) => (
-        <YStack key={refund.id} gap="0.5">
-          <Text fontWeight="600">{money(refund.amount)}</Text>
-          <Text fontSize={12} color="muted-foreground">
-            {isTipRefund(refund) ? `${t("paymentDetail.refunds.tip")} · ` : ""}
-            {t(refundMethodLabelKey[refund.method])} ·{" "}
-            {formatDateTime(new Date(refund.refundedAt), locale)}
-          </Text>
-          {refundLines
-            .filter((line) => line.refundId === refund.id)
-            .map((line) => (
-              <Text key={line.id} fontSize={12} color="muted-foreground">
-                {line.quantity} × {line.name}
-              </Text>
-            ))}
-        </YStack>
-      ))}
-      {/* EET reversal status and retry come with the EET task. */}
-      {canRefund ? (
-        <Button
-          size="lg"
-          variant="outline"
-          label={t("paymentDetail.refunds.action")}
-          onPress={() => setSheet("goods")}
-        />
-      ) : null}
-      {canRefundTip ? (
-        <Button
-          size="lg"
-          variant="outline"
-          label={t("paymentDetail.refunds.tipAction", {
-            amount: money(refundableTipAmount),
-          })}
-          onPress={() => setSheet("tip")}
-        />
-      ) : null}
+    <>
+      {refunds.length === 0 ? (
+        refundButtons
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("paymentDetail.refunds.title")}</CardTitle>
+            <CardAction>
+              <RefundBadge
+                summary={{
+                  refundedAmount: sumGoodsRefundAmounts(refunds),
+                  refundableAmount,
+                  currency: payment.currency,
+                }}
+              />
+            </CardAction>
+          </CardHeader>
+          <CardContent gap={12}>
+            <YStack>
+              {refunds.map((refund, index) => (
+                <YStack
+                  key={refund.id}
+                  gap={4}
+                  py={8}
+                  pt={index === 0 ? 0 : 8}
+                  borderTopWidth={index === 0 ? 0 : 1}
+                  borderColor="border-color"
+                >
+                  <Text fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
+                    {money(refund.amount)}
+                  </Text>
+                  <Text fontSize={fontSize.xs} color="muted-foreground">
+                    {isTipRefund(refund)
+                      ? `${t("paymentDetail.refunds.tip")} · `
+                      : ""}
+                    {t(refundMethodLabelKey[refund.method])} ·{" "}
+                    {formatDateTime(new Date(refund.refundedAt), locale)}
+                  </Text>
+                  {refundLines
+                    .filter((line) => line.refundId === refund.id)
+                    .map((line) => (
+                      <Text
+                        key={line.id}
+                        fontSize={fontSize.xs}
+                        color="muted-foreground"
+                      >
+                        {line.quantity} × {line.name}
+                      </Text>
+                    ))}
+                </YStack>
+              ))}
+            </YStack>
+            {/* EET reversal status and retry come with the EET task. */}
+            {refundButtons}
+          </CardContent>
+        </Card>
+      )}
       {sheet === "goods" ? (
         <RefundSheet
           paymentId={payment.id}
@@ -187,37 +241,47 @@ export function PaymentRefunds({
           onClose={() => setSheet(null)}
         />
       ) : null}
-    </Card>
+    </>
   )
 }
 
-/** A full-screen sheet; closing it drops the draft, as cancelling web's dialog does. */
+/**
+ * Web's refund dialogs, on ui/dialog; closing it drops the draft, as
+ * cancelling web's dialog does. It cannot be dismissed while a refund is
+ * being written.
+ */
 function Sheet({
   title,
   description,
+  pending,
   onClose,
   children,
+  footer,
 }: {
   readonly title: string
   readonly description: string
+  readonly pending: boolean
   readonly onClose: () => void
   readonly children: ReactNode
+  readonly footer: ReactNode
 }) {
   return (
-    <Modal
-      visible
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
+    <Dialog
+      open
+      dismissOnOverlayPress={!pending}
+      onOpenChange={(next) => {
+        if (!next && !pending) onClose()
+      }}
     >
-      <Screen>
-        <Text fontSize={24} fontWeight="600" accessibilityRole="header">
-          {title}
-        </Text>
-        <Text color="muted-foreground">{description}</Text>
-        {children}
-      </Screen>
-    </Modal>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <YStack gap={16}>{children}</YStack>
+        <DialogFooter>{footer}</DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -305,83 +369,95 @@ function RefundSheet({
     <Sheet
       title={t("refund.dialog.title")}
       description={t("refund.dialog.description")}
+      pending={pending}
       onClose={onClose}
+      footer={
+        <>
+          <Button
+            label={
+              refundAmount === null
+                ? t("refund.dialog.confirmEmpty")
+                : t("refund.dialog.confirm", { amount: money(refundAmount) })
+            }
+            pending={pending}
+            disabled={refundAmount === null}
+            onPress={() => void confirm()}
+          />
+          <Button
+            variant="outline"
+            label={t("refund.dialog.cancel")}
+            disabled={pending}
+            onPress={onClose}
+          />
+        </>
+      }
     >
       {tipAmount > 0 ? (
-        <Text color="muted-foreground">
+        <Text fontSize={fontSize.sm} color="muted-foreground">
           {t("refund.dialog.tipHint", { amount: money(tipAmount) })}
         </Text>
       ) : null}
       {refundableLines.length > 0 ? (
-        <Choice
-          label={t("refund.dialog.mode.label")}
+        <ToggleGroup
           value={mode}
+          onValueChange={setMode}
+          variant="outline"
+          columns={2}
           disabled={pending}
-          options={[
-            { value: "amount", label: t("refund.dialog.mode.amount") },
-            { value: "items", label: t("refund.dialog.mode.items") },
-          ]}
-          onChange={setMode}
-        />
+        >
+          <ToggleGroupItem value="amount">
+            {t("refund.dialog.mode.amount")}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="items">
+            {t("refund.dialog.mode.items")}
+          </ToggleGroupItem>
+        </ToggleGroup>
       ) : null}
 
       {mode === "amount" ? (
-        <Field
-          label={t("refund.dialog.amount.label")}
-          value={amountText}
-          keyboardType="decimal-pad"
-          autoComplete="off"
-          disabled={pending}
-          error={
-            typedAmount === null
+        <Field>
+          <FieldLabel>{t("refund.dialog.amount.label")}</FieldLabel>
+          <Input
+            value={amountText}
+            keyboardType="decimal-pad"
+            autoComplete="off"
+            disabled={pending}
+            invalid={typedAmount === null}
+            onChangeText={setTypedAmountText}
+          />
+          <FieldError>
+            {typedAmount === null
               ? t("refund.dialog.amount.invalid", {
                   amount: money(remainingAmount),
                 })
-              : undefined
-          }
-          onChangeText={setTypedAmountText}
-        />
+              : undefined}
+          </FieldError>
+        </Field>
       ) : (
-        <YStack gap="2">
-          <Text fontSize="sm" fontWeight="600">
+        <FieldSet>
+          <FieldLegend variant="label">
             {t("refund.dialog.items.label")}
-          </Text>
-          {refundableLines.map((refundable) => (
-            <RefundItemRow
-              key={refundable.line.id}
-              refundable={refundable}
-              quantity={quantities[refundable.line.id] ?? 0}
-              disabled={pending}
-              onStep={(step) =>
-                setQuantities(stepRefundQuantity(quantities, refundable, step))
-              }
-            />
-          ))}
-        </YStack>
+          </FieldLegend>
+          <YStack>
+            {refundableLines.map((refundable, index) => (
+              <RefundItemRow
+                key={refundable.line.id}
+                first={index === 0}
+                refundable={refundable}
+                quantity={quantities[refundable.line.id] ?? 0}
+                disabled={pending}
+                onStep={(step) =>
+                  setQuantities(
+                    stepRefundQuantity(quantities, refundable, step)
+                  )
+                }
+              />
+            ))}
+          </YStack>
+        </FieldSet>
       )}
 
       <MethodChoice method={method} disabled={pending} onChange={setMethod} />
-
-      <YStack gap="2">
-        <Button
-          size="lg"
-          label={
-            refundAmount === null
-              ? t("refund.dialog.confirmEmpty")
-              : t("refund.dialog.confirm", { amount: money(refundAmount) })
-          }
-          pending={pending}
-          disabled={refundAmount === null}
-          onPress={() => void confirm()}
-        />
-        <Button
-          size="lg"
-          variant="outline"
-          label={t("refund.dialog.cancel")}
-          disabled={pending}
-          onPress={onClose}
-        />
-      </YStack>
     </Sheet>
   )
 }
@@ -433,34 +509,37 @@ function TipRefundSheet({
     <Sheet
       title={t("refund.tipDialog.title")}
       description={t("refund.tipDialog.description", { amount: formattedTip })}
+      pending={pending}
       onClose={onClose}
+      footer={
+        <>
+          <Button
+            label={t("refund.dialog.confirm", { amount: formattedTip })}
+            pending={pending}
+            onPress={() => void confirm()}
+          />
+          <Button
+            variant="outline"
+            label={t("refund.dialog.cancel")}
+            disabled={pending}
+            onPress={onClose}
+          />
+        </>
+      }
     >
       <MethodChoice method={method} disabled={pending} onChange={setMethod} />
-      <YStack gap="2">
-        <Button
-          size="lg"
-          label={t("refund.dialog.confirm", { amount: formattedTip })}
-          pending={pending}
-          onPress={() => void confirm()}
-        />
-        <Button
-          size="lg"
-          variant="outline"
-          label={t("refund.dialog.cancel")}
-          disabled={pending}
-          onPress={onClose}
-        />
-      </YStack>
     </Sheet>
   )
 }
 
 function RefundItemRow({
+  first,
   refundable,
   quantity,
   disabled,
   onStep,
 }: {
+  readonly first: boolean
   readonly refundable: RefundableLine<RefundablePaymentLine>
   readonly quantity: number
   readonly disabled: boolean
@@ -470,105 +549,60 @@ function RefundItemRow({
   const { name } = refundable.line
 
   return (
-    <XStack gap="2" items="center">
-      <YStack flex={1}>
-        <Text fontWeight="600" numberOfLines={1}>
+    <XStack
+      items="center"
+      justify="space-between"
+      gap={12}
+      py={8}
+      borderTopWidth={first ? 0 : 1}
+      borderColor="border-color"
+    >
+      <YStack flex={1} minW={0}>
+        <Text
+          fontSize={fontSize.sm}
+          fontWeight={fontWeight.medium}
+          numberOfLines={1}
+        >
           {name}
         </Text>
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize={fontSize.xs} color="muted-foreground">
           {t("refund.dialog.items.available", {
             quantity: String(refundable.remainingQuantity),
           })}
         </Text>
       </YStack>
-      <StepButton
-        label={t("refund.dialog.items.decrease", { name })}
-        symbol="−"
-        disabled={disabled || quantity === 0}
-        onPress={() => onStep(-1)}
-      />
-      <Text minW={28} text="center" fontWeight="600">
-        {quantity}
-      </Text>
-      <StepButton
-        label={t("refund.dialog.items.increase", { name })}
-        symbol="+"
-        disabled={disabled || quantity >= refundable.remainingQuantity}
-        onPress={() => onStep(1)}
-      />
+      <XStack items="center" gap={8}>
+        <Button
+          variant="outline"
+          size="icon-lg"
+          iconStart={Minus}
+          accessibilityLabel={t("refund.dialog.items.decrease", { name })}
+          disabled={disabled || quantity === 0}
+          onPress={() => onStep(-1)}
+        />
+        <Text
+          w={32}
+          text="center"
+          fontSize={fontSize.sm}
+          fontWeight={fontWeight.semibold}
+          fontVariant={["tabular-nums"]}
+        >
+          {quantity}
+        </Text>
+        <Button
+          variant="outline"
+          size="icon-lg"
+          iconStart={Plus}
+          accessibilityLabel={t("refund.dialog.items.increase", { name })}
+          disabled={disabled || quantity >= refundable.remainingQuantity}
+          onPress={() => onStep(1)}
+        />
+      </XStack>
     </XStack>
   )
 }
 
-function StepButton({
-  label,
-  symbol,
-  disabled,
-  onPress,
-}: {
-  readonly label: string
-  readonly symbol: string
-  readonly disabled: boolean
-  readonly onPress: () => void
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={6}
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        borderWidth: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      <Text fontSize={20}>{symbol}</Text>
-    </Pressable>
-  )
-}
-
-/** A labelled single choice; the chosen option is the filled button. */
-function Choice<T extends string>({
-  label,
-  value,
-  options,
-  disabled,
-  onChange,
-}: {
-  readonly label: string
-  readonly value: T
-  readonly options: ReadonlyArray<{ readonly value: T; readonly label: string }>
-  readonly disabled: boolean
-  readonly onChange: (value: T) => void
-}) {
-  return (
-    <YStack gap="1.5">
-      <Text fontSize="sm" fontWeight="600">
-        {label}
-      </Text>
-      <YStack gap="2">
-        {options.map((option) => (
-          <Button
-            size="lg"
-            key={option.value}
-            variant={option.value === value ? "default" : "outline"}
-            label={option.label}
-            disabled={disabled}
-            onPress={() => onChange(option.value)}
-          />
-        ))}
-      </YStack>
-    </YStack>
-  )
-}
-
+/** Web's `RefundMethodField`: a labelled one-column outline toggle group. */
 function MethodChoice({
   method,
   disabled,
@@ -580,18 +614,24 @@ function MethodChoice({
 }) {
   const { t } = useTranslation()
   return (
-    <Choice
-      label={t("refund.dialog.method.label")}
-      value={method}
-      disabled={disabled}
-      options={[
-        {
-          value: "cashRegister",
-          label: t("refund.dialog.method.cashRegister"),
-        },
-        { value: "outside", label: t("refund.dialog.method.outside") },
-      ]}
-      onChange={onChange}
-    />
+    <FieldSet>
+      <FieldLegend variant="label">
+        {t("refund.dialog.method.label")}
+      </FieldLegend>
+      <ToggleGroup
+        value={method}
+        onValueChange={onChange}
+        variant="outline"
+        orientation="vertical"
+        disabled={disabled}
+      >
+        <ToggleGroupItem value="cashRegister" justify="flex-start">
+          {t("refund.dialog.method.cashRegister")}
+        </ToggleGroupItem>
+        <ToggleGroupItem value="outside" justify="flex-start">
+          {t("refund.dialog.method.outside")}
+        </ToggleGroupItem>
+      </ToggleGroup>
+    </FieldSet>
   )
 }

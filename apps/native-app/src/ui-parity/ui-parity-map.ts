@@ -242,12 +242,29 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/activity/bill-coverage-warning.tsx",
       "apps/web-app/src/components/detail-row.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Collapsible: "Technical, web's PaymentDetailTechnical",
+      CollapsibleContent: "Technical, web's PaymentDetailTechnical",
+      CollapsibleTrigger: "Technical, web's PaymentDetailTechnical",
+      DetailRow:
+        "the coverage warning's amount rows (web's BillCoverageAmountRow) and OptionalRow",
+      FadeHeader:
+        "DetailScreen, web's detail page header in activity-pages.tsx",
+    },
   },
   {
     native: "src/features/activity/payment-detail-page.tsx",
     web: ["apps/web-app/src/features/activity/payment-detail.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Collapsible:
+        "drawn by Technical in detail-parts.tsx, which both detail screens share; web keeps PaymentDetailTechnical in payment-detail.tsx",
+      CollapsibleContent:
+        "drawn by Technical in detail-parts.tsx, which both detail screens share; web keeps PaymentDetailTechnical in payment-detail.tsx",
+      CollapsibleTrigger:
+        "drawn by Technical in detail-parts.tsx, which both detail screens share; web keeps PaymentDetailTechnical in payment-detail.tsx",
+    },
   },
   {
     native: "src/features/activity/payment-history-page.tsx",
@@ -260,12 +277,25 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/activity/payment-refunds.tsx",
     web: ["apps/web-app/src/features/activity/payment-refunds.tsx"],
-    status: "pending",
+    status: "matched",
+  },
+  {
+    native: "src/features/activity/bill-status-display.tsx",
+    web: ["apps/web-app/src/features/activity/bill-status-display.ts"],
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "web exports the badge's class map and draws the Badge at each call site; native wraps both in BillStatusBadge",
+    },
   },
   {
     native: "src/features/activity/payment-status-display.tsx",
     web: ["apps/web-app/src/features/activity/payment-status-display.tsx"],
     status: "matched",
+    allowedDifferences: {
+      Badge:
+        "web exports paymentStatusBadgeClassName and draws the Badge at each call site; native wraps both in PaymentStatusBadge",
+    },
   },
   {
     native: "src/features/bill/assign-table-dialog.tsx",

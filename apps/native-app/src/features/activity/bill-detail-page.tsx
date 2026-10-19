@@ -8,7 +8,7 @@ import { formatDateTime } from "@payky/app-shared/format-date"
 import { formatMoney } from "@payky/app-shared/format-money"
 import { useNow } from "@payky/app-shared/use-now"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
-import { BillId, type BillStatus } from "@payky/core/modules/bill/bill-types"
+import { BillId } from "@payky/core/modules/bill/bill-types"
 import {
   calculateTaxRecap,
   hasTaxableLines,
@@ -33,8 +33,15 @@ import { Text, XStack, YStack } from "tamagui"
 import { CollisionAlert } from "../../components/collision-alert.tsx"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
-import { LoadingView } from "../../components/state-views.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
@@ -43,32 +50,25 @@ import {
   useBillLineSummaries,
   useBillStatus,
 } from "../shared/use-bill-state.ts"
-import {
-  paymentMethodsText,
-  StatusDot,
-  type StatusTone,
-} from "./activity-parts.tsx"
+import { paymentMethodsText } from "./activity-parts.tsx"
+import { BillStatusBadge } from "./bill-status-display.tsx"
 import {
   BillCoverageWarning,
   BillLines,
-  Card,
   DetailScreen,
   OptionalRow,
-  paymentStatusTone,
-  StatusBadge,
   Technical,
 } from "./detail-parts.tsx"
+import { PaymentDetailSkeleton } from "./payment-detail-page.tsx"
+import {
+  PaymentStatusBadge,
+  PaymentStatusIcon,
+} from "./payment-status-display.tsx"
 import { useBillCoverage } from "./use-bill-detail-data.ts"
 
 type BillPaymentRow = InferRow<
   ReturnType<typeof paymentsWithClaimsByBillIdQuery>
 >
-
-const billStatusTone = {
-  open: "warning",
-  closed: "success",
-  canceled: "danger",
-} as const satisfies Record<BillStatus, StatusTone>
 
 /** `/activity/bills/[billId]`: one bill, read-only. */
 export function BillDetailPage() {
@@ -79,7 +79,7 @@ export function BillDetailPage() {
   return (
     <DetailScreen title={t("billDetail.title")}>
       {parsed.success ? (
-        <Suspense fallback={<LoadingView />}>
+        <Suspense fallback={<PaymentDetailSkeleton />}>
           <BillDetail billId={parsed.data} />
         </Suspense>
       ) : (
@@ -130,80 +130,92 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
         />
       ) : null}
 
-      <Card
-        title={
-          bill.label ?? t("bill.list.label", { number: bill.displayNumber })
-        }
-        subtitle={formatDateTime(new Date(bill.createdAt), locale)}
-        badge={
-          <StatusBadge
-            label={t(billStatusLabelKey[billStatus.status])}
-            tone={billStatusTone[billStatus.status]}
-          />
-        }
-      >
-        <YStack gap="1">
-          <Text fontSize={32} fontWeight="700">
-            {formatMoney(
-              { value: totalAmount, currency: bill.currency },
-              locale
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
+          </CardTitle>
+          <CardDescription>
+            {formatDateTime(new Date(bill.createdAt), locale)}
+          </CardDescription>
+          <CardAction>
+            <BillStatusBadge
+              status={billStatus.status}
+              label={t(billStatusLabelKey[billStatus.status])}
+            />
+          </CardAction>
+        </CardHeader>
+        <CardContent gap={12}>
+          <YStack gap="1">
+            <Text fontSize={32} fontWeight="700">
+              {formatMoney(
+                { value: totalAmount, currency: bill.currency },
+                locale
+              )}
+            </Text>
+            {closedOrCanceled === null ? null : (
+              <Text color="muted-foreground">{closedOrCanceled}</Text>
             )}
-          </Text>
-          {closedOrCanceled === null ? null : (
-            <Text color="muted-foreground">{closedOrCanceled}</Text>
-          )}
-        </YStack>
+          </YStack>
 
-        {/* Spelled out rather than "—": a counter sale with no table is a fact; "—" is a table row that is gone. */}
-        <DetailRow
-          label={t("billDetail.table")}
-          value={
-            bill.tableId === null
-              ? t("billDetail.noTable")
-              : (table?.name ?? t("billDetail.emptyValue"))
-          }
-        />
-
-        {billStatus.hasCancellationCollision ? (
-          <CollisionAlert
-            title={t("bill.collision.title")}
-            description={t("bill.collision.description")}
-          >
-            <BillCancellationCollisionActions billId={billId} />
-          </CollisionAlert>
-        ) : null}
-
-        <BillLines
-          summaries={summaries}
-          emptyMessage={t("billDetail.items.empty")}
-        />
-        {hasTaxableLines(taxRecapRows) ? (
-          <TaxRecap rows={taxRecapRows} currency={bill.currency} />
-        ) : null}
-        {coverage === "paid" ? null : (
-          <BillCoverageWarning
-            coverage={coverage}
-            expectedAmount={totalAmount}
-            claimedSum={claimedSum}
-            currency={bill.currency}
+          {/* Spelled out rather than "—": a counter sale with no table is a fact; "—" is a table row that is gone. */}
+          <DetailRow
+            label={t("billDetail.table")}
+            value={
+              bill.tableId === null
+                ? t("billDetail.noTable")
+                : (table?.name ?? t("billDetail.emptyValue"))
+            }
           />
-        )}
+
+          {billStatus.hasCancellationCollision ? (
+            <CollisionAlert
+              title={t("bill.collision.title")}
+              description={t("bill.collision.description")}
+            >
+              <BillCancellationCollisionActions billId={billId} />
+            </CollisionAlert>
+          ) : null}
+
+          <BillLines
+            summaries={summaries}
+            emptyMessage={t("billDetail.items.empty")}
+          />
+          {hasTaxableLines(taxRecapRows) ? (
+            <TaxRecap rows={taxRecapRows} currency={bill.currency} />
+          ) : null}
+          {coverage === "paid" ? null : (
+            <BillCoverageWarning
+              coverage={coverage}
+              expectedAmount={totalAmount}
+              claimedSum={claimedSum}
+              currency={bill.currency}
+            />
+          )}
+        </CardContent>
       </Card>
 
-      <Card title={t("billDetail.payments")}>
-        {payments.length === 0 ? (
-          <Text color="muted-foreground">{t("billDetail.payments.empty")}</Text>
-        ) : (
-          <YStack gap="1">
-            {payments.map((payment) => (
-              <BillPaymentRowView
-                key={payment.id}
-                payment={payment}
-                refundSummary={refundsByPayment.get(payment.id)}
-              />
-            ))}
-          </YStack>
-        )}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("billDetail.payments")}</CardTitle>
+        </CardHeader>
+        <CardContent gap={12}>
+          {payments.length === 0 ? (
+            <Text color="muted-foreground">
+              {t("billDetail.payments.empty")}
+            </Text>
+          ) : (
+            <YStack gap="1">
+              {payments.map((payment) => (
+                <BillPaymentRowView
+                  key={payment.id}
+                  payment={payment}
+                  refundSummary={refundsByPayment.get(payment.id)}
+                />
+              ))}
+            </YStack>
+          )}
+        </CardContent>
       </Card>
 
       {/* EET sale badges on the payments come with the EET task. */}
@@ -271,11 +283,9 @@ function BillPaymentRowView({
       }
     >
       <XStack gap="3" py="2" items="center">
-        <StatusDot
-          tone={
-            hasCancellationCollision ? "warning" : paymentStatusTone[status]
-          }
-          glyph={hasCancellationCollision ? "⚠" : statusGlyph[status]}
+        <PaymentStatusIcon
+          status={status}
+          hasCancellationCollision={hasCancellationCollision}
         />
         <YStack flex={1}>
           <Text fontWeight="600">{amount}</Text>
@@ -286,9 +296,9 @@ function BillPaymentRowView({
           </Text>
         </YStack>
         <YStack items="flex-end" gap="1">
-          <StatusBadge
+          <PaymentStatusBadge
+            status={status}
             label={t(paymentStatusLabelKey[status])}
-            tone={paymentStatusTone[status]}
           />
           {refundLabel === null ? null : (
             <Text fontSize={12} color="warning">
@@ -300,10 +310,3 @@ function BillPaymentRowView({
     </Pressable>
   )
 }
-
-const statusGlyph = {
-  paid: "✓",
-  pending: "…",
-  expired: "–",
-  canceled: "✕",
-} as const

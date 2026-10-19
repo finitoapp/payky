@@ -11,7 +11,6 @@ import { Badge } from "../../components/ui/badge.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { VerticalNav } from "../../components/vertical-nav.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
-import type { ThemeColor } from "../../theme/themes.ts"
 import { fontSize, fontWeight } from "../../theme/tokens.ts"
 import { paymentMethodIcon } from "../shared/payment-method-display.ts"
 
@@ -226,42 +225,7 @@ export function ActivityList({
   )
 }
 
-// The detail screens' status glyph and method text, until 4.4b/c rebuild
-// them with `PaymentStatusIcon` and the method icons.
-
-export type StatusTone = "success" | "warning" | "danger" | "muted"
-
-const toneColors = {
-  success: "success",
-  warning: "warning",
-  danger: "destructive",
-  muted: "muted-foreground",
-} as const satisfies Record<StatusTone, ThemeColor>
-
-/** The status as a ringed glyph; colour never carries it alone. */
-export function StatusDot({
-  tone,
-  glyph,
-}: {
-  readonly tone: StatusTone
-  readonly glyph: string
-}) {
-  return (
-    <YStack
-      w={32}
-      h={32}
-      rounded={16}
-      items="center"
-      justify="center"
-      borderWidth={1.5}
-      borderColor={toneColors[tone]}
-    >
-      <Text color={toneColors[tone]} fontWeight={fontWeight.bold}>
-        {glyph}
-      </Text>
-    </YStack>
-  )
-}
+// The detail screens' method text, until 4.4c shows the method icons there.
 
 /** The methods that settled a payment, once each, as plain labels. */
 export function paymentMethodsText(

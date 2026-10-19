@@ -13,6 +13,7 @@ import {
   hasTaxableLines,
 } from "@payky/core/modules/bill-line/bill-line-tax-utils"
 import { deriveBillSummaryTotal } from "@payky/core/modules/bill-line/bill-line-utils"
+import { eetSalesByBillIdQuery } from "@payky/core/modules/eet/eet-queries"
 import { paymentsWithClaimsByBillIdQuery } from "@payky/core/modules/payment/payment-queries"
 import {
   derivePaymentHasCancellationCollision,
@@ -46,6 +47,7 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight } from "../../theme/tokens.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
+import { EetSaleStatusLabel } from "../shared/eet-sale-status.tsx"
 import { RefundBadge } from "../shared/refund-badge.tsx"
 import { TaxRecap } from "../shared/tax-recap.tsx"
 import {
@@ -67,6 +69,8 @@ import {
   PaymentStatusIcon,
 } from "./payment-status-display.tsx"
 import { useBillCoverage } from "./use-bill-detail-data.ts"
+
+type BillEetSale = InferRow<ReturnType<typeof eetSalesByBillIdQuery>>
 
 type BillPaymentRow = InferRow<
   ReturnType<typeof paymentsWithClaimsByBillIdQuery>
@@ -103,6 +107,7 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
   const payments = useEvoluQuery(paymentsWithClaimsByBillIdQuery(billId)).data
   const refunds = useEvoluQuery(refundSummariesByBillIdQuery(billId)).data
   const refundsByPayment = summarizeRefundsByPayment(refunds)
+  const eetSales = useEvoluQuery(eetSalesByBillIdQuery(billId)).data
 
   // A deleted or never-synced id: the same page, not an error.
   if (bill === undefined || billStatus === undefined)
@@ -229,6 +234,9 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
                 <BillPaymentRowView
                   key={payment.id}
                   payment={payment}
+                  eetSale={eetSales.find(
+                    (sale) => sale.paymentId === payment.id
+                  )}
                   refundSummary={refundsByPayment.get(payment.id)}
                 />
               ))}
@@ -236,8 +244,6 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
           )}
         </CardContent>
       </Card>
-
-      {/* EET sale badges on the payments come with the EET task. */}
 
       <Technical>
         <OptionalRow mono label={t("billDetail.id")} value={bill.id} />
@@ -259,9 +265,11 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
 
 function BillPaymentRowView({
   payment,
+  eetSale,
   refundSummary,
 }: {
   readonly payment: BillPaymentRow
+  readonly eetSale: BillEetSale | undefined
   readonly refundSummary: PaymentRefundSummary | undefined
 }) {
   const { t } = useTranslation()
@@ -320,6 +328,7 @@ function BillPaymentRowView({
             label={t(paymentStatusLabelKey[status])}
           />
           <RefundBadge summary={refundSummary} />
+          {eetSale === undefined ? null : <EetSaleStatusLabel sale={eetSale} />}
         </YStack>
       </XStack>
     </Pressable>

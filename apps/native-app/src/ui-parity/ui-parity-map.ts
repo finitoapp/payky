@@ -289,7 +289,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
     allowedDifferences: {
       Badge:
-        "drawn by BillStatusBadge and PaymentStatusBadge, which wrap web's Badge + class maps",
+        "drawn by BillStatusBadge, PaymentStatusBadge and EetSaleStatusLabel, which wrap web's Badge + class maps",
       CollisionAlert:
         "web wraps the same CollisionAlert in BillCancellationCollisionPanel; native composes it with BillCancellationCollisionActions in place",
     },

@@ -1,3 +1,4 @@
+import type { InferRow } from "@evolu/common"
 import {
   type BillCoverageMismatchReason,
   derivePaymentBillCoverageNotice,
@@ -13,6 +14,7 @@ import { formatMoney } from "@payky/app-shared/format-money"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { defaultRefundMethod } from "@payky/app-shared/refund-form"
 import { useNow } from "@payky/app-shared/use-now"
+import type { EetDeliveryOutcome } from "@payky/core/integrations/eet/eet-client"
 import { claimedPaymentsByBillIdQuery } from "@payky/core/modules/bill/bill-coverage-queries"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
@@ -22,6 +24,15 @@ import {
 } from "@payky/core/modules/bill-line/bill-line-tax-utils"
 import { deriveBillSummaryTotal } from "@payky/core/modules/bill-line/bill-line-utils"
 import {
+  type DeliverEetSaleError,
+  retryEetSale,
+} from "@payky/core/modules/eet/eet-actions"
+import { eetSalesByPaymentIdQuery } from "@payky/core/modules/eet/eet-queries"
+import {
+  parseEetDateTime,
+  parseEetWarnings,
+} from "@payky/core/modules/eet/eet-utils"
+import {
   paymentDetailQuery,
   paymentReconciliationsQuery,
 } from "@payky/core/modules/payment/payment-queries"
@@ -30,10 +41,14 @@ import { paymentNumberByPaymentIdQuery } from "@payky/core/modules/payment-numbe
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { taxRatesQuery } from "@payky/core/modules/tax-rate/tax-rate-queries"
+import { parseISO } from "date-fns"
 import { router, useLocalSearchParams } from "expo-router"
+import { useAtomValue } from "jotai"
 import ChevronRight from "lucide-react-native/icons/chevron-right"
-import { Suspense } from "react"
+import RotateCw from "lucide-react-native/icons/rotate-cw"
+import { Suspense, useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
+import { accountAtom } from "../../atoms/account.ts"
 import { CollisionAlert } from "../../components/collision-alert.tsx"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
@@ -61,9 +76,16 @@ import {
   TimelineTitle,
 } from "../../components/ui/timeline.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useRunToast } from "../../hooks/use-run-toast.ts"
+import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
+import {
+  EetSaleStatusLabel,
+  useEetRecordingDeviceWait,
+  useEetSaleStatus,
+} from "../shared/eet-sale-status.tsx"
 import { paymentMethodIcon } from "../shared/payment-method-display.ts"
 import { TaxRecap } from "../shared/tax-recap.tsx"
 import {
@@ -303,7 +325,7 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
         />
       )}
 
-      {/* EET sale cards (status, retry) come with the EET task. */}
+      <PaymentEetCards paymentId={paymentId} />
 
       <Card>
         <CardHeader>
@@ -664,6 +686,191 @@ function PaymentBillCard({
             ) : null}
           </BillCoverageWarning>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+type PaymentEetSale = InferRow<ReturnType<typeof eetSalesByPaymentIdQuery>>
+
+const retryErrorKeys = {
+  EetSaleNotFoundError: "paymentDetail.eet.retry.failed",
+  EetSaleAlreadyConfirmedError: "paymentDetail.eet.retry.alreadyConfirmed",
+  EetSaleUnsupportedError: "paymentDetail.eet.retry.unsupported",
+  EetSaleBusyError: "paymentDetail.eet.retry.busy",
+  EetSigningCertificateMissingError: "paymentDetail.eet.retry.noCertificate",
+} satisfies Record<DeliverEetSaleError["type"], TranslationKey>
+
+const retryOutcomeKeys = {
+  accepted: "paymentDetail.eet.retry.confirmed",
+  verified: "paymentDetail.eet.retry.confirmed",
+  retry: "paymentDetail.eet.retry.pending",
+  rejected: "paymentDetail.eet.retry.rejected",
+} satisfies Record<EetDeliveryOutcome["type"], TranslationKey>
+
+/** Web's `PaymentDetailEetCards`: one card per EET sale of the payment. */
+function PaymentEetCards({ paymentId }: { readonly paymentId: PaymentId }) {
+  const sales = useEvoluQuery(eetSalesByPaymentIdQuery(paymentId)).data
+  return sales.map((sale) => <PaymentEetSaleCard key={sale.id} sale={sale} />)
+}
+
+/**
+ * Web's `PaymentDetailEetSaleCard`: the sale's status, POK, warnings and last
+ * error, with a manual resend while it is pending or refused and no other
+ * device holds its priority.
+ */
+function PaymentEetSaleCard({ sale }: { readonly sale: PaymentEetSale }) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const toast = useToast()
+  const runToast = useRunToast()
+  const [retrying, setRetrying] = useState(false)
+  const deviceId = useAtomValue(accountAtom).device.id
+  const { status, isOverdue } = useEetSaleStatus(sale)
+  const isExtraMoney = sale.extraFrom !== null
+  const waitEndsAt = useEetRecordingDeviceWait({
+    attempts: sale,
+    recordingDeviceId: sale.deviceId,
+    deviceId,
+    startsAt: parseEetDateTime(sale.saleAt),
+  })
+  const warnings =
+    sale.warningsJson === null ? [] : parseEetWarnings(sale.warningsJson)
+  const canRetry =
+    (status === "pending" || status === "rejected") && waitEndsAt === null
+  const lastError =
+    sale.pok !== null || sale.lastErrorMessage === null
+      ? null
+      : sale.lastErrorCode === null
+        ? sale.lastErrorMessage
+        : t("paymentDetail.eet.errorCode", {
+            code: String(sale.lastErrorCode),
+            message: sale.lastErrorMessage,
+          })
+
+  const retry = async () => {
+    setRetrying(true)
+    await runToast(async (run) => {
+      const result = await run(retryEetSale({ id: sale.id, deviceId }))
+      if (!result.ok) return retryErrorKeys[result.error.type]
+      const outcomeKey = retryOutcomeKeys[result.value.type]
+      if (result.value.type === "rejected") return outcomeKey
+      toast.success(t(outcomeKey))
+      return undefined
+    })
+    setRetrying(false)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {isExtraMoney
+            ? t("paymentDetail.eet.extra.title", {
+                amount: formatMoney(
+                  { value: sale.amount, currency: sale.currency },
+                  locale
+                ),
+              })
+            : t("paymentDetail.eet.title")}
+        </CardTitle>
+        <CardAction>
+          <EetSaleStatusLabel sale={sale} />
+        </CardAction>
+      </CardHeader>
+      <CardContent gap={12}>
+        {isExtraMoney ? (
+          <Text fontSize={fontSize.sm} color="muted-foreground">
+            {t("paymentDetail.eet.extra.description")}
+          </Text>
+        ) : null}
+        {status === "testConfirmed" || sale.environment === "playground" ? (
+          <Text fontSize={fontSize.xs} color="info">
+            {t("paymentDetail.eet.test")}
+          </Text>
+        ) : null}
+        {isOverdue ? (
+          <Text fontSize={fontSize.sm} color="destructive">
+            {t("paymentDetail.eet.overdue")}
+          </Text>
+        ) : null}
+        {status === "unsupported" ? (
+          <Text fontSize={fontSize.sm} color="destructive">
+            {t("paymentDetail.eet.unsupported")}
+          </Text>
+        ) : null}
+        {waitEndsAt === null ? null : (
+          <Text fontSize={fontSize.sm} color="muted-foreground">
+            {t("paymentDetail.eet.waitingForDevice", {
+              time: formatTime(new Date(waitEndsAt), locale),
+            })}
+          </Text>
+        )}
+        <DetailRow
+          label={t("paymentDetail.eet.amount")}
+          value={formatMoney(
+            { value: sale.amount, currency: sale.currency },
+            locale
+          )}
+        />
+        <OptionalRow label={t("paymentDetail.eet.pok")} value={sale.pok} mono />
+        {sale.receivedAt === null ? null : (
+          <DetailRow
+            label={t("paymentDetail.eet.receivedAt")}
+            value={formatDateTime(parseISO(sale.receivedAt), locale)}
+          />
+        )}
+        {warnings.map((warning) => (
+          <DetailRow
+            key={warning.code}
+            label={t("paymentDetail.eet.warning", {
+              code: String(warning.code),
+            })}
+            value={warning.message ?? ""}
+          />
+        ))}
+        {lastError === null ? null : (
+          <DetailRow
+            label={t("paymentDetail.eet.lastError")}
+            value={lastError}
+          />
+        )}
+        {canRetry ? (
+          <Button
+            variant="outline"
+            h={48}
+            iconStart={RotateCw}
+            label={t("paymentDetail.eet.retry")}
+            pending={retrying}
+            onPress={() => void retry()}
+          />
+        ) : null}
+        <Technical>
+          <DetailRow
+            label={t("paymentDetail.eet.saleAt")}
+            value={formatDateTime(parseISO(sale.saleAt), locale)}
+          />
+          <DetailRow label={t("paymentDetail.eet.eic")} value={sale.eic} />
+          <DetailRow
+            label={t("paymentDetail.eet.establishment")}
+            value={sale.establishmentId}
+          />
+          <OptionalRow
+            label={t("paymentDetail.eet.cashRegister")}
+            value={sale.cashRegisterId}
+            mono
+          />
+          <OptionalRow
+            label={t("paymentDetail.eet.sequenceNumber")}
+            value={sale.sequenceNumber}
+            mono
+          />
+          <OptionalRow
+            label={t("paymentDetail.eet.transactionId")}
+            value={sale.globalTransactionId ?? sale.lastGlobalTransactionId}
+            mono
+          />
+        </Technical>
       </CardContent>
     </Card>
   )

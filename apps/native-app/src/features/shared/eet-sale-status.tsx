@@ -1,6 +1,7 @@
 import { sqliteTrue } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { useNow } from "@payky/app-shared/use-now"
+import type { DeviceId } from "@payky/core/modules/device/device-types"
 import type {
   EetAttemptResult,
   EetDateTime,
@@ -10,9 +11,12 @@ import type {
 } from "@payky/core/modules/eet/eet-types"
 import {
   deriveEetSaleStatus,
+  getEetPriorityEndsAt,
+  getEetRecordingDeviceWaitEndsAt,
   getEetSaleOverdueAt,
   isEetSaleOverdue,
 } from "@payky/core/modules/eet/eet-utils"
+import type { TimestampMs } from "@payky/core/modules/shared/schema"
 import { Badge } from "../../components/ui/badge.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import type { ThemeColor } from "../../theme/themes.ts"
@@ -59,6 +63,38 @@ export function useEetSaleStatus(sale: EetSaleStatusFields) {
     status,
     isOverdue: isEetSaleOverdue({ status, saleAt: sale.saleAt, now }),
   }
+}
+
+/**
+ * Until when another device keeps its priority to send this sale, as web's:
+ * `null` once this device may send it.
+ */
+export function useEetRecordingDeviceWait({
+  attempts,
+  recordingDeviceId,
+  deviceId,
+  startsAt,
+}: {
+  readonly attempts: {
+    readonly attemptStartedAt: TimestampMs | null
+    readonly lastAttemptAt: TimestampMs | null
+  }
+  readonly recordingDeviceId: DeviceId
+  readonly deviceId: DeviceId
+  readonly startsAt: TimestampMs | null
+}): TimestampMs | null {
+  const now = useNow([
+    startsAt === null ? null : getEetPriorityEndsAt(startsAt),
+  ])
+  return startsAt === null
+    ? null
+    : getEetRecordingDeviceWaitEndsAt({
+        attempts,
+        recordingDeviceId,
+        deviceId,
+        startsAt,
+        now,
+      })
 }
 
 export function EetSaleStatusLabel({

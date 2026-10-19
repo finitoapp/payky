@@ -3,6 +3,9 @@ import { Animated, KeyboardAvoidingView, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme } from "tamagui"
 
+/** `Screen`'s content padding, web's `p-4`. */
+export const screenPadding = 16
+
 const ScreenScrollContext = createContext<Animated.Value | null>(null)
 
 /** The screen's vertical scroll offset, for `FadeHeader`; `null` outside a `Screen`. */
@@ -31,7 +34,11 @@ export function Screen({
         <ScreenScrollContext value={scrollY}>
           <Animated.ScrollView
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ flexGrow: 1, padding: 16, gap: 16 }}
+            contentContainerStyle={{
+              flexGrow: 1,
+              padding: screenPadding,
+              gap: 16,
+            }}
             scrollEventThrottle={16}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { y: scrollY } } }],

@@ -304,7 +304,6 @@ export function SettingsPage() {
 
   return (
     <Screen>
-      <YStack h={24} />
       <FadeHeader title={t("settings.title")} />
       <SettingsRow
         title={t("settings.profile.title")}

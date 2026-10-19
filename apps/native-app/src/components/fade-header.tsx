@@ -5,7 +5,7 @@ import { Animated } from "react-native"
 import { Text, View, XStack } from "tamagui"
 import { useTranslation } from "../hooks/use-translation.ts"
 import { fontSize, fontWeight } from "../theme/tokens.ts"
-import { useScreenScroll } from "./screen.tsx"
+import { screenPadding, useScreenScroll } from "./screen.tsx"
 import { Button } from "./ui/button.tsx"
 import { Icon } from "./ui/icon.tsx"
 
@@ -27,7 +27,9 @@ const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"))
  * it never goes back.
  *
  * Native differences: `px-4` comes from `Screen`'s padding; the title is
- * one line.
+ * one line. Web's bar is fixed at the top edge, so inside a `Screen` it
+ * cancels the screen's top padding to sit at the same height as on the
+ * screens that pad only the sides (activity).
  */
 
 const fadeDistance = 75
@@ -107,6 +109,7 @@ export function FadeHeader({
     <Animated.View
       pointerEvents={faded ? "none" : "auto"}
       style={{
+        marginTop: -screenPadding,
         zIndex: 10,
         opacity: scrollY.interpolate({
           inputRange: [0, fadeDistance],

@@ -55,7 +55,12 @@ function WithdrawHistoryScreen({
 
   return (
     <SafeAreaView
-      style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
+      style={{
+        flex: 1,
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        backgroundColor: theme.background.val,
+      }}
     >
       <FadeHeader
         title={t(

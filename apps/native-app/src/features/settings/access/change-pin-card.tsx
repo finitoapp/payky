@@ -1,7 +1,13 @@
 import { changePin } from "@payky/core/modules/access/access-actions"
 import { useState } from "react"
-import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -36,33 +42,29 @@ export function ChangePinCard({ onDone }: { readonly onDone: () => void }) {
   }
 
   return (
-    <YStack gap="3">
-      <Text fontSize="xl" fontWeight="700">
-        {t("access.changePin")}
-      </Text>
-      <NewPinFields state={newPin} disabled={pending} />
-      <XStack gap="2">
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            variant="ghost"
-            label={t("access.cancel")}
-            disabled={pending}
-            onPress={onDone}
-          />
-        </YStack>
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            label={t("access.save")}
-            pending={pending}
-            disabled={newPin.check.pin === null}
-            onPress={() => {
-              void save()
-            }}
-          />
-        </YStack>
-      </XStack>
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("access.changePin")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <NewPinFields state={newPin} disabled={pending} />
+      </CardContent>
+      <CardFooter justify="flex-end" gap={8}>
+        <Button
+          variant="ghost"
+          label={t("access.cancel")}
+          disabled={pending}
+          onPress={onDone}
+        />
+        <Button
+          label={t("access.save")}
+          pending={pending}
+          disabled={newPin.check.pin === null}
+          onPress={() => {
+            void save()
+          }}
+        />
+      </CardFooter>
+    </Card>
   )
 }

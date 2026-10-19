@@ -24,9 +24,13 @@ it("asks for confirmation, awaited, before removing a device, and never for this
     /if \(!confirmed\) return/,
     /await run\.ok\(removeDevice\(device\.id\)\)/
   )
-  expect(item).toMatch(
-    /\{thisDevice \? null : \(\s*<Button\b[^>]*variant="destructive"/u
-  )
+  expect(item).toMatch(/variant: "destructive"/u)
+  const removeButton = item.match(
+    /\{thisDevice \? null : \(\s*<Button\b([\s\S]*?)\/>/u
+  )?.[1]
+  expect(removeButton).toMatch(/variant="ghost"/u)
+  expect(removeButton).toMatch(/iconStart=\{Trash\}/u)
+  expect(removeButton).toMatch(/void remove\(\)/u)
 })
 
 it("edits device permissions only through the core action, from the presets and permissions core defines", () => {

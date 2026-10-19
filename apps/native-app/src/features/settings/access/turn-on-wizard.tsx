@@ -8,9 +8,26 @@ import {
 } from "@payky/core/modules/device/device-queries"
 import type { DeviceId } from "@payky/core/modules/device/device-types"
 import { useSetAtom } from "jotai"
+import KeyRound from "lucide-react-native/icons/key-round"
+import Pencil from "lucide-react-native/icons/pencil"
 import { useState } from "react"
-import { Text, XStack, YStack } from "tamagui"
+import { XStack, YStack } from "tamagui"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog.tsx"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -82,121 +99,120 @@ export function TurnOnWizard({
 
   if (step === "pin") {
     return (
-      <YStack gap="3">
-        <Text fontSize="xl" fontWeight="700">
-          {t("access.wizard.pin.title")}
-        </Text>
-        <Text color="muted-foreground">
-          {t("access.wizard.pin.description")}
-        </Text>
-        {hasPin ? (
-          <Button
-            size="lg"
-            variant="outline"
-            label={t("access.wizard.keepPin")}
-            onPress={() => {
-              void keepCurrentPin()
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("access.wizard.pin.title")}</CardTitle>
+          <CardDescription>
+            {t("access.wizard.pin.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent gap={16}>
+          {hasPin ? (
+            <Button
+              variant="outline"
+              label={t("access.wizard.keepPin")}
+              iconStart={KeyRound}
+              onPress={() => void keepCurrentPin()}
+            />
+          ) : null}
+          <NewPinFields
+            state={{
+              ...newPin,
+              setPin: (text) => {
+                setKeepPin(false)
+                newPin.setPin(text)
+              },
+              setRepeat: (text) => {
+                setKeepPin(false)
+                newPin.setRepeat(text)
+              },
             }}
           />
-        ) : null}
-        <NewPinFields
-          state={{
-            ...newPin,
-            setPin: (text) => {
-              setKeepPin(false)
-              newPin.setPin(text)
-            },
-            setRepeat: (text) => {
-              setKeepPin(false)
-              newPin.setRepeat(text)
-            },
-          }}
-        />
-        <XStack gap="2">
-          <YStack flex={1}>
-            <Button
-              size="lg"
-              variant="ghost"
-              label={t("access.cancel")}
-              onPress={onDone}
-            />
-          </YStack>
-          <YStack flex={1}>
-            <Button
-              size="lg"
-              label={t("access.wizard.next")}
-              disabled={keepPin || newPin.check.pin === null}
-              onPress={() => setStep("devices")}
-            />
-          </YStack>
-        </XStack>
-      </YStack>
+        </CardContent>
+        <CardFooter justify="flex-end" gap={8}>
+          <Button variant="ghost" label={t("access.cancel")} onPress={onDone} />
+          <Button
+            label={t("access.wizard.next")}
+            disabled={keepPin || newPin.check.pin === null}
+            onPress={() => setStep("devices")}
+          />
+        </CardFooter>
+      </Card>
     )
   }
 
   return (
-    <YStack gap="3">
-      <Text fontSize="xl" fontWeight="700">
-        {t("access.wizard.devices.title")}
-      </Text>
-      <Text color="muted-foreground">
-        {t("access.wizard.devices.description")}
-      </Text>
-      {devices.map((device) => (
-        <YStack
-          key={device.id}
-          gap="2"
-          p="3"
-          rounded="lg"
-          borderWidth={1}
-          borderColor="border-color"
-        >
-          <DeviceHeading device={device} thisDevice={device.id === deviceId} />
-          {renaming?.id === device.id ? (
-            <RenameForm device={device} onClose={() => setRenaming(null)} />
-          ) : (
-            <>
-              <Text fontWeight="600">
-                {t("access.device.preset", { name: device.name })}
-              </Text>
-              <PresetPicker
-                label={t("access.device.preset", { name: device.name })}
-                value={presets[device.id] ?? "basic"}
-                onChange={(preset) =>
-                  setPresets((current) => ({ ...current, [device.id]: preset }))
-                }
-              />
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("access.wizard.devices.title")}</CardTitle>
+        <CardDescription>
+          {t("access.wizard.devices.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent gap={12}>
+        {devices.map((device) => (
+          <YStack
+            key={device.id}
+            gap="2"
+            p="3"
+            rounded="lg"
+            borderWidth={1}
+            borderColor="border-color"
+          >
+            <XStack items="flex-start" justify="space-between" gap="2">
+              <YStack flex={1} minW={0}>
+                <DeviceHeading
+                  device={device}
+                  thisDevice={device.id === deviceId}
+                />
+              </YStack>
               <Button
-                size="lg"
-                variant="outline"
-                label={t("access.device.rename")}
+                size="icon-sm"
+                variant="ghost"
+                accessibilityLabel={t("access.device.rename")}
+                iconStart={Pencil}
                 onPress={() => setRenaming(device)}
               />
-            </>
-          )}
-        </YStack>
-      ))}
-      <XStack gap="2">
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            variant="ghost"
-            label={t("access.wizard.back")}
-            disabled={pending}
-            onPress={() => setStep("pin")}
-          />
-        </YStack>
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            label={t("access.turnOn")}
-            pending={pending}
-            onPress={() => {
-              void finish()
+            </XStack>
+            <PresetPicker
+              label={t("access.device.preset", { name: device.name })}
+              value={presets[device.id] ?? "basic"}
+              onChange={(preset) =>
+                setPresets((current) => ({ ...current, [device.id]: preset }))
+              }
+            />
+          </YStack>
+        ))}
+        {renaming === null ? null : (
+          <Dialog
+            open
+            onOpenChange={(open) => {
+              if (!open) setRenaming(null)
             }}
-          />
-        </YStack>
-      </XStack>
-    </YStack>
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("access.device.rename")}</DialogTitle>
+                <DialogDescription>{t("access.device.name")}</DialogDescription>
+              </DialogHeader>
+              <RenameForm device={renaming} onClose={() => setRenaming(null)} />
+            </DialogContent>
+          </Dialog>
+        )}
+      </CardContent>
+      <CardFooter justify="flex-end" gap={8}>
+        <Button
+          variant="ghost"
+          label={t("access.wizard.back")}
+          disabled={pending}
+          onPress={() => setStep("pin")}
+        />
+        <Button
+          label={t("access.turnOn")}
+          pending={pending}
+          onPress={() => void finish()}
+        />
+      </CardFooter>
+    </Card>
   )
 }

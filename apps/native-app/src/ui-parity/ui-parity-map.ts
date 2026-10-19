@@ -433,46 +433,286 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/access/access-settings-page.tsx",
     web: ["apps/web-app/src/features/settings/access/access-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "web keeps device badges in this page; native extracts them to device-parts.tsx",
+      Checkbox:
+        "web keeps permission controls in this page; native extracts them to device-item.tsx",
+      Dialog:
+        "web keeps device editors in this page; native extracts them to device-item.tsx",
+      DialogContent:
+        "web keeps device editors in this page; native extracts them to device-item.tsx",
+      DialogDescription:
+        "web keeps device editors in this page; native extracts them to device-item.tsx",
+      DialogFooter:
+        "web keeps device editors in this page; native extracts them to device-item.tsx",
+      DialogHeader:
+        "web keeps device editors in this page; native extracts them to device-item.tsx",
+      DialogTitle:
+        "web keeps device editors in this page; native extracts them to device-item.tsx",
+      Field:
+        "web keeps PIN and permission fields in this page; native extracts them to new-pin-fields.tsx and device-item.tsx",
+      FieldDescription:
+        "web keeps PIN and permission fields in this page; native extracts them to new-pin-fields.tsx and device-item.tsx",
+      FieldError:
+        "web keeps PIN and permission fields in this page; native extracts them to new-pin-fields.tsx and device-item.tsx",
+      FieldGroup:
+        "web keeps PIN and permission fields in this page; native extracts them to new-pin-fields.tsx and device-item.tsx",
+      FieldLabel:
+        "web keeps PIN and permission fields in this page; native extracts them to new-pin-fields.tsx and device-item.tsx",
+      Input:
+        "web keeps PIN and rename fields in this page; native extracts them to new-pin-fields.tsx and device-parts.tsx",
+      Select:
+        "web keeps device preset controls in this page; native extracts them to device-parts.tsx",
+      SelectContent:
+        "web keeps device preset controls in this page; native extracts them to device-parts.tsx",
+      SelectItem:
+        "web keeps device preset controls in this page; native extracts them to device-parts.tsx",
+      SelectTrigger:
+        "web keeps device preset controls in this page; native extracts them to device-parts.tsx",
+      SelectValue:
+        "web keeps device preset controls in this page; native extracts them to device-parts.tsx",
+    },
   },
   {
     native: "src/features/settings/access/account-transfer-source-page.tsx",
     web: [
       "apps/web-app/src/features/settings/account-transfer-source-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/access/change-pin-card.tsx",
     web: ["apps/web-app/src/features/settings/access/access-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "the web file contains the full access page; native keeps this PIN card in its own file",
+      CardDescription:
+        "the web file contains the full access page; native keeps this PIN card in its own file",
+      Checkbox:
+        "the web file contains the full access page; native keeps permission controls in sibling files",
+      Dialog:
+        "the web file contains the full access page; native keeps device editors in sibling files",
+      DialogContent:
+        "the web file contains the full access page; native keeps device editors in sibling files",
+      DialogDescription:
+        "the web file contains the full access page; native keeps device editors in sibling files",
+      DialogFooter:
+        "the web file contains the full access page; native keeps device editors in sibling files",
+      DialogHeader:
+        "the web file contains the full access page; native keeps device editors in sibling files",
+      DialogTitle:
+        "the web file contains the full access page; native keeps device editors in sibling files",
+      FadeHeader:
+        "the web page owns its route header; this native child renders only the PIN card",
+      Field:
+        "the web file contains the full access page; native extracts the PIN fields to new-pin-fields.tsx",
+      FieldDescription:
+        "the web file contains the full access page; native extracts the PIN fields to new-pin-fields.tsx",
+      FieldError:
+        "the web file contains the full access page; native extracts the PIN fields to new-pin-fields.tsx",
+      FieldGroup:
+        "the web file contains the full access page; native extracts the PIN fields to new-pin-fields.tsx",
+      FieldLabel:
+        "the web file contains the full access page; native extracts the PIN fields to new-pin-fields.tsx",
+      Input:
+        "the web file contains the full access page; native extracts the PIN fields to new-pin-fields.tsx",
+      Select:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectContent:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectItem:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectTrigger:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectValue:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+    },
   },
   {
     native: "src/features/settings/access/device-item.tsx",
     web: ["apps/web-app/src/features/settings/access/access-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "the web file contains the full access page; native renders device badges in device-parts.tsx",
+      Card: "the web file contains the full access page; native places this row inside the parent card in access-settings-page.tsx",
+      CardContent:
+        "the web file contains the full access page; native places this row inside the parent card in access-settings-page.tsx",
+      CardDescription:
+        "the web file contains the full access page; native places this row inside the parent card in access-settings-page.tsx",
+      CardFooter:
+        "the web file contains the full access page; native places this row inside the parent card in access-settings-page.tsx",
+      CardHeader:
+        "the web file contains the full access page; native places this row inside the parent card in access-settings-page.tsx",
+      CardTitle:
+        "the web file contains the full access page; native places this row inside the parent card in access-settings-page.tsx",
+      FadeHeader:
+        "the web page owns its route header; this native child renders one device row",
+      FieldError:
+        "the web file contains the full access page; the native permission editor has no input error field",
+      FieldContent:
+        "native's field kit groups the permission label and description; web's field markup does not need this wrapper",
+      Input:
+        "the web file contains the full access page; native keeps the device rename input in device-parts.tsx",
+      Select:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectContent:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectItem:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectTrigger:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectValue:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+    },
   },
   {
     native: "src/features/settings/access/device-parts.tsx",
     web: ["apps/web-app/src/features/settings/access/access-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Card: "the web file contains the full access page; native places these device helpers in their parent card and row",
+      CardContent:
+        "the web file contains the full access page; native places these device helpers in their parent card and row",
+      CardDescription:
+        "the web file contains the full access page; native places these device helpers in their parent card and row",
+      CardFooter:
+        "the web file contains the full access page; native places these device helpers in their parent card and row",
+      CardHeader:
+        "the web file contains the full access page; native places these device helpers in their parent card and row",
+      CardTitle:
+        "the web file contains the full access page; native places these device helpers in their parent card and row",
+      Checkbox:
+        "the web file contains the full access page; native keeps permission checkboxes in device-item.tsx",
+      Dialog:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogContent:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogDescription:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogFooter:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogHeader:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogTitle:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      FadeHeader:
+        "the web page owns its route header; this native file supplies device subcomponents",
+      FieldDescription:
+        "the web file contains the full access page; native keeps permission descriptions in device-item.tsx",
+      FieldError:
+        "the web file contains the full access page; native keeps permission errors in device-item.tsx",
+      FieldGroup:
+        "the web file contains the full access page; native keeps permission groups in device-item.tsx",
+    },
   },
   {
     native: "src/features/settings/access/new-pin-fields.tsx",
     web: ["apps/web-app/src/features/settings/access/access-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "the web file contains the full access page; native keeps device badges in device-parts.tsx",
+      Button:
+        "the web file contains the full access page; native keeps PIN actions in parent cards",
+      Card: "the web file contains the full access page; native keeps PIN fields inside parent cards",
+      CardContent:
+        "the web file contains the full access page; native keeps PIN fields inside parent cards",
+      CardDescription:
+        "the web file contains the full access page; native keeps PIN fields inside parent cards",
+      CardFooter:
+        "the web file contains the full access page; native keeps PIN fields inside parent cards",
+      CardHeader:
+        "the web file contains the full access page; native keeps PIN fields inside parent cards",
+      CardTitle:
+        "the web file contains the full access page; native keeps PIN fields inside parent cards",
+      Checkbox:
+        "the web file contains the full access page; native keeps permission checkboxes in device-item.tsx",
+      Dialog:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogContent:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogDescription:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogFooter:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogHeader:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      DialogTitle:
+        "the web file contains the full access page; native keeps device dialogs in device-item.tsx",
+      FadeHeader:
+        "the web page owns its route header; this native child renders only PIN fields",
+      Select:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectContent:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectItem:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectTrigger:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectValue:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+    },
   },
   {
     native: "src/features/settings/access/turn-on-wizard.tsx",
     web: ["apps/web-app/src/features/settings/access/access-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "the web file contains the full access page; native renders device badges in device-parts.tsx",
+      Checkbox:
+        "the web file contains the full access page; native renders permission controls in device-item.tsx",
+      DialogFooter:
+        "the web file contains the full access page; native keeps dialog actions in device-item.tsx",
+      FadeHeader:
+        "the web page owns its route header; this native child renders only the enable wizard",
+      Field:
+        "the web file contains the full access page; native extracts PIN fields to new-pin-fields.tsx",
+      FieldDescription:
+        "the web file contains the full access page; native extracts PIN fields to new-pin-fields.tsx",
+      FieldError:
+        "the web file contains the full access page; native extracts PIN fields to new-pin-fields.tsx",
+      FieldGroup:
+        "the web file contains the full access page; native extracts PIN fields to new-pin-fields.tsx",
+      FieldLabel:
+        "the web file contains the full access page; native extracts PIN fields to new-pin-fields.tsx",
+      Input:
+        "the web file contains the full access page; native extracts PIN fields to new-pin-fields.tsx",
+      Select:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectContent:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectItem:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectTrigger:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+      SelectValue:
+        "the web file contains the full access page; native keeps device presets in device-parts.tsx",
+    },
   },
   {
     native: "src/features/settings/accounts/accounts-settings-page.tsx",
     web: [
       "apps/web-app/src/features/settings/accounts/accounts-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    note: "Native account rows use the last persisted nostrPicture; web prefers the active account's current profile query and falls back to the persisted picture.",
+    allowedDifferences: {
+      Dialog:
+        "web opens restore and account-transfer-target dialogs; native keeps restore inline and opens pairing or the source route",
+      DialogContent:
+        "web opens restore and account-transfer-target dialogs; native keeps restore inline and opens pairing or the source route",
+      DialogDescription:
+        "web opens restore and account-transfer-target dialogs; native keeps restore inline and opens pairing or the source route",
+      DialogHeader:
+        "web opens restore and account-transfer-target dialogs; native keeps restore inline and opens pairing or the source route",
+      DialogTitle:
+        "web opens restore and account-transfer-target dialogs; native keeps restore inline and opens pairing or the source route",
+    },
   },
   {
     native: "src/features/settings/assistant/assistant-chat-page.tsx",

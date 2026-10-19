@@ -9,8 +9,15 @@ import {
 import type { DeviceAccountId } from "@payky/core/evolu/device-client"
 import { router } from "expo-router"
 import { useAtomValue, useSetAtom, useStore } from "jotai"
+import Check from "lucide-react-native/icons/check"
+import KeyRound from "lucide-react-native/icons/key-round"
+import MonitorSmartphone from "lucide-react-native/icons/monitor-smartphone"
+import Plus from "lucide-react-native/icons/plus"
+import QrCode from "lucide-react-native/icons/qr-code"
+import Trash from "lucide-react-native/icons/trash"
 import { useState } from "react"
-import { Text, XStack, YStack } from "tamagui"
+import { Image } from "react-native"
+import { Text, useTheme, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../../atoms/device-evolu.ts"
 import {
@@ -19,7 +26,10 @@ import {
 } from "../../../atoms/evolu-counter.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
+import { VerticalNav } from "../../../components/vertical-nav.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useDeviceEvoluQuery } from "../../../hooks/use-evolu-query.ts"
@@ -92,91 +102,128 @@ export function AccountsSettingsPage() {
     }
   }
 
+  const accountItems = accounts.map((account) => {
+    const active = account.id === activeAccount.id
+    return {
+      id: account.id,
+      kind: "static" as const,
+      active,
+      icon: (
+        <AccountAvatar
+          name={account.name}
+          active={active}
+          picture={account.nostrPicture}
+        />
+      ),
+      label: (
+        <YStack gap="1">
+          <Text fontSize="sm" fontWeight="500" numberOfLines={1}>
+            {account.name}
+          </Text>
+          <Text fontSize="xs" color="muted-foreground">
+            {`${t("settings.accounts.list.createdAt")} ${formatDateTime(new Date(account.createdAt), language)}`}
+          </Text>
+        </YStack>
+      ),
+      action: active ? (
+        <Badge
+          variant="secondary"
+          label={t("settings.accounts.list.active")}
+          icon={Check}
+        />
+      ) : (
+        <XStack items="center" gap="1">
+          <Button
+            size="sm"
+            label={t("settings.accounts.list.switch")}
+            variant="outline"
+            disabled={busy}
+            onPress={() => {
+              void activate(account.id)
+            }}
+          />
+          <Button
+            size="icon-sm"
+            accessibilityLabel={t("settings.accounts.list.remove")}
+            variant="ghost"
+            iconStart={Trash}
+            disabled={busy}
+            onPress={() => {
+              void remove(account.id, account.name)
+            }}
+          />
+        </XStack>
+      ),
+    }
+  })
+
   return (
     <Screen>
       <FadeHeader title={t("settings.accounts.title")} />
-      <YStack gap="3">
-        <Text fontWeight="700">{t("settings.accounts.list.title")}</Text>
-        {accounts.length === 0 ? (
-          <Text color="muted-foreground">
-            {t("settings.accounts.list.empty")}
-          </Text>
-        ) : (
-          accounts.map((account) => {
-            const active = account.id === activeAccount.id
-            return (
-              <YStack
-                key={account.id}
-                gap="2"
-                p="3"
-                rounded="lg"
-                borderWidth={1}
-                borderColor={active ? "primary" : "border-color"}
-              >
-                <XStack items="center" gap="2">
-                  <YStack flex={1}>
-                    <Text fontWeight="600" numberOfLines={1}>
-                      {account.name}
-                    </Text>
-                    <Text fontSize="sm" color="muted-foreground">
-                      {`${t("settings.accounts.list.createdAt")} ${formatDateTime(new Date(account.createdAt), language)}`}
-                    </Text>
-                  </YStack>
-                  {active ? (
-                    <Text fontWeight="600">
-                      {t("settings.accounts.list.active")}
-                    </Text>
-                  ) : null}
-                </XStack>
-                {active ? null : (
-                  <XStack gap="2">
-                    <YStack flex={1}>
-                      <Button
-                        size="sm"
-                        label={t("settings.accounts.list.switch")}
-                        variant="outline"
-                        disabled={busy}
-                        onPress={() => {
-                          void activate(account.id)
-                        }}
-                      />
-                    </YStack>
-                    <YStack flex={1}>
-                      <Button
-                        size="lg"
-                        label={t("settings.accounts.list.remove")}
-                        variant="destructive"
-                        disabled={busy}
-                        onPress={() => {
-                          void remove(account.id, account.name)
-                        }}
-                      />
-                    </YStack>
-                  </XStack>
-                )}
-              </YStack>
-            )
-          })
-        )}
-      </YStack>
-
-      <YStack gap="3">
-        <Text fontWeight="700">{t("settings.accounts.add.title")}</Text>
-        <Button
-          size="lg"
-          label={t("accountChoice.new.title")}
-          variant="outline"
-          pending={busy}
-          onPress={() => {
-            void createNew()
-          }}
+      <YStack gap={24}>
+        <VerticalNav
+          title={t("settings.accounts.list.title")}
+          items={accountItems}
+          empty={t("settings.accounts.list.empty")}
         />
-        <Button
-          size="lg"
-          label={t("accountChoice.restore.title")}
-          variant="outline"
-          disabled={busy || restoring.pending}
-          onPress={() => setRestoreOpen((open) => !open)}
+
+        <VerticalNav
+          title={t("settings.accounts.add.title")}
+          items={[
+            {
+              id: "new",
+              kind: "button",
+              icon: <Icon icon={Plus} color="muted-foreground" />,
+              label: (
+                <YStack gap="1">
+                  <Text fontWeight="600">{t("accountChoice.new.title")}</Text>
+                  <Text fontSize="xs" color="muted-foreground">
+                    {t("accountChoice.new.description")}
+                  </Text>
+                </YStack>
+              ),
+              disabled: busy,
+              onPress: () => {
+                void createNew()
+              },
+            },
+            {
+              id: "restore",
+              kind: "button",
+              icon: <Icon icon={KeyRound} color="muted-foreground" />,
+              label: (
+                <YStack gap="1">
+                  <Text fontWeight="600">
+                    {t("accountChoice.restore.title")}
+                  </Text>
+                  <Text fontSize="xs" color="muted-foreground">
+                    {t("accountChoice.restore.description")}
+                  </Text>
+                </YStack>
+              ),
+              disabled: busy || restoring.pending,
+              onPress: () => setRestoreOpen((open) => !open),
+            },
+            {
+              id: "transfer",
+              kind: "button",
+              icon: <Icon icon={QrCode} color="muted-foreground" />,
+              label: (
+                <YStack gap="1">
+                  <Text fontWeight="600">
+                    {t("accountChoice.transfer.title")}
+                  </Text>
+                  <Text fontSize="xs" color="muted-foreground">
+                    {t("accountChoice.transfer.description")}
+                  </Text>
+                </YStack>
+              ),
+              disabled: busy,
+              onPress: () => {
+                router.push("/pair")
+              },
+            },
+          ]}
         />
         {restoreOpen ? (
           <RestoreAccountStep
@@ -188,28 +235,82 @@ export function AccountsSettingsPage() {
             }}
           />
         ) : null}
-        <Button
-          size="lg"
-          label={t("accountChoice.transfer.title")}
-          variant="outline"
-          disabled={busy}
-          onPress={() => router.push("/pair")}
-        />
-      </YStack>
 
-      <YStack gap="3">
-        <Text fontWeight="700">{t("settings.accounts.elsewhere.title")}</Text>
-        <Text color="muted-foreground">
-          {t("accountTransfer.settings.source.description")}
-        </Text>
-        <Button
-          size="lg"
-          label={t("accountTransfer.settings.source.title")}
-          variant="outline"
-          disabled={busy}
-          onPress={() => router.push("/settings/access/add-device")}
+        <VerticalNav
+          title={t("settings.accounts.elsewhere.title")}
+          items={[
+            {
+              kind: "button",
+              icon: <Icon icon={MonitorSmartphone} color="muted-foreground" />,
+              label: (
+                <YStack gap="1">
+                  <Text fontWeight="600">
+                    {t("accountTransfer.settings.source.title")}
+                  </Text>
+                  <Text fontSize="xs" color="muted-foreground">
+                    {t("accountTransfer.settings.source.description")}
+                  </Text>
+                </YStack>
+              ),
+              disabled: busy,
+              onPress: () => router.push("/settings/access/add-device"),
+            },
+          ]}
         />
       </YStack>
     </Screen>
+  )
+}
+
+/** The last published picture, or the account's initial when unavailable. */
+function AccountAvatar({
+  name,
+  active,
+  picture,
+}: {
+  readonly name: string
+  readonly active: boolean
+  readonly picture: string | null
+}) {
+  const theme = useTheme()
+  const [failedPicture, setFailedPicture] = useState<string | null>(null)
+
+  if (picture !== null && picture !== failedPicture) {
+    return (
+      <Image
+        source={{ uri: picture }}
+        accessibilityIgnoresInvertColors
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: theme.muted.val,
+          borderWidth: active ? 2 : 0,
+          borderColor: theme.primary.val,
+        }}
+        onError={() => setFailedPicture(picture)}
+      />
+    )
+  }
+
+  return (
+    <YStack
+      w={36}
+      h={36}
+      shrink={0}
+      rounded="full"
+      items="center"
+      justify="center"
+      bg={active ? "primary" : "muted"}
+      accessibilityElementsHidden
+    >
+      <Text
+        fontWeight="600"
+        color={active ? "primary-foreground" : "muted-foreground"}
+        textTransform="uppercase"
+      >
+        {name.slice(0, 1)}
+      </Text>
+    </YStack>
   )
 }

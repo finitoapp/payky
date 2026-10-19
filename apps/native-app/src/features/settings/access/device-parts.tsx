@@ -3,10 +3,13 @@ import type { AccessPreset } from "@payky/core/modules/access/access-types"
 import { renameDevice } from "@payky/core/modules/device/device-actions"
 import type { DeviceListRow } from "@payky/core/modules/device/device-queries"
 import { NonEmptyString255Schema } from "@payky/core/modules/shared/schema"
+import Ban from "lucide-react-native/icons/ban"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
-import { Field } from "../../../components/field.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import { Field, FieldLabel } from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import {
   Select,
   SelectContent,
@@ -36,14 +39,14 @@ export function DeviceHeading({
       <XStack gap="2" items="center" flexWrap="wrap">
         <Text fontWeight="600">{device.name}</Text>
         {thisDevice ? (
-          <Text fontSize={12} color="muted-foreground">
-            {t("access.device.this")}
-          </Text>
+          <Badge variant="secondary" label={t("access.device.this")} />
         ) : null}
         {device.pinBlockedAt !== null ? (
-          <Text fontSize={12} fontWeight="700" color="destructive">
-            {t("access.device.blocked")}
-          </Text>
+          <Badge
+            variant="destructive"
+            icon={Ban}
+            label={t("access.device.blocked")}
+          />
         ) : null}
       </XStack>
       {details === "" ? null : (
@@ -128,37 +131,29 @@ export function RenameForm({
 
   return (
     <YStack gap="3">
-      <Field
-        label={t("access.device.name")}
-        value={name}
-        maxLength={255}
-        disabled={pending}
-        onChangeText={setName}
-        onSubmitEditing={() => {
-          void save()
-        }}
-      />
-      <XStack gap="2">
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            variant="ghost"
-            label={t("access.cancel")}
-            disabled={pending}
-            onPress={onClose}
-          />
-        </YStack>
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            label={t("access.save")}
-            pending={pending}
-            disabled={!parsed.success}
-            onPress={() => {
-              void save()
-            }}
-          />
-        </YStack>
+      <Field>
+        <FieldLabel>{t("access.device.name")}</FieldLabel>
+        <Input
+          value={name}
+          maxLength={255}
+          disabled={pending}
+          onChangeText={setName}
+          onSubmitEditing={() => void save()}
+        />
+      </Field>
+      <XStack justify="flex-end" gap={8}>
+        <Button
+          variant="ghost"
+          label={t("access.cancel")}
+          disabled={pending}
+          onPress={onClose}
+        />
+        <Button
+          label={t("access.save")}
+          pending={pending}
+          disabled={!parsed.success}
+          onPress={() => void save()}
+        />
       </XStack>
     </YStack>
   )

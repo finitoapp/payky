@@ -11,11 +11,29 @@ import {
   unblockDevice,
 } from "@payky/core/modules/device/device-actions"
 import type { DeviceListRow } from "@payky/core/modules/device/device-queries"
+import LockOpen from "lucide-react-native/icons/lock-open"
+import Pencil from "lucide-react-native/icons/pencil"
+import Trash from "lucide-react-native/icons/trash"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
-import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../../components/ui/button.tsx"
+import { Checkbox } from "../../../components/ui/checkbox.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog.tsx"
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
 import { Icon } from "../../../components/ui/icon.tsx"
 import {
   accessPresetLabelKeys,
@@ -78,7 +96,7 @@ export function DeviceItem({
       borderColor="border-color"
     >
       <DeviceHeading device={device} thisDevice={thisDevice} />
-      <Text color="muted-foreground">
+      <Text fontSize="sm" color="muted-foreground">
         {preset === null
           ? permissions
               .filter((permission) => granted.has(permission))
@@ -86,16 +104,8 @@ export function DeviceItem({
               .join(", ")
           : t(accessPresetLabelKeys[preset])}
       </Text>
-      {editor === "permissions" ? (
-        <PermissionsEditor
-          device={device}
-          initial={granted}
-          onClose={() => setEditor(null)}
-        />
-      ) : editor === "rename" ? (
-        <RenameForm device={device} onClose={() => setEditor(null)} />
-      ) : (
-        <YStack gap="2">
+      {editor === null ? (
+        <XStack flexWrap="wrap" gap="2">
           <Button
             size="sm"
             variant="outline"
@@ -105,6 +115,7 @@ export function DeviceItem({
           <Button
             size="sm"
             variant="outline"
+            iconStart={Pencil}
             label={t("access.device.rename")}
             onPress={() => setEditor("rename")}
           />
@@ -112,6 +123,7 @@ export function DeviceItem({
             <Button
               size="sm"
               variant="outline"
+              iconStart={LockOpen}
               label={t("access.device.unblock")}
               onPress={() => {
                 void unblock()
@@ -121,14 +133,46 @@ export function DeviceItem({
           {thisDevice ? null : (
             <Button
               size="sm"
-              variant="destructive"
+              variant="ghost"
+              iconStart={Trash}
               label={t("access.device.remove")}
               onPress={() => {
                 void remove()
               }}
             />
           )}
-        </YStack>
+        </XStack>
+      ) : (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditor(null)
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editor === "permissions"
+                  ? device.name
+                  : t("access.device.rename")}
+              </DialogTitle>
+              {editor === "permissions" ? (
+                <DialogDescription>
+                  {t("access.device.permissions.description")}
+                </DialogDescription>
+              ) : null}
+            </DialogHeader>
+            {editor === "permissions" ? (
+              <PermissionsEditor
+                device={device}
+                initial={granted}
+                onClose={() => setEditor(null)}
+              />
+            ) : (
+              <RenameForm device={device} onClose={() => setEditor(null)} />
+            )}
+          </DialogContent>
+        </Dialog>
       )}
     </YStack>
   )
@@ -162,9 +206,6 @@ function PermissionsEditor({
 
   return (
     <YStack gap="3">
-      <Text color="muted-foreground">
-        {t("access.device.permissions.description")}
-      </Text>
       <Text fontWeight="600">
         {t("access.device.preset", { name: device.name })}
       </Text>
@@ -173,26 +214,28 @@ function PermissionsEditor({
         value={presetOf(granted)}
         onChange={(preset) => setGranted(new Set(accessPresets[preset]))}
       />
-      {permissions.map((permission) => (
-        <XStack key={permission} gap="3" items="center">
-          <Switch
-            accessibilityLabel={t(permissionLabelKeys[permission])}
-            value={granted.has(permission)}
-            disabled={pending}
-            onValueChange={(checked) =>
-              setGranted((current) =>
-                withPermission(current, permission, checked)
-              )
-            }
-          />
-          <YStack flex={1}>
-            <Text fontWeight="600">{t(permissionLabelKeys[permission])}</Text>
-            <Text fontSize={13} color="muted-foreground">
-              {t(permissionDescriptionKeys[permission])}
-            </Text>
-          </YStack>
-        </XStack>
-      ))}
+      <FieldGroup>
+        {permissions.map((permission) => (
+          <Field key={permission} orientation="horizontal">
+            <Checkbox
+              accessibilityLabel={t(permissionLabelKeys[permission])}
+              checked={granted.has(permission)}
+              disabled={pending}
+              onCheckedChange={(checked) =>
+                setGranted((current) =>
+                  withPermission(current, permission, checked)
+                )
+              }
+            />
+            <FieldContent>
+              <FieldLabel>{t(permissionLabelKeys[permission])}</FieldLabel>
+              <FieldDescription>
+                {t(permissionDescriptionKeys[permission])}
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        ))}
+      </FieldGroup>
       {granted.has("admin") ? (
         <XStack
           gap={8}
@@ -211,27 +254,19 @@ function PermissionsEditor({
           </Text>
         </XStack>
       ) : null}
-      <XStack gap="2">
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            variant="ghost"
-            label={t("access.cancel")}
-            disabled={pending}
-            onPress={onClose}
-          />
-        </YStack>
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            label={t("access.save")}
-            pending={pending}
-            onPress={() => {
-              void save()
-            }}
-          />
-        </YStack>
-      </XStack>
+      <DialogFooter>
+        <Button
+          variant="ghost"
+          label={t("access.cancel")}
+          disabled={pending}
+          onPress={onClose}
+        />
+        <Button
+          label={t("access.save")}
+          pending={pending}
+          onPress={() => void save()}
+        />
+      </DialogFooter>
     </YStack>
   )
 }

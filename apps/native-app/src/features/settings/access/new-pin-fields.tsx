@@ -1,7 +1,13 @@
 import { checkNewPin, sanitizePinInput } from "@payky/app-shared/access-form"
 import { useState } from "react"
-import { Text, YStack } from "tamagui"
-import { Field } from "../../../components/field.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 /**
@@ -52,28 +58,33 @@ export function NewPinFields({
   const { t } = useTranslation()
 
   return (
-    <YStack gap="3">
-      <Field
-        {...secretInput}
-        label={t("access.newPin.label")}
-        value={state.pin}
-        disabled={disabled}
-        onChangeText={state.setPin}
-      />
-      <Text
-        fontSize={13}
-        color={state.check.invalid ? "destructive" : "muted-foreground"}
-      >
-        {t("access.newPin.description")}
-      </Text>
-      <Field
-        {...secretInput}
-        label={t("access.newPin.repeat")}
-        value={state.repeat}
-        disabled={disabled}
-        error={state.check.mismatch ? t("access.newPin.mismatch") : undefined}
-        onChangeText={state.setRepeat}
-      />
-    </YStack>
+    <FieldGroup>
+      <Field>
+        <FieldLabel>{t("access.newPin.label")}</FieldLabel>
+        <Input
+          {...secretInput}
+          value={state.pin}
+          disabled={disabled}
+          invalid={state.check.invalid}
+          onChangeText={state.setPin}
+        />
+        <FieldDescription color="muted-foreground">
+          {t("access.newPin.description")}
+        </FieldDescription>
+      </Field>
+      <Field>
+        <FieldLabel>{t("access.newPin.repeat")}</FieldLabel>
+        <Input
+          {...secretInput}
+          value={state.repeat}
+          disabled={disabled}
+          invalid={state.check.mismatch}
+          onChangeText={state.setRepeat}
+        />
+        <FieldError>
+          {state.check.mismatch ? t("access.newPin.mismatch") : undefined}
+        </FieldError>
+      </Field>
+    </FieldGroup>
   )
 }

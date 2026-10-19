@@ -54,6 +54,10 @@ export type VerticalNavItem = NavItemTarget & {
   readonly action?: ReactNode
   readonly icon?: ReactNode
   readonly disableAction?: boolean
+  /** Keep the row visible and announced while preventing its action. */
+  readonly disabled?: boolean
+  /** Tint a selected static row, as in the active account list item. */
+  readonly active?: boolean
   /** TalkBack name when `label` is not a string. */
   readonly accessibilityLabel?: string
   /**
@@ -123,7 +127,8 @@ export function VerticalNavRow({
   readonly item: VerticalNavItem
   readonly first: boolean
 }) {
-  const onPress = press(item)
+  const disabled = item.disabled === true
+  const onPress = disabled ? undefined : press(item)
   const interactive = item.kind !== "static"
   return (
     <View
@@ -137,8 +142,15 @@ export function VerticalNavRow({
       borderColor="border-color"
       borderLeftWidth={item.stripeColor === undefined ? 0 : 3}
       borderLeftColor={item.stripeColor ?? "transparent"}
-      bg={interactive ? "transparent press:accent" : "transparent"}
+      bg={
+        item.active
+          ? "primary-5"
+          : interactive && !disabled
+            ? "transparent press:accent"
+            : "transparent"
+      }
       onPress={onPress}
+      opacity={disabled ? 0.5 : undefined}
       accessible={interactive ? true : undefined}
       accessibilityRole={
         item.kind === "link" || item.kind === "href"
@@ -151,6 +163,7 @@ export function VerticalNavRow({
         item.accessibilityLabel ??
         (typeof item.label === "string" ? item.label : undefined)
       }
+      accessibilityState={disabled ? { disabled: true } : undefined}
     >
       {item.icon}
       <View flex={1} minW={0}>

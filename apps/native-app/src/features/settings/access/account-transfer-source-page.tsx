@@ -14,9 +14,14 @@ import {
 } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { useAtomValue, useStore } from "jotai"
+import ArrowRightLeft from "lucide-react-native/icons/arrow-right-left"
+import Check from "lucide-react-native/icons/check"
+import KeyRound from "lucide-react-native/icons/key-round"
+import QrCodeIcon from "lucide-react-native/icons/qr-code"
+import RotateCcw from "lucide-react-native/icons/rotate-ccw"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { Fragment, useEffect, useRef, useState } from "react"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { evoluCounterAtom } from "../../../atoms/evolu-counter.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
@@ -29,11 +34,18 @@ import {
 } from "../../../components/ui/alert.tsx"
 import { Button } from "../../../components/ui/button.tsx"
 import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "../../../components/ui/card.tsx"
+import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
 } from "../../../components/ui/field.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import {
   InputOTP,
   InputOTPGroup,
@@ -75,6 +87,14 @@ const codeGroups = [
   [0, 1, 2],
   [3, 4, 5],
 ] as const
+const introSteps = [
+  { label: "accountTransfer.source.step.scan", icon: QrCodeIcon },
+  { label: "accountTransfer.source.step.code", icon: KeyRound },
+  { label: "accountTransfer.source.step.transfer", icon: ArrowRightLeft },
+] as const satisfies ReadonlyArray<{
+  readonly label: TranslationKey
+  readonly icon: typeof QrCodeIcon
+}>
 
 /**
  * The source half of account/0001: the device with the account shows a QR,
@@ -156,216 +176,233 @@ export function AccountTransferSourcePage() {
   return (
     <Screen>
       <FadeHeader title={t("accountTransfer.source.title")} />
+      <Card>
+        {state !== null && stepByPhase[state.phase] > 0 ? (
+          <CardHeader>
+            <Stepper value={stepByPhase[state.phase]}>
+              <StepperNav>
+                {[1, 2, 3].map((step) => (
+                  <StepperItem key={step} step={step} last={step === 3}>
+                    <StepperIndicator
+                      size={8}
+                      inactiveColor="muted-foreground-30"
+                    />
+                    {step < 3 ? <StepperSeparator /> : null}
+                  </StepperItem>
+                ))}
+              </StepperNav>
+            </Stepper>
+          </CardHeader>
+        ) : null}
 
-      {state !== null && stepByPhase[state.phase] > 0 ? (
-        <Stepper value={stepByPhase[state.phase]}>
-          <StepperNav>
-            {[1, 2, 3].map((step) => (
-              <StepperItem key={step} step={step} last={step === 3}>
-                <StepperIndicator
-                  size={8}
-                  inactiveColor="muted-foreground-30"
-                />
-                {step < 3 ? <StepperSeparator /> : null}
-              </StepperItem>
-            ))}
-          </StepperNav>
-        </Stepper>
-      ) : null}
+        <CardContent gap={16}>
+          {state === null ? (
+            <YStack gap="3">
+              {introSteps.map(({ label, icon }, index) => (
+                <XStack key={label} items="center" gap="3">
+                  <YStack
+                    w={32}
+                    h={32}
+                    shrink={0}
+                    items="center"
+                    justify="center"
+                    rounded="full"
+                    bg="muted"
+                  >
+                    <Text fontWeight="600">{index + 1}</Text>
+                  </YStack>
+                  <Icon icon={icon} color="muted-foreground" />
+                  <Text flex={1} fontSize="sm">
+                    {t(label)}
+                  </Text>
+                </XStack>
+              ))}
+              <Alert variant="warning" icon={TriangleAlert}>
+                <AlertTitle>
+                  {t("accountTransfer.source.warning.title")}
+                </AlertTitle>
+                <AlertDescription>
+                  {t("accountTransfer.source.warning.description")}
+                </AlertDescription>
+              </Alert>
+              {accessControlOn ? (
+                <Text fontSize="sm" color="muted-foreground">
+                  {t("accountTransfer.source.permissions")}
+                </Text>
+              ) : null}
+            </YStack>
+          ) : null}
 
-      {state === null ? (
-        <YStack gap="3">
-          {(
-            [
-              "accountTransfer.source.step.scan",
-              "accountTransfer.source.step.code",
-              "accountTransfer.source.step.transfer",
-            ] as const
-          ).map((label, index) => (
-            <Text key={label}>{`${index + 1}. ${t(label)}`}</Text>
-          ))}
-          <Alert variant="warning" icon={TriangleAlert}>
-            <AlertTitle>{t("accountTransfer.source.warning.title")}</AlertTitle>
-            <AlertDescription>
-              {t("accountTransfer.source.warning.description")}
-            </AlertDescription>
-          </Alert>
-          {accessControlOn ? (
-            <Text color="muted-foreground">
-              {t("accountTransfer.source.permissions")}
+          {state?.phase === "waiting" ? (
+            <YStack gap="3" accessibilityLiveRegion="polite">
+              {qr(state.uri, 260)}
+              <Text>{t("accountTransfer.source.qr.instructions")}</Text>
+              <Text fontSize="sm" color="muted-foreground">
+                {t("accountTransfer.source.qr.reassurance")}
+              </Text>
+              <Text color="muted-foreground">
+                {t("accountTransfer.source.qr.validFor", {
+                  time: formatCountdown(state.expiresAt - now),
+                })}
+              </Text>
+              <Text>{t("accountTransfer.source.qr.waiting")}</Text>
+            </YStack>
+          ) : null}
+
+          {state?.phase === "locked" ? (
+            <YStack gap="3" accessibilityLiveRegion="polite">
+              {state.uri !== null ? qr(state.uri, 160) : null}
+              <Text fontWeight="600">
+                {t("accountTransfer.source.code.connected")}
+              </Text>
+              <Field>
+                <FieldLabel>
+                  {t("accountTransfer.source.code.instructions")}
+                </FieldLabel>
+                {/* No auto-submit on the sixth digit: a typo would spend one of
+                three attempts. No one-time-code autofill either. */}
+                <InputOTP
+                  value={code}
+                  maxLength={TRANSFER_CODE_LENGTH}
+                  autoFocus
+                  accessibilityLabel={t("accountTransfer.source.code.label")}
+                  onChange={(next) => setCode(next.replace(/\D/gu, ""))}
+                >
+                  {codeGroups.map((group, index) => (
+                    <Fragment key={group.join()}>
+                      {index > 0 ? <InputOTPSeparator /> : null}
+                      <InputOTPGroup>
+                        {group.map((slot, position) => (
+                          <InputOTPSlot
+                            key={slot}
+                            index={slot}
+                            first={position === 0}
+                            last={position === group.length - 1}
+                            invalid={state.mismatch}
+                            size="lg"
+                          />
+                        ))}
+                      </InputOTPGroup>
+                    </Fragment>
+                  ))}
+                </InputOTP>
+                <FieldDescription>
+                  {t("accountTransfer.source.code.warning")}
+                </FieldDescription>
+                <FieldError>
+                  {state.mismatch
+                    ? t("accountTransfer.source.code.mismatch", {
+                        count: state.attemptsLeft,
+                      })
+                    : undefined}
+                </FieldError>
+              </Field>
+              <Button
+                iconStart={Check}
+                label={t("accountTransfer.source.code.confirm")}
+                disabled={code.length !== TRANSFER_CODE_LENGTH}
+                onPress={() => {
+                  sessionRef.current?.submitCode(code)
+                  // A mismatch starts the next attempt from an empty input.
+                  setCode("")
+                }}
+              />
+            </YStack>
+          ) : null}
+
+          {state?.phase === "expired" ? (
+            <Text accessibilityLiveRegion="polite">
+              {t("accountTransfer.source.qr.expired")}
             </Text>
           ) : null}
-        </YStack>
-      ) : null}
 
-      {state?.phase === "waiting" ? (
-        <YStack gap="3" accessibilityLiveRegion="polite">
-          {qr(state.uri, 260)}
-          <Text>{t("accountTransfer.source.qr.instructions")}</Text>
-          <Text fontSize="sm" color="muted-foreground">
-            {t("accountTransfer.source.qr.reassurance")}
-          </Text>
-          <Text color="muted-foreground">
-            {t("accountTransfer.source.qr.validFor", {
-              time: formatCountdown(state.expiresAt - now),
-            })}
-          </Text>
-          <Text>{t("accountTransfer.source.qr.waiting")}</Text>
-        </YStack>
-      ) : null}
+          {state?.phase === "sending" ? (
+            <Text accessibilityLiveRegion="polite">
+              {t("accountTransfer.source.sending")}
+            </Text>
+          ) : null}
 
-      {state?.phase === "locked" ? (
-        <YStack gap="3" accessibilityLiveRegion="polite">
-          {state.uri !== null ? qr(state.uri, 160) : null}
-          <Text fontWeight="600">
-            {t("accountTransfer.source.code.connected")}
-          </Text>
-          <Field>
-            <FieldLabel>
-              {t("accountTransfer.source.code.instructions")}
-            </FieldLabel>
-            {/* No auto-submit on the sixth digit: a typo would spend one of
-                three attempts. No one-time-code autofill either. */}
-            <InputOTP
-              value={code}
-              maxLength={TRANSFER_CODE_LENGTH}
-              autoFocus
-              accessibilityLabel={t("accountTransfer.source.code.label")}
-              onChange={(next) => setCode(next.replace(/\D/gu, ""))}
-            >
-              {codeGroups.map((group, index) => (
-                <Fragment key={group.join()}>
-                  {index > 0 ? <InputOTPSeparator /> : null}
-                  <InputOTPGroup>
-                    {group.map((slot, position) => (
-                      <InputOTPSlot
-                        key={slot}
-                        index={slot}
-                        first={position === 0}
-                        last={position === group.length - 1}
-                        invalid={state.mismatch}
-                        size="lg"
-                      />
-                    ))}
-                  </InputOTPGroup>
-                </Fragment>
-              ))}
-            </InputOTP>
-            <FieldDescription>
-              {t("accountTransfer.source.code.warning")}
-            </FieldDescription>
-            <FieldError>
-              {state.mismatch
-                ? t("accountTransfer.source.code.mismatch", {
-                    count: state.attemptsLeft,
-                  })
-                : undefined}
-            </FieldError>
-          </Field>
-          <Button
-            size="lg"
-            label={t("accountTransfer.source.code.confirm")}
-            disabled={code.length !== TRANSFER_CODE_LENGTH}
-            onPress={() => {
-              sessionRef.current?.submitCode(code)
-              // A mismatch starts the next attempt from an empty input.
-              setCode("")
-            }}
-          />
-        </YStack>
-      ) : null}
+          {state?.phase === "done" ? (
+            <Alert variant="success" icon={Check}>
+              <AlertTitle>{t("accountTransfer.source.done.title")}</AlertTitle>
+              <AlertDescription>
+                {t(
+                  state.acked
+                    ? "accountTransfer.source.done.acked"
+                    : "accountTransfer.source.done.sent"
+                )}
+                {accessControlOn
+                  ? ` ${t("accountTransfer.source.permissions")}`
+                  : ""}
+              </AlertDescription>
+            </Alert>
+          ) : null}
 
-      {state?.phase === "expired" ? (
-        <Text accessibilityLiveRegion="polite">
-          {t("accountTransfer.source.qr.expired")}
-        </Text>
-      ) : null}
-
-      {state?.phase === "sending" ? (
-        <Text accessibilityLiveRegion="polite">
-          {t("accountTransfer.source.sending")}
-        </Text>
-      ) : null}
-
-      {state?.phase === "done" ? (
-        <YStack gap="2" accessibilityLiveRegion="polite">
-          <Text fontWeight="600">{t("accountTransfer.source.done.title")}</Text>
-          <Text>
-            {t(
-              state.acked
-                ? "accountTransfer.source.done.acked"
-                : "accountTransfer.source.done.sent"
-            )}
-            {accessControlOn
-              ? ` ${t("accountTransfer.source.permissions")}`
-              : ""}
-          </Text>
-        </YStack>
-      ) : null}
-
-      {state?.phase === "failed" ? (
-        <Alert variant="destructive" icon={TriangleAlert}>
-          <AlertTitle>{t("accountTransfer.source.failed.title")}</AlertTitle>
-          <AlertDescription>
-            {`${t(failureKeys[state.reason])} ${t("accountTransfer.source.failed.nothingSent")}`}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      {state === null ? (
-        <>
-          <Button
-            size="lg"
-            label={t("accountTransfer.source.start")}
-            onPress={() => {
-              void start()
-            }}
-          />
-          <Button
-            size="lg"
-            label={t("accountTransfer.cancel")}
-            variant="outline"
-            onPress={close}
-          />
-        </>
-      ) : null}
-      {state?.phase === "waiting" || state?.phase === "locked" ? (
-        <Button
-          size="lg"
-          label={t("accountTransfer.cancel")}
-          variant="outline"
-          onPress={close}
-        />
-      ) : null}
-      {state?.phase === "expired" ? (
-        <Button
-          size="lg"
-          label={t("accountTransfer.source.qr.renew")}
-          onPress={() => {
-            void start()
-          }}
-        />
-      ) : null}
-      {state?.phase === "failed" ? (
-        <>
-          <Button
-            size="lg"
-            label={t("accountTransfer.source.startAgain")}
-            onPress={() => {
-              void start()
-            }}
-          />
-          <Button
-            size="lg"
-            label={t("accountTransfer.close")}
-            variant="outline"
-            onPress={close}
-          />
-        </>
-      ) : null}
-      {state?.phase === "done" ? (
-        <Button size="lg" label={t("accountTransfer.done")} onPress={close} />
-      ) : null}
+          {state?.phase === "failed" ? (
+            <Alert variant="destructive" icon={TriangleAlert}>
+              <AlertTitle>
+                {t("accountTransfer.source.failed.title")}
+              </AlertTitle>
+              <AlertDescription>
+                {`${t(failureKeys[state.reason])} ${t("accountTransfer.source.failed.nothingSent")}`}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </CardContent>
+        <CardFooter justify="flex-end" flexWrap="wrap" gap={8}>
+          {state === null ? (
+            <>
+              <Button
+                label={t("accountTransfer.cancel")}
+                variant="outline"
+                onPress={close}
+              />
+              <Button
+                iconStart={QrCodeIcon}
+                label={t("accountTransfer.source.start")}
+                onPress={() => {
+                  void start()
+                }}
+              />
+            </>
+          ) : null}
+          {state?.phase === "waiting" || state?.phase === "locked" ? (
+            <Button
+              label={t("accountTransfer.cancel")}
+              variant="outline"
+              onPress={close}
+            />
+          ) : null}
+          {state?.phase === "expired" ? (
+            <Button
+              iconStart={RotateCcw}
+              label={t("accountTransfer.source.qr.renew")}
+              onPress={() => {
+                void start()
+              }}
+            />
+          ) : null}
+          {state?.phase === "failed" ? (
+            <>
+              <Button
+                label={t("accountTransfer.close")}
+                variant="outline"
+                onPress={close}
+              />
+              <Button
+                iconStart={RotateCcw}
+                label={t("accountTransfer.source.startAgain")}
+                onPress={() => {
+                  void start()
+                }}
+              />
+            </>
+          ) : null}
+          {state?.phase === "done" ? (
+            <Button label={t("accountTransfer.done")} onPress={close} />
+          ) : null}
+        </CardFooter>
+      </Card>
     </Screen>
   )
 }

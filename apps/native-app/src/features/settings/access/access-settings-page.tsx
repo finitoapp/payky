@@ -3,11 +3,24 @@ import { accessControlQuery } from "@payky/core/modules/access/access-queries"
 import { decodePinHash } from "@payky/core/modules/access/access-utils"
 import { devicesQuery } from "@payky/core/modules/device/device-queries"
 import { router } from "expo-router"
+import KeyRound from "lucide-react-native/icons/key-round"
+import MonitorSmartphone from "lucide-react-native/icons/monitor-smartphone"
+import ShieldCheck from "lucide-react-native/icons/shield-check"
+import ShieldOff from "lucide-react-native/icons/shield-off"
 import { useState } from "react"
-import { Text, YStack } from "tamagui"
+import { XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -38,18 +51,20 @@ function AccessSettings() {
   return (
     <Screen>
       <FadeHeader title={t("access.title")} />
-      {mode === "wizard" && !enabled ? (
-        <TurnOnWizard hasPin={hasPin} onDone={toView} />
-      ) : mode === "changePin" ? (
-        <ChangePinCard onDone={toView} />
-      ) : (
-        <StatusCard
-          enabled={enabled}
-          onTurnOn={() => setMode("wizard")}
-          onChangePin={() => setMode("changePin")}
-        />
-      )}
-      {mode === "wizard" && !enabled ? null : <DevicesCard />}
+      <YStack gap="5">
+        {mode === "wizard" && !enabled ? (
+          <TurnOnWizard hasPin={hasPin} onDone={toView} />
+        ) : mode === "changePin" ? (
+          <ChangePinCard onDone={toView} />
+        ) : (
+          <StatusCard
+            enabled={enabled}
+            onTurnOn={() => setMode("wizard")}
+            onChangePin={() => setMode("changePin")}
+          />
+        )}
+        {mode === "wizard" && !enabled ? null : <DevicesCard />}
+      </YStack>
     </Screen>
   )
 }
@@ -77,32 +92,42 @@ function StatusCard({
   }
 
   return (
-    <YStack gap="3">
-      <Text fontSize="xl" fontWeight="700">
-        {t(enabled ? "access.status.on" : "access.status.off")}
-      </Text>
-      <Text color="muted-foreground">{t("access.description")}</Text>
-      {enabled ? (
-        <>
-          <Button
-            size="lg"
-            variant="outline"
-            label={t("access.changePin")}
-            onPress={onChangePin}
+    <Card>
+      <CardHeader>
+        <XStack items="center" gap="2">
+          <Icon
+            icon={enabled ? ShieldCheck : ShieldOff}
+            color={enabled ? "primary" : "muted-foreground"}
+            size={20}
           />
-          <Button
-            size="lg"
-            variant="outline"
-            label={t("access.turnOff")}
-            onPress={() => {
-              void turnOff()
-            }}
-          />
-        </>
-      ) : (
-        <Button size="lg" label={t("access.turnOn")} onPress={onTurnOn} />
-      )}
-    </YStack>
+          <CardTitle>
+            {t(enabled ? "access.status.on" : "access.status.off")}
+          </CardTitle>
+        </XStack>
+        <CardDescription>{t("access.description")}</CardDescription>
+      </CardHeader>
+      <CardFooter flexWrap="wrap" justify="flex-end" gap={8}>
+        {enabled ? (
+          <>
+            <Button
+              variant="outline"
+              iconStart={KeyRound}
+              label={t("access.changePin")}
+              onPress={onChangePin}
+            />
+            <Button
+              variant="outline"
+              label={t("access.turnOff")}
+              onPress={() => {
+                void turnOff()
+              }}
+            />
+          </>
+        ) : (
+          <Button label={t("access.turnOn")} onPress={onTurnOn} />
+        )}
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -112,23 +137,29 @@ function DevicesCard() {
   const { data: devices } = useEvoluQuery(devicesQuery)
 
   return (
-    <YStack gap="3">
-      <Text fontWeight="700">{t("access.devices.title")}</Text>
-      <Text color="muted-foreground">{t("access.devices.description")}</Text>
-      {devices.map((device) => (
-        <DeviceItem
-          key={device.id}
-          device={device}
-          thisDevice={device.id === deviceId}
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("access.devices.title")}</CardTitle>
+        <CardDescription>{t("access.devices.description")}</CardDescription>
+      </CardHeader>
+      <CardContent gap={12}>
+        {devices.map((device) => (
+          <DeviceItem
+            key={device.id}
+            device={device}
+            thisDevice={device.id === deviceId}
+          />
+        ))}
+      </CardContent>
+      <CardFooter justify="flex-end">
+        {/* Sends this account to the new device by QR (account/0001). */}
+        <Button
+          variant="outline"
+          iconStart={MonitorSmartphone}
+          label={t("access.devices.add")}
+          onPress={() => router.push("/settings/access/add-device")}
         />
-      ))}
-      {/* Sends this account to the new device by QR (account/0001). */}
-      <Button
-        size="lg"
-        variant="outline"
-        label={t("access.devices.add")}
-        onPress={() => router.push("/settings/access/add-device")}
-      />
-    </YStack>
+      </CardFooter>
+    </Card>
   )
 }

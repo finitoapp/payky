@@ -109,6 +109,17 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "pending",
   },
   {
+    native: "src/components/list-skeleton.tsx",
+    web: ["apps/web-app/src/components/list-skeleton.tsx"],
+    status: "matched",
+    allowedDifferences: {
+      VerticalNavShell:
+        "web shares the shell as verticalNavShellClassName; RN has no class names, so it is a styled component",
+      VerticalNavTitle:
+        "web shares the title as verticalNavTitleClassName; same reason",
+    },
+  },
+  {
     native: "src/components/option-toggle-group.tsx",
     web: ["apps/web-app/src/components/option-toggle-group.tsx"],
     status: "matched",
@@ -151,6 +162,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/components/table-tile-shell.tsx",
     web: ["apps/web-app/src/features/shared/table-tile.tsx"],
     status: "pending",
+  },
+  {
+    native: "src/components/vertical-nav.tsx",
+    web: ["apps/web-app/src/components/vertical-nav.tsx"],
+    status: "matched",
   },
   {
     native: "src/features/activity/activity-parts.tsx",

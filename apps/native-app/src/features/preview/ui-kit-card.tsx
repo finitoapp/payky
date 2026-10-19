@@ -5,6 +5,7 @@ import Plus from "lucide-react-native/icons/plus"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Text, View } from "tamagui"
+import { ListSkeleton } from "../../components/list-skeleton.tsx"
 import { OptionToggleGroup } from "../../components/option-toggle-group.tsx"
 import {
   Alert,
@@ -93,6 +94,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "../../components/ui/toggle-group.tsx"
+import { VerticalNav } from "../../components/vertical-nav.tsx"
 
 const variants = [
   "default",
@@ -319,6 +321,24 @@ export function UiKitCard() {
           <AlertDescription>Alert description</AlertDescription>
         </Alert>
       ))}
+      <VerticalNav
+        title="VERTICAL NAV"
+        items={[
+          {
+            kind: "button",
+            label: "Button row",
+            icon: <Icon icon={Plus} size={20} color="muted-foreground" />,
+          },
+          {
+            kind: "static",
+            label: "Static row with action",
+            action: <Badge label="Badge" />,
+          },
+          { kind: "href", label: "External link", href: "https://payky.me" },
+        ]}
+      />
+      <VerticalNav items={[]} empty="Empty list" />
+      <ListSkeleton rows={3} title="LIST SKELETON" />
       <Stepper value={2}>
         <StepperNav>
           {[1, 2, 3].map((step) => (

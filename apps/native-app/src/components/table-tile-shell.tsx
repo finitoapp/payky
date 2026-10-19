@@ -1,6 +1,6 @@
 import Table2 from "lucide-react-native/icons/table-2"
 import type { ReactNode } from "react"
-import { Text, View, XStack } from "tamagui"
+import { type GetProps, Text, View, XStack } from "tamagui"
 import { fontSize, fontWeight } from "../theme/tokens.ts"
 import { Card } from "./ui/card.tsx"
 import { Icon } from "./ui/icon.tsx"
@@ -27,7 +27,8 @@ export function TableTileShell({
   selected = false,
   icon = <Icon icon={Table2} size={20} color="muted-foreground" />,
   children,
-}: {
+  ...cardProps
+}: Omit<GetProps<typeof Card>, "children"> & {
   /** Already translated or user-entered. */
   readonly name: string
   readonly subtitle?: string
@@ -55,6 +56,7 @@ export function TableTileShell({
             : "card-ring"
       }
       bg={occupied ? (attention ? "info-10" : "primary-10") : "transparent"}
+      {...cardProps}
     >
       <XStack items="flex-start" justify="space-between" gap={8}>
         <View shrink={1} minW={0}>

@@ -13,11 +13,11 @@ import {
 import { router } from "expo-router"
 import { atom, type PrimitiveAtom, useAtomValue, useSetAtom } from "jotai"
 import { useRef, useState } from "react"
-import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 
 type AmountInputAtom = PrimitiveAtom<string>
 
@@ -26,6 +26,13 @@ type AmountInputAtom = PrimitiveAtom<string>
  * (AGENTS.md; web's `TerminalPaymentKeypad` has the measurement), so a key
  * press re-renders only the display and the Charge button, not the keys.
  * `useState`, not `useMemo`: React may discard a memo and clear the amount.
+ *
+ * Drawn as web's `TerminalPaymentKeypad`: a spacer, the amount (`text-6xl
+ * font-semibold tabular-nums`), the 3-column grid of round ghost keys
+ * (`text-3xl`, rows `gap-y-10` around keys that overlap by `-m-6`) and the
+ * round outline Charge button (`h-14 rounded-full text-base font-bold`),
+ * spread over the height. Web's press bubble and amount bounce are motion
+ * effects left out; a key shows the ghost press tint instead.
  */
 export function AmountKeypad({
   currency,
@@ -37,7 +44,8 @@ export function AmountKeypad({
   const [amountInputAtom] = useState(() => atom(""))
 
   return (
-    <YStack flex={1} justify="space-between" gap="4">
+    <YStack flex={1} justify="space-between">
+      <YStack />
       <AmountDisplay amountInputAtom={amountInputAtom} currency={currency} />
       <Keys amountInputAtom={amountInputAtom} currency={currency} />
       <ChargeButton
@@ -60,11 +68,12 @@ function AmountDisplay({
   const locale = useLocale()
 
   return (
-    <YStack flex={1} items="center" justify="center">
+    <YStack items="center">
       <Text
         accessibilityRole="header"
-        fontSize={48}
-        fontWeight="600"
+        fontSize={60}
+        fontWeight={fontWeight.semibold}
+        fontVariant={["tabular-nums"]}
         adjustsFontSizeToFit
         numberOfLines={1}
       >
@@ -98,30 +107,27 @@ function Keys({
   )
 
   return (
-    <YStack gap="2">
+    <YStack gap={16}>
       {rows.map((row) => (
-        <XStack key={row.join("")} gap="2">
+        <XStack key={row.join("")}>
           {row.map((key) => (
-            <Pressable
+            <Button
               key={key}
-              accessibilityRole="button"
+              variant="ghost"
+              flex={1}
+              h={72}
+              rounded={radius.full}
               accessibilityLabel={label(key)}
               onPress={() => {
                 setAmountInput((current) =>
                   applyAmountKey(current, key, currency)
                 )
               }}
-              style={{
-                flex: 1,
-                minHeight: 72,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
             >
-              <Text fontSize={30}>
-                {key === "." ? decimalSeparator : key === "<" ? "⌫" : key}
+              <Text fontSize={fontSize["3xl"]}>
+                {key === "." ? decimalSeparator : key}
               </Text>
-            </Pressable>
+            </Button>
           ))}
         </XStack>
       ))}
@@ -173,13 +179,19 @@ function ChargeButton({
 
   return (
     <Button
-      size="lg"
-      label={t("home.pay")}
+      variant="outline"
+      h={56}
+      rounded={radius.full}
+      accessibilityLabel={t("home.pay")}
       pending={pending}
       disabled={amount === null}
       onPress={() => {
         if (amount !== null) void charge(amount)
       }}
-    />
+    >
+      <Text fontSize={fontSize.base} fontWeight={fontWeight.bold}>
+        {t("home.pay")}
+      </Text>
+    </Button>
   )
 }

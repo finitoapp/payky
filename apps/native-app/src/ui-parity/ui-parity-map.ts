@@ -834,17 +834,21 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/terminal-home/terminal-payment-keypad.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/terminal-home/pos-overview-page.tsx",
     web: ["apps/web-app/src/features/terminal-home/pos-overview-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Button:
+        "web draws its new-bill links as a Link styled with buttonVariants; native has no Link element, so they are ui/button",
+    },
   },
   {
     native: "src/features/terminal-home/terminal-home-page.tsx",
     web: ["apps/web-app/src/features/terminal-home/terminal-home-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/withdraw/cashu-withdraw-form-step.tsx",

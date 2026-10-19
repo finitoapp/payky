@@ -1,6 +1,7 @@
 import Search from "lucide-react-native/icons/search"
 import X from "lucide-react-native/icons/x"
-import { View } from "tamagui"
+import { useState } from "react"
+import { XStack } from "tamagui"
 import { fontSize, radius } from "../theme/tokens.ts"
 import { Button } from "./ui/button.tsx"
 import { Icon } from "./ui/icon.tsx"
@@ -14,6 +15,12 @@ import { Input } from "./ui/input.tsx"
  * Tailwind mirrored: the input `h-12 bg-card pl-12 text-base`, the icon
  * `left-4 size-5 text-muted-foreground`, the clear button `size="icon-sm"
  * right-2 rounded-full`.
+ *
+ * Native difference: web overlays the icon and pads the input past it. On
+ * Android the input's left padding did not take effect and the text ran
+ * under the icon, so the row draws the frame and lays the icon, the input
+ * and the clear button side by side; the border turns `ring` while the input
+ * has focus, as the kit Input's own border does.
  */
 export function SearchInput({
   value,
@@ -27,13 +34,24 @@ export function SearchInput({
   readonly placeholder: string
   readonly clearAriaLabel: string
 }) {
+  const [focused, setFocused] = useState(false)
   return (
-    <View>
+    <XStack
+      h={48}
+      items="center"
+      gap={2}
+      pl={16}
+      pr={8}
+      rounded={radius.lg}
+      borderWidth={1}
+      borderColor={focused ? "ring" : "input"}
+      bg="card"
+    >
+      <Icon icon={Search} size={20} color="muted-foreground" />
       <Input
-        h={48}
-        bg="card"
-        pl={48}
-        pr={44}
+        flex={1}
+        borderWidth={0}
+        bg="transparent"
         fontSize={fontSize.base}
         value={value}
         placeholder={placeholder}
@@ -43,29 +61,19 @@ export function SearchInput({
         autoCapitalize="none"
         returnKeyType="search"
         onChangeText={onChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
       />
-      <View
-        position="absolute"
-        t={0}
-        b={0}
-        l={16}
-        justify="center"
-        pointerEvents="none"
-      >
-        <Icon icon={Search} size={20} color="muted-foreground" />
-      </View>
       {value === "" ? null : (
-        <View position="absolute" t={0} b={0} r={8} justify="center">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            rounded={radius.full}
-            accessibilityLabel={clearAriaLabel}
-            iconStart={X}
-            onPress={() => onChange("")}
-          />
-        </View>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          rounded={radius.full}
+          accessibilityLabel={clearAriaLabel}
+          iconStart={X}
+          onPress={() => onChange("")}
+        />
       )}
-    </View>
+    </XStack>
   )
 }

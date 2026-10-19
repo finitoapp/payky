@@ -1,7 +1,13 @@
-import type { EetError, EetSubmitOutcome, Result } from "@finitoapp/eet-client"
+import type {
+  EetError,
+  EetSigner,
+  EetSubmitOutcome,
+  Result,
+} from "@finitoapp/eet-client"
 
 import type { DateDep, FetchDep } from "../../deps.ts"
 import type { EetEnvironment, EetWarning } from "../../modules/eet/eet-types.ts"
+import type { EetNativeCrypto } from "./eet-certificate.ts"
 
 export interface EetReceipt {
   readonly eic: string
@@ -173,14 +179,41 @@ const requestBodyText = (body: BodyInit | null | undefined): string | null => {
   return null
 }
 
+/**
+ * The request signer for the stored key: Web Crypto's `CryptoKey`, or
+ * Quick Crypto's key through `native`. `null` when the key cannot sign.
+ */
+const createSigner = async (
+  certificate: EetSigningCertificate,
+  native: EetNativeCrypto | undefined,
+  importEetSigningKey: (pkcs8: Uint8Array) => Promise<CryptoKey | null>
+): Promise<EetSigner | null> => {
+  if (native !== undefined) {
+    const privateKey = native.importPrivateKey(certificate.privateKeyPkcs8)
+    return privateKey.ok
+      ? native.createSigner(certificate.certificateDer, privateKey.value)
+      : null
+  }
+  const [{ createCryptoKeySigner }, privateKey] = await Promise.all([
+    import("@finitoapp/eet-client"),
+    importEetSigningKey(certificate.privateKeyPkcs8),
+  ])
+  return privateKey === null
+    ? null
+    : createCryptoKeySigner(certificate.certificateDer, privateKey)
+}
+
 export const createEetApiDep = (
   deps: FetchDep & DateDep,
   {
     productionUrl,
     timeoutMs = EET_REQUEST_TIMEOUT_MS,
+    native,
   }: {
     readonly productionUrl?: string | undefined
     readonly timeoutMs?: number
+    /** The native app's Quick Crypto; see `EetNativeCrypto`. */
+    readonly native?: EetNativeCrypto | undefined
   } = {}
 ): EetApiDep => ({
   eetApi: {
@@ -231,8 +264,12 @@ export const createEetApiDep = (
         })
       }
 
-      const privateKey = await importEetSigningKey(certificate.privateKeyPkcs8)
-      if (privateKey === null) {
+      const signer = await createSigner(
+        certificate,
+        native,
+        importEetSigningKey
+      )
+      if (signer === null) {
         return failedLocally({
           type: "rejected",
           errorType: "EetSignerError",
@@ -242,21 +279,22 @@ export const createEetApiDep = (
 
       let rawRequest: string | null = null
       let rawResponse: string | null = null
-      const client = sdk.createEetClient({
+      const options = {
         endpoint,
-        signer: sdk.createCryptoKeySigner(
-          certificate.certificateDer,
-          privateKey
-        ),
-        responseSignatureVerifier: createEetResponseVerifier(deps),
-        fetch: async (input, init) => {
+        signer,
+        responseSignatureVerifier: createEetResponseVerifier(deps, native),
+        fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
           rawRequest = requestBodyText(init?.body)
           const response = await deps.fetch(input, init)
           rawResponse = await response.clone().text()
           return response
         },
         timeoutMs,
-      })
+      }
+      const client =
+        native === undefined
+          ? sdk.createEetClient(options)
+          : native.createEetClient(options)
       const result = await client.submit(data.value, {
         firstSubmission,
         verification,

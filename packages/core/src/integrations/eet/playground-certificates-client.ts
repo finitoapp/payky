@@ -9,6 +9,7 @@ import { defineError } from "@payky/core/error"
 import {
   type EetCertificateError,
   type EetCertificateFile,
+  type EetNativeCrypto,
   readEetCertificateFile,
 } from "@payky/core/integrations/eet/eet-certificate"
 import { EetBase64Schema } from "@payky/core/modules/eet/eet-types"
@@ -61,7 +62,9 @@ export type PlaygroundCertificatesError =
 /** `url` is this app's own `/api/eet/playground-certificates`, absolute on native. */
 export const fetchPlaygroundCertificates =
   (
-    url: string
+    url: string,
+    /** The native app's Quick Crypto; see `EetNativeCrypto`. */
+    native?: EetNativeCrypto
   ): Task<
     ReadonlyArray<EetCertificateFile>,
     PlaygroundCertificatesError,
@@ -103,6 +106,7 @@ export const fetchPlaygroundCertificates =
         file: eetBase64ToBytes(p12Base64),
         password,
         now,
+        native,
       })
       if (!file.ok) {
         return err(

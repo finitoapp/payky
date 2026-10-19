@@ -3,11 +3,43 @@ import {
   parsePkcs12,
   pickPrivateKeyCertificate,
 } from "@finitoapp/eet-client/pkcs12"
+import type {
+  EetClient,
+  EetClientOptions,
+  Result as EetResult,
+  EetSigner,
+  Pkcs12Contents,
+  Pkcs12Error,
+  ResponseSignatureVerifier,
+} from "@finitoapp/eet-client/react-native"
 import { AsnConvert } from "@peculiar/asn1-schema"
 import { Certificate } from "@peculiar/asn1-x509"
 
 import { defineError } from "../../error.ts"
 import { type EetEic, EetEicSchema } from "../../modules/eet/eet-types.ts"
+
+/**
+ * eet-client's React Native crypto (`createReactNativeCrypto(QuickCrypto)`),
+ * which the native app passes in so EET runs on Quick Crypto explicitly
+ * rather than on a global `crypto.subtle`. Without it, the EET helpers here
+ * use Web Crypto, as the browser and Node do.
+ */
+export interface EetNativeCrypto {
+  // Methods rather than function properties, so the backend's own key types
+  // stay assignable to `unknown` here.
+  parsePkcs12(
+    data: Uint8Array,
+    password: string
+  ): Promise<EetResult<Pkcs12Contents, Pkcs12Error>>
+  importPrivateKey(pkcs8: Uint8Array): EetResult<unknown, unknown>
+  importPublicKey(spki: Uint8Array): EetResult<unknown, unknown>
+  createSigner(certificateDer: Uint8Array, privateKey: unknown): EetSigner
+  createResponseSignatureVerifier(
+    publicKey: unknown,
+    trustedCertificateDer: Uint8Array
+  ): ResponseSignatureVerifier
+  createEetClient(options: Omit<EetClientOptions, "cryptoBackend">): EetClient
+}
 
 export const RSA_SHA256 = {
   name: "RSASSA-PKCS1-v1_5",
@@ -127,12 +159,14 @@ export const readEetCertificateFile = async ({
   file,
   password,
   now,
+  native,
 }: {
   readonly file: Uint8Array
   readonly password: string
   readonly now: Date
+  readonly native?: EetNativeCrypto | undefined
 }): Promise<Result<EetCertificateFile, EetCertificateError>> => {
-  const contents = await parsePkcs12(file, password)
+  const contents = await (native?.parsePkcs12 ?? parsePkcs12)(file, password)
   if (!contents.ok) {
     return err(
       contents.error.type === "Pkcs12InvalidMacError"
@@ -159,9 +193,11 @@ export const readEetCertificateFile = async ({
     return err(createEetCertificateNotYetValidError({ validFrom }))
   }
 
-  if ((await importEetSigningKey(privateKey.der)) === null) {
-    return err(createEetCertificateUnreadableError())
-  }
+  const canSign =
+    native === undefined
+      ? (await importEetSigningKey(privateKey.der)) !== null
+      : native.importPrivateKey(privateKey.der).ok
+  if (!canSign) return err(createEetCertificateUnreadableError())
 
   return ok({
     eic: eic.data,

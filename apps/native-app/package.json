@@ -15,6 +15,7 @@
     "@evolu/common": "8.23.0",
     "@evolu/react": "11.2.1",
     "@evolu/react-native": "16.1.6",
+    "@finitoapp/eet-client": "0.4.0",
     "@payky/app-shared": "workspace:*",
     "@payky/core": "workspace:*",
     "@sentry/react-native": "8.31.0",

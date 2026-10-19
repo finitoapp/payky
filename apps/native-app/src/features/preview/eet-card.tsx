@@ -1,8 +1,5 @@
 import { fetchAndValidateJson } from "@payky/core/deps"
-import {
-  importEetSigningKey,
-  readEetCertificateFile,
-} from "@payky/core/integrations/eet/eet-certificate"
+import { readEetCertificateFile } from "@payky/core/integrations/eet/eet-certificate"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createEetResponseVerifier } from "@payky/core/integrations/eet/eet-response-verifier"
 import { EetBase64Schema } from "@payky/core/modules/eet/eet-types"
@@ -21,6 +18,7 @@ import { z } from "zod"
 import { Button } from "../../components/ui/button.tsx"
 import { apiUrl } from "../../core/native-env.ts"
 import { nativeRun } from "../../core/native-runtime.ts"
+import { eetNativeCrypto } from "../../platform/eet-crypto.ts"
 import { createFetchDep } from "../../platform/native-deps.ts"
 
 const bytes = (text: string) => new TextEncoder().encode(text)
@@ -52,7 +50,7 @@ const crypto_ = async (lines: string[]) => {
     })
   )
   const read = (file: Uint8Array, password: string, at: Date) =>
-    readEetCertificateFile({ file, password, now: at })
+    readEetCertificateFile({ file, password, now: at, native: eetNativeCrypto })
   const good = await time("read p12", () => read(p12, PASSWORD, now))
   lines.push(
     good.ok
@@ -70,8 +68,8 @@ const crypto_ = async (lines: string[]) => {
   )
   lines.push(`expired: ${late.ok ? "ok?!" : late.error.type}`)
 
-  const key = await importEetSigningKey(cert.privateKeyPkcs8)
-  lines.push(`importEetSigningKey: ${key === null ? "null" : "ok"}`)
+  const key = eetNativeCrypto.importPrivateKey(cert.privateKeyPkcs8)
+  lines.push(`importPrivateKey: ${key.ok ? "ok" : key.error.type}`)
 
   // Verifier path, as eet-response-verifier.test.ts: a GFR-issued signer.
   const signer = await createTestCertificate({
@@ -88,7 +86,10 @@ const crypto_ = async (lines: string[]) => {
         data as BufferSource
       )
     )
-  const verifier = createEetResponseVerifier({ date: { now: () => now } })
+  const verifier = createEetResponseVerifier(
+    { date: { now: () => now } },
+    eetNativeCrypto
+  )
   const input = (signatureValue: Uint8Array) => ({
     raw: "",
     signature: {
@@ -152,6 +153,7 @@ const playground = async (lines: string[]) => {
     file: eetBase64ToBytes(first.p12Base64),
     password: archive.value.password,
     now,
+    native: eetNativeCrypto,
   })
   lines.push(
     `read ${first.fileName}: ${certificate.ok ? `ok ${certificate.value.eic}` : certificate.error.type} (${Date.now() - t1} ms)`
@@ -159,7 +161,7 @@ const playground = async (lines: string[]) => {
   if (!certificate.ok) return
   const { eetApi } = createEetApiDep(
     { ...createFetchDep(), date: { now: () => now } },
-    { productionUrl: undefined }
+    { productionUrl: undefined, native: eetNativeCrypto }
   )
   const t2 = Date.now()
   const submission = await eetApi.submit({

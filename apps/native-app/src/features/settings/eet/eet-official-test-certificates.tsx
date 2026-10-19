@@ -16,6 +16,7 @@ import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { eetNativeCrypto } from "../../../platform/eet-crypto.ts"
 
 /**
  * The sandbox's official test certificates, fetched only on request: the
@@ -38,7 +39,10 @@ export function EetOfficialTestCertificates() {
     queryFn: async () => {
       await using run = appRun()
       const result = await run(
-        fetchPlaygroundCertificates(apiUrl("/api/eet/playground-certificates"))
+        fetchPlaygroundCertificates(
+          apiUrl("/api/eet/playground-certificates"),
+          eetNativeCrypto
+        )
       )
       if (!result.ok) throw result.error
       return result.value

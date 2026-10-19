@@ -26,6 +26,7 @@ import { evoluAtom } from "../../atoms/evolu.ts"
 import { captureReportedError } from "../../core/error-reporting.ts"
 import { nativeEnv } from "../../core/native-env.ts"
 import { nativeConsole, nativeRun } from "../../core/native-runtime.ts"
+import { eetNativeCrypto } from "../../platform/eet-crypto.ts"
 import {
   createConnectivityDep,
   createFetchDep,
@@ -50,7 +51,10 @@ const createJobDeps = ({
     ...createConnectivityDep(),
     ...createEetApiDep(
       { ...dateDep, ...fetchDep },
-      { productionUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL }
+      {
+        productionUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL,
+        native: eetNativeCrypto,
+      }
     ),
     // The one lock authority of this JS runtime, shared with `nativeRun`.
     lockManager,

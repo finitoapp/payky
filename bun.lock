@@ -72,6 +72,7 @@
         "@evolu/common": "8.23.0",
         "@evolu/react": "11.2.1",
         "@evolu/react-native": "16.1.6",
+        "@finitoapp/eet-client": "0.4.0",
         "@payky/app-shared": "workspace:*",
         "@payky/core": "workspace:*",
         "@sentry/react-native": "8.31.0",
@@ -232,7 +233,7 @@
         "@cashu/cashu-ts": "4.11.0",
         "@evolu/common": "8.23.0",
         "@evolu/nodejs": "4.3.4",
-        "@finitoapp/eet-client": "0.3.0",
+        "@finitoapp/eet-client": "0.4.0",
         "@noble/hashes": "2.4.0",
         "@peculiar/asn1-schema": "2.11.0",
         "@peculiar/asn1-x509": "2.11.0",
@@ -728,7 +729,7 @@
 
     "@expo/xcpretty": ["@expo/xcpretty@4.4.7", "", { "dependencies": { "@babel/code-frame": "^7.20.0", "chalk": "^4.1.0", "js-yaml": "^4.1.0" }, "bin": { "excpretty": "build/cli.js" } }, "sha512-EbxYllZ7/ozONVZd425cm4XnolfW+AmSFT5aP7Jdno6oc3WrYQcHz2CO20z/2rwWwYgztmV2PXvYH+BQ8YFjqg=="],
 
-    "@finitoapp/eet-client": ["@finitoapp/eet-client@0.3.0", "", { "peerDependencies": { "zod": "^4.0.0" }, "optionalPeers": ["zod"] }, "sha512-LtoEiThFvBt8R3cU4+t2bRRbyldIMwZgqZSdrVct469Sg4Ml9sJRdDys2ZjAM9LkMdJXWLHnR9U+6v+B1J4onw=="],
+    "@finitoapp/eet-client": ["@finitoapp/eet-client@0.4.0", "", { "peerDependencies": { "react-native-quick-crypto": "^1.0.0", "zod": "^4.0.0" }, "optionalPeers": ["react-native-quick-crypto", "zod"] }, "sha512-ayeFPTrgvu5Oxf9jBqpWkCvzKesrzxDl3Gc457zxPVJ9g5R6ac6BuoXL+wWNKLywDuZ/aMGGjabfkUClqQLXFA=="],
 
     "@floating-ui/core": ["@floating-ui/core@1.8.0", "", { "dependencies": { "@floating-ui/utils": "^0.2.12" } }, "sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ=="],
 

@@ -12,6 +12,7 @@ import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
 import { evoluAtom } from "../atoms/evolu.ts"
 import { nativeEnv } from "../core/native-env.ts"
 import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
+import { eetNativeCrypto } from "../platform/eet-crypto.ts"
 import { createFetchDep } from "../platform/native-deps.ts"
 import { createSwitchioTerminalDep } from "../platform/switchio.ts"
 
@@ -45,7 +46,10 @@ function useAppRunDeps() {
       ...createSwitchioTerminalDep(),
       ...createEetApiDep(
         { ...dateDep, ...fetchDep },
-        { productionUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL }
+        {
+          productionUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL,
+          native: eetNativeCrypto,
+        }
       ),
       ...createNostrDep(nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS),
     }

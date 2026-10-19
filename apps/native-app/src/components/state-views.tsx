@@ -2,7 +2,7 @@ import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { ActivityIndicator } from "react-native"
 import { Text, YStack } from "tamagui"
 import { useTranslation } from "../hooks/use-translation.ts"
-import { AppButton } from "./app-button.tsx"
+import { Button } from "./ui/button.tsx"
 
 export function LoadingView() {
   return (
@@ -41,9 +41,10 @@ export function FailureView({
         {t(messageKey)}
       </Text>
       {onRetry === undefined ? null : (
-        <AppButton
+        <Button
+          size="lg"
           label={t("appError.tryAgain")}
-          variant="secondary"
+          variant="outline"
           onPress={onRetry}
         />
       )}

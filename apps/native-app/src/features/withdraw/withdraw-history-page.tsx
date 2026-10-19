@@ -18,9 +18,9 @@ import { Suspense } from "react"
 import { ActivityIndicator, FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -171,7 +171,8 @@ function WithdrawHistory({
 
   return (
     <YStack flex={1} gap="3">
-      <AppButton
+      <Button
+        size="lg"
         label={t("withdraw.history.new")}
         onPress={() => router.push(withdrawRoutes[method].new)}
       />

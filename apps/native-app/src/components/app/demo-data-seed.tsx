@@ -10,7 +10,7 @@ import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
-import { AppButton } from "../app-button.tsx"
+import { Button } from "../ui/button.tsx"
 
 /** The most history generated, from today back; stopping ends it sooner. */
 const maxHistoryDays = 90
@@ -139,9 +139,10 @@ export function DemoDataSeed() {
                   { done: String(state.done), total: String(state.total) }
                 )}
               </Text>
-              <AppButton
+              <Button
+                size="lg"
                 label={t("demoData.stop")}
-                variant="secondary"
+                variant="outline"
                 disabled={stopping}
                 onPress={() => {
                   stopRequested.current = true
@@ -150,7 +151,8 @@ export function DemoDataSeed() {
               />
             </>
           ) : (
-            <AppButton
+            <Button
+              size="lg"
               label={t("demoData.close")}
               onPress={() => setDismissed(true)}
             />

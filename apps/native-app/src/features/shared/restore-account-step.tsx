@@ -1,8 +1,8 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 /**
@@ -52,14 +52,16 @@ export function RestoreAccountStep({
       <Text fontSize="sm" color="muted-foreground">
         {t("settings.accounts.restore.mnemonic.description")}
       </Text>
-      <AppButton
+      <Button
+        size="lg"
         label={t(shown ? "passwordTextarea.hide" : "passwordTextarea.show")}
-        variant="secondary"
+        variant="outline"
         onPress={() => {
           setShown((current) => !current)
         }}
       />
-      <AppButton
+      <Button
+        size="lg"
         label={t("onboarding.restore.action")}
         pending={pending}
         onPress={() => {

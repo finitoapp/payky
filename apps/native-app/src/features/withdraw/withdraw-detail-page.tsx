@@ -33,10 +33,10 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
-import { AppButton } from "../../components/app-button.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useAsyncValue } from "../../hooks/use-async-value.ts"
@@ -137,7 +137,8 @@ function NewWithdrawalButton({ view }: { readonly view: WithdrawalView }) {
           {t("withdraw.detail.invoiceRenewHint")}
         </Text>
       ) : null}
-      <AppButton
+      <Button
+        size="lg"
         label={t("withdraw.detail.newWithdrawal")}
         onPress={() =>
           router.push(
@@ -227,15 +228,17 @@ function OnchainResolutionButtons({
         </Text>
       )}
       {offerNotSent ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("withdraw.detail.markNotSent")}
-          variant="secondary"
+          variant="outline"
           onPress={() => void resolve(false)}
         />
       ) : null}
-      <AppButton
+      <Button
+        size="lg"
         label={t("withdraw.detail.markSent")}
-        variant="secondary"
+        variant="outline"
         onPress={() => void resolve(true)}
       />
     </YStack>

@@ -25,7 +25,6 @@ import {
   evoluCounterAtom,
   reloadAppEvoluAtom,
 } from "../../atoms/evolu-counter.ts"
-import { AppButton } from "../../components/app-button.tsx"
 import {
   QR_SCAN_TYPES,
   ScanCodeScanner,
@@ -35,6 +34,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../../components/ui/alert.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
@@ -235,15 +235,17 @@ export function AccountTransferTarget({
       ) : null}
 
       {view.phase === "connecting" || view.phase === "code" ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountTransfer.cancel")}
-          variant="secondary"
+          variant="outline"
           onPress={cancelSession}
         />
       ) : null}
 
       {view.phase === "failed" ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountTransfer.target.scanAgain")}
           onPress={() => setView({ phase: "scan", error: null })}
         />

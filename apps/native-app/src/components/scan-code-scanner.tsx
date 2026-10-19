@@ -5,7 +5,7 @@ import { AppState, Linking } from "react-native"
 import { Text, View, YStack } from "tamagui"
 import { useTranslation } from "../hooks/use-translation.ts"
 import { scanPermissionView, shouldAcceptScan } from "../platform/scan-state.ts"
-import { AppButton } from "./app-button.tsx"
+import { Button } from "./ui/button.tsx"
 
 /** The retail symbologies web scans, plus QR for custom labels. */
 export const ALL_SCAN_TYPES: ReadonlyArray<BarcodeType> = [
@@ -88,7 +88,8 @@ export function ScanCodeScanner({
         <Text accessibilityRole="alert">
           {t("scanner.error.permissionDenied")}
         </Text>
-        <AppButton
+        <Button
+          size="lg"
           label={t(
             view === "request"
               ? "scanner.permission.grant"
@@ -124,8 +125,9 @@ export function ScanCodeScanner({
       ) : null}
       {active && ready ? (
         <View position="absolute" b="2" r="2">
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="outline"
             label={t(torchOn ? "scanner.torch.off" : "scanner.torch.on")}
             onPress={() => setTorchOn((on) => !on)}
           />

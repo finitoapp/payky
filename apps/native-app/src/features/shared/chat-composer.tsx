@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
+import { Button } from "../../components/ui/button.tsx"
 
 /**
  * The message field with Send (or Stop while a reply is coming); the draft is
@@ -39,7 +39,8 @@ export function ChatComposer({
         />
       </YStack>
       {stop === undefined ? (
-        <AppButton
+        <Button
+          size="lg"
           label={sendLabel}
           disabled={disabled || trimmed.length === 0}
           onPress={() => {
@@ -48,9 +49,10 @@ export function ChatComposer({
           }}
         />
       ) : (
-        <AppButton
+        <Button
+          size="lg"
           label={stop.label}
-          variant="secondary"
+          variant="outline"
           onPress={stop.onStop}
         />
       )}

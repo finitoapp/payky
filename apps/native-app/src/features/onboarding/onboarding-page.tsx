@@ -21,8 +21,8 @@ import { useAtom } from "jotai"
 import { useEffect, useRef, useState } from "react"
 import { BackHandler } from "react-native"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { Screen } from "../../components/screen.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useSetLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -212,7 +212,8 @@ export function OnboardingPage() {
               </Text>
             </YStack>
           ) : null}
-          <AppButton
+          <Button
+            size="lg"
             label={t(
               profilePublishFailed
                 ? "onboarding.businessName.retry"
@@ -226,9 +227,10 @@ export function OnboardingPage() {
             }}
           />
           {profilePublishFailed ? (
-            <AppButton
+            <Button
+              size="lg"
               label={t("onboarding.businessName.continueWithoutPublishing")}
-              variant="secondary"
+              variant="outline"
               disabled={finishing}
               onPress={() => {
                 void finish(true)
@@ -239,9 +241,10 @@ export function OnboardingPage() {
       ) : null}
 
       {stepIndex > 0 ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("onboarding.back")}
-          variant="secondary"
+          variant="ghost"
           disabled={finishing || restoring}
           onPress={() => {
             goBack()

@@ -33,8 +33,8 @@ import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
 import { reloadAppEvoluAtom } from "../../atoms/evolu-counter.ts"
-import { AppButton } from "../../components/app-button.tsx"
 import { Screen } from "../../components/screen.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { nativeRun } from "../../core/native-runtime.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -236,17 +236,23 @@ export function RestoreSyncPage() {
 
       <YStack gap="2">
         {settled ? (
-          <AppButton label={t("accountRestore.action.retry")} onPress={retry} />
+          <Button
+            size="lg"
+            label={t("accountRestore.action.retry")}
+            onPress={retry}
+          />
         ) : null}
-        <AppButton
+        <Button
+          size="lg"
           label={t("accountRestore.action.otherPhrase")}
-          variant="secondary"
+          variant="outline"
           onPress={switchToAnotherPhrase}
         />
         {settled ? (
-          <AppButton
+          <Button
+            size="lg"
             label={t("accountRestore.action.setupNew")}
-            variant="secondary"
+            variant="ghost"
             onPress={() => {
               void setUpAsNew()
             }}

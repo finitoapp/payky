@@ -18,11 +18,6 @@ export interface UiParityEntry {
 
 export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
-    native: "src/components/app-button.tsx",
-    web: ["apps/web-app/src/components/ui/button.tsx"],
-    status: "pending",
-  },
-  {
     native: "src/components/app/access-gate.tsx",
     web: ["apps/web-app/src/components/app/access-gate.tsx"],
     status: "pending",

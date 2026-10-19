@@ -21,12 +21,12 @@ import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@payky/core/modules/withdraw/withdr
 import { type ReactNode, useRef, useState } from "react"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
 import {
   QR_SCAN_TYPES,
   ScanCodeScanner,
 } from "../../components/scan-code-scanner.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useBtcFiat, useLnurlPayMetadata } from "../../hooks/use-btc-fiat.ts"
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts"
@@ -212,8 +212,9 @@ export function WithdrawFormFields({
             onDraftChange(draftWithDestination(draft, value))
           }}
         />
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("withdraw.destination.scan")}
           onPress={() => setScanning((on) => !on)}
         />
@@ -251,17 +252,19 @@ export function WithdrawFormFields({
         {invoiceAmountSats === null ? (
           <XStack gap="2">
             <XStack flex={1}>
-              <AppButton
+              <Button
+                size="lg"
                 label={t("withdraw.amount.unitSats")}
-                variant={draft.unit === "sats" ? "primary" : "secondary"}
+                variant={draft.unit === "sats" ? "default" : "outline"}
                 disabled={effectiveWithdrawAll}
                 onPress={() => update({ unit: "sats", amount: "" })}
               />
             </XStack>
             <XStack flex={1}>
-              <AppButton
+              <Button
+                size="lg"
                 label={fiat.currency}
-                variant={draft.unit === "fiat" ? "primary" : "secondary"}
+                variant={draft.unit === "fiat" ? "default" : "outline"}
                 disabled={effectiveWithdrawAll || fiat.rate === null}
                 onPress={() => update({ unit: "fiat", amount: "" })}
               />
@@ -372,7 +375,8 @@ export function WithdrawFormFields({
           {submitError}
         </Text>
       )}
-      <AppButton
+      <Button
+        size="lg"
         label={pending ? t("withdraw.quotePending") : t("withdraw.continue")}
         pending={pending}
         disabled={!canSubmit}

@@ -15,7 +15,7 @@ import { atom, type PrimitiveAtom, useAtomValue, useSetAtom } from "jotai"
 import { useRef, useState } from "react"
 import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 
@@ -172,7 +172,8 @@ function ChargeButton({
   }
 
   return (
-    <AppButton
+    <Button
+      size="lg"
       label={t("home.pay")}
       pending={pending}
       disabled={amount === null}

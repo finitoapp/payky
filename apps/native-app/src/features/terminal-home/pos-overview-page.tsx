@@ -23,8 +23,8 @@ import { router } from "expo-router"
 import { useEffect, useMemo, useState } from "react"
 import { FlatList, Pressable, ScrollView, View } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { TableTileShell } from "../../components/table-tile-shell.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 
@@ -120,9 +120,10 @@ export function PosOverviewPage() {
             <XStack gap="2">
               {TableFilterSchema.options.map((filter) => (
                 <XStack key={filter} flex={1}>
-                  <AppButton
+                  <Button
+                    size="lg"
                     label={t(tableFilterLabelKeys[filter])}
-                    variant={filter === tableFilter ? "primary" : "secondary"}
+                    variant={filter === tableFilter ? "default" : "outline"}
                     onPress={() => setTableFilter(filter)}
                   />
                 </XStack>
@@ -194,7 +195,8 @@ function NoTableStrip({
       <XStack items="center" justify="space-between" gap="2">
         <Text fontWeight="600">{t("bill.table.dialog.none")}</Text>
         <XStack>
-          <AppButton
+          <Button
+            size="lg"
             label={`+ ${t("tables.tile.newBill")}`}
             onPress={newBill}
           />

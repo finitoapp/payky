@@ -6,8 +6,8 @@ import { Redirect, router } from "expo-router"
 import { Suspense } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, XStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
@@ -54,25 +54,28 @@ export function TerminalHomePage() {
         {enabledModes.length > 1 &&
           enabledModes.map((enabledMode) => (
             <XStack key={enabledMode} flex={1}>
-              <AppButton
+              <Button
+                size="lg"
                 label={t(modeLabelKeys[enabledMode])}
-                variant={enabledMode === mode ? "primary" : "secondary"}
+                variant={enabledMode === mode ? "default" : "outline"}
                 onPress={() => setMode(enabledMode)}
               />
             </XStack>
           ))}
         {/* The ways into the history and the settings, as web's header links. */}
         <XStack flex={enabledModes.length > 1 ? undefined : 1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("nav.activity")}
-            variant="secondary"
+            variant="ghost"
             onPress={() => router.push("/activity")}
           />
         </XStack>
         <XStack flex={enabledModes.length > 1 ? undefined : 1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("nav.settings")}
-            variant="secondary"
+            variant="ghost"
             onPress={() => router.push("/settings")}
           />
         </XStack>
@@ -80,16 +83,18 @@ export function TerminalHomePage() {
       {/* Web reaches these from the Spark and Cashu account settings, which native lacks (owner PIN gate on the routes). */}
       <XStack gap="2" mb="3">
         <XStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("withdraw.history.title")}
-            variant="secondary"
+            variant="outline"
             onPress={() => router.push("/withdraw")}
           />
         </XStack>
         <XStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("withdraw.cashu.title")}
-            variant="secondary"
+            variant="outline"
             onPress={() => router.push("/cashu-withdraw")}
           />
         </XStack>

@@ -14,7 +14,7 @@ import {
 import type { Currency } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
 import { XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import {
   CurrencyGroup,
@@ -86,16 +86,18 @@ export function TopSales({ stats }: { readonly stats: SalesStats }) {
       {both ? (
         <XStack gap="2">
           <YStack flex={1}>
-            <AppButton
+            <Button
+              size="lg"
               label={t("stats.top.items")}
-              variant={tab === "items" ? "primary" : "secondary"}
+              variant={tab === "items" ? "default" : "outline"}
               onPress={() => setTab("items")}
             />
           </YStack>
           <YStack flex={1}>
-            <AppButton
+            <Button
+              size="lg"
               label={t("stats.top.categories")}
-              variant={tab === "categories" ? "primary" : "secondary"}
+              variant={tab === "categories" ? "default" : "outline"}
               onPress={() => setTab("categories")}
             />
           </YStack>
@@ -126,9 +128,10 @@ function TopItems({
       <XStack gap="2" accessibilityLabel={t("stats.items.metric")}>
         {(["amount", "quantity"] as const).map((value) => (
           <YStack key={value} flex={1}>
-            <AppButton
+            <Button
+              size="lg"
               label={t(metricLabelKeys[value])}
-              variant={metric === value ? "primary" : "secondary"}
+              variant={metric === value ? "default" : "outline"}
               onPress={() => setMetric(value)}
             />
           </YStack>
@@ -151,9 +154,10 @@ function TopItems({
         </CurrencyGroup>
       ))}
       {hasMore ? (
-        <AppButton
+        <Button
+          size="lg"
           label={showAll ? t("stats.items.showTop") : t("stats.items.showAll")}
-          variant="secondary"
+          variant="outline"
           onPress={() => setShowAll((value) => !value)}
         />
       ) : null}

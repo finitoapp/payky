@@ -21,7 +21,7 @@ import type { SparkExitSpeed } from "@payky/core/spark/spark-wallet"
 import { useEffect, useState } from "react"
 import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import {
   Card,
@@ -261,22 +261,25 @@ export function ReviewFooter({
         </Text>
       )}
       {uncertain ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("withdraw.history.title")}
           onPress={onOpenHistory}
         />
       ) : (
         <>
           {error !== null || nearlyExpired ? (
-            <AppButton
+            <Button
+              size="lg"
               label={t("withdraw.review.newQuote")}
-              variant="secondary"
+              variant="outline"
               disabled={confirming}
               pending={requoting}
               onPress={onNewQuote}
             />
           ) : null}
-          <AppButton
+          <Button
+            size="lg"
             label={
               confirming
                 ? t("withdraw.review.confirming")
@@ -288,9 +291,10 @@ export function ReviewFooter({
           />
         </>
       )}
-      <AppButton
+      <Button
+        size="lg"
         label={t("withdraw.review.back")}
-        variant="secondary"
+        variant="outline"
         disabled={confirming}
         onPress={onBack}
       />

@@ -20,9 +20,11 @@ import {
   useSetAtom,
   useStore,
 } from "jotai"
+import CircleAlert from "lucide-react-native/icons/circle-alert"
 import MessageSquarePlus from "lucide-react-native/icons/message-square-plus"
+import RotateCw from "lucide-react-native/icons/rotate-cw"
 import { useEffect, useRef, useState } from "react"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
@@ -31,6 +33,7 @@ import { Icon } from "../../../components/ui/icon.tsx"
 import { apiUrl } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { fontSize, radius } from "../../../theme/tokens.ts"
 import { ChatComposer } from "../../shared/chat-composer.tsx"
 import { usePrivacySettings } from "../privacy/use-privacy-settings.ts"
 
@@ -92,27 +95,20 @@ function AssistantChat({ access }: { readonly access: Access }) {
 
   return (
     <Screen
+      // Web docks the composer card at the screen's edges, unframed.
       footer={
-        <YStack
-          px="4"
-          py="3"
-          borderTopWidth={1}
-          borderColor="border-color"
-          bg="background"
-        >
-          <ChatComposer
-            label={t("settings.assistant.message.label")}
-            placeholder={t("settings.assistant.message.placeholder")}
-            sendLabel={t("settings.assistant.send")}
-            onSend={ask}
-            disabled={false}
-            stop={
-              answering
-                ? { label: t("settings.assistant.stop"), onStop: stop }
-                : undefined
-            }
-          />
-        </YStack>
+        <ChatComposer
+          label={t("settings.assistant.message.label")}
+          placeholder={t("settings.assistant.message.placeholder")}
+          sendLabel={t("settings.assistant.send")}
+          onSend={ask}
+          disabled={false}
+          stop={
+            answering
+              ? { label: t("settings.assistant.stop"), onStop: stop }
+              : undefined
+          }
+        />
       }
     >
       <FadeHeader
@@ -133,11 +129,13 @@ function AssistantChat({ access }: { readonly access: Access }) {
       {turns.length === 0 ? (
         <EmptyConversation access={access} onAsk={ask} />
       ) : (
-        <YStack gap="2" accessibilityLiveRegion="polite">
-          {turns.map((turn) => (
+        // At the bottom, next to the composer, as web's `mt-auto` list.
+        <YStack mt="auto" gap={8} accessibilityLiveRegion="polite">
+          {turns.map((turn, index) => (
             <Turn
               key={turn.id}
               turn={turn}
+              first={index === 0}
               answeringAtom={answeringAtom}
               onRetry={() => ask(turn.question, turn.id)}
             />
@@ -272,13 +270,14 @@ function EmptyConversation({
 }) {
   const { t } = useTranslation()
   return (
-    <YStack gap="3" items="center">
-      <Text color="muted-foreground" text="center">
+    // At the bottom, next to the composer and the thumb, as in messengers.
+    <YStack mt="auto" self="center" maxW={320} gap={12} items="center">
+      <Text fontSize={fontSize.sm} color="muted-foreground" text="center">
         {t(emptyKeys[access])}
       </Text>
       {suggestions[access].map((key) => (
         <Button
-          size="lg"
+          size="sm"
           key={key}
           label={t(key)}
           variant="outline"
@@ -291,32 +290,44 @@ function EmptyConversation({
 
 function Turn({
   turn,
+  first,
   answeringAtom,
   onRetry,
 }: {
   readonly turn: AssistantTurn
+  readonly first: boolean
   readonly answeringAtom: PrimitiveAtom<Answering>
   readonly onRetry: () => void
 }) {
   const { t } = useTranslation()
   return (
     <>
-      <Bubble own>{turn.question}</Bubble>
+      <Bubble own first={first}>
+        {turn.question}
+      </Bubble>
       {turn.status === "answering" ? (
         <AnsweringBubble answeringAtom={answeringAtom} />
       ) : turn.reply === "" ? null : (
         <Bubble own={false}>{turn.reply}</Bubble>
       )}
       {turn.status === "stopped" ? (
-        <Text fontSize={12} color="muted-foreground">
+        <Text
+          px={12}
+          self="flex-start"
+          fontSize={fontSize.xs}
+          color="muted-foreground"
+        >
           {t("settings.assistant.stopped")}
         </Text>
       ) : null}
       {turn.status === "failed" ? (
         <Button
+          self="flex-start"
           size="xs"
           labelColor="destructive"
           label={t("settings.assistant.failed")}
+          iconStart={CircleAlert}
+          iconEnd={RotateCw}
           variant="ghost"
           onPress={onRetry}
         />
@@ -338,42 +349,90 @@ function AnsweringBubble({
   const { t } = useTranslation()
   const { text, lookingUp } = useAtomValue(answeringAtom)
   const waitingFor = (
-    <Text fontSize={12} color="muted-foreground">
-      {lookingUp === null
-        ? t("settings.assistant.thinking")
-        : t(lookingUpKeys[lookingUp])}
-    </Text>
+    <XStack
+      items="center"
+      gap={8}
+      accessible
+      accessibilityLabel={
+        lookingUp === null
+          ? t("settings.assistant.thinking")
+          : t(lookingUpKeys[lookingUp])
+      }
+    >
+      <TypingDots />
+      {lookingUp === null ? null : (
+        <Text fontSize={fontSize.xs} color="muted-foreground">
+          {t(lookingUpKeys[lookingUp])}
+        </Text>
+      )}
+    </XStack>
   )
   if (text === "") return <Bubble own={false}>{waitingFor}</Bubble>
   return (
     <>
       <Bubble own={false}>{text}</Bubble>
-      {lookingUp === null ? null : waitingFor}
+      {lookingUp === null ? null : (
+        <YStack px={12} self="flex-start">
+          {waitingFor}
+        </YStack>
+      )}
     </>
   )
 }
 
-/** The merchant on the primary colour, replies on a bordered card. */
+/**
+ * Web's typing dots (`size-1.5 rounded-full bg-current`, muted).
+ * ponytail: static; web bounces them, add an Animated loop if it matters.
+ */
+function TypingDots() {
+  return (
+    <XStack h={20} items="center" gap={4}>
+      {[0, 1, 2].map((dot) => (
+        <YStack
+          key={dot}
+          w={6}
+          h={6}
+          rounded={radius.full}
+          bg="muted-foreground"
+        />
+      ))}
+    </XStack>
+  )
+}
+
+/**
+ * Web's support-chat bubbles: the merchant on the primary colour, replies on
+ * a card with the card ring. A question opens a turn, so it keeps more room
+ * above it than the reply below it has.
+ */
 function Bubble({
   own,
+  first = false,
   children,
 }: {
   readonly own: boolean
+  readonly first?: boolean
   readonly children: string | React.ReactNode
 }) {
   return (
     <YStack
       maxW="85%"
       self={own ? "flex-end" : "flex-start"}
-      px="3"
-      py="2"
-      rounded="xl"
-      bg={own ? "primary" : "background"}
+      mt={own && !first ? 12 : 0}
+      px={12}
+      py={8}
+      rounded={radius["2xl"]}
+      bg={own ? "primary" : "card"}
       borderWidth={own ? 0 : 1}
-      borderColor="border-color"
+      borderColor="card-ring"
     >
       {typeof children === "string" ? (
-        <Text color={own ? "primary-foreground" : "color"}>{children}</Text>
+        <Text
+          fontSize={fontSize.sm}
+          color={own ? "primary-foreground" : "card-foreground"}
+        >
+          {children}
+        </Text>
       ) : (
         children
       )}

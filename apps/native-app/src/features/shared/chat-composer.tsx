@@ -30,7 +30,8 @@ export function ChatComposer({
 
   return (
     <Card size="sm" borderBottomLeftRadius={0} borderBottomRightRadius={0}>
-      <CardContent>
+      {/* Web's `CardContent className="px-3"`. */}
+      <CardContent px={12}>
         <XStack gap="2" items="flex-end">
           <Textarea
             flex={1}

@@ -92,24 +92,17 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
 
   return (
     <Screen
+      // Web docks the composer card at the screen's edges, unframed.
       footer={
-        <YStack
-          px="4"
-          py="3"
-          borderTopWidth={1}
-          borderColor="border-color"
-          bg="background"
-        >
-          <ChatComposer
-            label={t("settings.supportChat.message.label")}
-            placeholder={t("settings.supportChat.message.placeholder")}
-            sendLabel={t("settings.supportChat.send")}
-            disabled={team.data === undefined}
-            onSend={(text) => {
-              void sendAndOpenReplies(text)
-            }}
-          />
-        </YStack>
+        <ChatComposer
+          label={t("settings.supportChat.message.label")}
+          placeholder={t("settings.supportChat.message.placeholder")}
+          sendLabel={t("settings.supportChat.send")}
+          disabled={team.data === undefined}
+          onSend={(text) => {
+            void sendAndOpenReplies(text)
+          }}
+        />
       }
     >
       <FadeHeader title={t("settings.supportChat.title")} />

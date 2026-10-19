@@ -56,6 +56,7 @@ import { Text, useTheme, View, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/loading-view.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
+import { SearchInput } from "../../components/search-input.tsx"
 import {
   Alert,
   AlertDescription,
@@ -71,6 +72,7 @@ import {
 import { Icon } from "../../components/ui/icon.tsx"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
+import { useDebouncedValue } from "../../hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
@@ -469,10 +471,15 @@ function BillCart({
     } else if (matches.length > 1) setCollisionCandidates(matches)
     else addScanned(first)
   }
+  const [search, setSearch] = useState("")
   // At any time, not only in scan mode, as web (scanner/0001).
   useHardwareScanner({
     enabled: !scanDialogOpen,
-    onScan: (code) => void handleScan(code),
+    onScan: (code) => {
+      // A focused search field received the code's characters too.
+      if (search.endsWith(code)) setSearch(search.slice(0, -code.length))
+      void handleScan(code)
+    },
   })
   // Handled once, then dropped from the route so a return to this bill does
   // not add the item a second time.
@@ -502,24 +509,28 @@ function BillCart({
   )
   // Deferred, so switching a chip never suspends this screen: a suspend here
   // would bubble to the route's boundary and remount the cart mid-tap.
+  // The search additionally waits for typing to pause, as web's 250 ms.
+  const deferredSearch = useDeferredValue(useDebouncedValue(search, 250))
   const deferredFilter = useDeferredValue(categoryFilter)
   const deferredInBillIds = useDeferredValue(inBillItemIds)
   const gridQuery = useMemo(
     () =>
       catalogItemsPageQuery({
-        search: "",
+        search: deferredSearch,
         categoryFilter: deferredFilter === "inBill" ? "all" : deferredFilter,
         currency,
         ...(deferredFilter === "inBill"
           ? { catalogItemIds: deferredInBillIds }
           : {}),
-        // The whole catalog keeps each category's items together, as web.
-        groupByCategory: deferredFilter === "all",
+        // The whole catalog, unsearched, keeps each category's items
+        // together, as web.
+        groupByCategory:
+          deferredFilter === "all" && deferredSearch.trim() === "",
         // ponytail: no paging, the list is virtualized; raise or page if a
         // catalog ever outgrows this.
         limit: 10_000,
       }),
-    [deferredFilter, deferredInBillIds, currency]
+    [deferredSearch, deferredFilter, deferredInBillIds, currency]
   )
   const gridItems = useEvoluQuery(gridQuery).data
   const inBillFilterOptions = useMemo(
@@ -540,17 +551,12 @@ function BillCart({
 
       <XStack mt={8} gap={8} items="center">
         <YStack flex={1} minW={0}>
-          {scanMode ? null : (
-            <CategoryFilterBar
-              categories={categories}
-              usedCategoryIds={usedCategoryIds}
-              value={categoryFilter}
-              onValueChange={setCategoryFilter}
-              allLabel={t("bill.category.all")}
-              uncategorizedLabel={t("bill.category.uncategorized")}
-              extraOptions={inBillFilterOptions}
-            />
-          )}
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t("bill.search")}
+            clearAriaLabel={t("bill.search.clear.aria")}
+          />
         </YStack>
         <Button
           variant={scanMode ? "default" : "outline"}
@@ -564,6 +570,19 @@ function BillCart({
           onPress={() => setScanMode((on) => !on)}
         />
       </XStack>
+      {scanMode ? null : (
+        <YStack mt={8}>
+          <CategoryFilterBar
+            categories={categories}
+            usedCategoryIds={usedCategoryIds}
+            value={categoryFilter}
+            onValueChange={setCategoryFilter}
+            allLabel={t("bill.category.all")}
+            uncategorizedLabel={t("bill.category.uncategorized")}
+            extraOptions={inBillFilterOptions}
+          />
+        </YStack>
+      )}
 
       <YStack flex={1} mt={8}>
         {scanMode ? (

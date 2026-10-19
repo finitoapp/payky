@@ -373,8 +373,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: ["apps/web-app/src/features/bill/bill-page.tsx"],
     status: "matched",
     allowedDifferences: {
-      SearchInput:
-        "native's cart has no catalog search yet (native.md, 4.2b gaps); the row keeps the scan toggle beside the category bar",
       RouteMessage:
         "web answers an unparsable bill id in the route file (_terminal.bill.tsx); native's route renders this page, which does it",
     },

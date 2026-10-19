@@ -4,8 +4,8 @@ import {
 } from "@payky/core/modules/catalog-category/catalog-category-queries"
 import { Suspense, useCallback, useState } from "react"
 import { YStack } from "tamagui"
+import { ListSkeleton } from "../../../components/list-skeleton.tsx"
 import { SearchInput } from "../../../components/search-input.tsx"
-import { LoadingView } from "../../../components/state-views.tsx"
 import { useDebouncedValue } from "../../../hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -44,7 +44,7 @@ function CategoriesSettingsBody() {
           clearAriaLabel={t("settings.categories.search.clear.aria")}
         />
       )}
-      <Suspense fallback={<LoadingView />}>
+      <Suspense fallback={<ListSkeleton />}>
         <CategoriesList search={debouncedSearch} hasAny={hasAny} />
       </Suspense>
     </YStack>

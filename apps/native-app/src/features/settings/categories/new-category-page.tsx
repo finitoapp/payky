@@ -3,11 +3,24 @@ import { createCatalogCategoryAtEnd } from "@payky/core/modules/catalog-category
 import { NonEmptyString255Schema } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { useState } from "react"
-import { Text } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -39,32 +52,49 @@ export function NewCatalogCategoryPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.categories.form.title.create")} />
-      <Text color="muted-foreground">
-        {t("settings.categories.form.card.description")}
-      </Text>
-      <Field
-        label={t("settings.categories.form.name.label")}
-        value={name}
-        disabled={pending}
-        autoCorrect={false}
-        placeholder={t("settings.categories.form.name.placeholder")}
-        error={nameError === null ? undefined : t(nameError)}
-        onChangeText={(text) => {
-          setName(text)
-          setNameError(null)
-        }}
-        onSubmitEditing={() => {
-          void submit()
-        }}
-      />
-      <Button
-        size="lg"
-        label={t("settings.categories.form.save.create")}
-        pending={pending}
-        onPress={() => {
-          void submit()
-        }}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.categories.form.card.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.categories.form.card.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Field>
+              <FieldLabel>
+                {t("settings.categories.form.name.label")}
+              </FieldLabel>
+              <Input
+                value={name}
+                disabled={pending}
+                autoCorrect={false}
+                placeholder={t("settings.categories.form.name.placeholder")}
+                invalid={nameError !== null}
+                onChangeText={(text) => {
+                  setName(text)
+                  setNameError(null)
+                }}
+                onSubmitEditing={() => {
+                  void submit()
+                }}
+              />
+              <FieldError>
+                {nameError === null ? undefined : t(nameError)}
+              </FieldError>
+            </Field>
+          </FieldGroup>
+        </CardContent>
+        <CardFooter justify="flex-end">
+          <Button
+            label={t("settings.categories.form.save.create")}
+            pending={pending}
+            onPress={() => {
+              void submit()
+            }}
+          />
+        </CardFooter>
+      </Card>
     </Screen>
   )
 }

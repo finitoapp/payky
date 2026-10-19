@@ -22,16 +22,32 @@ import {
 } from "@payky/core/modules/catalog-item/catalog-item-utils"
 import type { TaxRateId } from "@payky/core/modules/tax-rate/tax-rate-types"
 import { router, useLocalSearchParams } from "expo-router"
-import { useMemo } from "react"
-import { Text, YStack } from "tamagui"
+import Trash from "lucide-react-native/icons/trash"
+import { useMemo, useState } from "react"
+import { YStack } from "tamagui"
 import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
+import { ScanCodeScanner } from "../../../components/scan-code-scanner.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -83,6 +99,7 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
   const { t } = useTranslation()
   const runToast = useRunToast()
   const confirmedRun = useConfirmedRun()
+  const [scannerOpen, setScannerOpen] = useState(false)
   const { data: catalogItems } = useEvoluQuery(catalogItemsQuery)
   const { categoryOptions, taxRateOptions } = useCatalogItemOptions(
     item.taxRateId
@@ -135,186 +152,232 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
   return (
     <Screen>
       <FadeHeader title={t("settings.items.form.title.edit")} />
-      <Text color="muted-foreground">
-        {t("settings.items.form.card.description")}
-      </Text>
-      <InlineEditField
-        label={t("settings.items.form.name.label")}
-        placeholder={t("settings.items.form.name.placeholder")}
-        defaultValue={item.name}
-        codec={requiredTextCodec}
-        errorKey="settings.items.form.name.invalid"
-        onSave={(name) => saveItem({ name })}
-      />
-      <InlineEditField
-        label={t("settings.items.form.internalName.label")}
-        description={t("settings.items.form.internalName.hint")}
-        placeholder={t("settings.items.form.internalName.placeholder")}
-        defaultValue={item.internalName}
-        codec={optionalTextCodec}
-        errorKey="settings.items.form.internalName.invalid"
-        onSave={(internalName) => saveItem({ internalName })}
-      />
-      <InlineEditField
-        label={t("settings.items.form.price.label")}
-        keyboardType="decimal-pad"
-        defaultValue={item.unitAmount}
-        codec={priceCodec}
-        errorKey="settings.items.form.price.invalid"
-        onSave={(unitAmount) => saveItem({ unitAmount })}
-      />
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.items.form.currency.label")}</Text>
-        <Select
-          value={currency.value}
-          onValueChange={(value) => void currency.choose(value)}
-          items={Object.fromEntries(
-            fiatCurrencyOptions.map((option) => [option.value, option.value])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.items.form.currency.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.items.form.currency.label")}>
-            {fiatCurrencyOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.value}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <YStack gap={20}>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.items.form.card.title")}</CardTitle>
+            <CardDescription>
+              {t("settings.items.form.card.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <InlineEditField
+                label={t("settings.items.form.name.label")}
+                placeholder={t("settings.items.form.name.placeholder")}
+                defaultValue={item.name}
+                codec={requiredTextCodec}
+                errorKey="settings.items.form.name.invalid"
+                onSave={(name) => saveItem({ name })}
+              />
+              <InlineEditField
+                label={t("settings.items.form.internalName.label")}
+                description={t("settings.items.form.internalName.hint")}
+                placeholder={t("settings.items.form.internalName.placeholder")}
+                defaultValue={item.internalName}
+                codec={optionalTextCodec}
+                errorKey="settings.items.form.internalName.invalid"
+                onSave={(internalName) => saveItem({ internalName })}
+              />
+              <InlineEditField
+                label={t("settings.items.form.price.label")}
+                keyboardType="decimal-pad"
+                defaultValue={item.unitAmount}
+                codec={priceCodec}
+                errorKey="settings.items.form.price.invalid"
+                onSave={(unitAmount) => saveItem({ unitAmount })}
+              />
+              <Field>
+                <FieldLabel>
+                  {t("settings.items.form.currency.label")}
+                </FieldLabel>
+                <Select
+                  value={currency.value}
+                  onValueChange={(value) => void currency.choose(value)}
+                  items={Object.fromEntries(
+                    fiatCurrencyOptions.map((option) => [
+                      option.value,
+                      option.value,
+                    ])
+                  )}
+                >
+                  <SelectTrigger
+                    fullWidth
+                    accessibilityLabel={t("settings.items.form.currency.label")}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent
+                    title={t("settings.items.form.currency.label")}
+                  >
+                    <SelectGroup>
+                      {fiatCurrencyOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.value}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <InlineEditField
+                label={t("settings.items.form.description.label")}
+                placeholder={t("settings.items.form.description.placeholder")}
+                defaultValue={item.description}
+                codec={optionalTextCodec}
+                errorKey="settings.items.form.description.invalid"
+                onSave={(description) => saveItem({ description })}
+              />
+              <InlineEditField
+                label={t("settings.items.form.internalDescription.label")}
+                placeholder={t(
+                  "settings.items.form.internalDescription.placeholder"
+                )}
+                defaultValue={item.internalDescription}
+                codec={optionalTextCodec}
+                errorKey="settings.items.form.internalDescription.invalid"
+                onSave={(internalDescription) =>
+                  saveItem({ internalDescription })
+                }
+              />
+              <InlineEditField
+                label={t("settings.items.form.sku.label")}
+                placeholder={t("settings.items.form.sku.placeholder")}
+                defaultValue={item.sku}
+                codec={optionalTextCodec}
+                errorKey="settings.items.form.sku.invalid"
+                onSave={(sku) => saveItem({ sku })}
+              />
+              <Field>
+                <FieldLabel>
+                  {t("settings.items.form.category.label")}
+                </FieldLabel>
+                <Select
+                  value={z.encode(categoryCodec, category.value)}
+                  onValueChange={(value) =>
+                    void category.choose(
+                      z.safeDecode(categoryCodec, value).data ?? null
+                    )
+                  }
+                  items={Object.fromEntries(
+                    categoryOptions.map((option) => [
+                      option.value,
+                      option.title,
+                    ])
+                  )}
+                >
+                  <SelectTrigger
+                    fullWidth
+                    accessibilityLabel={t("settings.items.form.category.label")}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent
+                    title={t("settings.items.form.category.label")}
+                  >
+                    <SelectGroup>
+                      {categoryOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.title}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>
+                  {t("settings.items.form.taxRate.label")}
+                </FieldLabel>
+                <Select
+                  value={z.encode(taxRateCodec, taxRate.value)}
+                  onValueChange={(value) =>
+                    void taxRate.choose(
+                      z.safeDecode(taxRateCodec, value).data ?? null
+                    )
+                  }
+                  items={Object.fromEntries(
+                    taxRateOptions.map((option) => [option.value, option.title])
+                  )}
+                >
+                  <SelectTrigger
+                    fullWidth
+                    accessibilityLabel={t("settings.items.form.taxRate.label")}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent title={t("settings.items.form.taxRate.label")}>
+                    <SelectGroup>
+                      {taxRateOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.title}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  {t("settings.items.form.taxRate.description")}
+                </FieldDescription>
+              </Field>
+              <InlineEditField
+                label={t("settings.items.form.scanCode.label")}
+                description={
+                  scanCodeCollisions.length > 0
+                    ? t("settings.items.form.scanCode.duplicate", {
+                        name: scanCodeCollisions
+                          .map((match) => getStaffDisplayName(match))
+                          .join(", "),
+                      })
+                    : undefined
+                }
+                placeholder={t("settings.items.form.scanCode.placeholder")}
+                defaultValue={item.scanCode}
+                codec={optionalTextCodec}
+                errorKey="settings.items.form.scanCode.invalid"
+                trailing={
+                  <ScanCodeButton
+                    onPress={() => setScannerOpen((open) => !open)}
+                  />
+                }
+                onSave={(scanCode) => saveItem({ scanCode })}
+              />
+              {scannerOpen ? (
+                <ScanCodeScanner
+                  onScan={(rawValue) => {
+                    setScannerOpen(false)
+                    const parsed = z.safeDecode(optionalTextCodec, rawValue)
+                    if (parsed.success) void saveItem({ scanCode: parsed.data })
+                  }}
+                />
+              ) : null}
+            </FieldGroup>
+          </CardContent>
+        </Card>
+        <Button
+          label={t("settings.items.delete")}
+          iconStart={Trash}
+          variant="destructive"
+          onPress={() => {
+            void (async () => {
+              const name = getStaffDisplayName(item)
+              const deleted = await confirmedRun(
+                {
+                  title: t("settings.items.delete.confirm.title", { name }),
+                  description: t("settings.items.delete.confirm.description", {
+                    name,
+                  }),
+                  confirmLabel: t("settings.items.delete.confirm.confirm"),
+                  cancelLabel: t("settings.items.delete.confirm.cancel"),
+                  variant: "destructive",
+                },
+                deleteCatalogItem(item.id)
+              )
+              if (deleted) router.back()
+            })()
+          }}
+        />
       </YStack>
-      <InlineEditField
-        label={t("settings.items.form.description.label")}
-        placeholder={t("settings.items.form.description.placeholder")}
-        defaultValue={item.description}
-        codec={optionalTextCodec}
-        errorKey="settings.items.form.description.invalid"
-        onSave={(description) => saveItem({ description })}
-      />
-      <InlineEditField
-        label={t("settings.items.form.internalDescription.label")}
-        placeholder={t("settings.items.form.internalDescription.placeholder")}
-        defaultValue={item.internalDescription}
-        codec={optionalTextCodec}
-        errorKey="settings.items.form.internalDescription.invalid"
-        onSave={(internalDescription) => saveItem({ internalDescription })}
-      />
-      <InlineEditField
-        label={t("settings.items.form.sku.label")}
-        placeholder={t("settings.items.form.sku.placeholder")}
-        defaultValue={item.sku}
-        codec={optionalTextCodec}
-        errorKey="settings.items.form.sku.invalid"
-        onSave={(sku) => saveItem({ sku })}
-      />
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.items.form.category.label")}</Text>
-        <Select
-          value={z.encode(categoryCodec, category.value)}
-          onValueChange={(value) =>
-            void category.choose(
-              z.safeDecode(categoryCodec, value).data ?? null
-            )
-          }
-          items={Object.fromEntries(
-            categoryOptions.map((option) => [option.value, option.title])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.items.form.category.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.items.form.category.label")}>
-            {categoryOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </YStack>
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.items.form.taxRate.label")}</Text>
-        <Select
-          value={z.encode(taxRateCodec, taxRate.value)}
-          onValueChange={(value) =>
-            void taxRate.choose(z.safeDecode(taxRateCodec, value).data ?? null)
-          }
-          items={Object.fromEntries(
-            taxRateOptions.map((option) => [option.value, option.title])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.items.form.taxRate.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.items.form.taxRate.label")}>
-            {taxRateOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Text fontSize={13} color="muted-foreground">
-          {t("settings.items.form.taxRate.description")}
-        </Text>
-      </YStack>
-      <InlineEditField
-        label={t("settings.items.form.scanCode.label")}
-        description={
-          scanCodeCollisions.length > 0
-            ? t("settings.items.form.scanCode.duplicate", {
-                name: scanCodeCollisions
-                  .map((match) => getStaffDisplayName(match))
-                  .join(", "),
-              })
-            : undefined
-        }
-        placeholder={t("settings.items.form.scanCode.placeholder")}
-        defaultValue={item.scanCode}
-        codec={optionalTextCodec}
-        errorKey="settings.items.form.scanCode.invalid"
-        onSave={(scanCode) => saveItem({ scanCode })}
-      />
-      {/* A scan skips the edit mode: the camera already confirmed the value. */}
-      <ScanCodeButton
-        onScan={(rawValue) => {
-          const parsed = z.safeDecode(optionalTextCodec, rawValue)
-          if (parsed.success) void saveItem({ scanCode: parsed.data })
-        }}
-      />
-      <Button
-        size="lg"
-        label={t("settings.items.delete")}
-        variant="destructive"
-        onPress={() => {
-          void (async () => {
-            const name = getStaffDisplayName(item)
-            const deleted = await confirmedRun(
-              {
-                title: t("settings.items.delete.confirm.title", { name }),
-                description: t("settings.items.delete.confirm.description", {
-                  name,
-                }),
-                confirmLabel: t("settings.items.delete.confirm.confirm"),
-                cancelLabel: t("settings.items.delete.confirm.cancel"),
-                variant: "destructive",
-              },
-              deleteCatalogItem(item.id)
-            )
-            if (deleted) router.back()
-          })()
-        }}
-      />
     </Screen>
   )
 }

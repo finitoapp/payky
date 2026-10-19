@@ -3,11 +3,24 @@ import { parseTableForm } from "@payky/app-shared/table-form"
 import { createTableAtEnd } from "@payky/core/modules/table/table-actions"
 import { router } from "expo-router"
 import { useState } from "react"
-import { Text } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -49,47 +62,69 @@ export function NewTablePage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.tables.form.title.create")} />
-      <Text color="muted-foreground">
-        {t("settings.tables.form.card.description")}
-      </Text>
-      <Field
-        label={t("settings.tables.form.name.label")}
-        value={name}
-        disabled={pending}
-        autoCorrect={false}
-        placeholder={t("settings.tables.form.name.placeholder")}
-        error={nameError === null ? undefined : t(nameError)}
-        onChangeText={(text) => {
-          setName(text)
-          setNameError(null)
-        }}
-      />
-      <Field
-        label={t("settings.tables.form.seatCount.label")}
-        value={seatCount}
-        disabled={pending}
-        keyboardType="number-pad"
-        placeholder={t("settings.tables.form.seatCount.placeholder")}
-        error={seatCountError === null ? undefined : t(seatCountError)}
-        onChangeText={(text) => {
-          // Digits only, as web's field.
-          if (/^\d*$/u.test(text)) {
-            setSeatCount(text)
-            setSeatCountError(null)
-          }
-        }}
-        onSubmitEditing={() => {
-          void submit()
-        }}
-      />
-      <Button
-        size="lg"
-        label={t("settings.tables.form.save.create")}
-        pending={pending}
-        onPress={() => {
-          void submit()
-        }}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.tables.form.card.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.tables.form.card.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Field>
+              <FieldLabel>{t("settings.tables.form.name.label")}</FieldLabel>
+              <Input
+                value={name}
+                disabled={pending}
+                autoCorrect={false}
+                placeholder={t("settings.tables.form.name.placeholder")}
+                invalid={nameError !== null}
+                onChangeText={(text) => {
+                  setName(text)
+                  setNameError(null)
+                }}
+              />
+              <FieldError>
+                {nameError === null ? undefined : t(nameError)}
+              </FieldError>
+            </Field>
+            <Field>
+              <FieldLabel>
+                {t("settings.tables.form.seatCount.label")}
+              </FieldLabel>
+              <Input
+                value={seatCount}
+                disabled={pending}
+                keyboardType="number-pad"
+                placeholder={t("settings.tables.form.seatCount.placeholder")}
+                invalid={seatCountError !== null}
+                onChangeText={(text) => {
+                  // Digits only, as web's field.
+                  if (/^\d*$/u.test(text)) {
+                    setSeatCount(text)
+                    setSeatCountError(null)
+                  }
+                }}
+                onSubmitEditing={() => {
+                  void submit()
+                }}
+              />
+              <FieldError>
+                {seatCountError === null ? undefined : t(seatCountError)}
+              </FieldError>
+            </Field>
+          </FieldGroup>
+        </CardContent>
+        <CardFooter justify="flex-end">
+          <Button
+            label={t("settings.tables.form.save.create")}
+            pending={pending}
+            onPress={() => {
+              void submit()
+            }}
+          />
+        </CardFooter>
+      </Card>
     </Screen>
   )
 }

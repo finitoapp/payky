@@ -14,8 +14,8 @@ import { Integer } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { Suspense, useCallback, useMemo, useState } from "react"
 import { YStack } from "tamagui"
+import { ListSkeleton } from "../../../components/list-skeleton.tsx"
 import { SearchInput } from "../../../components/search-input.tsx"
-import { LoadingView } from "../../../components/state-views.tsx"
 import { useDebouncedValue } from "../../../hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../../hooks/use-hardware-scanner.ts"
@@ -99,7 +99,7 @@ function ItemsSettingsBody() {
         allLabel={t("settings.items.category.all")}
         uncategorizedLabel={t("settings.items.category.uncategorized")}
       />
-      <Suspense fallback={<LoadingView />}>
+      <Suspense fallback={<ListSkeleton />}>
         <ItemsList
           search={debouncedSearch}
           categoryFilter={categoryFilter}

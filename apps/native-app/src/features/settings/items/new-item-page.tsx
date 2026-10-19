@@ -18,14 +18,31 @@ import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import type { TaxRateId } from "@payky/core/modules/tax-rate/tax-rate-types"
 import { router, useLocalSearchParams } from "expo-router"
 import { type ComponentProps, useMemo, useState } from "react"
-import { Text, YStack } from "tamagui"
+import { View, XStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { Field } from "../../../components/field.tsx"
+import { ScanCodeScanner } from "../../../components/scan-code-scanner.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
+import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -67,6 +84,7 @@ export function NewCatalogItemPage() {
   // A code scanned in the item list, which opened this form to carry it.
   const { scan } = useLocalSearchParams<{ scan?: string }>()
   const [scanCode, setScanCode] = useState(scan ?? "")
+  const [scannerOpen, setScannerOpen] = useState(false)
   const [errors, setErrors] = useState<CatalogItemFormErrors>({})
   const [pending, setPending] = useState(false)
   const confirmOpen = useIsConfirmOpen()
@@ -91,13 +109,12 @@ export function NewCatalogItemPage() {
     value: string,
     set: (value: string) => void
   ): Pick<
-    ComponentProps<typeof Field>,
-    "value" | "onChangeText" | "error" | "disabled" | "autoCorrect"
+    ComponentProps<typeof Input>,
+    "value" | "onChangeText" | "disabled" | "autoCorrect"
   > => ({
     value,
     disabled: pending,
     autoCorrect: false,
-    error: error(field),
     onChangeText: (next) => {
       set(next)
       clearError(field)
@@ -155,150 +172,223 @@ export function NewCatalogItemPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.items.form.title.create")} />
-      <Text color="muted-foreground">
-        {t("settings.items.form.card.description")}
-      </Text>
-      <Field
-        label={t("settings.items.form.name.label")}
-        placeholder={t("settings.items.form.name.placeholder")}
-        {...text("name", name, setName)}
-      />
-      <Field
-        label={t("settings.items.form.internalName.label")}
-        placeholder={t("settings.items.form.internalName.placeholder")}
-        {...text("internalName", internalName, setInternalName)}
-      />
-      <Text fontSize={13} color="muted-foreground">
-        {t("settings.items.form.internalName.hint")}
-      </Text>
-      <Field
-        label={t("settings.items.form.price.label")}
-        keyboardType="decimal-pad"
-        {...text("price", price, setPrice)}
-      />
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.items.form.currency.label")}</Text>
-        <Select
-          value={currency}
-          onValueChange={setCurrency}
-          items={Object.fromEntries(
-            fiatCurrencyOptions.map((option) => [option.value, option.value])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.items.form.currency.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.items.form.currency.label")}>
-            {fiatCurrencyOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.value}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </YStack>
-      <Field
-        label={t("settings.items.form.description.label")}
-        placeholder={t("settings.items.form.description.placeholder")}
-        {...text("description", description, setDescription)}
-      />
-      <Field
-        label={t("settings.items.form.internalDescription.label")}
-        placeholder={t("settings.items.form.internalDescription.placeholder")}
-        {...text(
-          "internalDescription",
-          internalDescription,
-          setInternalDescription
-        )}
-      />
-      <Field
-        label={t("settings.items.form.sku.label")}
-        placeholder={t("settings.items.form.sku.placeholder")}
-        {...text("sku", sku, setSku)}
-      />
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.items.form.category.label")}</Text>
-        <Select
-          value={categoryId}
-          onValueChange={setCategoryId}
-          items={Object.fromEntries(
-            categoryOptions.map((option) => [option.value, option.title])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.items.form.category.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.items.form.category.label")}>
-            {categoryOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </YStack>
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.items.form.taxRate.label")}</Text>
-        <Select
-          value={taxRateId}
-          onValueChange={setTaxRateId}
-          items={Object.fromEntries(
-            taxRateOptions.map((option) => [option.value, option.title])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.items.form.taxRate.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.items.form.taxRate.label")}>
-            {taxRateOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Text fontSize={13} color="muted-foreground">
-          {t("settings.items.form.taxRate.description")}
-        </Text>
-      </YStack>
-      <Field
-        label={t("settings.items.form.scanCode.label")}
-        placeholder={t("settings.items.form.scanCode.placeholder")}
-        {...text("scanCode", scanCode, setScanCode)}
-      />
-      {errors.scanCode === undefined && scanCodeCollisions.length > 0 && (
-        <Text fontSize={13} color="muted-foreground">
-          {t("settings.items.form.scanCode.duplicate", {
-            name: scanCodeCollisions
-              .map((match) => getStaffDisplayName(match))
-              .join(", "),
-          })}
-        </Text>
-      )}
-      <ScanCodeButton
-        disabled={pending}
-        onScan={(code) => {
-          setScanCode(code)
-          clearError("scanCode")
-        }}
-      />
-      <Button
-        size="lg"
-        label={t("settings.items.form.save.create")}
-        pending={pending}
-        onPress={() => {
-          void submit()
-        }}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.items.form.card.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.items.form.card.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Field>
+              <FieldLabel>{t("settings.items.form.name.label")}</FieldLabel>
+              <Input
+                placeholder={t("settings.items.form.name.placeholder")}
+                invalid={error("name") !== undefined}
+                {...text("name", name, setName)}
+              />
+              <FieldError>{error("name")}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel>
+                {t("settings.items.form.internalName.label")}
+              </FieldLabel>
+              <Input
+                placeholder={t("settings.items.form.internalName.placeholder")}
+                invalid={error("internalName") !== undefined}
+                {...text("internalName", internalName, setInternalName)}
+              />
+              <FieldDescription>
+                {t("settings.items.form.internalName.hint")}
+              </FieldDescription>
+              <FieldError>{error("internalName")}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel>{t("settings.items.form.price.label")}</FieldLabel>
+              <XStack items="center" gap={8}>
+                <Input
+                  flex={1}
+                  keyboardType="decimal-pad"
+                  invalid={error("price") !== undefined}
+                  {...text("price", price, setPrice)}
+                />
+                <View w={96}>
+                  <Select
+                    value={currency}
+                    onValueChange={setCurrency}
+                    items={Object.fromEntries(
+                      fiatCurrencyOptions.map((option) => [
+                        option.value,
+                        option.value,
+                      ])
+                    )}
+                  >
+                    <SelectTrigger
+                      fullWidth
+                      accessibilityLabel={t(
+                        "settings.items.form.currency.label"
+                      )}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      title={t("settings.items.form.currency.label")}
+                    >
+                      <SelectGroup>
+                        {fiatCurrencyOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.value}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </View>
+              </XStack>
+              <FieldError>{error("price")}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel>
+                {t("settings.items.form.description.label")}
+              </FieldLabel>
+              <Input
+                placeholder={t("settings.items.form.description.placeholder")}
+                invalid={error("description") !== undefined}
+                {...text("description", description, setDescription)}
+              />
+              <FieldError>{error("description")}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel>
+                {t("settings.items.form.internalDescription.label")}
+              </FieldLabel>
+              <Input
+                placeholder={t(
+                  "settings.items.form.internalDescription.placeholder"
+                )}
+                invalid={error("internalDescription") !== undefined}
+                {...text(
+                  "internalDescription",
+                  internalDescription,
+                  setInternalDescription
+                )}
+              />
+              <FieldError>{error("internalDescription")}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel>{t("settings.items.form.sku.label")}</FieldLabel>
+              <Input
+                placeholder={t("settings.items.form.sku.placeholder")}
+                invalid={error("sku") !== undefined}
+                {...text("sku", sku, setSku)}
+              />
+              <FieldError>{error("sku")}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel>{t("settings.items.form.category.label")}</FieldLabel>
+              <Select
+                value={categoryId}
+                onValueChange={setCategoryId}
+                items={Object.fromEntries(
+                  categoryOptions.map((option) => [option.value, option.title])
+                )}
+              >
+                <SelectTrigger
+                  fullWidth
+                  accessibilityLabel={t("settings.items.form.category.label")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent title={t("settings.items.form.category.label")}>
+                  <SelectGroup>
+                    {categoryOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.title}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>{t("settings.items.form.taxRate.label")}</FieldLabel>
+              <Select
+                value={taxRateId}
+                onValueChange={setTaxRateId}
+                items={Object.fromEntries(
+                  taxRateOptions.map((option) => [option.value, option.title])
+                )}
+              >
+                <SelectTrigger
+                  fullWidth
+                  accessibilityLabel={t("settings.items.form.taxRate.label")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent title={t("settings.items.form.taxRate.label")}>
+                  <SelectGroup>
+                    {taxRateOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.title}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                {t("settings.items.form.taxRate.description")}
+              </FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel>{t("settings.items.form.scanCode.label")}</FieldLabel>
+              <View position="relative">
+                <Input
+                  pr={48}
+                  placeholder={t("settings.items.form.scanCode.placeholder")}
+                  invalid={error("scanCode") !== undefined}
+                  {...text("scanCode", scanCode, setScanCode)}
+                />
+                <View position="absolute" t={0} b={0} r={8} justify="center">
+                  <ScanCodeButton
+                    disabled={pending}
+                    onPress={() => setScannerOpen((open) => !open)}
+                  />
+                </View>
+              </View>
+              {errors.scanCode === undefined &&
+              scanCodeCollisions.length > 0 ? (
+                <FieldDescription>
+                  {t("settings.items.form.scanCode.duplicate", {
+                    name: scanCodeCollisions
+                      .map((match) => getStaffDisplayName(match))
+                      .join(", "),
+                  })}
+                </FieldDescription>
+              ) : null}
+              <FieldError>{error("scanCode")}</FieldError>
+              {scannerOpen ? (
+                <ScanCodeScanner
+                  onScan={(code) => {
+                    setScannerOpen(false)
+                    setScanCode(code)
+                    clearError("scanCode")
+                  }}
+                />
+              ) : null}
+            </Field>
+          </FieldGroup>
+        </CardContent>
+        <CardFooter justify="flex-end">
+          <Button
+            label={t("settings.items.form.save.create")}
+            pending={pending}
+            onPress={() => {
+              void submit()
+            }}
+          />
+        </CardFooter>
+      </Card>
     </Screen>
   )
 }

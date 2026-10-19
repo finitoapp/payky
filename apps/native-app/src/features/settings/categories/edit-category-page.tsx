@@ -7,11 +7,20 @@ import {
 import { catalogCategoryByIdQuery } from "@payky/core/modules/catalog-category/catalog-category-queries"
 import { CatalogCategoryId } from "@payky/core/modules/catalog-category/catalog-category-types"
 import { router, useLocalSearchParams } from "expo-router"
-import { Text } from "tamagui"
+import Trash from "lucide-react-native/icons/trash"
+import { YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import { FieldGroup } from "../../../components/ui/field.tsx"
 import { useConfirmedRun } from "../../../hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -61,46 +70,59 @@ function EditCatalogCategoryForm({
   return (
     <Screen>
       <FadeHeader title={t("settings.categories.form.title.edit")} />
-      <Text color="muted-foreground">
-        {t("settings.categories.form.card.description")}
-      </Text>
-      <InlineEditField
-        label={t("settings.categories.form.name.label")}
-        placeholder={t("settings.categories.form.name.placeholder")}
-        defaultValue={category.name}
-        codec={requiredTextCodec}
-        errorKey="settings.categories.form.name.invalid"
-        onSave={(name) =>
-          runToast(async (run) => {
-            await run.ok(updateCatalogCategory({ id: category.id, name }))
-          })
-        }
-      />
-      <Button
-        size="lg"
-        label={t("settings.categories.delete")}
-        variant="destructive"
-        onPress={() => {
-          void (async () => {
-            const deleted = await confirmedRun(
-              {
-                title: t("settings.categories.delete.confirm.title", {
-                  name: category.name,
-                }),
-                description: t(
-                  "settings.categories.delete.confirm.description",
-                  { name: category.name }
-                ),
-                confirmLabel: t("settings.categories.delete.confirm.confirm"),
-                cancelLabel: t("settings.categories.delete.confirm.cancel"),
-                variant: "destructive",
-              },
-              deleteCatalogCategory(category.id)
-            )
-            if (deleted) router.back()
-          })()
-        }}
-      />
+      <YStack gap={20}>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.categories.form.card.title")}</CardTitle>
+            <CardDescription>
+              {t("settings.categories.form.card.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <InlineEditField
+                label={t("settings.categories.form.name.label")}
+                placeholder={t("settings.categories.form.name.placeholder")}
+                defaultValue={category.name}
+                codec={requiredTextCodec}
+                errorKey="settings.categories.form.name.invalid"
+                onSave={(name) =>
+                  runToast(async (run) => {
+                    await run.ok(
+                      updateCatalogCategory({ id: category.id, name })
+                    )
+                  })
+                }
+              />
+            </FieldGroup>
+          </CardContent>
+        </Card>
+        <Button
+          label={t("settings.categories.delete")}
+          iconStart={Trash}
+          variant="destructive"
+          onPress={() => {
+            void (async () => {
+              const deleted = await confirmedRun(
+                {
+                  title: t("settings.categories.delete.confirm.title", {
+                    name: category.name,
+                  }),
+                  description: t(
+                    "settings.categories.delete.confirm.description",
+                    { name: category.name }
+                  ),
+                  confirmLabel: t("settings.categories.delete.confirm.confirm"),
+                  cancelLabel: t("settings.categories.delete.confirm.cancel"),
+                  variant: "destructive",
+                },
+                deleteCatalogCategory(category.id)
+              )
+              if (deleted) router.back()
+            })()
+          }}
+        />
+      </YStack>
     </Screen>
   )
 }

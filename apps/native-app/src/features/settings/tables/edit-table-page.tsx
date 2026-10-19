@@ -11,12 +11,26 @@ import {
 import { tableByIdQuery } from "@payky/core/modules/table/table-queries"
 import { TableId } from "@payky/core/modules/table/table-types"
 import { router, useLocalSearchParams } from "expo-router"
-import { Text } from "tamagui"
+import Trash from "lucide-react-native/icons/trash"
+import { YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { Field } from "../../../components/field.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -100,42 +114,52 @@ function EditTableForm({ table }: { readonly table: TableRow }) {
   return (
     <Screen>
       <FadeHeader title={t("settings.tables.form.title.edit")} />
-      <Text color="muted-foreground">
-        {t("settings.tables.form.card.description")}
-      </Text>
-      <InlineEditField
-        label={t("settings.tables.form.name.label")}
-        placeholder={t("settings.tables.form.name.placeholder")}
-        defaultValue={table.name}
-        codec={requiredTextCodec}
-        errorKey="settings.tables.form.name.invalid"
-        onSave={(name) => saveTable({ name })}
-      />
-      <InlineEditField
-        label={t("settings.tables.form.seatCount.label")}
-        placeholder={t("settings.tables.form.seatCount.placeholder")}
-        keyboardType="number-pad"
-        defaultValue={table.seatCount}
-        codec={positiveIntegerCodec}
-        errorKey="settings.tables.form.seatCount.invalid"
-        onSave={(seatCount) => saveTable({ seatCount })}
-      />
-      <Field
-        label={t("settings.tables.form.code.label")}
-        value={table.code}
-        disabled
-      />
-      <Text fontSize={13} color="muted-foreground">
-        {t("settings.tables.form.code.description")}
-      </Text>
-      <Button
-        size="lg"
-        label={t("settings.tables.delete")}
-        variant="destructive"
-        onPress={() => {
-          void handleDelete()
-        }}
-      />
+      <YStack gap={20}>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.tables.form.card.title")}</CardTitle>
+            <CardDescription>
+              {t("settings.tables.form.card.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <InlineEditField
+                label={t("settings.tables.form.name.label")}
+                placeholder={t("settings.tables.form.name.placeholder")}
+                defaultValue={table.name}
+                codec={requiredTextCodec}
+                errorKey="settings.tables.form.name.invalid"
+                onSave={(name) => saveTable({ name })}
+              />
+              <InlineEditField
+                label={t("settings.tables.form.seatCount.label")}
+                placeholder={t("settings.tables.form.seatCount.placeholder")}
+                keyboardType="number-pad"
+                defaultValue={table.seatCount}
+                codec={positiveIntegerCodec}
+                errorKey="settings.tables.form.seatCount.invalid"
+                onSave={(seatCount) => saveTable({ seatCount })}
+              />
+              <Field>
+                <FieldLabel>{t("settings.tables.form.code.label")}</FieldLabel>
+                <Input value={table.code} disabled readOnly />
+                <FieldDescription>
+                  {t("settings.tables.form.code.description")}
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
+          </CardContent>
+        </Card>
+        <Button
+          label={t("settings.tables.delete")}
+          iconStart={Trash}
+          variant="destructive"
+          onPress={() => {
+            void handleDelete()
+          }}
+        />
+      </YStack>
     </Screen>
   )
 }

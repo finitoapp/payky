@@ -486,21 +486,35 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/categories/categories-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/categories/edit-category-page.tsx",
     web: [
       "apps/web-app/src/features/settings/categories/category-form-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Field:
+        "the native InlineEditField composes the same field anatomy for auto-saving edits",
+      FieldError:
+        "the native InlineEditField composes the same validation message for auto-saving edits",
+      FieldLabel:
+        "the native InlineEditField composes the same label for auto-saving edits",
+      Input:
+        "the native InlineEditField composes the same input for auto-saving edits",
+    },
   },
   {
     native: "src/features/settings/categories/new-category-page.tsx",
     web: [
       "apps/web-app/src/features/settings/categories/category-form-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      CardFooter:
+        "the web SettingsFormCard feature helper composes CardFooter; native composes the same footer directly",
+    },
   },
   {
     native: "src/features/settings/debug-console/debug-console-page.tsx",
@@ -599,17 +613,35 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/items/edit-item-page.tsx",
     web: ["apps/web-app/src/features/settings/items/item-form-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      FieldError:
+        "native auto-saving InlineEditField components own the validation messages; the web source also includes create-form FieldError parts",
+      Input:
+        "native auto-saving InlineEditField components own their inputs; the web source also includes create-form Input parts",
+      ScanCodeScanner:
+        "native renders the camera inline after the scan-code field instead of inside a modal",
+      ScanCodeScannerDialog:
+        "web wraps the scanner in a dialog; native renders it inline after the scan-code field",
+    },
   },
   {
     native: "src/features/settings/items/items-settings-page.tsx",
     web: ["apps/web-app/src/features/settings/items/items-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/items/new-item-page.tsx",
     web: ["apps/web-app/src/features/settings/items/item-form-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      CardFooter:
+        "the web SettingsFormCard feature helper composes CardFooter; native composes the same footer directly",
+      ScanCodeScanner:
+        "native renders the camera inline after the scan-code field instead of inside a modal",
+      ScanCodeScannerDialog:
+        "web wraps the scanner in a dialog; native renders it inline after the scan-code field",
+    },
   },
   {
     native: "src/features/settings/items/scan-code-button.tsx",
@@ -810,17 +842,27 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/tables/edit-table-page.tsx",
     web: ["apps/web-app/src/features/settings/tables/table-form-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      FieldError:
+        "native auto-saving InlineEditField components own validation messages; the web source also includes create-form FieldError parts",
+    },
   },
   {
     native: "src/features/settings/tables/new-table-page.tsx",
     web: ["apps/web-app/src/features/settings/tables/table-form-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      CardFooter:
+        "the web SettingsFormCard feature helper composes CardFooter; native composes the same footer directly",
+      FieldDescription:
+        "the web source's code-field description exists only after a table has been created",
+    },
   },
   {
     native: "src/features/settings/tables/tables-settings-page.tsx",
     web: ["apps/web-app/src/features/settings/tables/tables-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/tax-rates/tax-rates-settings-page.tsx",

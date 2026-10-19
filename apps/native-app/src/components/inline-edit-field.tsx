@@ -1,7 +1,7 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import Check from "lucide-react-native/icons/check"
 import X from "lucide-react-native/icons/x"
-import { type ComponentProps, useState } from "react"
+import { type ComponentProps, type ReactNode, useState } from "react"
 import { View, XStack } from "tamagui"
 import { z } from "zod"
 import { useToast } from "../hooks/use-toast.ts"
@@ -31,6 +31,7 @@ export function InlineEditField<T extends string | number | null>({
   defaultValue,
   codec,
   errorKey,
+  trailing,
   onSave,
   startEditing = false,
   onEditFinished,
@@ -44,6 +45,8 @@ export function InlineEditField<T extends string | number | null>({
   readonly defaultValue: T
   readonly codec: z.core.$ZodType<T, string>
   readonly errorKey: TranslationKey
+  /** A control inside the input while idle, hidden during an edit. */
+  readonly trailing?: ReactNode
   readonly onSave: (value: T) => Promise<boolean>
   /**
    * Mounts the field already in edit mode, for a caller that renders it only
@@ -89,7 +92,7 @@ export function InlineEditField<T extends string | number | null>({
   return (
     <Field>
       <FieldLabel>{label}</FieldLabel>
-      <View>
+      <View position="relative">
         <Input
           value={draft ?? z.encode(codec, defaultValue)}
           placeholder={placeholder}
@@ -98,7 +101,7 @@ export function InlineEditField<T extends string | number | null>({
           autoCorrect={false}
           invalid={invalid}
           accessibilityLabel={label}
-          pr={draft === null ? 10 : 80}
+          pr={draft === null ? (trailing === undefined ? 10 : 48) : 80}
           onChangeText={(text) => {
             setDraft(text)
             setInvalid(false)
@@ -107,6 +110,11 @@ export function InlineEditField<T extends string | number | null>({
             void commit()
           }}
         />
+        {draft === null && trailing !== undefined ? (
+          <View position="absolute" t={0} b={0} r={8} justify="center">
+            {trailing}
+          </View>
+        ) : null}
         {draft === null ? null : (
           <XStack position="absolute" t={0} b={0} r={4} items="center" gap={2}>
             <Button

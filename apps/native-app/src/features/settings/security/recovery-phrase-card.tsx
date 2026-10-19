@@ -7,6 +7,19 @@ import { AppState } from "react-native"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -31,44 +44,49 @@ export function RecoveryPhraseCard() {
   }, [])
 
   return (
-    <YStack
-      gap="3"
-      p="4"
-      rounded="lg"
-      borderWidth={1}
-      borderColor="border-color"
-    >
-      <Text fontWeight="700">{t("settings.security.mnemonic.title")}</Text>
-      <Text color="muted-foreground">
-        {t("settings.security.mnemonic.description")}
-      </Text>
-      <Text fontSize="sm" fontWeight="600">
-        {t("settings.security.mnemonic.label")}
-      </Text>
-      {revealed ? <RevealedPhrase /> : <Text>{"••••••••••••"}</Text>}
-      <Text fontSize={13} color="muted-foreground">
-        {t("settings.security.mnemonic.help")}
-      </Text>
-      <Text fontSize={13} color="muted-foreground">
-        {t("settings.security.mnemonic.warning")}
-      </Text>
-      <Button
-        size="lg"
-        label={t(revealed ? "passwordTextarea.hide" : "passwordTextarea.show")}
-        variant="outline"
-        onPress={() => {
-          if (revealed) {
-            setRevealed(false)
-            return
-          }
-          void (async () => {
-            if (await require("admin", "access.action.revealRecoveryPhrase")) {
-              setRevealed(true)
-            }
-          })()
-        }}
-      />
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.security.mnemonic.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.security.mnemonic.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <YStack gap="3">
+          <FieldGroup>
+            <Field>
+              <FieldLabel>{t("settings.security.mnemonic.label")}</FieldLabel>
+              {revealed ? <RevealedPhrase /> : <Text>{"••••••••••••"}</Text>}
+              <FieldDescription>
+                {t("settings.security.mnemonic.help")}
+              </FieldDescription>
+              <FieldDescription>
+                {t("settings.security.mnemonic.warning")}
+              </FieldDescription>
+            </Field>
+          </FieldGroup>
+          <Button
+            label={t(
+              revealed ? "passwordTextarea.hide" : "passwordTextarea.show"
+            )}
+            variant="outline"
+            onPress={() => {
+              if (revealed) {
+                setRevealed(false)
+                return
+              }
+              void (async () => {
+                if (
+                  await require("admin", "access.action.revealRecoveryPhrase")
+                ) {
+                  setRevealed(true)
+                }
+              })()
+            }}
+          />
+        </YStack>
+      </CardContent>
+    </Card>
   )
 }
 

@@ -5,13 +5,24 @@ import {
   profileFromMetadata,
   publishNostrProfile,
 } from "@payky/core/integrations/nostr/nostr-client"
+import Copy from "lucide-react-native/icons/copy"
+import ImageIcon from "lucide-react-native/icons/image"
+import Trash from "lucide-react-native/icons/trash"
 import { useState } from "react"
-import { ActivityIndicator, Image, Text as NativeText } from "react-native"
+import { Image, Text as NativeText } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import { Skeleton } from "../../../components/ui/skeleton.tsx"
 import { useCopyToClipboard } from "../../../hooks/use-copy-to-clipboard.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import {
@@ -21,6 +32,7 @@ import {
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { pickProfilePicture } from "../../../platform/pick-profile-picture.ts"
+import { radius } from "../../../theme/tokens.ts"
 
 /**
  * Edits the name and picture of the account's Nostr profile, as web's
@@ -38,42 +50,66 @@ export function ProfileSettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.profile.title")} />
-      <Text color="muted-foreground">{t("settings.profile.description")}</Text>
-      {profile.data !== null ? (
-        <ProfileEditor profile={profile.data} />
-      ) : profile.failed && !profile.loading ? (
-        <YStack gap="2" accessibilityRole="alert">
-          <Text color="destructive">{t("settings.profile.loadFailed")}</Text>
-          <Button
-            size="lg"
-            label={t("settings.profile.retry")}
-            variant="outline"
-            onPress={() => setAttempt(attempt + 1)}
-          />
-        </YStack>
-      ) : (
-        <ActivityIndicator />
-      )}
-      <YStack gap="1.5">
-        <Text fontSize="sm" fontWeight="600">
-          {t("settings.profile.npub.label")}
-        </Text>
-        {/* Tamagui's Text has no `selectable`; the key is long, so it can be copied by hand. */}
-        <NativeText selectable style={{ fontSize: 12, opacity: 0.7 }}>
-          {identity.npub}
-        </NativeText>
-        <Button
-          size="lg"
-          label={t("settings.profile.npub.copy")}
-          variant="outline"
-          onPress={() =>
-            void copy(identity.npub, {
-              copied: t("settings.profile.npub.copied"),
-              failed: t("settings.profile.npub.copyFailed"),
-            })
-          }
-        />
-      </YStack>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.profile.title")}</CardTitle>
+          <CardDescription>{t("settings.profile.description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <YStack gap="5">
+            {profile.data !== null ? (
+              <ProfileEditor profile={profile.data} />
+            ) : profile.failed && !profile.loading ? (
+              <YStack gap="2" accessibilityRole="alert">
+                <Text color="destructive">
+                  {t("settings.profile.loadFailed")}
+                </Text>
+                <Button
+                  label={t("settings.profile.retry")}
+                  variant="outline"
+                  onPress={() => setAttempt(attempt + 1)}
+                />
+              </YStack>
+            ) : (
+              <YStack gap="3" accessibilityLabel={t("settings.profile.title")}>
+                <Skeleton w={80} h={80} rounded={radius.full} />
+                <Skeleton h={40} />
+              </YStack>
+            )}
+            <YStack gap="1.5">
+              <Text fontSize="sm" fontWeight="600">
+                {t("settings.profile.npub.label")}
+              </Text>
+              {/* The key can be copied by hand as well as with the button. */}
+              <XStack items="center" gap="1">
+                <NativeText
+                  selectable
+                  style={{
+                    flex: 1,
+                    fontSize: 12,
+                    opacity: 0.7,
+                    fontFamily: "monospace",
+                  }}
+                >
+                  {identity.npub}
+                </NativeText>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  accessibilityLabel={t("settings.profile.npub.copy")}
+                  iconStart={Copy}
+                  onPress={() =>
+                    void copy(identity.npub, {
+                      copied: t("settings.profile.npub.copied"),
+                      failed: t("settings.profile.npub.copyFailed"),
+                    })
+                  }
+                />
+              </XStack>
+            </YStack>
+          </YStack>
+        </CardContent>
+      </Card>
     </Screen>
   )
 }
@@ -141,17 +177,17 @@ function ProfileEditor({ profile }: { readonly profile: NostrProfile }) {
           </YStack>
           <YStack gap="2" flex={1}>
             <Button
-              size="lg"
               label={t("settings.profile.picture.choose")}
               variant="outline"
+              iconStart={ImageIcon}
               disabled={picture.saving}
               onPress={() => void choosePicture()}
             />
             {picture.value !== null ? (
               <Button
-                size="lg"
                 label={t("settings.profile.picture.remove")}
                 variant="ghost"
+                iconStart={Trash}
                 disabled={picture.saving}
                 onPress={() => {
                   setPictureInvalid(false)

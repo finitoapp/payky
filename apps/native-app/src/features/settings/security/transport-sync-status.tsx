@@ -2,6 +2,7 @@ import type { Millis } from "@evolu/common"
 import { relaySyncStateToStatus } from "@evolu/common/local-first"
 import {
   findRelaySyncState,
+  type TransportSyncKind,
   toTransportSyncKind,
   transportRouteErrorKeys,
   transportSyncKindLabels,
@@ -11,11 +12,19 @@ import { resolveTransportUrl } from "@payky/core/evolu/device-account"
 import { isSameDay } from "date-fns"
 import { useAtomValue } from "jotai"
 import { useSyncExternalStore } from "react"
-import { Text } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
 import { nativeRun } from "../../../core/native-runtime.ts"
 import { useDebouncedValue } from "../../../hooks/use-debounced-value.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
+
+const kindDotColors = {
+  synced: "success",
+  syncing: "info",
+  connecting: "warning",
+  offline: "muted-foreground",
+  error: "destructive",
+} as const satisfies Record<TransportSyncKind, string>
 
 /** The live sync status of one active transport, from Evolu's `syncState`. */
 export function TransportSyncStatus({ url }: { readonly url: string }) {
@@ -79,12 +88,15 @@ export function TransportSyncStatus({ url }: { readonly url: string }) {
   })()
 
   return (
-    <Text
-      fontSize={12}
-      color={kind === "error" ? "destructive" : "muted-foreground"}
-    >
-      {t(transportSyncKindLabels[kind])}
-      {detail === null ? "" : ` · ${detail}`}
-    </Text>
+    <XStack items="center" gap="1.5">
+      <YStack w={8} h={8} shrink={0} rounded="full" bg={kindDotColors[kind]} />
+      <Text
+        fontSize="xs"
+        color={kind === "error" ? "destructive" : "muted-foreground"}
+      >
+        {t(transportSyncKindLabels[kind])}
+        {detail === null ? "" : ` · ${detail}`}
+      </Text>
+    </XStack>
   )
 }

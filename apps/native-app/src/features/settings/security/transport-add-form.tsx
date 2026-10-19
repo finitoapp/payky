@@ -8,12 +8,20 @@ import type { DeviceAccountId } from "@payky/core/evolu/device-client"
 import { runMutationWithCompletion } from "@payky/core/modules/shared/evolu-utils"
 import { WssUrlSchema } from "@payky/core/modules/shared/schema"
 import { useAtomValue, useSetAtom } from "jotai"
+import Plus from "lucide-react-native/icons/plus"
 import { useState } from "react"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { deviceEvoluAtom } from "../../../atoms/device-evolu.ts"
 import { reloadAppEvoluAtom } from "../../../atoms/evolu-counter.ts"
-import { Field } from "../../../components/field.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -61,36 +69,43 @@ export function TransportAddForm({
 
   return (
     <YStack gap="3">
-      <Field
-        label={t("settings.security.transports.url.label")}
-        value={url}
-        onChangeText={(next) => {
-          setUrl(next)
-          setError(null)
-          setSaved(false)
-        }}
-        disabled={pending}
-        placeholder={defaultEvoluTransportUrls[0]}
-        keyboardType="url"
-        autoCapitalize="none"
-        autoCorrect={false}
-        error={error === null ? undefined : t(error)}
-      />
-      <Text fontSize={13} color="muted-foreground">
-        {t("settings.security.transports.url.description")}
-      </Text>
-      {saved ? (
-        <Text accessibilityLiveRegion="polite">
-          {t("settings.security.transports.saved")}
-        </Text>
-      ) : null}
-      <Button
-        size="lg"
-        label={t("settings.security.transports.add")}
-        variant="outline"
-        pending={pending}
-        onPress={() => void submit()}
-      />
+      <FieldGroup>
+        <Field>
+          <FieldLabel>{t("settings.security.transports.url.label")}</FieldLabel>
+          <Input
+            value={url}
+            invalid={error !== null}
+            onChangeText={(next) => {
+              setUrl(next)
+              setError(null)
+              setSaved(false)
+            }}
+            disabled={pending}
+            placeholder={defaultEvoluTransportUrls[0]}
+            keyboardType="url"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <FieldDescription>
+            {t("settings.security.transports.url.description")}
+          </FieldDescription>
+          <FieldError>{error === null ? undefined : t(error)}</FieldError>
+        </Field>
+      </FieldGroup>
+      <XStack items="center" justify="space-between" gap="3">
+        {saved ? (
+          <Text accessibilityLiveRegion="polite">
+            {t("settings.security.transports.saved")}
+          </Text>
+        ) : null}
+        <Button
+          label={t("settings.security.transports.add")}
+          variant="outline"
+          iconStart={Plus}
+          pending={pending}
+          onPress={() => void submit()}
+        />
+      </XStack>
     </YStack>
   )
 }

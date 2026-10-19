@@ -1061,63 +1061,77 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/privacy/ai-assistant-card.tsx",
     web: ["apps/web-app/src/features/settings/privacy/ai-assistant-card.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/privacy/consent-card.tsx",
     web: [
       "apps/web-app/src/features/settings/privacy/error-reporting-card.tsx",
-      "apps/web-app/src/features/settings/privacy/ai-assistant-card.tsx",
       "apps/web-app/src/features/settings/privacy/product-lookup-card.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/privacy/privacy-settings-page.tsx",
     web: [
       "apps/web-app/src/features/settings/privacy/privacy-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/profile/profile-settings-page.tsx",
     web: [
       "apps/web-app/src/features/settings/profile/profile-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Field:
+        "Native uses InlineEditField, which renders the same ui/field primitives internally; the name edit stays editable on-device without a separate web-style field wrapper.",
+      FieldError:
+        "The native InlineEditField owns validation and renders its field error internally.",
+      FieldGroup:
+        "Native groups these controls with the CardContent YStack while keeping the app's shared InlineEditField intact.",
+      FieldLabel:
+        "The native InlineEditField and picture label render labels inside the controls' existing native components.",
+    },
   },
   {
     native: "src/features/settings/security/recovery-phrase-card.tsx",
     web: ["apps/web-app/src/features/shared/recovery-phrase-card.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      PasswordTextarea:
+        "Native intentionally keeps the phrase in an unselectable Text view, derives it only after owner approval, drops the zero-lifetime query on hide, hides on app inactivity, and prevents screenshots; web's reusable password field also offers copy and is not used on native.",
+    },
   },
   {
     native: "src/features/settings/security/security-settings-page.tsx",
     web: [
       "apps/web-app/src/features/settings/security/security-settings-page.tsx",
+      "apps/web-app/src/features/settings/security/evolu-transport-card.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/security/transport-add-form.tsx",
     web: [
       "apps/web-app/src/features/shared/evolu-transports/transport-add-form.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/security/transport-list.tsx",
     web: [
       "apps/web-app/src/features/shared/evolu-transports/transport-toggle-list.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/security/transport-sync-status.tsx",
     web: [
       "apps/web-app/src/features/shared/evolu-transports/transport-sync-status.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/settings-form-empty-state.tsx",

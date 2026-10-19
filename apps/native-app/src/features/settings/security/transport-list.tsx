@@ -8,10 +8,10 @@ import type { DeviceAccountId } from "@payky/core/evolu/device-client"
 import { runMutationWithCompletion } from "@payky/core/modules/shared/evolu-utils"
 import { useAtomValue, useSetAtom } from "jotai"
 import { useState } from "react"
-import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { deviceEvoluAtom } from "../../../atoms/device-evolu.ts"
 import { reloadAppEvoluAtom } from "../../../atoms/evolu-counter.ts"
+import { Switch } from "../../../components/ui/switch.tsx"
 import { useDeviceEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -44,17 +44,21 @@ export function TransportList({
   }
 
   return (
-    <YStack gap="2">
-      {transports.map((transport) => {
+    <YStack
+      rounded="lg"
+      borderWidth={1}
+      borderColor="border-color"
+      overflow="hidden"
+    >
+      {transports.map((transport, index) => {
         const active = transport.isActive === sqliteTrue
         return (
           <YStack
             key={transport.id}
+            borderTopWidth={index === 0 ? 0 : 1}
+            borderColor="border-color"
             gap="2"
             p="3"
-            rounded="lg"
-            borderWidth={1}
-            borderColor="border-color"
           >
             <TransportUrl url={transport.url} muted={!active} />
             <XStack items="center" justify="space-between" gap="3">
@@ -62,18 +66,28 @@ export function TransportList({
                 {active ? (
                   <TransportSyncStatus url={transport.url} />
                 ) : (
-                  <Text fontSize={12} color="muted-foreground">
-                    {t("settings.security.transports.inactive")}
-                  </Text>
+                  <XStack items="center" gap="1.5">
+                    <YStack
+                      w={8}
+                      h={8}
+                      shrink={0}
+                      rounded="full"
+                      borderWidth={1}
+                      borderColor="muted-foreground"
+                    />
+                    <Text fontSize="xs" color="muted-foreground">
+                      {t("settings.security.transports.inactive")}
+                    </Text>
+                  </XStack>
                 )}
               </YStack>
               <Switch
                 accessibilityLabel={t("settings.security.transports.toggle", {
                   url: transport.url,
                 })}
-                value={active}
+                checked={active}
                 disabled={disabled || pendingId !== null}
-                onValueChange={(checked) => {
+                onCheckedChange={(checked) => {
                   void (async () => {
                     setPendingId(transport.id)
                     await runToast(async () => {
@@ -114,14 +128,28 @@ function TransportUrl({
   const { scheme, parts } = splitTransportUrl(url)
 
   return (
-    <Text fontWeight="600" color={muted ? "muted-foreground" : "color"}>
-      {scheme}
+    <Text
+      fontSize="sm"
+      fontWeight="500"
+      color={muted ? "muted-foreground" : "color"}
+      style={{ fontFamily: "monospace" }}
+    >
+      {scheme === null ? null : <Text color="muted-foreground">{scheme}</Text>}
       {parts.map((part, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: the parts of one URL never reorder.
         <Text key={index}>
-          {index === 0
-            ? null
-            : `[${t("settings.security.transports.accountId")}]`}
+          {index === 0 ? null : (
+            <Text
+              fontFamily="body"
+              fontSize="xs"
+              color="muted-foreground"
+              bg="muted"
+              rounded="sm"
+              px="1"
+            >
+              {t("settings.security.transports.accountId")}
+            </Text>
+          )}
           {part}
         </Text>
       ))}

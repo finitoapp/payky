@@ -1,7 +1,16 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { AiAssistantAccess } from "@payky/core/evolu/device-client"
-import { Text, YStack } from "tamagui"
+import BookOpen from "lucide-react-native/icons/book-open"
+import Database from "lucide-react-native/icons/database"
+import PowerOff from "lucide-react-native/icons/power-off"
 import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { usePrivacySettings } from "./use-privacy-settings.ts"
@@ -9,21 +18,25 @@ import { usePrivacySettings } from "./use-privacy-settings.ts"
 const accessOptions = [
   {
     value: "off",
+    icon: PowerOff,
     title: "settings.privacy.aiAssistant.off.title",
     description: "settings.privacy.aiAssistant.off.description",
   },
   {
     value: "public",
+    icon: BookOpen,
     title: "settings.privacy.aiAssistant.public.title",
     description: "settings.privacy.aiAssistant.public.description",
   },
   {
     value: "all",
+    icon: Database,
     title: "settings.privacy.aiAssistant.all.title",
     description: "settings.privacy.aiAssistant.all.description",
   },
 ] as const satisfies ReadonlyArray<{
   readonly value: AiAssistantAccess
+  readonly icon: typeof BookOpen
   readonly title: TranslationKey
   readonly description: TranslationKey
 }>
@@ -35,33 +48,32 @@ export function AiAssistantCard() {
   const { require } = useRequirePermission()
 
   return (
-    <YStack
-      gap="3"
-      p="4"
-      rounded="lg"
-      borderWidth={1}
-      borderColor="border-color"
-    >
-      <Text fontWeight="700">{t("settings.privacy.aiAssistant.title")}</Text>
-      <Text color="muted-foreground">
-        {t("settings.privacy.aiAssistant.description")}
-      </Text>
-      {/* It decides what leaves the device, on a `free` page (access/0002). */}
-      <OptionToggleGroup
-        value={aiAssistantAccess}
-        options={accessOptions.map((option) => ({
-          value: option.value,
-          title: t(option.title),
-          description: t(option.description),
-        }))}
-        onChange={(next) => {
-          void (async () => {
-            if (await require("admin", "access.action.aiAccess")) {
-              setAiAssistantAccess(next)
-            }
-          })()
-        }}
-      />
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.privacy.aiAssistant.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.privacy.aiAssistant.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* It decides what leaves the device, on a `free` page (access/0002). */}
+        <OptionToggleGroup
+          value={aiAssistantAccess}
+          options={accessOptions.map((option) => ({
+            value: option.value,
+            icon: option.icon,
+            title: t(option.title),
+            description: t(option.description),
+          }))}
+          onChange={(next) => {
+            void (async () => {
+              if (await require("admin", "access.action.aiAccess")) {
+                setAiAssistantAccess(next)
+              }
+            })()
+          }}
+        />
+      </CardContent>
+    </Card>
   )
 }

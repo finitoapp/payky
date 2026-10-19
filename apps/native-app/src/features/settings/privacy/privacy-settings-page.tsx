@@ -1,5 +1,13 @@
+import { Text, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { AiAssistantCard } from "./ai-assistant-card.tsx"
 import { ConsentCard } from "./consent-card.tsx"
@@ -15,37 +23,54 @@ export function PrivacySettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.about.privacy.title")} />
-      <ConsentCard
-        title={t("settings.privacy.errorReporting.title")}
-        description={t("settings.privacy.errorReporting.description")}
-        status={t(
-          reporting
-            ? "settings.privacy.errorReporting.enabled"
-            : "settings.privacy.errorReporting.disabled"
-        )}
-        actionLabel={t(
-          reporting
-            ? "settings.privacy.errorReporting.disable"
-            : "settings.privacy.errorReporting.enable"
-        )}
-        onPress={() => settings.setErrorReportingEnabled(!reporting)}
-      />
-      <ConsentCard
-        title={t("settings.privacy.productLookup.title")}
-        description={t("settings.privacy.productLookup.description")}
-        status={t(
-          lookup
-            ? "settings.privacy.productLookup.enabled"
-            : "settings.privacy.productLookup.disabled"
-        )}
-        actionLabel={t(
-          lookup
-            ? "settings.privacy.productLookup.disable"
-            : "settings.privacy.productLookup.enable"
-        )}
-        onPress={() => settings.setProductLookupEnabled(!lookup)}
-      />
-      <AiAssistantCard />
+      <YStack gap="5">
+        <ConsentCard
+          title={t("settings.privacy.errorReporting.title")}
+          description={t("settings.privacy.errorReporting.description")}
+          enabled={reporting}
+          status={t(
+            reporting
+              ? "settings.privacy.errorReporting.enabled"
+              : "settings.privacy.errorReporting.disabled"
+          )}
+          actionLabel={t(
+            reporting
+              ? "settings.privacy.errorReporting.disable"
+              : "settings.privacy.errorReporting.enable"
+          )}
+          onPress={() => settings.setErrorReportingEnabled(!reporting)}
+        />
+        <ConsentCard
+          title={t("settings.privacy.productLookup.title")}
+          description={t("settings.privacy.productLookup.description")}
+          enabled={lookup}
+          status={t(
+            lookup
+              ? "settings.privacy.productLookup.enabled"
+              : "settings.privacy.productLookup.disabled"
+          )}
+          actionLabel={t(
+            lookup
+              ? "settings.privacy.productLookup.disable"
+              : "settings.privacy.productLookup.enable"
+          )}
+          onPress={() => settings.setProductLookupEnabled(!lookup)}
+        />
+        <AiAssistantCard />
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.about.privacy.heading")}</CardTitle>
+            <CardDescription>
+              {t("settings.about.privacy.summary")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Text color="muted-foreground" fontSize="sm">
+              {t("settings.about.privacy.body")}
+            </Text>
+          </CardContent>
+        </Card>
+      </YStack>
     </Screen>
   )
 }

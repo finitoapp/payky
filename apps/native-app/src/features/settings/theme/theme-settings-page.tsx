@@ -1,9 +1,18 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { DeviceTheme } from "@payky/core/evolu/device-client"
-import { Text, YStack } from "tamagui"
+import Laptop from "lucide-react-native/icons/laptop"
+import Moon from "lucide-react-native/icons/moon"
+import Sun from "lucide-react-native/icons/sun"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import {
   useSetThemePreference,
   useThemePreference,
@@ -24,6 +33,12 @@ const themeDescriptionKeys = {
 
 const themes: ReadonlyArray<DeviceTheme> = ["light", "dark", "system"]
 
+const themeIcons = {
+  light: Sun,
+  dark: Moon,
+  system: Laptop,
+} satisfies Record<DeviceTheme, typeof Sun>
+
 /** Light, dark or the system's, as web's `ThemeSettingsPage`; applied at once by the root layout. */
 export function ThemeSettingsPage() {
   const { t } = useTranslation()
@@ -33,21 +48,26 @@ export function ThemeSettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.theme.title")} />
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.theme.mode.title")}</Text>
-        <Text color="muted-foreground">
-          {t("settings.theme.mode.description")}
-        </Text>
-        <OptionToggleGroup
-          value={theme}
-          options={themes.map((value) => ({
-            value,
-            title: t(themeLabelKeys[value]),
-            description: t(themeDescriptionKeys[value]),
-          }))}
-          onChange={setTheme}
-        />
-      </YStack>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.theme.mode.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.theme.mode.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <OptionToggleGroup
+            value={theme}
+            options={themes.map((value) => ({
+              value,
+              icon: themeIcons[value],
+              title: t(themeLabelKeys[value]),
+              description: t(themeDescriptionKeys[value]),
+            }))}
+            onChange={setTheme}
+          />
+        </CardContent>
+      </Card>
     </Screen>
   )
 }

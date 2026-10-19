@@ -606,9 +606,14 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/home-screen/home-screen-settings-page.tsx",
     web: [
+      "apps/web-app/src/features/settings/inline-edit-switch.tsx",
       "apps/web-app/src/features/settings/home-screen/home-screen-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      SavedTick:
+        "native keeps its existing controlled query state and result toast; web InlineEditSwitch shows a brief saved tick",
+    },
   },
   {
     native: "src/features/settings/items/edit-item-page.tsx",
@@ -653,7 +658,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/language/language-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/legal-entity/legal-entity-settings-page.tsx",
@@ -907,7 +912,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/theme/theme-settings-page.tsx",
     web: ["apps/web-app/src/features/settings/theme/theme-settings-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/tips/tips-settings-page.tsx",

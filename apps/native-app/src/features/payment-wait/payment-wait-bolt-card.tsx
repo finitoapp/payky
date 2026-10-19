@@ -1,10 +1,13 @@
 import { payPaymentWithBoltCard } from "@payky/core/modules/payment/payment-actions"
 import type { PayPaymentWithBoltCardError } from "@payky/core/modules/payment/payment-errors"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
+import Nfc from "lucide-react-native/icons/nfc"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useEffect, useEffectEvent, useRef, useState } from "react"
-import { AppState } from "react-native"
-import { Text, YStack } from "tamagui"
+import { ActivityIndicator, AppState } from "react-native"
+import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
@@ -14,6 +17,7 @@ import {
   openNfcSettings,
   startNfcReading,
 } from "../../platform/nfc.ts"
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
 
 /**
  * How long a card's accepted withdrawal may take to show up as a settled
@@ -152,10 +156,13 @@ export function BoltCardReader({
 
   if (nfcStatus === "disabled") {
     return (
-      <YStack gap="2" items="center">
-        <Text color="muted-foreground" text="center">
-          {t("paymentWait.boltCard.disabled")}
-        </Text>
+      <YStack gap={8} items="center">
+        <XStack maxW={288} items="center" gap={8}>
+          <Icon icon={Nfc} color="muted-foreground" />
+          <Text shrink={1} fontSize={fontSize.sm} color="muted-foreground">
+            {t("paymentWait.boltCard.disabled")}
+          </Text>
+        </XStack>
         <Button
           size="sm"
           label={t("paymentWait.boltCard.enable")}
@@ -166,23 +173,37 @@ export function BoltCardReader({
     )
   }
 
-  return state.step === "failed" ? (
-    <Text color="destructive" text="center" accessibilityRole="alert">
-      {state.message}
-    </Text>
-  ) : (
-    <Text
-      color="muted-foreground"
-      text="center"
+  return (
+    <XStack
+      maxW={288}
+      items="center"
+      gap={8}
       accessibilityLiveRegion="polite"
+      accessibilityRole={state.step === "failed" ? "alert" : undefined}
     >
-      {t(
-        state.step === "ready"
-          ? "paymentWait.boltCard.ready"
-          : state.step === "processing"
-            ? "paymentWait.boltCard.processing"
-            : "paymentWait.boltCard.awaitingSettlement"
+      {state.step === "ready" ? (
+        <Icon icon={Nfc} />
+      ) : state.step === "failed" ? (
+        <Icon icon={TriangleAlert} color="destructive" />
+      ) : (
+        <ActivityIndicator size="small" />
       )}
-    </Text>
+      <Text
+        shrink={1}
+        fontSize={fontSize.sm}
+        fontWeight={state.step === "failed" ? fontWeight.medium : undefined}
+        color={state.step === "failed" ? "destructive" : "muted-foreground"}
+      >
+        {state.step === "failed"
+          ? state.message
+          : t(
+              state.step === "ready"
+                ? "paymentWait.boltCard.ready"
+                : state.step === "processing"
+                  ? "paymentWait.boltCard.processing"
+                  : "paymentWait.boltCard.awaitingSettlement"
+            )}
+      </Text>
+    </XStack>
   )
 }

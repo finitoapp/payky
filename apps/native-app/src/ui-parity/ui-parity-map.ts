@@ -323,27 +323,41 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/payment-wait/payment-wait-bolt-card.tsx",
     web: ["apps/web-app/src/features/payment-wait/payment-wait-bolt-card.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/payment-wait/payment-wait-card-tab.tsx",
     web: ["apps/web-app/src/features/payment-wait/payment-wait-card-tab.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/payment-wait/payment-wait-cashu-tab.tsx",
-    web: ["apps/web-app/src/features/payment-wait/payment-wait-cashu-tab.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/payment-wait/payment-wait-cashu-tab.tsx",
+      "apps/web-app/src/features/payment-wait/payment-wait-qr-request.tsx",
+    ],
+    status: "matched",
   },
   {
     native: "src/features/payment-wait/payment-wait-iban-tab.tsx",
-    web: ["apps/web-app/src/features/payment-wait/payment-wait-iban-tab.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/payment-wait/payment-wait-iban-tab.tsx",
+      "apps/web-app/src/features/payment-wait/payment-wait-qr-request.tsx",
+    ],
+    status: "matched",
   },
   {
     native: "src/features/payment-wait/payment-wait-page.tsx",
-    web: ["apps/web-app/src/features/payment-wait/payment-wait-page.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/payment-wait/payment-wait-page.tsx",
+      "apps/web-app/src/features/payment-wait/payment-wait-cash-tab.tsx",
+      "apps/web-app/src/features/payment-wait/payment-wait-qr-request.tsx",
+    ],
+    status: "matched",
+    allowedDifferences: {
+      TabsContent:
+        "web renders a TabsContent per method only as a screen-reader line; native draws the active method's content directly and states it in the prompt",
+    },
   },
   {
     native: "src/features/settings/about/about-page.tsx",

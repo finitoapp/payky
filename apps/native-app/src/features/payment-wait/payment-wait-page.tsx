@@ -45,17 +45,34 @@ import { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { Currency, Integer } from "@payky/core/modules/shared/schema"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue } from "jotai"
+import Banknote from "lucide-react-native/icons/banknote"
+import Check from "lucide-react-native/icons/check"
+import Coins from "lucide-react-native/icons/coins"
+import CreditCard from "lucide-react-native/icons/credit-card"
+import Landmark from "lucide-react-native/icons/landmark"
+import X from "lucide-react-native/icons/x"
+import Zap from "lucide-react-native/icons/zap"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { useSettleStoredSwitchioResult } from "../../components/app/switchio-restored-result.tsx"
 import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
-import { Field } from "../../components/field.tsx"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
 import { Screen } from "../../components/screen.tsx"
-import { EmptyView } from "../../components/state-views.tsx"
+import { SlidingPillSegmentContent } from "../../components/sliding-pill.tsx"
+import { SuccessPanel } from "../../components/success-panel.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../../components/ui/field.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
+import { Input } from "../../components/ui/input.tsx"
+import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
@@ -65,6 +82,7 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useCashuRunToast, useRunToast } from "../../hooks/use-run-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { isSwitchioSupported } from "../../platform/switchio.ts"
+import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 import { readCashReceived } from "./cash-received.ts"
 import { BoltCardReader } from "./payment-wait-bolt-card.tsx"
 import { CardPaymentTab } from "./payment-wait-card-tab.tsx"
@@ -83,6 +101,14 @@ const methodLabelKeys = {
   cashu: "paymentWait.method.cashu",
   card: "paymentWait.method.card",
 } satisfies Record<MethodId, TranslationKey>
+
+const methodIcons = {
+  spark: Zap,
+  cash: Banknote,
+  iban: Landmark,
+  cashu: Coins,
+  card: CreditCard,
+} as const
 
 /**
  * A card decline and an unreadable terminal result must never read the same:
@@ -364,8 +390,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
   if (payment === undefined || status === null)
     return <RouteMessage>{t("paymentWait.notFound")}</RouteMessage>
-  if (status === "canceled") return <Closed messageKey="paymentWait.canceled" />
-  if (status === "paid") return <Paid />
+  if (status === "canceled")
+    return <RouteMessage>{t("paymentWait.canceled")}</RouteMessage>
+  if (status === "paid") return <Paid paymentId={paymentId} />
 
   const cashRegisterAccountId = payment.cashRegisterAccountId
   const { text, leastReceived, receivedAmount } = readCashReceived({
@@ -571,202 +598,310 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     void prepare(active, preparationKey)
   }
 
+  const sats =
+    active?.id === "spark"
+      ? payment.amountSats
+      : active?.id === "cashu"
+        ? (payment.cashuAmountSats ?? null)
+        : null
+
   return (
     <Screen>
-      <YStack items="center" gap="2" pt="6">
-        <Text color="muted-foreground">{t("paymentWait.pay")}</Text>
-        <Text fontSize={36} fontWeight="600" accessibilityRole="header">
-          {formatMinor(payment.amount)}
-        </Text>
-        {active?.id === "spark" && payment.amountSats !== null ? (
-          <Text color="muted-foreground">
-            {formatMoney(
-              { value: payment.amountSats, currency: Currency.BTC },
-              locale
-            )}
+      <FadeHeader />
+      <YStack items="center" gap={28}>
+        <YStack items="center" gap={8}>
+          <Text
+            fontSize={fontSize.sm}
+            fontWeight={fontWeight.medium}
+            color="muted-foreground"
+          >
+            {t("paymentWait.pay")}
           </Text>
-        ) : active?.id === "cashu" &&
-          payment.cashuAmountSats !== null &&
-          payment.cashuAmountSats !== undefined ? (
-          <Text color="muted-foreground">
-            {formatMoney(
-              { value: payment.cashuAmountSats, currency: Currency.BTC },
-              locale
-            )}
+          <Text
+            fontSize={36}
+            fontWeight={fontWeight.semibold}
+            fontVariant={["tabular-nums"]}
+            accessibilityRole="header"
+          >
+            {formatMinor(payment.amount)}
           </Text>
-        ) : null}
-      </YStack>
+          <Text
+            fontWeight={fontWeight.medium}
+            color="muted-foreground"
+            fontVariant={["tabular-nums"]}
+          >
+            {sats === null
+              ? "\u00A0"
+              : formatMoney({ value: sats, currency: Currency.BTC }, locale)}
+          </Text>
+        </YStack>
 
-      {methods.length > 1 ? (
-        <XStack gap="2" justify="center">
-          {methods.map(({ id }) => (
+        {active === undefined ? (
+          <Text
+            maxW={288}
+            fontSize={fontSize.sm}
+            color="muted-foreground"
+            text="center"
+          >
+            {t("paymentWait.missingRequest")}
+          </Text>
+        ) : (
+          <Tabs value={active.id} onValueChange={setSelected}>
+            <TabsList
+              h={64}
+              gap={2}
+              p={8}
+              rounded={radius.full}
+              borderWidth={1}
+              borderColor="input"
+              bg="background"
+            >
+              {methods.map(({ id }) => {
+                const isActive = id === active.id
+                return (
+                  <TabsTrigger
+                    key={id}
+                    value={id}
+                    accessibilityLabel={t(methodLabelKeys[id])}
+                    flex={0}
+                    minW={48}
+                    px={24}
+                    rounded={radius.full}
+                    bg="transparent"
+                    borderColor="transparent"
+                  >
+                    <SlidingPillSegmentContent
+                      active={isActive}
+                      icon={
+                        <Icon
+                          icon={methodIcons[id]}
+                          color={isActive ? "background" : "muted-foreground"}
+                        />
+                      }
+                      label={t(methodLabelKeys[id])}
+                    />
+                  </TabsTrigger>
+                )
+              })}
+            </TabsList>
+          </Tabs>
+        )}
+
+        {active !== undefined && preparationStatus?.status === "failed" ? (
+          <YStack gap={12} items="center">
+            <Text
+              maxW={288}
+              fontSize={fontSize.sm}
+              fontWeight={fontWeight.medium}
+              color="destructive"
+              text="center"
+            >
+              {t("paymentWait.prepareError")}
+            </Text>
+            <Button
+              variant="outline"
+              label={t("paymentWait.prepareRetry")}
+              onPress={retryPreparation}
+            />
+          </YStack>
+        ) : active === undefined ? null : active.id === "spark" ? (
+          <YStack gap={12} items="center" w="100%">
+            {sparkInvoice !== null ? (
+              <CopyableQrCode value={sparkInvoice} />
+            ) : (
+              <XStack items="center" gap={8}>
+                <ActivityIndicator />
+                <Text fontSize={fontSize.sm} color="muted-foreground">
+                  {t("paymentWait.preparing.spark")}
+                </Text>
+              </XStack>
+            )}
+            {status === "expired" ? (
+              <Text color="muted-foreground">
+                {t("payment.status.expired")}
+              </Text>
+            ) : null}
+            {/* A Bolt Card pays a Lightning invoice, not a Spark one. */}
+            {status === "pending" && payment.lnInvoice !== null ? (
+              <BoltCardReader paymentId={paymentId} />
+            ) : null}
+          </YStack>
+        ) : active.id === "cashu" ? (
+          <YStack gap={12} items="center" w="100%">
+            <CashuPaymentTab
+              paymentId={paymentId}
+              qrPayload={cashuQrPayload}
+              quoteExpired={
+                cashuQuoteExpiresAt !== null &&
+                now.getTime() >= cashuQuoteExpiresAt
+              }
+              newQuotePending={newQuotePending}
+              onNewQuote={() => void requestNewQuote()}
+            />
+          </YStack>
+        ) : active.id === "iban" && ibanNumber !== null ? (
+          <IbanPaymentTab
+            qrPayload={bankQrPayload}
+            qrPayloads={bankQrPayloads}
+            activeFormat={activeQrFormat}
+            onSelectFormat={setSelectedQrFormat}
+            iban={ibanNumber}
+            variableSymbol={payment.variableSymbol}
+            preparing={preparing}
+            canMarkPaid={canMarkIbanPaid}
+            pending={ibanPending}
+            errorKey={ibanErrorKey}
+            onMarkPaid={() => void markIbanPaid()}
+          />
+        ) : active.id === "card" ? (
+          <CardPaymentTab
+            canPayCard={canPayCard}
+            pending={cardPending}
+            errorKey={cardErrorKey}
+            hasAccount={cardAccountId !== null && cardAccountId !== undefined}
+            unresolvedTransactionId={cardUnresolvedTransactionId}
+            onPayCard={() => void payCard()}
+          />
+        ) : (
+          <YStack w="100%" items="center" gap={12} py={16}>
+            {preparing ? (
+              <XStack items="center" gap={8}>
+                <ActivityIndicator />
+                <Text fontSize={fontSize.sm} color="muted-foreground">
+                  {t("paymentWait.preparing.cash")}
+                </Text>
+              </XStack>
+            ) : null}
+            <Field w="100%" maxW={288}>
+              <FieldLabel>{t("paymentWait.cashPaid.received")}</FieldLabel>
+              <Input
+                h={48}
+                text="center"
+                fontSize={fontSize.lg}
+                fontWeight={fontWeight.semibold}
+                value={text}
+                keyboardType="decimal-pad"
+                autoComplete="off"
+                disabled={markPending}
+                invalid={receivedAmount === null}
+                onChangeText={setEdited}
+              />
+              {receivedAmount === null ? (
+                <FieldError>
+                  {t("paymentWait.cashPaid.receivedTooLow", {
+                    amount: formatMinor(leastReceived),
+                  })}
+                </FieldError>
+              ) : receivedAmount === payment.amount ? null : (
+                <FieldDescription>
+                  {t("paymentWait.cashPaid.difference", {
+                    amount: formatMinor(receivedAmount - payment.amount),
+                  })}
+                </FieldDescription>
+              )}
+            </Field>
             <Button
               size="lg"
-              key={id}
-              label={t(methodLabelKeys[id])}
-              variant={id === active?.id ? "default" : "outline"}
-              onPress={() => setSelected(id)}
+              h={56}
+              px={32}
+              iconStart={Check}
+              label={
+                markPending
+                  ? t("paymentWait.cashPaid.pending")
+                  : t("paymentWait.cashPaid.action")
+              }
+              pending={markPending}
+              disabled={!canMarkCashPaid || receivedAmount === null}
+              onPress={() => void markPaid()}
             />
-          ))}
-        </XStack>
-      ) : null}
-
-      {active === undefined ? (
-        <Text color="muted-foreground" text="center">
-          {t("paymentWait.missingRequest")}
-        </Text>
-      ) : preparationStatus?.status === "failed" ? (
-        <YStack gap="3" items="center">
-          <Text color="destructive" text="center">
-            {t("paymentWait.prepareError")}
-          </Text>
-          <Button
-            size="lg"
-            label={t("paymentWait.prepareRetry")}
-            variant="outline"
-            onPress={retryPreparation}
-          />
-        </YStack>
-      ) : active.id === "spark" ? (
-        <YStack gap="3" items="center">
-          {sparkInvoice !== null ? (
-            <CopyableQrCode value={sparkInvoice} />
-          ) : (
-            <YStack items="center" gap="2">
-              <ActivityIndicator />
-              <Text color="muted-foreground">
-                {t("paymentWait.preparing.spark")}
+            {errorKey === null ? null : (
+              <Text
+                fontSize={fontSize.sm}
+                fontWeight={fontWeight.medium}
+                color="destructive"
+                accessibilityRole="alert"
+              >
+                {t(errorKey)}
               </Text>
-            </YStack>
-          )}
-          {status === "expired" ? (
-            <Text color="muted-foreground">{t("payment.status.expired")}</Text>
-          ) : null}
-          {/* A Bolt Card pays a Lightning invoice, not a Spark one. */}
-          {status === "pending" && payment.lnInvoice !== null ? (
-            <BoltCardReader paymentId={paymentId} />
-          ) : null}
-        </YStack>
-      ) : active.id === "cashu" ? (
-        <YStack gap="3" items="center">
-          <CashuPaymentTab
-            paymentId={paymentId}
-            qrPayload={cashuQrPayload}
-            quoteExpired={
-              cashuQuoteExpiresAt !== null &&
-              now.getTime() >= cashuQuoteExpiresAt
-            }
-            newQuotePending={newQuotePending}
-            onNewQuote={() => void requestNewQuote()}
-          />
-        </YStack>
-      ) : active.id === "iban" && ibanNumber !== null ? (
-        <IbanPaymentTab
-          qrPayload={bankQrPayload}
-          qrPayloads={bankQrPayloads}
-          activeFormat={activeQrFormat}
-          onSelectFormat={setSelectedQrFormat}
-          iban={ibanNumber}
-          variableSymbol={payment.variableSymbol}
-          preparing={preparing}
-          canMarkPaid={canMarkIbanPaid}
-          pending={ibanPending}
-          errorKey={ibanErrorKey}
-          onMarkPaid={() => void markIbanPaid()}
-        />
-      ) : active.id === "card" ? (
-        <CardPaymentTab
-          canPayCard={canPayCard}
-          pending={cardPending}
-          errorKey={cardErrorKey}
-          hasAccount={cardAccountId !== null && cardAccountId !== undefined}
-          unresolvedTransactionId={cardUnresolvedTransactionId}
-          onPayCard={() => void payCard()}
-        />
-      ) : (
-        <YStack gap="3">
-          <Text fontWeight="600" text="center">
-            {t("paymentWait.cashPaid.prompt")}
-          </Text>
-          {preparing ? (
-            <YStack items="center" gap="2">
-              <ActivityIndicator />
-              <Text color="muted-foreground">
-                {t("paymentWait.preparing.cash")}
+            )}
+            {canMarkCashPaid ? null : (
+              <Text
+                maxW={288}
+                fontSize={fontSize.sm}
+                color="muted-foreground"
+                text="center"
+              >
+                {t("paymentWait.cashPaid.unavailable")}
               </Text>
-            </YStack>
-          ) : null}
-          <Field
-            label={t("paymentWait.cashPaid.received")}
-            value={text}
-            keyboardType="decimal-pad"
-            autoComplete="off"
-            disabled={markPending}
-            error={
-              receivedAmount === null
-                ? t("paymentWait.cashPaid.receivedTooLow", {
-                    amount: formatMinor(leastReceived),
-                  })
-                : undefined
-            }
-            onChangeText={setEdited}
-          />
-          {receivedAmount !== null && receivedAmount !== payment.amount ? (
-            <Text color="muted-foreground">
-              {t("paymentWait.cashPaid.difference", {
-                amount: formatMinor(receivedAmount - payment.amount),
-              })}
-            </Text>
-          ) : null}
-          <Button
-            size="lg"
-            label={
-              markPending
-                ? t("paymentWait.cashPaid.pending")
-                : t("paymentWait.cashPaid.action")
-            }
-            pending={markPending}
-            disabled={!canMarkCashPaid || receivedAmount === null}
-            onPress={() => void markPaid()}
-          />
-          {errorKey === null ? null : (
-            <Text color="destructive" accessibilityRole="alert">
-              {t(errorKey)}
-            </Text>
-          )}
+            )}
+          </YStack>
+        )}
+
+        <YStack items="center" gap={16}>
+          <Text
+            fontSize={fontSize.lg}
+            fontWeight={fontWeight.semibold}
+            text="center"
+          >
+            {t(
+              active?.id === "cash"
+                ? "paymentWait.cashPaid.prompt"
+                : active?.id === "card"
+                  ? "paymentWait.cardPaid.prompt"
+                  : "paymentWait.scanOrTap"
+            )}
+          </Text>
+          <YStack pt={8}>
+            <Button
+              size="lg"
+              variant="outline"
+              iconStart={X}
+              label={t("paymentWait.cancel")}
+              pending={cancelPending}
+              disabled={markPending || ibanPending || cardPending}
+              onPress={() => void cancel()}
+            />
+          </YStack>
         </YStack>
-      )}
-
-      <Button
-        size="lg"
-        label={t("paymentWait.cancel")}
-        variant="outline"
-        pending={cancelPending}
-        disabled={markPending || ibanPending || cardPending}
-        onPress={() => void cancel()}
-      />
-    </Screen>
-  )
-}
-
-/** Canceled or expired: nothing to settle, only the way back. */
-function Closed({ messageKey }: { readonly messageKey: TranslationKey }) {
-  const { t } = useTranslation()
-  return (
-    <Screen>
-      <EmptyView message={t(messageKey)} />
-      <Button size="lg" label={t("paymentWait.back")} onPress={goHome} />
+      </YStack>
     </Screen>
   )
 }
 
 /** Shown from the derived status alone, so a reopened paid payment shows it too. */
-function Paid() {
+function Paid({ paymentId }: { readonly paymentId: PaymentId }) {
   const { t } = useTranslation()
   return (
     <Screen>
-      <EmptyView message={t("paymentWait.paid")} />
-      <Button size="lg" label={t("paymentWait.back")} onPress={goHome} />
+      <YStack flex={1} items="center" justify="center">
+        <SuccessPanel
+          title={t("paymentWait.paid")}
+          actions={
+            <YStack items="center" gap={32} pt={64} w={320} maxW="100%">
+              <Button
+                size="lg"
+                h={64}
+                w="100%"
+                label={t("paymentWait.back")}
+                onPress={goHome}
+              />
+              <Button
+                size="lg"
+                variant="outline"
+                h={48}
+                w="100%"
+                label={t("paymentWait.detail")}
+                onPress={() =>
+                  router.push({
+                    pathname: "/activity/[paymentId]",
+                    params: { paymentId },
+                  })
+                }
+              />
+            </YStack>
+          }
+        />
+      </YStack>
     </Screen>
   )
 }

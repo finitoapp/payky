@@ -1,11 +1,13 @@
 import { cashuTokenArrivals } from "@payky/core/cashu/cashu-token-listener"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
+import RefreshCw from "lucide-react-native/icons/refresh-cw"
 import { useSyncExternalStore } from "react"
 import { ActivityIndicator } from "react-native"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize } from "../../theme/tokens.ts"
 import { cashuArrivalMessage } from "./cashu-arrival.ts"
 
 /**
@@ -35,7 +37,13 @@ export function CashuPaymentTab({
   if (arrival !== null) {
     const { key, params } = cashuArrivalMessage(arrival)
     return (
-      <Text color="muted-foreground" text="center" accessibilityRole="alert">
+      <Text
+        maxW={288}
+        fontSize={fontSize.sm}
+        color="muted-foreground"
+        text="center"
+        accessibilityRole="alert"
+      >
         {t(key, params)}
       </Text>
     )
@@ -43,12 +51,17 @@ export function CashuPaymentTab({
 
   if (quoteExpired)
     return (
-      <YStack gap="3" items="center">
-        <Text color="muted-foreground" text="center">
+      <YStack gap={12} items="center">
+        <Text
+          maxW={288}
+          fontSize={fontSize.sm}
+          color="muted-foreground"
+          text="center"
+        >
           {t("paymentWait.cashu.quoteExpired")}
         </Text>
         <Button
-          size="lg"
+          iconStart={RefreshCw}
           label={t("paymentWait.cashu.newQuote")}
           variant="outline"
           pending={newQuotePending}
@@ -58,10 +71,12 @@ export function CashuPaymentTab({
     )
 
   return qrPayload === null ? (
-    <YStack items="center" gap="2">
+    <XStack items="center" gap={8}>
       <ActivityIndicator />
-      <Text color="muted-foreground">{t("paymentWait.preparing.cashu")}</Text>
-    </YStack>
+      <Text fontSize={fontSize.sm} color="muted-foreground">
+        {t("paymentWait.preparing.cashu")}
+      </Text>
+    </XStack>
   ) : (
     <CopyableQrCode value={qrPayload} />
   )

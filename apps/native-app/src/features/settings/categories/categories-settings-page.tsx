@@ -2,6 +2,7 @@ import {
   catalogCategoriesExistQuery,
   catalogCategoriesPageQuery,
 } from "@payky/core/modules/catalog-category/catalog-category-queries"
+import Folder from "lucide-react-native/icons/folder"
 import { Suspense, useCallback, useState } from "react"
 import { YStack } from "tamagui"
 import { ListSkeleton } from "../../../components/list-skeleton.tsx"
@@ -68,6 +69,7 @@ function CategoriesList({
     <SettingsEntityList
       deps={[search]}
       createPageQuery={createPageQuery}
+      icon={Folder}
       hasAny={hasAny}
       emptyTitle={t("settings.categories.empty.title")}
       emptyDescription={t("settings.categories.empty.description")}

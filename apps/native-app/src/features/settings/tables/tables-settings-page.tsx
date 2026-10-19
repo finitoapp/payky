@@ -2,6 +2,7 @@ import {
   tablesExistQuery,
   tablesPageQuery,
 } from "@payky/core/modules/table/table-queries"
+import Table2 from "lucide-react-native/icons/table-2"
 import { Suspense, useCallback, useState } from "react"
 import { YStack } from "tamagui"
 import { ListSkeleton } from "../../../components/list-skeleton.tsx"
@@ -68,6 +69,7 @@ function TablesList({
     <SettingsEntityList
       deps={[search]}
       createPageQuery={createPageQuery}
+      icon={Table2}
       hasAny={hasAny}
       emptyTitle={t("settings.tables.empty.title")}
       emptyDescription={t("settings.tables.empty.description")}

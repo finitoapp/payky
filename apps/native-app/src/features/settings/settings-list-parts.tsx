@@ -1,6 +1,7 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
 import type { EvoluSchema } from "@payky/core/evolu/schema"
 import { type Href, router } from "expo-router"
+import type { LucideIcon } from "lucide-react-native"
 import Plus from "lucide-react-native/icons/plus"
 import { type ReactNode, Suspense } from "react"
 import { ActivityIndicator, FlatList } from "react-native"
@@ -73,7 +74,10 @@ export interface SettingsListRowData {
   readonly href?: Href | undefined
 }
 
-function toVerticalNavItem(row: SettingsListRowData): VerticalNavItem {
+function toVerticalNavItem(
+  row: SettingsListRowData,
+  icon: LucideIcon
+): VerticalNavItem {
   const label = (
     // No flex={1}: it would grow to the row's height and, wrapping, pack
     // a one-line label at the top instead of the row's center.
@@ -102,9 +106,11 @@ function toVerticalNavItem(row: SettingsListRowData): VerticalNavItem {
     </XStack>
   )
 
+  // Web's lucide icon without a size class: the 24 px default.
+  const rowIcon = <Icon icon={icon} size={24} color="muted-foreground" />
   return row.href === undefined
-    ? { kind: "static", id: row.id, label, disableAction: true }
-    : { kind: "link", id: row.id, href: row.href, label }
+    ? { kind: "static", id: row.id, icon: rowIcon, label, disableAction: true }
+    : { kind: "link", id: row.id, href: row.href, icon: rowIcon, label }
 }
 
 /**
@@ -117,6 +123,7 @@ export function SettingsEntityList<R extends Row>({
   deps,
   createPageQuery,
   renderRow,
+  icon,
   hasAny,
   emptyTitle,
   emptyDescription,
@@ -125,6 +132,8 @@ export function SettingsEntityList<R extends Row>({
   readonly deps: readonly unknown[]
   readonly createPageQuery: (limit: number) => Query<EvoluSchema, R>
   readonly renderRow: (row: QueryRows<R>[number]) => SettingsListRowData
+  /** Leads every row, as web's lists pass one icon per row. */
+  readonly icon: LucideIcon
   readonly hasAny: boolean
   /** Already translated. */
   readonly emptyTitle: string
@@ -168,7 +177,10 @@ export function SettingsEntityList<R extends Row>({
           hasMore ? <ActivityIndicator style={{ padding: 16 }} /> : undefined
         }
         renderItem={({ item, index }) => (
-          <VerticalNavRow item={toVerticalNavItem(item)} first={index === 0} />
+          <VerticalNavRow
+            item={toVerticalNavItem(item, icon)}
+            first={index === 0}
+          />
         )}
       />
     </VerticalNav>

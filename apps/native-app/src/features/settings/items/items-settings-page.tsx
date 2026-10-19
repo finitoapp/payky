@@ -12,6 +12,7 @@ import {
 } from "@payky/core/modules/catalog-item/catalog-item-utils"
 import { Integer } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
+import Tag from "lucide-react-native/icons/tag"
 import { Suspense, useCallback, useMemo, useState } from "react"
 import { YStack } from "tamagui"
 import { ListSkeleton } from "../../../components/list-skeleton.tsx"
@@ -140,6 +141,7 @@ function ItemsList({
     <SettingsEntityList
       deps={[search, categoryFilter]}
       createPageQuery={createPageQuery}
+      icon={Tag}
       hasAny={hasAny}
       emptyTitle={t("settings.items.empty.title")}
       emptyDescription={t("settings.items.empty.description")}

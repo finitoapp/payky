@@ -9,11 +9,10 @@ import {
 import ChevronDown from "lucide-react-native/icons/chevron-down"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import type { ReactNode } from "react"
-import { ScrollView } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, View, XStack, YStack } from "tamagui"
+import { Text, View, XStack, YStack } from "tamagui"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
+import { Screen } from "../../components/screen.tsx"
 import {
   Alert,
   AlertDescription,
@@ -39,21 +38,11 @@ export function DetailScreen({
   readonly title: string
   readonly children: ReactNode
 }) {
-  const theme = useTheme()
-
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        paddingHorizontal: 16,
-        backgroundColor: theme.background.val,
-      }}
-    >
+    <Screen>
       <FadeHeader title={title} />
-      <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 24 }}>
-        {children}
-      </ScrollView>
-    </SafeAreaView>
+      {children}
+    </Screen>
   )
 }
 

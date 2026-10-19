@@ -4,15 +4,17 @@ import type { Href } from "expo-router"
 import Receipt from "lucide-react-native/icons/receipt"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import type { ReactNode } from "react"
-import { FlatList } from "react-native"
+import { Animated } from "react-native"
 import { Text, View, XStack, YStack } from "tamagui"
 import { ListSkeleton } from "../../components/list-skeleton.tsx"
+import { screenPadding, useScreenScroll } from "../../components/screen.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { VerticalNav } from "../../components/vertical-nav.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight } from "../../theme/tokens.ts"
 import { paymentMethodIcon } from "../shared/payment-method-display.ts"
+import { useActivityHeader } from "./activity-shell.tsx"
 
 /**
  * The pieces the payment and bill lists share, so the two activity tabs read
@@ -169,6 +171,7 @@ function ActivityDay({ group }: { readonly group: ActivityGroup }) {
  * Day-grouped, paginated list (`useInfinitePages`) as one `FlatList` of day
  * cards with stable keys, so live updates move rows instead of remounting
  * the list. An empty history is the titled card with web's empty state.
+ * The shell's header and tabs lead the list, so they scroll with it.
  */
 export function ActivityList({
   groups,
@@ -188,10 +191,27 @@ export function ActivityList({
   readonly isPending: boolean
   readonly loadMore: () => void
 }) {
+  const header = useActivityHeader()
+  const scrollY = useScreenScroll()
   return (
-    <FlatList
+    <Animated.FlatList
       style={{ flex: 1 }}
-      contentContainerStyle={{ gap: 16, paddingBottom: 16 }}
+      contentContainerStyle={{
+        gap: 16,
+        // Padded inside the scroll, so the list and its scrollbar span the
+        // screen's full width.
+        padding: screenPadding,
+      }}
+      scrollEventThrottle={16}
+      onScroll={
+        scrollY === null
+          ? undefined
+          : Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true }
+            )
+      }
+      ListHeaderComponent={header ?? undefined}
       data={groups}
       keyExtractor={(group) => group.key}
       onEndReachedThreshold={0.5}

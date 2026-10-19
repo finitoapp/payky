@@ -6,7 +6,11 @@ import { useTheme } from "tamagui"
 /** `Screen`'s content padding, web's `p-4`. */
 export const screenPadding = 16
 
-const ScreenScrollContext = createContext<Animated.Value | null>(null)
+/**
+ * The scroll offset `FadeHeader` follows. `Screen` provides it; a screen that
+ * scrolls a list of its own (activity) provides its list's instead.
+ */
+export const ScreenScrollContext = createContext<Animated.Value | null>(null)
 
 /** The screen's vertical scroll offset, for `FadeHeader`; `null` outside a `Screen`. */
 export const useScreenScroll = () => useContext(ScreenScrollContext)

@@ -1,17 +1,24 @@
 import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import { formatSatsAmount } from "@payky/app-shared/format-money"
-import { removeKnownCashuMint } from "@payky/core/cashu/cashu-mints"
+import {
+  removeKnownCashuMint,
+  writeCashuDefaultMint,
+} from "@payky/core/cashu/cashu-mints"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
 import { normalizeMintUrl } from "@payky/core/modules/cashu/cashu-utils"
 import { useQuery } from "@tanstack/react-query"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue } from "jotai"
+import Star from "lucide-react-native/icons/star"
 import Trash2 from "lucide-react-native/icons/trash"
 import { Suspense } from "react"
 import { Image } from "react-native"
 import { Text, XStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
-import { cashuWalletDepAtom } from "../../../atoms/cashu.ts"
+import {
+  cashuShardStoreAtom,
+  cashuWalletDepAtom,
+} from "../../../atoms/cashu.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { LoadingView } from "../../../components/loading-view.tsx"
 import { RouteMessage } from "../../../components/route-message.tsx"
@@ -29,9 +36,13 @@ import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useCashuRunToast } from "../../../hooks/use-run-toast.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
+import { fontSize } from "../../../theme/tokens.ts"
 import { useCashuWalletSnapshot } from "../../shared/cashu/use-cashu-wallet-snapshot.ts"
 
-/** One mint, as web's `CashuMintDetailPage`: info, balance, default badge and removal. */
+/**
+ * One mint, as web's `CashuMintDetailPage`: info, balance, the default badge
+ * or "set as default", and removal. Web's move-funds card is not here yet.
+ */
 export function CashuMintDetailPage() {
   const { t } = useTranslation()
   const { mint } = useLocalSearchParams<{ mint: string }>()
@@ -54,7 +65,8 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
   const { require } = useRequirePermission()
   const account = useAtomValue(accountAtom)
   const walletDep = useAtomValue(cashuWalletDepAtom)
-  const { snapshot } = useCashuWalletSnapshot()
+  const store = useAtomValue(cashuShardStoreAtom)
+  const { snapshot, refetch } = useCashuWalletSnapshot()
   const info = useQuery({
     queryKey: ["cashuMintInfo", account.id, mint],
     // A fetch that records nothing: the mint is not marked seen by looking.
@@ -68,6 +80,16 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
 
   const balance = snapshot?.balances.get(mint) ?? 0
   const isDefault = snapshot?.defaultMint === mint
+
+  // Where new Cashu payments go, in the wallet shared with Linky; the write
+  // goes through the shard store, as web's.
+  const setAsDefault = async () => {
+    if (!(await require("admin", "access.action.cashuMints"))) return
+    await runToast(async () => {
+      await writeCashuDefaultMint(store, mint)
+      await refetch()
+    })
+  }
 
   const remove = async () => {
     if (!(await require("admin", "access.action.cashuMints"))) return
@@ -121,10 +143,17 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
           </CardDescription>
         </CardHeader>
         {isDefault ? null : (
-          <CardContent>
-            <Text color="muted-foreground">
+          <CardContent gap={12}>
+            <Text fontSize={fontSize.sm} color="muted-foreground">
               {t("settings.cashuMints.defaultWarning")}
             </Text>
+            <Button
+              variant="outline"
+              iconStart={Star}
+              label={t("settings.cashuMints.setDefault")}
+              disabled={info.isError}
+              onPress={() => void setAsDefault()}
+            />
           </CardContent>
         )}
       </Card>

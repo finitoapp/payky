@@ -16,6 +16,7 @@ import {
   maxFailedPinAttempts,
   type Permission,
 } from "@payky/core/modules/access/access-types"
+import { router } from "expo-router"
 import Delete from "lucide-react-native/icons/delete"
 import KeyRound from "lucide-react-native/icons/key-round"
 import LockKeyhole from "lucide-react-native/icons/lock-keyhole"
@@ -175,6 +176,17 @@ export function PinScreen({
           attempts={view.attempts}
           pending={pending}
           onContinue={() => void finish(view.via, view.attempts.length)}
+          // As web: a forgotten PIN was just bypassed with the phrase, so
+          // offer to replace it. Unlocking first starts the session the
+          // admin-only access settings need.
+          onSetNewPin={
+            view.via === "phrase"
+              ? async () => {
+                  await finish(view.via, view.attempts.length)
+                  router.push("/settings/access")
+                }
+              : undefined
+          }
         />
       ) : view.kind === "phrase" ? (
         <PhraseForm
@@ -424,10 +436,13 @@ function FailedAttempts({
   attempts,
   pending,
   onContinue,
+  onSetNewPin,
 }: {
   readonly attempts: ReadonlyArray<PinAttemptRow>
   readonly pending: boolean
   readonly onContinue: () => void
+  /** Only after a recovery-phrase unlock. */
+  readonly onSetNewPin: (() => Promise<void>) | undefined
 }) {
   const { t, language } = useTranslation()
 
@@ -461,7 +476,15 @@ function FailedAttempts({
           ))}
         </>
       ) : null}
-      <XStack justify="flex-end">
+      <XStack justify="flex-end" flexWrap="wrap" gap={8}>
+        {onSetNewPin === undefined ? null : (
+          <Button
+            variant="outline"
+            label={t("access.phrase.setNewPin")}
+            disabled={pending}
+            onPress={() => void onSetNewPin()}
+          />
+        )}
         <Button
           label={t("access.attempts.continue")}
           pending={pending}

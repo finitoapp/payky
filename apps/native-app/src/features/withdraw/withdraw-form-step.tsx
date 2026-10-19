@@ -19,7 +19,6 @@ import {
 import { parseWithdrawDestination } from "@payky/core/modules/withdraw/withdraw-destination-utils"
 import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@payky/core/modules/withdraw/withdraw-utils"
 import { type ReactNode, useRef, useState } from "react"
-import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { Field } from "../../components/field.tsx"
 import {
@@ -27,6 +26,28 @@ import {
   ScanCodeScanner,
 } from "../../components/scan-code-scanner.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card.tsx"
+import { Checkbox } from "../../components/ui/checkbox.tsx"
+import {
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  Field as KitField,
+} from "../../components/ui/field.tsx"
+import { Input } from "../../components/ui/input.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useBtcFiat, useLnurlPayMetadata } from "../../hooks/use-btc-fiat.ts"
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts"
@@ -189,199 +210,214 @@ export function WithdrawFormFields({
   }
 
   return (
-    <YStack gap="4">
-      <Text color="muted-foreground">
-        {t(
-          method === "spark"
-            ? "withdraw.form.description"
-            : "withdraw.cashu.form.description"
-        )}
-      </Text>
-      {beforeDestination}
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("withdraw.form.title")}</CardTitle>
+        <CardDescription>
+          {t(
+            method === "spark"
+              ? "withdraw.form.description"
+              : "withdraw.cashu.form.description"
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          {beforeDestination}
 
-      <YStack gap="1.5">
-        <Field
-          label={t("withdraw.destination.label")}
-          value={draft.destination}
-          placeholder={t("withdraw.destination.placeholder")}
-          autoCapitalize="none"
-          autoCorrect={false}
-          error={state.error === null ? undefined : t(state.error)}
-          onChangeText={(value) => {
-            setSubmitError(null)
-            onDraftChange(draftWithDestination(draft, value))
-          }}
-        />
-        <Button
-          size="lg"
-          variant="outline"
-          label={t("withdraw.destination.scan")}
-          onPress={() => setScanning((on) => !on)}
-        />
-        {scanning ? (
-          // A scan only fills the field: parsing, review and PIN run as usual.
-          <ScanCodeScanner
-            types={QR_SCAN_TYPES}
-            onScan={(raw) => {
-              setScanning(false)
-              update({ ...draftWithDestination(draft, raw.trim()) })
-            }}
-          />
-        ) : null}
-        {destination?.kind === "lightning-address" ? (
-          <LightningAddress address={destination.address} />
-        ) : null}
-        {state.hint === null ? null : (
-          <Text fontSize={13} color="muted-foreground">
-            {t(state.hint)}
-          </Text>
-        )}
-        {state.checkingAddress ? (
-          <Text fontSize={13} color="muted-foreground">
-            {t("withdraw.destination.checkingAddress")}
-          </Text>
-        ) : null}
-        {state.addressUnavailable ? (
-          <Text fontSize={13} color="destructive" accessibilityRole="alert">
-            {t("withdraw.error.lightningAddressUnavailable")}
-          </Text>
-        ) : null}
-      </YStack>
-
-      <YStack gap="1.5">
-        {invoiceAmountSats === null ? (
-          <XStack gap="2">
-            <XStack flex={1}>
-              <Button
-                size="lg"
-                label={t("withdraw.amount.unitSats")}
-                variant={draft.unit === "sats" ? "default" : "outline"}
-                disabled={effectiveWithdrawAll}
-                onPress={() => update({ unit: "sats", amount: "" })}
-              />
-            </XStack>
-            <XStack flex={1}>
-              <Button
-                size="lg"
-                label={fiat.currency}
-                variant={draft.unit === "fiat" ? "default" : "outline"}
-                disabled={effectiveWithdrawAll || fiat.rate === null}
-                onPress={() => update({ unit: "fiat", amount: "" })}
-              />
-            </XStack>
-          </XStack>
-        ) : null}
-        <Field
-          label={t("withdraw.amount.label")}
-          value={
-            invoiceAmountSats !== null
-              ? String(invoiceAmountSats)
-              : draft.amount
-          }
-          disabled={effectiveWithdrawAll || invoiceAmountSats !== null}
-          keyboardType={draft.unit === "sats" ? "number-pad" : "decimal-pad"}
-          placeholder={
-            draft.unit === "sats"
-              ? t("withdraw.amount.placeholder")
-              : t("withdraw.amount.placeholderFiat", {
-                  currency: fiat.currency,
-                })
-          }
-          onChangeText={(amount) => update({ amount })}
-        />
-        {invoiceAmountSats !== null ? (
-          <Text fontSize={13} color="muted-foreground">
-            {`${t("withdraw.amount.fromInvoice")} ${fiat.approx(invoiceAmountSats) ?? ""}`.trim()}
-          </Text>
-        ) : equivalent !== null && !effectiveWithdrawAll ? (
-          <Text fontSize={13} color="muted-foreground">
-            {equivalent}
-          </Text>
-        ) : null}
-        {state.range === null ? null : (
-          <Text
-            fontSize={13}
-            color={outOfRange ? "destructive" : "muted-foreground"}
-          >
-            {t("withdraw.amount.range", {
-              min: sats(state.range.minSendableSats),
-              max: sats(state.range.maxSendableSats),
-            })}
-          </Text>
-        )}
-        {onchainMinimumSats === null ? null : (
-          <Text
-            fontSize={13}
-            color={belowOnchainMinimum ? "destructive" : "muted-foreground"}
-          >
-            {t("withdraw.amount.onchainMinimum", {
-              amount: sats(onchainMinimumSats),
-            })}
-          </Text>
-        )}
-        {availableSats === null ? null : (
-          <Text fontSize={13} color="muted-foreground">
-            {`${t("withdraw.amount.available", { amount: sats(availableSats) })} ${fiat.approx(availableSats) ?? ""}`.trim()}
-          </Text>
-        )}
-      </YStack>
-
-      <XStack gap="3" items="center">
-        <Switch
-          accessibilityLabel={t("withdraw.all.label")}
-          value={effectiveWithdrawAll}
-          disabled={withdrawAllUnavailable !== null}
-          onValueChange={(withdrawAll) => update({ withdrawAll })}
-        />
-        <YStack flex={1}>
-          <Text fontWeight="600">{t("withdraw.all.label")}</Text>
-          <Text fontSize={13} color="muted-foreground">
-            {t(withdrawAllUnavailable ?? "withdraw.all.description")}
-          </Text>
-        </YStack>
-      </XStack>
-
-      <Collapsible label={t("withdraw.options.label")}>
-        {state.commentAllowed > 0 ? (
-          <YStack gap="1">
+          <YStack gap="1.5">
             <Field
-              label={t("withdraw.recipientComment.label")}
-              value={draft.recipientComment}
-              maxLength={state.commentAllowed}
-              onChangeText={(recipientComment) => update({ recipientComment })}
+              label={t("withdraw.destination.label")}
+              value={draft.destination}
+              placeholder={t("withdraw.destination.placeholder")}
+              autoCapitalize="none"
+              autoCorrect={false}
+              error={state.error === null ? undefined : t(state.error)}
+              onChangeText={(value) => {
+                setSubmitError(null)
+                onDraftChange(draftWithDestination(draft, value))
+              }}
             />
-            <Text fontSize={13} color="muted-foreground">
-              {t("withdraw.recipientComment.hint", {
-                max: state.commentAllowed,
-              })}
-            </Text>
+            <Button
+              size="default"
+              variant="outline"
+              label={t("withdraw.destination.scan")}
+              onPress={() => setScanning((on) => !on)}
+            />
+            {scanning ? (
+              // A scan only fills the field: parsing, review and PIN run as usual.
+              <ScanCodeScanner
+                types={QR_SCAN_TYPES}
+                onScan={(raw) => {
+                  setScanning(false)
+                  update({ ...draftWithDestination(draft, raw.trim()) })
+                }}
+              />
+            ) : null}
+            {destination?.kind === "lightning-address" ? (
+              <LightningAddress address={destination.address} />
+            ) : null}
+            {state.hint === null ? null : (
+              <Text fontSize={13} color="muted-foreground">
+                {t(state.hint)}
+              </Text>
+            )}
+            {state.checkingAddress ? (
+              <Text fontSize={13} color="muted-foreground">
+                {t("withdraw.destination.checkingAddress")}
+              </Text>
+            ) : null}
+            {state.addressUnavailable ? (
+              <Text fontSize={13} color="destructive" accessibilityRole="alert">
+                {t("withdraw.error.lightningAddressUnavailable")}
+              </Text>
+            ) : null}
           </YStack>
-        ) : null}
-        <YStack gap="1">
-          <Field
-            label={t("withdraw.comment.label")}
-            value={draft.comment}
-            maxLength={255}
-            onChangeText={(comment) => update({ comment })}
-          />
-          <Text fontSize={13} color="muted-foreground">
-            {t("withdraw.comment.hint")}
-          </Text>
-        </YStack>
-      </Collapsible>
 
-      {submitError === null ? null : (
-        <Text color="destructive" accessibilityRole="alert">
-          {submitError}
-        </Text>
-      )}
-      <Button
-        size="lg"
-        label={pending ? t("withdraw.quotePending") : t("withdraw.continue")}
-        pending={pending}
-        disabled={!canSubmit}
-        onPress={() => void submit()}
-      />
-    </YStack>
+          <YStack gap="1.5">
+            <KitField>
+              <XStack justify="space-between" items="center" gap="2">
+                <FieldLabel>{t("withdraw.amount.label")}</FieldLabel>
+                {invoiceAmountSats === null ? (
+                  <ToggleGroup<WithdrawDraft["unit"]>
+                    value={draft.unit}
+                    onValueChange={(unit) => update({ unit, amount: "" })}
+                    variant="outline"
+                    size="sm"
+                    accessibilityLabel={t("withdraw.amount.unit")}
+                    disabled={effectiveWithdrawAll}
+                  >
+                    <ToggleGroupItem value="sats">
+                      {t("withdraw.amount.unitSats")}
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="fiat" disabled={fiat.rate === null}>
+                      {fiat.currency}
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                ) : null}
+              </XStack>
+              <Input
+                accessibilityLabel={t("withdraw.amount.label")}
+                value={
+                  invoiceAmountSats !== null
+                    ? String(invoiceAmountSats)
+                    : draft.amount
+                }
+                disabled={effectiveWithdrawAll || invoiceAmountSats !== null}
+                invalid={outOfRange || belowOnchainMinimum}
+                keyboardType={
+                  draft.unit === "sats" ? "number-pad" : "decimal-pad"
+                }
+                placeholder={
+                  draft.unit === "sats"
+                    ? t("withdraw.amount.placeholder")
+                    : t("withdraw.amount.placeholderFiat", {
+                        currency: fiat.currency,
+                      })
+                }
+                onChangeText={(amount) => update({ amount })}
+              />
+              {invoiceAmountSats !== null ? (
+                <Text fontSize={13} color="muted-foreground">
+                  {`${t("withdraw.amount.fromInvoice")} ${fiat.approx(invoiceAmountSats) ?? ""}`.trim()}
+                </Text>
+              ) : equivalent !== null && !effectiveWithdrawAll ? (
+                <Text fontSize={13} color="muted-foreground">
+                  {equivalent}
+                </Text>
+              ) : null}
+              {state.range === null ? null : (
+                <Text
+                  fontSize={13}
+                  color={outOfRange ? "destructive" : "muted-foreground"}
+                >
+                  {t("withdraw.amount.range", {
+                    min: sats(state.range.minSendableSats),
+                    max: sats(state.range.maxSendableSats),
+                  })}
+                </Text>
+              )}
+              {onchainMinimumSats === null ? null : (
+                <Text
+                  fontSize={13}
+                  color={
+                    belowOnchainMinimum ? "destructive" : "muted-foreground"
+                  }
+                >
+                  {t("withdraw.amount.onchainMinimum", {
+                    amount: sats(onchainMinimumSats),
+                  })}
+                </Text>
+              )}
+              {availableSats === null ? null : (
+                <Text fontSize={13} color="muted-foreground">
+                  {`${t("withdraw.amount.available", { amount: sats(availableSats) })} ${fiat.approx(availableSats) ?? ""}`.trim()}
+                </Text>
+              )}
+            </KitField>
+          </YStack>
+
+          <KitField orientation="horizontal">
+            <Checkbox
+              checked={effectiveWithdrawAll}
+              accessibilityLabel={t("withdraw.all.label")}
+              disabled={withdrawAllUnavailable !== null}
+              onCheckedChange={(withdrawAll) => update({ withdrawAll })}
+            />
+            <FieldContent>
+              <FieldLabel>{t("withdraw.all.label")}</FieldLabel>
+              <FieldDescription>
+                {t(withdrawAllUnavailable ?? "withdraw.all.description")}
+              </FieldDescription>
+            </FieldContent>
+          </KitField>
+
+          <Collapsible
+            label={t("withdraw.options.label")}
+            defaultOpen={draft.recipientComment !== "" || draft.comment !== ""}
+          >
+            {state.commentAllowed > 0 ? (
+              <YStack gap="1">
+                <Field
+                  label={t("withdraw.recipientComment.label")}
+                  value={draft.recipientComment}
+                  maxLength={state.commentAllowed}
+                  onChangeText={(recipientComment) =>
+                    update({ recipientComment })
+                  }
+                />
+                <Text fontSize={13} color="muted-foreground">
+                  {t("withdraw.recipientComment.hint", {
+                    max: state.commentAllowed,
+                  })}
+                </Text>
+              </YStack>
+            ) : null}
+            <YStack gap="1">
+              <Field
+                label={t("withdraw.comment.label")}
+                value={draft.comment}
+                maxLength={255}
+                onChangeText={(comment) => update({ comment })}
+              />
+              <Text fontSize={13} color="muted-foreground">
+                {t("withdraw.comment.hint")}
+              </Text>
+            </YStack>
+          </Collapsible>
+
+          <FieldError>{submitError ?? undefined}</FieldError>
+        </FieldGroup>
+      </CardContent>
+      <CardFooter>
+        <Button
+          size="default"
+          label={pending ? t("withdraw.quotePending") : t("withdraw.continue")}
+          pending={pending}
+          disabled={!canSubmit}
+          onPress={() => void submit()}
+        />
+      </CardFooter>
+    </Card>
   )
 }

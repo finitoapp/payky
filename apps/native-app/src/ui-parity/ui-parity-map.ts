@@ -1460,46 +1460,79 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/withdraw/cashu-withdraw-form-step.tsx",
     web: ["apps/web-app/src/features/withdraw/cashu-withdraw-form-step.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Card: "The common native form renders this shared shell in WithdrawFormFields, while the web Cashu screen owns its Card.",
+      CardContent:
+        "The common native form renders this shared shell in WithdrawFormFields, while the web Cashu screen owns its CardContent.",
+      CardDescription:
+        "The common native form renders this shared shell in WithdrawFormFields, while the web Cashu screen owns its CardDescription.",
+      CardFooter:
+        "The common native form renders this shared shell in WithdrawFormFields, while the web Cashu screen owns its CardFooter.",
+      CardHeader:
+        "The common native form renders this shared shell in WithdrawFormFields, while the web Cashu screen owns its CardHeader.",
+      CardTitle:
+        "The common native form renders this shared shell in WithdrawFormFields, while the web Cashu screen owns its CardTitle.",
+      FieldError:
+        "Quote errors render in the shared native WithdrawFormFields component.",
+      FieldGroup:
+        "The shared native WithdrawFormFields component groups the common form fields.",
+    },
   },
   {
     native: "src/features/withdraw/cashu-withdraw-page.tsx",
     web: ["apps/web-app/src/features/withdraw/cashu-withdraw-page.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "Native keeps its existing no-account EmptyView; the payment-account CTA is an intentionally recorded navigation gap in this visual pass.",
   },
   {
     native: "src/features/withdraw/cashu-withdraw-review-step.tsx",
     web: ["apps/web-app/src/features/withdraw/cashu-withdraw-review-step.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/withdraw/withdraw-detail-page.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-detail-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/withdraw/withdraw-form-step.tsx",
-    web: ["apps/web-app/src/features/withdraw/withdraw-form-step.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/withdraw/withdraw-form-step.tsx",
+      "apps/web-app/src/features/withdraw/withdraw-amount-field.tsx",
+      "apps/web-app/src/features/withdraw/withdraw-all-field.tsx",
+    ],
+    status: "matched",
+    allowedDifferences: {
+      ScanCodeScanner:
+        "Native adds QR scanning to fill the same destination field before review.",
+    },
   },
   {
     native: "src/features/withdraw/withdraw-history-page.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-history-page.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "Native keeps its existing no-account EmptyView; the payment-account CTA and Spark older-transactions link remain documented navigation gaps because their destinations are outside this pass.",
   },
   {
     native: "src/features/withdraw/withdraw-page.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-page.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "Native keeps its existing no-account EmptyView; the payment-account CTA is an intentionally recorded navigation gap in this visual pass.",
   },
   {
     native: "src/features/withdraw/withdraw-parts.tsx",
-    web: ["apps/web-app/src/features/withdraw/withdraw-detail-page.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/withdraw/withdraw-collapsible.tsx",
+      "apps/web-app/src/features/withdraw/withdraw-lightning-address.tsx",
+      "apps/web-app/src/features/withdraw/withdraw-sats.tsx",
+      "apps/web-app/src/features/withdraw/withdraw-status-badge.tsx",
+    ],
+    status: "matched",
   },
   {
     native: "src/features/withdraw/withdraw-review-step.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-review-step.tsx"],
-    status: "pending",
+    status: "matched",
   },
 ]

@@ -5,6 +5,7 @@ import {
   shortWithdrawalDestination,
   withdrawalKindKeys,
   withdrawalMethod,
+  withdrawalStatusKey,
 } from "@payky/app-shared/withdraw-display"
 import type { WithdrawMethod } from "@payky/app-shared/withdraw-flow"
 import type { AccountId } from "@payky/core/modules/account/account-types"
@@ -14,13 +15,16 @@ import {
   withdrawalsByAccountQuery,
 } from "@payky/core/modules/withdraw/withdraw-queries"
 import { router } from "expo-router"
+import Plus from "lucide-react-native/icons/plus"
 import { Suspense } from "react"
-import { ActivityIndicator, FlatList, Pressable } from "react-native"
+import { FlatList } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
+import { ListSkeleton } from "../../components/list-skeleton.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import { VerticalNav } from "../../components/vertical-nav.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -83,13 +87,11 @@ function WithdrawHistoryBody({ method }: { readonly method: WithdrawMethod }) {
   return <WithdrawHistory method={method} accountId={accountId} />
 }
 
-type ListEntry =
-  | { readonly kind: "day"; readonly key: string; readonly title: string }
-  | {
-      readonly kind: "row"
-      readonly key: string
-      readonly view: WithdrawalView
-    }
+type WithdrawalGroup = {
+  readonly key: string
+  readonly title: string
+  readonly items: ReadonlyArray<WithdrawalView>
+}
 
 function SparkBalanceSummary({ accountId }: { readonly accountId: AccountId }) {
   return <BalanceSummary balance={useSparkBalance(accountId)} />
@@ -154,106 +156,116 @@ function WithdrawHistory({
     return view === null ? [] : [view]
   })
   const now = new Date()
-  const entries = groupByDay(views, (view) => new Date(view.createdAt)).flatMap(
-    (group): ReadonlyArray<ListEntry> => [
-      {
-        kind: "day",
-        key: `day:${group.date.toDateString()}`,
-        title: formatRelativeDate(group.date, now, locale),
-      },
-      ...group.items.map((view) => ({
-        kind: "row" as const,
-        key: view.id,
-        view,
-      })),
-    ]
-  )
+  const groups: ReadonlyArray<WithdrawalGroup> = groupByDay(
+    views,
+    (view) => new Date(view.createdAt)
+  ).map((group) => ({
+    key: group.date.toDateString(),
+    title: formatRelativeDate(group.date, now, locale),
+    items: group.items,
+  }))
 
   return (
-    <YStack flex={1} gap="3">
-      <Button
-        size="lg"
-        label={t("withdraw.history.new")}
-        onPress={() => router.push(withdrawRoutes[method].new)}
-      />
-      {method === "spark" ? (
-        <SparkBalanceSummary accountId={accountId} />
-      ) : (
-        <CashuBalanceSummary />
-      )}
+    <YStack flex={1} gap="4">
+      <XStack justify="space-between" items="center" gap="2">
+        <Button
+          size="default"
+          iconStart={Plus}
+          label={t("withdraw.history.new")}
+          onPress={() => router.push(withdrawRoutes[method].new)}
+        />
+        {method === "spark" ? (
+          <SparkBalanceSummary accountId={accountId} />
+        ) : (
+          <CashuBalanceSummary />
+        )}
+      </XStack>
       <FlatList
         style={{ flex: 1 }}
-        data={entries}
-        keyExtractor={(entry) => entry.key}
+        contentContainerStyle={{ gap: 16, paddingBottom: 16 }}
+        data={groups}
+        keyExtractor={(group) => group.key}
         onEndReachedThreshold={0.5}
         onEndReached={() => {
           if (hasMore && !isPending) loadMore()
         }}
-        ListEmptyComponent={<EmptyView message={t("withdraw.history.empty")} />}
+        ListEmptyComponent={
+          <VerticalNav
+            items={[]}
+            empty={
+              <Text p="4" fontSize={14} color="muted-foreground">
+                {t("withdraw.history.empty")}
+              </Text>
+            }
+          />
+        }
         ListFooterComponent={
-          hasMore ? <ActivityIndicator style={{ padding: 16 }} /> : undefined
+          hasMore && isPending ? <ListSkeleton rows={5} /> : undefined
         }
-        renderItem={({ item }) =>
-          item.kind === "day" ? (
-            <Text
-              fontSize={13}
-              fontWeight="600"
-              color="muted-foreground"
-              pt="4"
-              pb="1"
-              px="3"
-            >
-              {item.title}
-            </Text>
-          ) : (
-            <WithdrawalRow view={item.view} />
-          )
-        }
+        renderItem={({ item }) => <WithdrawalDay group={item} />}
       />
     </YStack>
   )
 }
 
-function WithdrawalRow({ view }: { readonly view: WithdrawalView }) {
+function WithdrawalDay({ group }: { readonly group: WithdrawalGroup }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const amount = t("withdraw.sats", {
-    amount: formatSatsAmount(view.amountSats, locale),
-  })
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${amount}, ${shortWithdrawalDestination(view.target)}`}
-      onPress={() =>
-        router.push({
-          pathname: withdrawRoutes[withdrawalMethod(view.target)].detail,
-          params: { withdrawalId: view.id },
+    <VerticalNav
+      title={group.title}
+      items={group.items.map((view) => {
+        const amount = t("withdraw.sats", {
+          amount: formatSatsAmount(view.amountSats, locale),
         })
-      }
-    >
-      <YStack gap="1" py="3" px="3">
-        <XStack justify="space-between" items="center" gap="2">
-          <Text fontWeight="600">{amount}</Text>
-          <WithdrawalStatusBadge view={view} />
-        </XStack>
-        <Text fontSize={12} numberOfLines={1}>
-          {shortWithdrawalDestination(view.target)}
-        </Text>
-        {view.comment === null ? null : (
-          <Text fontSize={12} color="muted-foreground" numberOfLines={1}>
-            {view.comment}
-          </Text>
-        )}
-        <Text fontSize={12} color="muted-foreground">
-          {[
+        return {
+          id: view.id,
+          kind: "button" as const,
+          accessibilityLabel: [
+            amount,
+            t(withdrawalStatusKey(view)),
+            shortWithdrawalDestination(view.target),
+            view.comment,
             t(withdrawalKindKeys[view.target.kind]),
             formatTime(new Date(view.createdAt), locale),
             view.deviceName,
           ]
             .filter((part) => part !== null)
-            .join(" · ")}
-        </Text>
-      </YStack>
-    </Pressable>
+            .join(", "),
+          onPress: () =>
+            router.push({
+              pathname: withdrawRoutes[withdrawalMethod(view.target)].detail,
+              params: { withdrawalId: view.id },
+            }),
+          label: (
+            <YStack w="100%" gap="1" items="flex-start">
+              <XStack w="100%" justify="space-between" items="center" gap="2">
+                <Text fontSize={14} fontWeight="600">
+                  {amount}
+                </Text>
+                <WithdrawalStatusBadge view={view} />
+              </XStack>
+              <Text fontSize={12} numberOfLines={1}>
+                {shortWithdrawalDestination(view.target)}
+              </Text>
+              {view.comment === null ? null : (
+                <Text fontSize={12} color="muted-foreground" numberOfLines={1}>
+                  {view.comment}
+                </Text>
+              )}
+              <Text fontSize={12} color="muted-foreground">
+                {[
+                  t(withdrawalKindKeys[view.target.kind]),
+                  formatTime(new Date(view.createdAt), locale),
+                  view.deviceName,
+                ]
+                  .filter((part) => part !== null)
+                  .join(" · ")}
+              </Text>
+            </YStack>
+          ),
+        }
+      })}
+    />
   )
 }

@@ -18,24 +18,35 @@ import {
   withdrawalRecipientSats,
 } from "@payky/core/modules/withdraw/withdraw-utils"
 import type { SparkExitSpeed } from "@payky/core/spark/spark-wallet"
+import ArrowLeft from "lucide-react-native/icons/arrow-left"
+import RefreshCw from "lucide-react-native/icons/refresh-cw"
+import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
-import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import { DetailRow } from "../../components/detail-row.tsx"
 import { Button } from "../../components/ui/button.tsx"
-import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import {
   Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card.tsx"
+import { FieldError, FieldGroup } from "../../components/ui/field.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
+import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
+import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import {
   Collapsible,
   LightningAddress,
   Mono,
-  Row,
   SatsWithFiat,
 } from "./withdraw-parts.tsx"
 
-/**
- * Spark documents no confirmation times per exit speed, so each option says
- * what it trades off rather than promising a duration.
- */
+/** Spark documents no confirmation times per exit speed, so each option says what it trades off. */
 const exitSpeedOptions: ReadonlyArray<{
   readonly value: SparkExitSpeed
   readonly label: TranslationKey
@@ -75,6 +86,7 @@ function OnchainReview({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
+  const fiat = useBtcFiat()
   const feeSats = quote.feeQuote[exitSpeed].totalFeeSats
   const totalSats = computeTotalDebitedSats({
     amountSats: quote.amountSats,
@@ -85,59 +97,63 @@ function OnchainReview({
 
   return (
     <>
-      <YStack gap="2">
+      <ToggleGroup<SparkExitSpeed>
+        value={exitSpeed}
+        onValueChange={onExitSpeedChange}
+        variant="outline"
+        spacing={0}
+        orientation="vertical"
+      >
         {exitSpeedOptions.map((option) => {
           const unavailable = isExitSpeedUnavailable(quote, option.value)
-          const selected = option.value === exitSpeed
+          const optionFee = quote.feeQuote[option.value].totalFeeSats
           return (
-            <Pressable
+            <ToggleGroupItem
               key={option.value}
-              accessibilityRole="radio"
-              accessibilityState={{ selected, disabled: unavailable }}
+              value={option.value}
               disabled={unavailable || confirming}
-              onPress={() => onExitSpeedChange(option.value)}
+              accessibilityLabel={`${t(option.label)}. ${t(option.hint)}. ${t("withdraw.sats", { amount: formatSatsAmount(optionFee, locale) })}. ${fiat.approx(optionFee) ?? ""}`}
+              h="auto"
+              w="100%"
+              justify="space-between"
+              px="4"
+              py="2"
             >
-              <XStack
-                justify="space-between"
-                items="center"
-                gap="3"
-                p="3"
-                rounded="lg"
-                borderWidth={selected ? 2 : 1}
-                borderColor={selected ? "primary" : "border-color"}
-                opacity={unavailable ? 0.5 : 1}
-              >
-                <YStack flex={1}>
-                  <Text fontWeight="600">{t(option.label)}</Text>
-                  <Text fontSize={12} color="muted-foreground">
-                    {t(option.hint)}
-                  </Text>
-                </YStack>
-                <Text>
+              <YStack flex={1} items="flex-start" gap="1">
+                <Text>{t(option.label)}</Text>
+                <Text fontSize={12} color="muted-foreground">
+                  {t(option.hint)}
+                </Text>
+              </YStack>
+              <YStack items="flex-end">
+                <Text fontSize={12} color="muted-foreground">
                   {t("withdraw.sats", {
-                    amount: formatSatsAmount(
-                      quote.feeQuote[option.value].totalFeeSats,
-                      locale
-                    ),
+                    amount: formatSatsAmount(optionFee, locale),
                   })}
                 </Text>
-              </XStack>
-            </Pressable>
+                <Text fontSize={12} color="muted-foreground">
+                  {fiat.approx(optionFee)}
+                </Text>
+              </YStack>
+            </ToggleGroupItem>
           )
         })}
+      </ToggleGroup>
+
+      <YStack gap="3">
+        <DetailRow label={t("withdraw.review.destination")} stacked>
+          <Mono value={formatAddressGroups(quote.onchainAddress)} />
+        </DetailRow>
+        <DetailRow label={t("withdraw.review.amount")}>
+          <SatsWithFiat sats={withdrawalRecipientSats(quote, exitSpeed)} />
+        </DetailRow>
+        <DetailRow label={t("withdraw.review.fee")}>
+          <SatsWithFiat sats={feeSats} />
+        </DetailRow>
+        <DetailRow label={t("withdraw.review.total")} emphasize>
+          <SatsWithFiat sats={totalSats} />
+        </DetailRow>
       </YStack>
-      <Row label={t("withdraw.review.destination")} stacked>
-        <Mono value={formatAddressGroups(quote.onchainAddress)} />
-      </Row>
-      <Row label={t("withdraw.review.amount")}>
-        <SatsWithFiat sats={withdrawalRecipientSats(quote, exitSpeed)} />
-      </Row>
-      <Row label={t("withdraw.review.fee")}>
-        <SatsWithFiat sats={feeSats} />
-      </Row>
-      <Row label={t("withdraw.review.total")} emphasize>
-        <SatsWithFiat sats={totalSats} />
-      </Row>
     </>
   )
 }
@@ -156,16 +172,16 @@ function LightningReview({
     quote.lightningAddress === null ? quote.invoice.description : null
 
   return (
-    <>
-      <Row label={t("withdraw.review.destination")} stacked>
+    <YStack gap="3">
+      <DetailRow label={t("withdraw.review.destination")} stacked>
         {quote.lightningAddress !== null ? (
           <LightningAddress address={quote.lightningAddress} />
         ) : (
           <Text>{t("withdraw.destination.kind.lightningInvoice")}</Text>
         )}
-      </Row>
+      </DetailRow>
       {quote.recipientText === null ? null : (
-        <Row
+        <DetailRow
           label={t(
             invoiceDescription === null
               ? "withdraw.review.recipientText"
@@ -174,28 +190,28 @@ function LightningReview({
           stacked
         >
           <Text>{quote.recipientText}</Text>
-        </Row>
+        </DetailRow>
       )}
-      <Row label={t("withdraw.review.amount")}>
+      <DetailRow label={t("withdraw.review.amount")}>
         <SatsWithFiat sats={quote.amountSats} />
-      </Row>
-      <Row label={t("withdraw.review.lightningFee")}>
+      </DetailRow>
+      <DetailRow label={t("withdraw.review.lightningFee")}>
         {quote.invoice.sparkFallbackIdentity !== null
           ? t("withdraw.review.maxFeeSpark", { amount: maxFee })
           : t("withdraw.review.feeEstimate", {
               estimate: formatSatsAmount(quote.feeEstimateSats, locale),
               max: maxFee,
             })}
-      </Row>
-      <Row label={t("withdraw.review.maxTotal")} emphasize>
+      </DetailRow>
+      <DetailRow label={t("withdraw.review.maxTotal")} emphasize>
         <SatsWithFiat sats={quote.amountSats + quote.maxFeeSats} />
-      </Row>
+      </DetailRow>
       <ExpiryRow msLeft={msLeft} />
       <Text color="muted-foreground">{t("withdraw.review.remainder")}</Text>
       <Collapsible label={t("withdraw.review.showInvoice")}>
         <Mono value={quote.invoice.invoice} />
       </Collapsible>
-    </>
+    </YStack>
   )
 }
 
@@ -203,11 +219,11 @@ function LightningReview({
 export function ExpiryRow({ msLeft }: { readonly msLeft: number }) {
   const { t } = useTranslation()
   return (
-    <Row label={t("withdraw.review.expiresIn")}>
+    <DetailRow label={t("withdraw.review.expiresIn")}>
       <Text color={msLeft <= EXPIRY_WARNING_MS ? "destructive" : "color"}>
         {formatCountdown(msLeft)}
       </Text>
-    </Row>
+    </DetailRow>
   )
 }
 
@@ -221,12 +237,11 @@ export const useMsLeft = (deadline: number): number => {
   return Math.max(0, deadline - now)
 }
 
-/**
- * The warning, the error and the buttons every review ends with. An
- * uncertain send (withdraw/0007) offers no confirm or new quote, only the
- * history to check the result in.
- */
-export function ReviewFooter({
+/** Shared Spark/Cashu review card; send handlers stay in their flow owners. */
+export function WithdrawReviewCard({
+  children,
+  recipientComment,
+  comment,
   error,
   nearlyExpired,
   expired,
@@ -238,6 +253,9 @@ export function ReviewFooter({
   onNewQuote,
   onOpenHistory,
 }: {
+  readonly children: ReactNode
+  readonly recipientComment: string | null
+  readonly comment: string | null
   readonly error: string | null
   readonly nearlyExpired: boolean
   readonly expired: boolean
@@ -252,34 +270,60 @@ export function ReviewFooter({
 }) {
   const { t } = useTranslation()
   return (
-    <>
-      <Text color="muted-foreground">{t("withdraw.review.warning")}</Text>
-
-      {error === null ? null : (
-        <Text color="destructive" accessibilityRole="alert">
-          {error}
-        </Text>
-      )}
-      {uncertain ? (
-        <Button
-          size="lg"
-          label={t("withdraw.history.title")}
-          onPress={onOpenHistory}
-        />
-      ) : (
-        <>
-          {error !== null || nearlyExpired ? (
-            <Button
-              size="lg"
-              label={t("withdraw.review.newQuote")}
-              variant="outline"
-              disabled={confirming}
-              pending={requoting}
-              onPress={onNewQuote}
-            />
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("withdraw.review.title")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          {children}
+          {recipientComment === null ? null : (
+            <DetailRow label={t("withdraw.review.recipientComment")} stacked>
+              <Text>{recipientComment}</Text>
+            </DetailRow>
+          )}
+          {comment === null ? null : (
+            <DetailRow label={t("withdraw.review.comment")} stacked>
+              <Text>{comment}</Text>
+            </DetailRow>
+          )}
+          <Text color="muted-foreground">{t("withdraw.review.warning")}</Text>
+          <FieldError>{error ?? undefined}</FieldError>
+          {!uncertain && (error !== null || nearlyExpired) ? (
+            <XStack>
+              <Button
+                size="default"
+                variant="outline"
+                iconStart={RefreshCw}
+                label={t("withdraw.review.newQuote")}
+                disabled={confirming || requoting}
+                pending={requoting}
+                onPress={onNewQuote}
+              />
+            </XStack>
           ) : null}
+        </FieldGroup>
+      </CardContent>
+      <CardFooter gap="2">
+        <Button
+          size="default"
+          variant="outline"
+          iconStart={ArrowLeft}
+          label={t("withdraw.review.back")}
+          disabled={confirming}
+          onPress={onBack}
+        />
+        {uncertain ? (
           <Button
-            size="lg"
+            size="default"
+            flex={1}
+            label={t("withdraw.history.title")}
+            onPress={onOpenHistory}
+          />
+        ) : (
+          <Button
+            size="default"
+            flex={1}
             label={
               confirming
                 ? t("withdraw.review.confirming")
@@ -289,16 +333,9 @@ export function ReviewFooter({
             disabled={requoting || expired}
             onPress={onConfirm}
           />
-        </>
-      )}
-      <Button
-        size="lg"
-        label={t("withdraw.review.back")}
-        variant="outline"
-        disabled={confirming}
-        onPress={onBack}
-      />
-    </>
+        )}
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -349,10 +386,20 @@ export function WithdrawReviewStep({
       : null)
 
   return (
-    <Card>
-      <Text fontSize={17} fontWeight="600">
-        {t("withdraw.review.title")}
-      </Text>
+    <WithdrawReviewCard
+      recipientComment={recipientComment}
+      comment={comment}
+      error={error}
+      nearlyExpired={nearlyExpired}
+      expired={expired}
+      confirming={confirming}
+      requoting={requoting}
+      uncertain={uncertain}
+      onBack={onBack}
+      onConfirm={onConfirm}
+      onNewQuote={onNewQuote}
+      onOpenHistory={onOpenHistory}
+    >
       {quote.kind === "onchain" ? (
         <OnchainReview
           quote={quote}
@@ -363,30 +410,6 @@ export function WithdrawReviewStep({
       ) : (
         <LightningReview quote={quote} msLeft={msLeft} />
       )}
-
-      {quote.kind === "lightning" && recipientComment !== null ? (
-        <Row label={t("withdraw.review.recipientComment")} stacked>
-          <Text>{recipientComment}</Text>
-        </Row>
-      ) : null}
-      {comment === null ? null : (
-        <Row label={t("withdraw.review.comment")} stacked>
-          <Text>{comment}</Text>
-        </Row>
-      )}
-
-      <ReviewFooter
-        error={error}
-        nearlyExpired={nearlyExpired}
-        expired={expired}
-        confirming={confirming}
-        requoting={requoting}
-        uncertain={uncertain}
-        onBack={onBack}
-        onConfirm={onConfirm}
-        onNewQuote={onNewQuote}
-        onOpenHistory={onOpenHistory}
-      />
-    </Card>
+    </WithdrawReviewCard>
   )
 }

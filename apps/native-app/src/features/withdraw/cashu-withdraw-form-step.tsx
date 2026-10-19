@@ -10,8 +10,13 @@ import {
   type CashuWithdrawalQuote,
   quoteCashuWithdrawal,
 } from "@payky/core/modules/withdraw/withdraw-cashu-actions"
-import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import { Button } from "../../components/ui/button.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "../../components/ui/field.tsx"
 import { useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { WithdrawFormFields } from "./withdraw-form-step.tsx"
@@ -54,40 +59,40 @@ export function CashuWithdrawFormStep({
       onDraftChange={onDraftChange}
       canSubmit={mint !== null}
       beforeDestination={
-        <YStack gap="1.5">
-          <Text fontWeight="600">{t("withdraw.cashu.mint")}</Text>
+        <Field>
+          <FieldLabel>{t("withdraw.cashu.mint")}</FieldLabel>
           {funded.length === 0 ? (
-            <Text color="muted-foreground">{t("withdraw.cashu.noFunds")}</Text>
+            <FieldDescription>{t("withdraw.cashu.noFunds")}</FieldDescription>
           ) : (
-            funded.map(([candidate, balance]) => (
-              <Pressable
-                key={candidate}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: candidate === mint }}
-                onPress={() => onMintChange(candidate)}
-              >
-                <XStack
-                  justify="space-between"
-                  items="center"
-                  gap="3"
-                  p="3"
-                  rounded="lg"
-                  borderWidth={candidate === mint ? 2 : 1}
-                  borderColor={candidate === mint ? "primary" : "border-color"}
+            <YStack gap="2">
+              {funded.map(([candidate, balance]) => (
+                <Button
+                  key={candidate}
+                  size="default"
+                  variant={candidate === mint ? "default" : "outline"}
+                  accessibilityState={{ selected: candidate === mint }}
+                  onPress={() => onMintChange(candidate)}
                 >
-                  <Text flex={1} numberOfLines={1}>
-                    {formatMintLabel(candidate)}
-                  </Text>
-                  <Text>
-                    {t("withdraw.sats", {
-                      amount: formatSatsAmount(balance, locale),
-                    })}
-                  </Text>
-                </XStack>
-              </Pressable>
-            ))
+                  <XStack
+                    flex={1}
+                    justify="space-between"
+                    items="center"
+                    gap="3"
+                  >
+                    <Text flex={1} numberOfLines={1}>
+                      {formatMintLabel(candidate)}
+                    </Text>
+                    <Text>
+                      {t("withdraw.sats", {
+                        amount: formatSatsAmount(balance, locale),
+                      })}
+                    </Text>
+                  </XStack>
+                </Button>
+              ))}
+            </YStack>
           )}
-        </YStack>
+        </Field>
       }
       onQuote={async (built) => {
         if (mint === null) return null

@@ -170,6 +170,8 @@ export function ToggleGroupItem({
 export interface ToggleGroupProps<Value extends string> {
   readonly value: Value | null
   readonly onValueChange: (value: Value) => void
+  /** Translated group name announced by screen readers. */
+  readonly accessibilityLabel?: string
   readonly variant?: ToggleVariant
   readonly size?: ToggleSize
   /** Tailwind spacing steps between items (× 4 px); 0 joins them. */
@@ -184,6 +186,7 @@ export interface ToggleGroupProps<Value extends string> {
 export function ToggleGroup<Value extends string>({
   value,
   onValueChange,
+  accessibilityLabel,
   variant = "default",
   size = "default",
   spacing = 2,
@@ -222,6 +225,7 @@ export function ToggleGroup<Value extends string>({
     <GroupContext value={context}>
       <View
         accessibilityRole="radiogroup"
+        accessibilityLabel={accessibilityLabel}
         flexDirection={vertical ? "column" : "row"}
         items={vertical ? "stretch" : "center"}
         gap={columns === undefined ? gap : undefined}

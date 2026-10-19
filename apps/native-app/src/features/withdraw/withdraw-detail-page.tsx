@@ -27,16 +27,20 @@ import {
 import { WithdrawalId } from "@payky/core/modules/withdraw/withdraw-types"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue, useStore } from "jotai"
+import ExternalLink from "lucide-react-native/icons/external-link"
 import { Suspense } from "react"
 import { Linking, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, YStack } from "tamagui"
+import { Text, useTheme, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
+import { DetailRow } from "../../components/detail-row.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import { Card, CardContent } from "../../components/ui/card.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useAsyncValue } from "../../hooks/use-async-value.ts"
@@ -46,10 +50,8 @@ import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { useSparkBalance } from "./use-withdraw-data.ts"
 import {
-  Card,
   Collapsible,
   Mono,
-  Row,
   SatsWithFiat,
   WithdrawalStatusBadge,
 } from "./withdraw-parts.tsx"
@@ -251,53 +253,55 @@ function WithdrawalStatusCard({ view }: { readonly view: WithdrawalView }) {
 
   return (
     <Card>
-      <YStack gap="2">
-        <Row label={t("withdraw.detail.amount")}>
-          <SatsWithFiat sats={view.amountSats} />
-        </Row>
-        <WithdrawalStatusBadge view={view} />
-      </YStack>
-      {state.status === "pending" ? (
-        target.kind === "lightning" ? (
-          <PendingLightningText view={view} />
-        ) : target.kind === "cashu" ? (
-          <Text>{t("withdraw.detail.pending.cashu")}</Text>
-        ) : (
-          <>
-            <Text>{t("withdraw.detail.onchainUncertain")}</Text>
-            <OnchainResolutionButtons view={view} offerNotSent />
-          </>
-        )
-      ) : state.status === "failed" ? (
-        <>
-          <Text>{t(withdrawalFailureKeys[state.reason])}</Text>
-          {state.reason === "not-created" ? (
-            // Derived from time, not confirmed: a new withdrawal to the same
-            // Lightning address could pay twice (withdraw/0007).
-            <Text color="muted-foreground">
-              {t("withdraw.detail.failed.notCreatedHint")}
-            </Text>
+      <CardContent>
+        <YStack gap="3">
+          <XStack justify="space-between" items="flex-start" gap="2">
+            <SatsWithFiat sats={view.amountSats} align="start" />
+            <WithdrawalStatusBadge view={view} />
+          </XStack>
+          {state.status === "pending" ? (
+            target.kind === "lightning" ? (
+              <PendingLightningText view={view} />
+            ) : target.kind === "cashu" ? (
+              <Text>{t("withdraw.detail.pending.cashu")}</Text>
+            ) : (
+              <>
+                <Text>{t("withdraw.detail.onchainUncertain")}</Text>
+                <OnchainResolutionButtons view={view} offerNotSent />
+              </>
+            )
+          ) : state.status === "failed" ? (
+            <>
+              <Text>{t(withdrawalFailureKeys[state.reason])}</Text>
+              {state.reason === "not-created" ? (
+                // Derived from time, not confirmed: a new withdrawal to the same
+                // Lightning address could pay twice (withdraw/0007).
+                <Text color="muted-foreground">
+                  {t("withdraw.detail.failed.notCreatedHint")}
+                </Text>
+              ) : (
+                <NewWithdrawalButton view={view} />
+              )}
+              {state.reason === "manual" ? (
+                <OnchainResolutionButtons view={view} offerNotSent={false} />
+              ) : null}
+            </>
           ) : (
-            <NewWithdrawalButton view={view} />
+            <>
+              {target.kind === "onchain" && state.coopExitRequestId === null ? (
+                <Text color="muted-foreground">
+                  {t("withdraw.detail.manualConfirmed")}
+                </Text>
+              ) : null}
+              {state.movementDeleted ? (
+                <Text color="muted-foreground">
+                  {t("withdraw.detail.movementDeleted")}
+                </Text>
+              ) : null}
+            </>
           )}
-          {state.reason === "manual" ? (
-            <OnchainResolutionButtons view={view} offerNotSent={false} />
-          ) : null}
-        </>
-      ) : (
-        <>
-          {target.kind === "onchain" && state.coopExitRequestId === null ? (
-            <Text color="muted-foreground">
-              {t("withdraw.detail.manualConfirmed")}
-            </Text>
-          ) : null}
-          {state.movementDeleted ? (
-            <Text color="muted-foreground">
-              {t("withdraw.detail.movementDeleted")}
-            </Text>
-          ) : null}
-        </>
-      )}
+        </YStack>
+      </CardContent>
     </Card>
   )
 }
@@ -341,20 +345,24 @@ function OnchainTxid({
   if (coopExitRequestId === null && txid === null) return null
 
   return (
-    <Row label={t("withdraw.detail.txid")} stacked>
+    <DetailRow label={t("withdraw.detail.txid")} stacked>
       {shown !== null ? (
         <YStack gap="2">
           <Mono value={shown} />
-          <Text
-            fontSize={12}
-            textDecorationLine="underline"
+          <XStack
+            items="center"
+            gap="1"
             accessibilityRole="link"
+            accessibilityLabel={t("withdraw.detail.viewOnExplorer")}
             onPress={() =>
               void Linking.openURL(`https://mempool.space/tx/${shown}`)
             }
           >
-            {t("withdraw.detail.viewOnExplorer")}
-          </Text>
+            <Icon icon={ExternalLink} size={12} />
+            <Text fontSize={12} textDecorationLine="underline">
+              {t("withdraw.detail.viewOnExplorer")}
+            </Text>
+          </XStack>
         </YStack>
       ) : (
         <Text color="muted-foreground">
@@ -363,7 +371,7 @@ function OnchainTxid({
             : t("withdraw.detail.txidPending")}
         </Text>
       )}
-    </Row>
+    </DetailRow>
   )
 }
 
@@ -384,90 +392,96 @@ function WithdrawalDetailsCard({ view }: { readonly view: WithdrawalView }) {
 
   return (
     <Card>
-      <Row label={t("withdraw.detail.type")}>
-        {t(withdrawalKindKeys[target.kind])}
-      </Row>
-      {target.kind === "onchain" ? (
-        <Row label={t("withdraw.detail.destination")} stacked>
-          <Mono value={target.onchainAddress} />
-        </Row>
-      ) : (
-        <Row label={t("withdraw.detail.destination")}>
-          {target.lightningAddress ??
-            t("withdraw.destination.kind.lightningInvoice")}
-        </Row>
-      )}
-      {target.kind === "cashu" ? (
-        <Row label={t("withdraw.detail.mint")}>
-          {formatMintLabel(target.mintUrl)}
-        </Row>
-      ) : null}
-      {view.comment === null ? null : (
-        <Row label={t("withdraw.detail.comment")} stacked>
-          {view.comment}
-        </Row>
-      )}
-      <Row label={t("withdraw.detail.amount")}>
-        <SatsWithFiat sats={view.amountSats} />
-      </Row>
-      {feeSats === null ? null : (
-        <>
-          <Row
-            label={t(
-              isMaxFee ? "withdraw.detail.maxFee" : "withdraw.detail.fee"
-            )}
-          >
-            <SatsWithFiat sats={feeSats} />
-          </Row>
-          <Row label={t("withdraw.detail.total")} emphasize>
-            <SatsWithFiat
-              sats={
-                state.status === "done"
-                  ? state.debitedSats
-                  : view.amountSats + feeSats
-              }
-            />
-          </Row>
-        </>
-      )}
-      <Row label={t("withdraw.detail.date")}>
-        {formatDateTime(new Date(view.createdAt), locale)}
-      </Row>
-      {view.deviceName === null ? null : (
-        <Row label={t("withdraw.detail.device")}>{view.deviceName}</Row>
-      )}
-      {state.status === "done" && target.kind === "onchain" ? (
-        <OnchainTxid
-          accountId={view.accountId}
-          txid={state.txid}
-          coopExitRequestId={state.coopExitRequestId}
-        />
-      ) : null}
-      {target.kind === "cashu" ? (
-        <Collapsible label={t("withdraw.detail.technical")}>
-          <Row label={t("withdraw.detail.invoice")} stacked>
-            <Mono value={target.lnInvoice} />
-          </Row>
-          <Row label={t("withdraw.detail.cashuQuoteId")} stacked>
-            <Mono value={target.quoteId} />
-          </Row>
-        </Collapsible>
-      ) : null}
-      {target.kind === "lightning" ? (
-        <Collapsible label={t("withdraw.detail.technical")}>
-          <Row label={t("withdraw.detail.invoice")} stacked>
-            <Mono value={target.lnInvoice} />
-          </Row>
-          {state.status === "done" && state.preImage !== null ? (
-            <Row label={t("withdraw.detail.preimage")} stacked>
-              <Mono value={state.preImage} />
-            </Row>
+      <CardContent>
+        <YStack gap="3">
+          <DetailRow label={t("withdraw.detail.type")}>
+            {t(withdrawalKindKeys[target.kind])}
+          </DetailRow>
+          {target.kind === "onchain" ? (
+            <DetailRow label={t("withdraw.detail.destination")} stacked>
+              <Mono value={target.onchainAddress} />
+            </DetailRow>
+          ) : (
+            <DetailRow label={t("withdraw.detail.destination")}>
+              {target.lightningAddress ??
+                t("withdraw.destination.kind.lightningInvoice")}
+            </DetailRow>
+          )}
+          {target.kind === "cashu" ? (
+            <DetailRow label={t("withdraw.detail.mint")}>
+              {formatMintLabel(target.mintUrl)}
+            </DetailRow>
           ) : null}
-          <Row label={t("withdraw.detail.sparkTransferId")} stacked>
-            <Mono value={target.sparkTransferId} />
-          </Row>
-        </Collapsible>
-      ) : null}
+          {view.comment === null ? null : (
+            <DetailRow label={t("withdraw.detail.comment")} stacked>
+              {view.comment}
+            </DetailRow>
+          )}
+          <DetailRow label={t("withdraw.detail.amount")}>
+            <SatsWithFiat sats={view.amountSats} />
+          </DetailRow>
+          {feeSats === null ? null : (
+            <>
+              <DetailRow
+                label={t(
+                  isMaxFee ? "withdraw.detail.maxFee" : "withdraw.detail.fee"
+                )}
+              >
+                <SatsWithFiat sats={feeSats} />
+              </DetailRow>
+              <DetailRow label={t("withdraw.detail.total")} emphasize>
+                <SatsWithFiat
+                  sats={
+                    state.status === "done"
+                      ? state.debitedSats
+                      : view.amountSats + feeSats
+                  }
+                />
+              </DetailRow>
+            </>
+          )}
+          <DetailRow label={t("withdraw.detail.date")}>
+            {formatDateTime(new Date(view.createdAt), locale)}
+          </DetailRow>
+          {view.deviceName === null ? null : (
+            <DetailRow label={t("withdraw.detail.device")}>
+              {view.deviceName}
+            </DetailRow>
+          )}
+          {state.status === "done" && target.kind === "onchain" ? (
+            <OnchainTxid
+              accountId={view.accountId}
+              txid={state.txid}
+              coopExitRequestId={state.coopExitRequestId}
+            />
+          ) : null}
+          {target.kind === "cashu" ? (
+            <Collapsible label={t("withdraw.detail.technical")}>
+              <DetailRow label={t("withdraw.detail.invoice")} stacked>
+                <Mono value={target.lnInvoice} />
+              </DetailRow>
+              <DetailRow label={t("withdraw.detail.cashuQuoteId")} stacked>
+                <Mono value={target.quoteId} />
+              </DetailRow>
+            </Collapsible>
+          ) : null}
+          {target.kind === "lightning" ? (
+            <Collapsible label={t("withdraw.detail.technical")}>
+              <DetailRow label={t("withdraw.detail.invoice")} stacked>
+                <Mono value={target.lnInvoice} />
+              </DetailRow>
+              {state.status === "done" && state.preImage !== null ? (
+                <DetailRow label={t("withdraw.detail.preimage")} stacked>
+                  <Mono value={state.preImage} />
+                </DetailRow>
+              ) : null}
+              <DetailRow label={t("withdraw.detail.sparkTransferId")} stacked>
+                <Mono value={target.sparkTransferId} />
+              </DetailRow>
+            </Collapsible>
+          ) : null}
+        </YStack>
+      </CardContent>
     </Card>
   )
 }

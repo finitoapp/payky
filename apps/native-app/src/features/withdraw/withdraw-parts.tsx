@@ -1,62 +1,25 @@
 import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { withdrawalStatusKey } from "@payky/app-shared/withdraw-display"
 import type { WithdrawalView } from "@payky/core/modules/withdraw/withdraw-queries"
-import { type ReactNode, useState } from "react"
-import { Pressable, Text as RNText } from "react-native"
-import { Text, useTheme, XStack, YStack } from "tamagui"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
+import LoaderCircle from "lucide-react-native/icons/loader-circle"
+import type { ReactNode } from "react"
+import { Text as RNText } from "react-native"
+import { Text, useTheme, View, XStack, YStack } from "tamagui"
 import { CopyLink } from "../../components/copy-link.tsx"
+import { Badge } from "../../components/ui/badge.tsx"
+import {
+  CollapsibleContent,
+  Collapsible as CollapsibleRoot,
+  CollapsibleTrigger,
+  useCollapsible,
+} from "../../components/ui/collapsible.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import type { ThemeColor } from "../../theme/themes.ts"
 
-/** The building blocks of the withdrawal screens. */
-
-export function Card({ children }: { readonly children: ReactNode }) {
-  return (
-    <YStack
-      gap="3"
-      p="3"
-      rounded="xl"
-      borderWidth={1}
-      borderColor="border-color"
-      bg="card"
-    >
-      {children}
-    </YStack>
-  )
-}
-
-/** A labeled row; `stacked` puts a long value under its label. */
-export function Row({
-  label,
-  children,
-  stacked = false,
-  emphasize = false,
-}: {
-  readonly label: string
-  readonly children: ReactNode
-  readonly stacked?: boolean
-  readonly emphasize?: boolean
-}) {
-  const Layout = stacked ? YStack : XStack
-  return (
-    <Layout
-      gap={stacked ? "1" : "3"}
-      {...(stacked ? {} : { justify: "space-between" as const })}
-    >
-      <Text color="muted-foreground">{label}</Text>
-      <YStack
-        {...(stacked ? {} : { flex: 1, items: "flex-end" as const })}
-        gap="0.5"
-      >
-        {typeof children === "string" ? (
-          <Text fontWeight={emphasize ? "600" : "400"}>{children}</Text>
-        ) : (
-          children
-        )}
-      </YStack>
-    </Layout>
-  )
-}
+/** The withdrawal screens' small shared display pieces. */
 
 /** An identifier the owner may need to copy: selectable, with a Copy link. */
 export function Mono({ value }: { readonly value: string }) {
@@ -81,12 +44,18 @@ export function Mono({ value }: { readonly value: string }) {
 }
 
 /** The amount in sats, with its fiat equivalent when a rate is known. */
-export function SatsWithFiat({ sats }: { readonly sats: number }) {
+export function SatsWithFiat({
+  sats,
+  align = "end",
+}: {
+  readonly sats: number
+  readonly align?: "start" | "end"
+}) {
   const { t } = useTranslation()
   const locale = useLocale()
   const approx = useBtcFiat().approx(sats)
   return (
-    <YStack items="flex-end">
+    <YStack items={align === "start" ? "flex-start" : "flex-end"}>
       <Text>
         {t("withdraw.sats", { amount: formatSatsAmount(sats, locale) })}
       </Text>
@@ -110,11 +79,17 @@ export function LightningAddress({ address }: { readonly address: string }) {
   )
 }
 
-const statusColors = {
-  done: "success",
-  failed: "destructive",
-  pending: "warning",
-} as const satisfies Record<WithdrawalView["state"]["status"], string>
+const statusBadgeStyle = {
+  done: { background: "success-10", foreground: "success" },
+  failed: { background: "destructive-tint", foreground: "destructive" },
+  pending: { background: "warning-10", foreground: "warning" },
+} as const satisfies Record<
+  WithdrawalView["state"]["status"],
+  {
+    readonly background: ThemeColor
+    readonly foreground: ThemeColor
+  }
+>
 
 /** The state in words, coloured as well so it reads at a glance. */
 export function WithdrawalStatusBadge({
@@ -123,44 +98,50 @@ export function WithdrawalStatusBadge({
   readonly view: WithdrawalView
 }) {
   const { t } = useTranslation()
-  const color = statusColors[view.state.status]
+  const style = statusBadgeStyle[view.state.status]
   return (
-    <Text
-      fontSize={12}
-      fontWeight="600"
-      color={color}
-      borderWidth={1}
-      borderColor={color}
-      rounded="sm"
-      px="2"
-      py="0.5"
-    >
-      {t(withdrawalStatusKey(view))}
-    </Text>
+    <Badge
+      variant="secondary"
+      bg={style.background}
+      labelColor={style.foreground}
+      icon={view.state.status === "pending" ? LoaderCircle : undefined}
+      label={t(withdrawalStatusKey(view))}
+    />
   )
 }
 
 /** A closed-by-default section for what most merchants never need to read. */
 export function Collapsible({
   label,
+  defaultOpen = false,
   children,
 }: {
   readonly label: string
+  readonly defaultOpen?: boolean
   readonly children: ReactNode
 }) {
-  const [open, setOpen] = useState(false)
   return (
-    <YStack gap="2">
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        onPress={() => setOpen((current) => !current)}
-      >
-        <Text fontSize={13} fontWeight="600" color="muted-foreground">
-          {`${label} ${open ? "▴" : "▾"}`}
-        </Text>
-      </Pressable>
-      {open ? <YStack gap="2">{children}</YStack> : null}
-    </YStack>
+    <CollapsibleRoot defaultOpen={defaultOpen}>
+      <CollapsibleTrigger w="100%" py="2">
+        <CollapsibleLabel label={label} />
+      </CollapsibleTrigger>
+      <CollapsibleContent pt="3">
+        <YStack gap="3">{children}</YStack>
+      </CollapsibleContent>
+    </CollapsibleRoot>
+  )
+}
+
+function CollapsibleLabel({ label }: { readonly label: string }) {
+  const { open } = useCollapsible()
+  return (
+    <XStack w="100%" items="center" justify="space-between">
+      <Text fontSize={13} fontWeight="600" color="muted-foreground">
+        {label}
+      </Text>
+      <View rotate={open ? "180deg" : "0deg"}>
+        <Icon icon={ChevronDown} color="muted-foreground" />
+      </View>
+    </XStack>
   )
 }

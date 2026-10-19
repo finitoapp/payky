@@ -130,6 +130,7 @@ const derive = (selector: string): Record<string, string> => {
     "background-70": alpha("background", 0.7),
     "primary-15": alpha("primary", 0.15),
     "foreground-70": alpha("foreground", 0.7),
+    "primary-foreground-70": alpha("primary-foreground", 0.7),
     "warning-10": alpha("warning", 0.1),
     "success-10": alpha("success", 0.1),
   }

@@ -9,8 +9,13 @@ import {
 } from "@payky/app-shared/support-chat-timeline"
 import { shortenNpub } from "@payky/core/integrations/nostr/nostr-client"
 import { hexToNpub } from "@payky/core/integrations/nostr/npub"
+import Check from "lucide-react-native/icons/check"
 import CircleAlert from "lucide-react-native/icons/circle-alert"
+import Clock from "lucide-react-native/icons/clock"
+import RotateCw from "lucide-react-native/icons/rotate-cw"
+import { Image } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import paykyIcon from "../../../../assets/payky-icon.png"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import {
@@ -20,13 +25,14 @@ import {
 } from "../../../components/ui/alert.tsx"
 import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import { Skeleton } from "../../../components/ui/skeleton.tsx"
 import {
   useNostrIdentity,
   useNostrMemberProfile,
 } from "../../../hooks/use-nostr-profile.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
-import { radius } from "../../../theme/tokens.ts"
+import { fontSize, fontWeight, radius } from "../../../theme/tokens.ts"
 import { ChatComposer } from "../../shared/chat-composer.tsx"
 import { DmInboxWarning } from "./dm-inbox-warning.tsx"
 import { useSendSupportMessage } from "./use-send-support-message.ts"
@@ -187,6 +193,7 @@ function TimelineRow({
 function MessageBubble({
   entry,
   firstOfGroup,
+  lastOfGroup,
   indexerRelays,
   onRetry,
 }: Extract<TimelineItem, { kind: "message" }> & {
@@ -196,65 +203,137 @@ function MessageBubble({
   const { t } = useTranslation()
   const locale = useLocale()
   const own = !entry.fromSupport
+  // As in messengers, a run reads as one block: the corners on the author's
+  // side tighten where its bubbles meet (web's rounded-2xl → rounded-md).
+  const joined = (side: boolean) => (side ? radius.md : radius["2xl"])
+  const timeColor = own ? "primary-foreground-70" : "muted-foreground"
 
   return (
-    <YStack
+    <XStack
       maxW="85%"
       self={own ? "flex-end" : "flex-start"}
+      items="flex-end"
+      gap={8}
       mt={firstOfGroup ? 12 : 4}
-      gap="1"
-      items={own ? "flex-end" : "flex-start"}
     >
-      {!own && firstOfGroup ? (
-        <SupportAuthor pubkey={entry.author} indexerRelays={indexerRelays} />
-      ) : null}
-      <YStack
-        px="3"
-        py="2"
-        rounded="xl"
-        bg={own ? "primary" : "background"}
-        borderWidth={own ? 0 : 1}
-        borderColor="border-color"
-      >
-        <Text color={own ? "primary-foreground" : "color"}>
-          <MessageText
-            text={entry.text}
-            own={own}
-            indexerRelays={indexerRelays}
-          />
-        </Text>
-        <Text
-          fontSize={11}
-          color={own ? "primary-foreground" : "muted-foreground"}
-          self="flex-end"
+      {/* As in group chats, the others' avatar sits by the last bubble of
+          their run; the earlier ones keep its width so the run lines up. */}
+      {own ? null : lastOfGroup ? (
+        <SupportAvatar pubkey={entry.author} indexerRelays={indexerRelays} />
+      ) : (
+        <YStack w={28} shrink={0} />
+      )}
+      <YStack minW={0} gap={4} items={own ? "flex-end" : "flex-start"}>
+        {!own && firstOfGroup ? (
+          <SupportAuthor pubkey={entry.author} indexerRelays={indexerRelays} />
+        ) : null}
+        {/* Support writes on a card, the account on the primary colour. */}
+        <YStack
+          px={12}
+          py={8}
+          rounded={radius["2xl"]}
+          borderTopLeftRadius={joined(!own && !firstOfGroup)}
+          borderTopRightRadius={joined(own && !firstOfGroup)}
+          borderBottomLeftRadius={joined(!own && !lastOfGroup)}
+          borderBottomRightRadius={joined(own && !lastOfGroup)}
+          bg={own ? "primary" : "card"}
+          borderWidth={own ? 0 : 1}
+          borderColor="card-ring"
+          opacity={entry.status === "sending" ? 0.7 : 1}
         >
-          {`${new Date(entry.sentAt * 1000).toLocaleTimeString(locale, {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}${
-            own && entry.status === "sending"
-              ? ` · ${t("settings.supportChat.sending")}`
-              : own && entry.status === "sent"
-                ? ` · ✓ ${t("settings.supportChat.sent")}`
-                : ""
-          }`}
-        </Text>
+          <Text
+            fontSize={fontSize.sm}
+            color={own ? "primary-foreground" : "card-foreground"}
+          >
+            <MessageText
+              text={entry.text}
+              own={own}
+              indexerRelays={indexerRelays}
+            />
+          </Text>
+          <XStack self="flex-end" items="center" gap={4} mt={4} ml={12}>
+            <Text fontSize={fontSize.xs} color={timeColor}>
+              {new Date(entry.sentAt * 1000).toLocaleTimeString(locale, {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+            {own && entry.status === "sending" ? (
+              <YStack
+                accessible
+                accessibilityLabel={t("settings.supportChat.sending")}
+              >
+                <Icon icon={Clock} size={12} color={timeColor} />
+              </YStack>
+            ) : null}
+            {/* A relay accepted it for support; NIP-17 cannot tell more. */}
+            {own && entry.status === "sent" ? (
+              <YStack
+                accessible
+                accessibilityLabel={t("settings.supportChat.sent")}
+              >
+                <Icon icon={Check} size={12} color={timeColor} />
+              </YStack>
+            ) : null}
+          </XStack>
+        </YStack>
+        {/* As in messengers, reactions overlap the bubble's lower edge. */}
+        {entry.reactions.length > 0 ? (
+          <YStack
+            mt={-10}
+            mx={8}
+            px={6}
+            rounded={radius.full}
+            bg="card"
+            borderWidth={1}
+            borderColor="card-ring"
+          >
+            <Text fontSize={fontSize.sm}>{entry.reactions.join(" ")}</Text>
+          </YStack>
+        ) : null}
+        {entry.status === "failed" ? (
+          <Button
+            size="xs"
+            labelColor="destructive"
+            label={t("settings.supportChat.notDelivered")}
+            iconStart={CircleAlert}
+            iconEnd={RotateCw}
+            variant="ghost"
+            onPress={() => onRetry(entry)}
+          />
+        ) : null}
       </YStack>
-      {entry.status === "failed" ? (
-        <Button
-          size="xs"
-          labelColor="destructive"
-          label={t("settings.supportChat.notDelivered")}
-          variant="ghost"
-          onPress={() => onRetry(entry)}
-        />
-      ) : null}
-      {/* Reactions sit under the bubble: the first emoji of each, once. */}
-      {entry.reactions.length > 0 ? (
-        <XStack px="2">
-          <Text>{entry.reactions.join(" ")}</Text>
-        </XStack>
-      ) : null}
+    </XStack>
+  )
+}
+
+/** Web's `ProfileAvatar` at size-7: the Payky icon until a picture is published. */
+function SupportAvatar({
+  pubkey,
+  indexerRelays,
+}: {
+  readonly pubkey: string
+  readonly indexerRelays: ReadonlyArray<string> | undefined
+}) {
+  const picture = useNostrMemberProfile(pubkey, indexerRelays).data?.picture
+  return (
+    <YStack
+      w={28}
+      h={28}
+      shrink={0}
+      rounded={radius.full}
+      overflow="hidden"
+      bg="muted"
+    >
+      <Image
+        source={
+          picture === undefined || picture === null
+            ? paykyIcon
+            : { uri: picture }
+        }
+        style={{ width: 28, height: 28 }}
+        accessibilityIgnoresInvertColors
+      />
     </YStack>
   )
 }
@@ -268,7 +347,12 @@ function SupportAuthor({
 }) {
   const profile = useNostrMemberProfile(pubkey, indexerRelays)
   return (
-    <Text fontSize={12} fontWeight="600" color="muted-foreground">
+    <Text
+      px={4}
+      fontSize={fontSize.xs}
+      fontWeight={fontWeight.medium}
+      color="muted-foreground"
+    >
       {profile.data?.name ?? shortenNpub(hexToNpub(pubkey))}
     </Text>
   )
@@ -290,26 +374,41 @@ function MessageText({
     const key = offset
     offset += part.kind === "text" ? part.text.length : 1
     return part.kind === "text" ? (
-      <Text key={key} color={own ? "primary-foreground" : "color"}>
+      <Text key={key} color={own ? "primary-foreground" : "card-foreground"}>
         {part.text}
       </Text>
     ) : (
-      <Mention key={key} pubkey={part.pubkey} indexerRelays={indexerRelays} />
+      <Mention
+        key={key}
+        pubkey={part.pubkey}
+        own={own}
+        indexerRelays={indexerRelays}
+      />
     )
   })
 }
 
 /** A mentioned account by name, as other clients show it. */
+/**
+ * Web's mention chip colors (`text-primary`, on own bubbles
+ * `text-primary-foreground`). ponytail: no pill background; RN inline Text
+ * cannot round one.
+ */
 function Mention({
   pubkey,
+  own,
   indexerRelays,
 }: {
   readonly pubkey: string
+  readonly own: boolean
   readonly indexerRelays: ReadonlyArray<string> | undefined
 }) {
   const profile = useNostrMemberProfile(pubkey, indexerRelays)
   return (
-    <Text fontWeight="700">
+    <Text
+      fontWeight={fontWeight.medium}
+      color={own ? "primary-foreground" : "primary"}
+    >
       {`@${profile.data?.name ?? shortenNpub(hexToNpub(pubkey))}`}
     </Text>
   )

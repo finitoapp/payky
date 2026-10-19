@@ -802,7 +802,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     allowedDifferences: {
       FadeHeader:
         "The web ChatLayout renders the same page header internally; native places FadeHeader directly in Screen.",
-      Card: "The native Screen footer uses the shared ChatComposer directly. The matching web composer Card surface is deferred to the 4.12 shared ChatComposer pass.",
     },
     note: "Native chat currently lacks web ChatScrollArea's follow-while-reading and jump-to-latest behavior; track that shared chat behavior in 4.12.",
   },
@@ -1411,7 +1410,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     allowedDifferences: {
       FadeHeader:
         "The web ChatLayout renders the same page header internally; native places FadeHeader directly in Screen.",
-      Card: "The native Screen footer uses the shared ChatComposer directly. The matching web composer Card surface is deferred to the 4.12 shared ChatComposer pass.",
     },
     note: "Native chat currently lacks web ChatScrollArea's follow-while-reading and jump-to-latest behavior; track that shared chat behavior in 4.12.",
   },

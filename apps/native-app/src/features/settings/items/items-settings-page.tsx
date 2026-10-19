@@ -14,7 +14,7 @@ import { Integer } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { Suspense, useCallback, useMemo, useState } from "react"
 import { YStack } from "tamagui"
-import { SearchField } from "../../../components/search-field.tsx"
+import { SearchInput } from "../../../components/search-input.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
 import { useDebouncedValue } from "../../../hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
@@ -84,11 +84,11 @@ function ItemsSettingsBody() {
   return (
     <YStack flex={1} gap="3">
       {hasAny && (
-        <SearchField
+        <SearchInput
           value={search}
           onChange={setSearch}
           placeholder={t("settings.items.search")}
-          clearLabel={t("settings.items.search.clear.aria")}
+          clearAriaLabel={t("settings.items.search.clear.aria")}
         />
       )}
       <CategoryFilterBar<never>

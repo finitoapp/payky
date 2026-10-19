@@ -5,10 +5,15 @@ import Plus from "lucide-react-native/icons/plus"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Text, View } from "tamagui"
+import { CollisionAlert } from "../../components/collision-alert.tsx"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { ListSkeleton } from "../../components/list-skeleton.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
 import { OptionToggleGroup } from "../../components/option-toggle-group.tsx"
+import { PasswordTextarea } from "../../components/password-textarea.tsx"
+import { SearchInput } from "../../components/search-input.tsx"
+import { SlidingPillSegmentContent } from "../../components/sliding-pill.tsx"
+import { SuccessPanel } from "../../components/success-panel.tsx"
 import {
   Alert,
   AlertAction,
@@ -113,6 +118,8 @@ export function UiKitCard() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [choice, setChoice] = useState<"a" | "b" | "c" | null>("a")
   const [otp, setOtp] = useState("")
+  const [search, setSearch] = useState("")
+  const [secret, setSecret] = useState("")
   return (
     <View
       bg="card"
@@ -354,6 +361,47 @@ export function UiKitCard() {
         </CardContent>
       </Card>
       <NotFoundCard messageKey="paymentDetail.notFound" />
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Search"
+        clearAriaLabel="Clear"
+      />
+      <PasswordTextarea
+        value={secret}
+        onChangeText={setSecret}
+        placeholder="Secret"
+        hideLabel="Hide"
+        showLabel="Show"
+      />
+      <CollisionAlert title="Collision" description="Collision description">
+        <Button size="lg" label="Resolve" />
+        <Button size="lg" variant="outline" label="Refund" />
+      </CollisionAlert>
+      <SuccessPanel title="Paid" description="Success panel description" />
+      <View
+        flexDirection="row"
+        self="center"
+        p={4}
+        rounded={9999}
+        borderWidth={1}
+        borderColor="input"
+      >
+        {(["Pos", "Numpad"] as const).map((label, index) => (
+          <View key={label} px={16} h={36} justify="center">
+            <SlidingPillSegmentContent
+              active={index === 0}
+              icon={
+                <Icon
+                  icon={Plus}
+                  color={index === 0 ? "background" : "muted-foreground"}
+                />
+              }
+              label={label}
+            />
+          </View>
+        ))}
+      </View>
       <Stepper value={2}>
         <StepperNav>
           {[1, 2, 3].map((step) => (

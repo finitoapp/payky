@@ -34,18 +34,13 @@ import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { taxRatesQuery } from "@payky/core/modules/tax-rate/tax-rate-queries"
 import { router, useLocalSearchParams } from "expo-router"
-import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { Suspense } from "react"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
+import { CollisionAlert } from "../../components/collision-alert.tsx"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "../../components/ui/alert.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
 import {
   Timeline,
@@ -227,13 +222,10 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
         </YStack>
 
         {hasCancellationCollision ? (
-          <YStack gap={12}>
-            <Alert variant="warning" icon={TriangleAlert}>
-              <AlertTitle>{t("paymentDetail.collision.title")}</AlertTitle>
-              <AlertDescription>
-                {t("paymentDetail.collision.description")}
-              </AlertDescription>
-            </Alert>
+          <CollisionAlert
+            title={t("paymentDetail.collision.title")}
+            description={t("paymentDetail.collision.description")}
+          >
             <AppButton
               label={t("paymentDetail.collision.markPaid")}
               pending={collision.resolvePending}
@@ -244,18 +236,13 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
               label={t("paymentDetail.collision.refund")}
               onPress={collision.refund}
             />
-          </YStack>
+          </CollisionAlert>
         ) : null}
         {hasExcessSettlementCollision ? (
-          <YStack gap={12}>
-            <Alert variant="warning" icon={TriangleAlert}>
-              <AlertTitle>
-                {t("paymentDetail.excessCollision.title")}
-              </AlertTitle>
-              <AlertDescription>
-                {t("paymentDetail.excessCollision.description")}
-              </AlertDescription>
-            </Alert>
+          <CollisionAlert
+            title={t("paymentDetail.excessCollision.title")}
+            description={t("paymentDetail.excessCollision.description")}
+          >
             <AppButton
               label={t("paymentDetail.excessCollision.acknowledge")}
               pending={collision.excessResolvePending}
@@ -266,7 +253,7 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
               label={t("paymentDetail.collision.refund")}
               onPress={collision.refund}
             />
-          </YStack>
+          </CollisionAlert>
         ) : null}
       </Card>
 
@@ -509,15 +496,12 @@ function PaymentBillCard({
       />
 
       {billStatus.hasCancellationCollision ? (
-        <YStack gap={12}>
-          <Alert variant="warning" icon={TriangleAlert}>
-            <AlertTitle>{t("bill.collision.title")}</AlertTitle>
-            <AlertDescription>
-              {t("bill.collision.description")}
-            </AlertDescription>
-          </Alert>
+        <CollisionAlert
+          title={t("bill.collision.title")}
+          description={t("bill.collision.description")}
+        >
           <BillCancellationCollisionActions billId={billId} />
-        </YStack>
+        </CollisionAlert>
       ) : null}
 
       <BillLines

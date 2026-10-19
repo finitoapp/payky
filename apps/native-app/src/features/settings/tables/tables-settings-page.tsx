@@ -4,7 +4,7 @@ import {
 } from "@payky/core/modules/table/table-queries"
 import { Suspense, useCallback, useState } from "react"
 import { YStack } from "tamagui"
-import { SearchField } from "../../../components/search-field.tsx"
+import { SearchInput } from "../../../components/search-input.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
 import { useDebouncedValue } from "../../../hooks/use-debounced-value.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
@@ -37,11 +37,11 @@ function TablesSettingsBody() {
   return (
     <YStack flex={1} gap="3">
       {hasAny && (
-        <SearchField
+        <SearchInput
           value={search}
           onChange={setSearch}
           placeholder={t("settings.tables.search")}
-          clearLabel={t("settings.tables.search.clear.aria")}
+          clearAriaLabel={t("settings.tables.search.clear.aria")}
         />
       )}
       <Suspense fallback={<LoadingView />}>

@@ -83,6 +83,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "pending",
   },
   {
+    native: "src/components/collision-alert.tsx",
+    web: ["apps/web-app/src/components/collision-alert.tsx"],
+    status: "matched",
+  },
+  {
     native: "src/components/copy-link.tsx",
     web: [],
     note: "Native only: web copies through a Button inline.",
@@ -140,6 +145,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "pending",
   },
   {
+    native: "src/components/password-textarea.tsx",
+    web: ["apps/web-app/src/components/password-textarea.tsx"],
+    status: "matched",
+  },
+  {
     native: "src/components/qr-code.tsx",
     web: ["apps/web-app/src/components/copyable-qr-code.tsx"],
     status: "pending",
@@ -161,9 +171,14 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "pending",
   },
   {
-    native: "src/components/search-field.tsx",
+    native: "src/components/search-input.tsx",
     web: ["apps/web-app/src/components/search-input.tsx"],
-    status: "pending",
+    status: "matched",
+  },
+  {
+    native: "src/components/sliding-pill.tsx",
+    web: ["apps/web-app/src/components/sliding-pill.tsx"],
+    status: "matched",
   },
   {
     native: "src/components/state-views.tsx",
@@ -172,6 +187,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/components/list-skeleton.tsx",
     ],
     status: "pending",
+  },
+  {
+    native: "src/components/success-panel.tsx",
+    web: ["apps/web-app/src/components/success-panel.tsx"],
+    status: "matched",
   },
   {
     native: "src/components/table-tile-shell.tsx",

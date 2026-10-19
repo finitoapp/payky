@@ -5,9 +5,9 @@ import { router } from "expo-router"
 import { useState } from "react"
 import { Text } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useCashuRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -50,7 +50,7 @@ export function CashuMintNewPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.cashuMints.add")} />
+      <FadeHeader title={t("settings.cashuMints.add")} />
       <Field
         label={t("settings.cashuMints.url")}
         value={url}

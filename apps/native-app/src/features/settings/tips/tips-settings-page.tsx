@@ -19,9 +19,9 @@ import { useState } from "react"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
@@ -37,7 +37,7 @@ export function TipsSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.tips.title")} />
+      <FadeHeader title={t("settings.tips.title")} />
       {settings === undefined ? null : (
         <TipsSettingsForm key={settings.id} settings={settings} />
       )}

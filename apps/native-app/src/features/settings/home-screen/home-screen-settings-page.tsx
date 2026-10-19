@@ -8,8 +8,8 @@ import {
 } from "@payky/core/modules/app-settings/app-settings-utils"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -49,7 +49,7 @@ export function HomeScreenSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.homeScreen.title")} />
+      <FadeHeader title={t("settings.homeScreen.title")} />
       <YStack gap="3">
         <Text fontWeight="700">{t("settings.homeScreen.modes.title")}</Text>
         <Text color="muted-foreground">

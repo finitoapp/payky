@@ -26,10 +26,10 @@ import { useMemo } from "react"
 import { Text, YStack } from "tamagui"
 import { z } from "zod"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useConfirmedRun } from "../../../hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../../hooks/use-hardware-scanner.ts"
@@ -128,7 +128,7 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.items.form.title.edit")} />
+      <FadeHeader title={t("settings.items.form.title.edit")} />
       <Text color="muted-foreground">
         {t("settings.items.form.card.description")}
       </Text>

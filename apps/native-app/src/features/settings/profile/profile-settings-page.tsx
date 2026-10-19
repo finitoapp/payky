@@ -9,9 +9,9 @@ import { useState } from "react"
 import { ActivityIndicator, Image, Text as NativeText } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useCopyToClipboard } from "../../../hooks/use-copy-to-clipboard.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import {
@@ -37,7 +37,7 @@ export function ProfileSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.profile.title")} />
+      <FadeHeader title={t("settings.profile.title")} />
       <Text color="muted-foreground">{t("settings.profile.description")}</Text>
       {profile.data !== null ? (
         <ProfileEditor profile={profile.data} />

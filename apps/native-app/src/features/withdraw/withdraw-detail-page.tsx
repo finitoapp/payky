@@ -34,7 +34,7 @@ import { Text, useTheme, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import { AppButton } from "../../components/app-button.tsx"
-import { ScreenHeader } from "../../components/screen-header.tsx"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
@@ -71,7 +71,7 @@ export function WithdrawDetailPage() {
         backgroundColor: theme.background.val,
       }}
     >
-      <ScreenHeader title={t("withdraw.detail.title")} />
+      <FadeHeader title={t("withdraw.detail.title")} />
       {parsed.success ? (
         <Suspense fallback={<LoadingView />}>
           <WithdrawDetail withdrawalId={parsed.data} />

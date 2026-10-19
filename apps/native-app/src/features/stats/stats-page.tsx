@@ -10,8 +10,8 @@ import { statsPeriodRanges } from "@payky/core/modules/sales-stats/sales-stats-u
 import { router, useLocalSearchParams } from "expo-router"
 import { Suspense } from "react"
 import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { Screen } from "../../components/screen.tsx"
-import { ScreenHeader } from "../../components/screen-header.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -49,7 +49,7 @@ export function StatsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("stats.title")} />
+      <FadeHeader title={t("stats.title")} />
       <PeriodSelector
         period={period}
         onChange={(next: StatsSearch) => {

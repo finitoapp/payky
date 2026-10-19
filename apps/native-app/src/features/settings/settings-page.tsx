@@ -13,9 +13,9 @@ import {
 } from "@payky/core/modules/app-settings/app-settings-utils"
 import { legalEntityQuery } from "@payky/core/modules/legal-entity/legal-entity-queries"
 import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { languageOptions } from "../../components/language-options.ts"
 import { Screen } from "../../components/screen.tsx"
-import { ScreenHeader } from "../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import {
   useNostrIdentity,
@@ -190,7 +190,7 @@ export function SettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.title")} />
+      <FadeHeader title={t("settings.title")} />
       <SettingsRow
         title={t("settings.profile.title")}
         value={profile.data?.name ?? t("settings.profile.setName")}

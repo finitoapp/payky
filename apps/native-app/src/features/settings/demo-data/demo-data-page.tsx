@@ -10,8 +10,8 @@ import { accountAtom } from "../../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../../atoms/device-evolu.ts"
 import { reloadAppEvoluAtom } from "../../../atoms/evolu-counter.ts"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import {
   Alert,
   AlertDescription,
@@ -61,7 +61,7 @@ export function DemoDataPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.demoData.title")} />
+      <FadeHeader title={t("settings.demoData.title")} />
       {account.demo === null ? null : (
         <YStack gap="1" accessibilityRole="alert">
           <Text fontWeight="700">{t("settings.demoData.current.title")}</Text>

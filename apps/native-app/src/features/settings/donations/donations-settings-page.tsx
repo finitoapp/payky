@@ -21,9 +21,9 @@ import { useEffect, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { z } from "zod"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { nativeEnv } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useBtcFiat, useLnurlPayMetadata } from "../../../hooks/use-btc-fiat.ts"
@@ -154,7 +154,7 @@ export function DonationsSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.donations.title")} />
+      <FadeHeader title={t("settings.donations.title")} />
       <YStack gap="1">
         <Text fontWeight="700">{t("settings.donations.form.title")}</Text>
         <Text color="muted-foreground">

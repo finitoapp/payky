@@ -5,9 +5,9 @@ import { router } from "expo-router"
 import { useState } from "react"
 import { Text } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -48,7 +48,7 @@ export function NewTablePage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.tables.form.title.create")} />
+      <FadeHeader title={t("settings.tables.form.title.create")} />
       <Text color="muted-foreground">
         {t("settings.tables.form.card.description")}
       </Text>

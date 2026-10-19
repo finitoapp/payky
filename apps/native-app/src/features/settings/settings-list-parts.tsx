@@ -5,7 +5,7 @@ import { type ReactNode, Suspense } from "react"
 import { ActivityIndicator, FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
-import { ScreenHeader } from "../../components/screen-header.tsx"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 
@@ -30,9 +30,9 @@ export function SettingsListShell({
     <SafeAreaView
       style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
     >
-      <ScreenHeader
+      <FadeHeader
         title={title}
-        endAction={
+        endAddon={
           addHref === undefined ? null : (
             <Pressable
               accessibilityRole="button"

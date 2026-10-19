@@ -14,9 +14,9 @@ import type { CountryCode } from "@payky/core/modules/legal-entity/legal-entity-
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { z } from "zod"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -59,7 +59,7 @@ export function LegalEntitySettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.legalEntity.title")} />
+      <FadeHeader title={t("settings.legalEntity.title")} />
       <Text color="muted-foreground">
         {t("settings.legalEntity.description")}
       </Text>

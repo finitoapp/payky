@@ -1,9 +1,9 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { DeviceTheme } from "@payky/core/evolu/device-client"
 import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import {
   useSetThemePreference,
   useThemePreference,
@@ -32,7 +32,7 @@ export function ThemeSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.theme.title")} />
+      <FadeHeader title={t("settings.theme.title")} />
       <YStack gap="2">
         <Text fontWeight="700">{t("settings.theme.mode.title")}</Text>
         <Text color="muted-foreground">

@@ -1,7 +1,7 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { Text } from "tamagui"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { Screen } from "../../components/screen.tsx"
-import { ScreenHeader } from "../../components/screen-header.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 /**
@@ -18,7 +18,7 @@ export function SettingsFormEmptyState({
   const { t } = useTranslation()
   return (
     <Screen>
-      <ScreenHeader title={t(titleKey)} />
+      <FadeHeader title={t(titleKey)} />
       <Text color="muted-foreground" text="center">
         {t(messageKey)}
       </Text>

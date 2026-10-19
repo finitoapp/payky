@@ -24,8 +24,8 @@ import { useEffect, useRef, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { apiUrl } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -90,7 +90,7 @@ function AssistantChat({ access }: { readonly access: Access }) {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.assistant.title")} />
+      <FadeHeader title={t("settings.assistant.title")} />
       {turns.length === 0 ? null : (
         <AppButton
           label={t("settings.assistant.newConversation")}

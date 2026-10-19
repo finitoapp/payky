@@ -21,7 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
-import { ScreenHeader } from "../../components/screen-header.tsx"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useAccess, useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
@@ -43,7 +43,7 @@ export function WithdrawPage() {
         backgroundColor: theme.background.val,
       }}
     >
-      <ScreenHeader title={t("withdraw.form.title")} />
+      <FadeHeader title={t("withdraw.form.title")} />
       <Suspense fallback={<LoadingView />}>
         <WithdrawAccount />
       </Suspense>

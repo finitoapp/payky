@@ -1,8 +1,8 @@
 import Constants from "expo-constants"
 import { Platform } from "react-native"
 import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { SettingsRow } from "../settings-row.tsx"
 
@@ -13,7 +13,7 @@ export function AboutPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.about.title")} />
+      <FadeHeader title={t("settings.about.title")} />
       <YStack items="center" gap="3" py="8">
         <Text fontSize={24} fontWeight="700">
           {t("settings.about.app.title")}

@@ -18,10 +18,10 @@ import { paymentNumberSeriesQuery } from "@payky/core/modules/payment-number-ser
 import { createDefaultPaymentNumberSeries } from "@payky/core/modules/payment-number-series/payment-number-series-utils"
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -33,7 +33,7 @@ export function PaymentNumberSeriesSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.paymentNumberSeries.title")} />
+      <FadeHeader title={t("settings.paymentNumberSeries.title")} />
       <LastNumberSection />
       <SeriesFormatSection />
     </Screen>

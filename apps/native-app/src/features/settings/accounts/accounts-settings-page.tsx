@@ -18,8 +18,8 @@ import {
   reloadAppEvoluAtom,
 } from "../../../atoms/evolu-counter.ts"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useDeviceEvoluQuery } from "../../../hooks/use-evolu-query.ts"
@@ -94,7 +94,7 @@ export function AccountsSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.accounts.title")} />
+      <FadeHeader title={t("settings.accounts.title")} />
       <YStack gap="3">
         <Text fontWeight="700">{t("settings.accounts.list.title")}</Text>
         {accounts.length === 0 ? (

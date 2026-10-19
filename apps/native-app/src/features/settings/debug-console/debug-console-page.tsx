@@ -6,8 +6,8 @@ import { format } from "date-fns"
 import { useEffect, useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { nativeConsoleHistory } from "../../../core/native-runtime.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -38,7 +38,7 @@ export function DebugConsolePage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.debugConsole.title")} />
+      <FadeHeader title={t("settings.debugConsole.title")} />
       <Text fontWeight="700">{t("settings.debugConsole.history.title")}</Text>
       <XStack gap="2">
         <YStack flex={1}>

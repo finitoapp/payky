@@ -1,10 +1,10 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { DeviceLocale } from "@payky/core/evolu/device-client"
 import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { languageOptions } from "../../../components/language-options.ts"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import {
   useLocale,
   useSetLanguage,
@@ -34,7 +34,7 @@ export function LanguageSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.language.title")} />
+      <FadeHeader title={t("settings.language.title")} />
       <YStack gap="2">
         <Text fontWeight="700">{t("settings.language.mode.title")}</Text>
         <Text color="muted-foreground">

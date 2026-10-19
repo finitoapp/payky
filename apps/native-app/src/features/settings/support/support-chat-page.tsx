@@ -11,8 +11,8 @@ import { hexToNpub } from "@payky/core/integrations/nostr/npub"
 import CircleAlert from "lucide-react-native/icons/circle-alert"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
 import {
   Alert,
@@ -90,7 +90,7 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.supportChat.title")} />
+      <FadeHeader title={t("settings.supportChat.title")} />
       {failure === null ? null : (
         <Alert variant="destructive" icon={CircleAlert}>
           <AlertDescription>{t(failure)}</AlertDescription>

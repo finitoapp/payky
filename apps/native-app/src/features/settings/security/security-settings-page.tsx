@@ -1,8 +1,8 @@
 import { useAtomValue } from "jotai"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { RecoveryPhraseCard } from "./recovery-phrase-card.tsx"
 import { TransportAddForm } from "./transport-add-form.tsx"
@@ -16,7 +16,7 @@ export function SecuritySettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.security.title")} />
+      <FadeHeader title={t("settings.security.title")} />
       <YStack gap="5">
         <RecoveryPhraseCard key={account.id} />
         <YStack gap="3">

@@ -1,8 +1,8 @@
 import { Linking } from "react-native"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 const SOFTPOS_URL = "https://switchio.com/try-softpos/"
@@ -17,7 +17,7 @@ export function CardSwitchioSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.paymentAccounts.method.cardSwitchio")} />
+      <FadeHeader title={t("settings.paymentAccounts.method.cardSwitchio")} />
       <YStack gap="3">
         <Text fontWeight="600">
           {t("settings.cardSwitchioAccount.info.title")}

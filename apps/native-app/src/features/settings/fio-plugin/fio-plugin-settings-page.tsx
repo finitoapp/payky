@@ -22,9 +22,9 @@ import {
 import { format, subDays } from "date-fns"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useAccess } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
@@ -54,7 +54,7 @@ function FioPluginSettings() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.fioPlugin.title")} />
+      <FadeHeader title={t("settings.fioPlugin.title")} />
       <FioPluginForm />
       <FioTokenForm />
       <FioTokenList />

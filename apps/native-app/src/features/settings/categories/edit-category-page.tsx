@@ -9,9 +9,9 @@ import { CatalogCategoryId } from "@payky/core/modules/catalog-category/catalog-
 import { router, useLocalSearchParams } from "expo-router"
 import { Text } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useConfirmedRun } from "../../../hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -60,7 +60,7 @@ function EditCatalogCategoryForm({
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.categories.form.title.edit")} />
+      <FadeHeader title={t("settings.categories.form.title.edit")} />
       <Text color="muted-foreground">
         {t("settings.categories.form.card.description")}
       </Text>

@@ -19,7 +19,7 @@ import { ActivityIndicator, FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
-import { ScreenHeader } from "../../components/screen-header.tsx"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
@@ -52,7 +52,7 @@ function WithdrawHistoryScreen({
     <SafeAreaView
       style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
     >
-      <ScreenHeader
+      <FadeHeader
         title={t(
           method === "spark" ? "withdraw.history.title" : "withdraw.cashu.title"
         )}

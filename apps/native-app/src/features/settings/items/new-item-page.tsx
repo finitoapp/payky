@@ -20,10 +20,10 @@ import { router, useLocalSearchParams } from "expo-router"
 import { type ComponentProps, useMemo, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../../hooks/use-is-confirm-open.ts"
@@ -148,7 +148,7 @@ export function NewCatalogItemPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.items.form.title.create")} />
+      <FadeHeader title={t("settings.items.form.title.create")} />
       <Text color="muted-foreground">
         {t("settings.items.form.card.description")}
       </Text>

@@ -1,8 +1,8 @@
 import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { Suspense } from "react"
 import { Text, XStack, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { FailureView, LoadingView } from "../../../components/state-views.tsx"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { useCashuWalletSnapshot } from "../../shared/cashu/use-cashu-wallet-snapshot.ts"
@@ -23,7 +23,7 @@ function CashuAccountSettingsContent() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.cashuAccount.title")} />
+      <FadeHeader title={t("settings.cashuAccount.title")} />
       {isError ? (
         <FailureView
           messageKey="appError.description"

@@ -32,11 +32,11 @@ import {
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useAccess } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
@@ -92,7 +92,7 @@ function SparkAccountSettingsContent({
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.paymentAccounts.method.spark")} />
+      <FadeHeader title={t("settings.paymentAccounts.method.spark")} />
       <YStack gap="3">
         <Text fontWeight="700">{t("settings.sparkAccount.form.title")}</Text>
         <Text color="muted-foreground">

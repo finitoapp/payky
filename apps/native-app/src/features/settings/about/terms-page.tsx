@@ -1,6 +1,6 @@
 import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 export function TermsPage() {
@@ -8,7 +8,7 @@ export function TermsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.about.terms.title")} />
+      <FadeHeader title={t("settings.about.terms.title")} />
       <YStack
         gap="2"
         p="4"

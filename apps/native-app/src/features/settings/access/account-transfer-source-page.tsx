@@ -20,9 +20,9 @@ import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { evoluCounterAtom } from "../../../atoms/evolu-counter.ts"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { QrCode } from "../../../components/qr-code.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import {
   Alert,
   AlertDescription,
@@ -155,7 +155,7 @@ export function AccountTransferSourcePage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("accountTransfer.source.title")} />
+      <FadeHeader title={t("accountTransfer.source.title")} />
 
       {state !== null && stepByPhase[state.phase] > 0 ? (
         <Stepper value={stepByPhase[state.phase]}>

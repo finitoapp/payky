@@ -6,8 +6,8 @@ import { router } from "expo-router"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -37,7 +37,7 @@ function AccessSettings() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("access.title")} />
+      <FadeHeader title={t("access.title")} />
       {mode === "wizard" && !enabled ? (
         <TurnOnWizard hasPin={hasPin} onDone={toView} />
       ) : mode === "changePin" ? (

@@ -13,10 +13,10 @@ import { TableId } from "@payky/core/modules/table/table-types"
 import { router, useLocalSearchParams } from "expo-router"
 import { Text } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -99,7 +99,7 @@ function EditTableForm({ table }: { readonly table: TableRow }) {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.tables.form.title.edit")} />
+      <FadeHeader title={t("settings.tables.form.title.edit")} />
       <Text color="muted-foreground">
         {t("settings.tables.form.card.description")}
       </Text>

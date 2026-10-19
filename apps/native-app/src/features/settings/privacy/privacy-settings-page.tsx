@@ -1,5 +1,5 @@
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { AiAssistantCard } from "./ai-assistant-card.tsx"
 import { ConsentCard } from "./consent-card.tsx"
@@ -14,7 +14,7 @@ export function PrivacySettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.about.privacy.title")} />
+      <FadeHeader title={t("settings.about.privacy.title")} />
       <ConsentCard
         title={t("settings.privacy.errorReporting.title")}
         description={t("settings.privacy.errorReporting.description")}

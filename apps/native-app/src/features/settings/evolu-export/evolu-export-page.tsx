@@ -5,8 +5,8 @@ import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -69,7 +69,7 @@ export function EvoluExportPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.evoluExport.title")} />
+      <FadeHeader title={t("settings.evoluExport.title")} />
       <YStack gap="4">
         <YStack
           gap="2"

@@ -4,9 +4,9 @@ import { Linking } from "react-native"
 import { Text, YStack } from "tamagui"
 import { z } from "zod"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { QrCode } from "../../../components/qr-code.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useAsyncValue } from "../../../hooks/use-async-value.ts"
 import { useCopyToClipboard } from "../../../hooks/use-copy-to-clipboard.ts"
@@ -68,7 +68,7 @@ function DonationsInvoiceSettingsPage({
   if (paid) {
     return (
       <Screen>
-        <ScreenHeader title={t("settings.donations.invoice.title")} />
+        <FadeHeader title={t("settings.donations.invoice.title")} />
         <YStack gap="3" accessibilityLiveRegion="polite">
           <Text fontSize={24} fontWeight="700">
             {t("settings.donations.invoice.verify.paid")}
@@ -87,7 +87,7 @@ function DonationsInvoiceSettingsPage({
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.donations.invoice.title")} />
+      <FadeHeader title={t("settings.donations.invoice.title")} />
       <Text color="muted-foreground">
         {invoice.length === 0
           ? t("settings.donations.invoice.missing")

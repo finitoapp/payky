@@ -13,7 +13,7 @@ import { Pressable, Text as RNText, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { CopyLink } from "../../components/copy-link.tsx"
-import { ScreenHeader } from "../../components/screen-header.tsx"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import {
   Alert,
   AlertDescription,
@@ -42,7 +42,7 @@ export function DetailScreen({
         backgroundColor: theme.background.val,
       }}
     >
-      <ScreenHeader title={title} />
+      <FadeHeader title={title} />
       <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 24 }}>
         {children}
       </ScrollView>

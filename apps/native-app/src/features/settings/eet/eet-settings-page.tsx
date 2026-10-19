@@ -25,10 +25,10 @@ import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { z } from "zod"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import {
   Alert,
   AlertDescription,
@@ -90,7 +90,7 @@ export function EetSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.eet.title")} />
+      <FadeHeader title={t("settings.eet.title")} />
       <ReportingSection
         establishmentId={eet.settings?.establishmentId ?? null}
         isEnabled={eet.isEnabled}

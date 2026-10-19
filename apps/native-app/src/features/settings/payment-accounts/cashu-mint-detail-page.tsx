@@ -12,8 +12,8 @@ import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { cashuWalletDepAtom } from "../../../atoms/cashu.ts"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
@@ -29,7 +29,7 @@ export function CashuMintDetailPage() {
   if (parsed === null) {
     return (
       <Screen>
-        <ScreenHeader title={t("settings.cashuMints.title")} />
+        <FadeHeader title={t("settings.cashuMints.title")} />
         <Text color="muted-foreground">{t("settings.cashuMints.invalid")}</Text>
       </Screen>
     )
@@ -84,7 +84,7 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
 
   return (
     <Screen>
-      <ScreenHeader title={info.data?.name ?? formatMintLabel(mint)} />
+      <FadeHeader title={info.data?.name ?? formatMintLabel(mint)} />
       <YStack
         gap="2"
         p="4"

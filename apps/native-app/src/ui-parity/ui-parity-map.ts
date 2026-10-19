@@ -94,6 +94,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "pending",
   },
   {
+    native: "src/components/fade-header.tsx",
+    web: ["apps/web-app/src/components/fade-header.tsx"],
+    status: "matched",
+  },
+  {
     native: "src/components/field.tsx",
     web: ["apps/web-app/src/components/ui/field.tsx"],
     status: "pending",
@@ -121,11 +126,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/scan-code-scanner.tsx",
     web: ["apps/web-app/src/components/scan-code-scanner.tsx"],
-    status: "pending",
-  },
-  {
-    native: "src/components/screen-header.tsx",
-    web: ["apps/web-app/src/components/fade-header.tsx"],
     status: "pending",
   },
   {

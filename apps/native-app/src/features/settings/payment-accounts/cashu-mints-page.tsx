@@ -4,8 +4,8 @@ import { router } from "expo-router"
 import type { ReactNode } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../../components/app-button.tsx"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { FailureView, LoadingView } from "../../../components/state-views.tsx"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { useCashuKnownMints } from "../../shared/cashu/use-cashu-known-mints.ts"
@@ -40,7 +40,7 @@ export function CashuMintsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.cashuMints.title")} />
+      <FadeHeader title={t("settings.cashuMints.title")} />
       {!snapshot.hydrated ? (
         <Text color="muted-foreground">
           {t("settings.cashuAccount.syncing")}

@@ -24,8 +24,8 @@ import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { Pressable, Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useCashuRunToast, useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -198,7 +198,7 @@ export function PaymentAccountsSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.paymentAccounts.title")} />
+      <FadeHeader title={t("settings.paymentAccounts.title")} />
       <Text color="muted-foreground">
         {t("settings.paymentAccounts.order.description")}
       </Text>

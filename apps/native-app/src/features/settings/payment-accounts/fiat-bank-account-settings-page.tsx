@@ -17,10 +17,10 @@ import {
 import type { FiatCurrency, Iban } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { ScreenHeader } from "../../../components/screen-header.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -74,7 +74,7 @@ export function FiatBankAccountSettingsPage() {
 
   return (
     <Screen>
-      <ScreenHeader title={t("settings.paymentAccounts.method.iban")} />
+      <FadeHeader title={t("settings.paymentAccounts.method.iban")} />
       <Text fontWeight="700">{t("settings.fiatBankAccount.form.title")}</Text>
       <Text color="muted-foreground">
         {t("settings.fiatBankAccount.form.description")}

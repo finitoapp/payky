@@ -3,7 +3,7 @@ import { type ReactNode, Suspense } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, XStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
-import { ScreenHeader } from "../../components/screen-header.tsx"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
@@ -28,7 +28,7 @@ export function ActivityShell({
     <SafeAreaView
       style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
     >
-      <ScreenHeader title={t("activity.title")} />
+      <FadeHeader title={t("activity.title")} />
       <AppButton
         label={t("stats.title")}
         variant="secondary"

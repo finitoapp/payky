@@ -2,9 +2,11 @@ import { atom } from "jotai"
 
 export interface Toast {
   readonly id: number
-  readonly variant: "success" | "error"
+  readonly variant: "default" | "success" | "error"
   /** Already translated. */
   readonly message: string
+  /** A button that runs `onPress` and dismisses the toast, as sonner's. */
+  readonly action?: { readonly label: string; readonly onPress: () => void }
 }
 
 export const toastsAtom = atom<ReadonlyArray<Toast>>([])

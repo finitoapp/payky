@@ -1,6 +1,11 @@
-import { linesNeedDiscard } from "@payky/app-shared/cart-lines"
+import {
+  type CartLine,
+  invertLine,
+  linesNeedDiscard,
+} from "@payky/app-shared/cart-lines"
 import {
   addCatalogItemToBill,
+  appendGuardedBillLines,
   appendRemoveBillLine,
   assignBillToTable,
   createBillAtEnd,
@@ -13,7 +18,7 @@ import { getBillLineSummaryUnitAmount } from "@payky/core/modules/bill-line/bill
 import type { CatalogItemRow } from "@payky/core/modules/catalog-item/catalog-item"
 import {
   type FiatCurrency,
-  type NonNegativeInteger,
+  NonNegativeInteger,
   PositiveNumber,
 } from "@payky/core/modules/shared/schema"
 import type { TableId } from "@payky/core/modules/table/table-types"
@@ -27,10 +32,12 @@ import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
+type CartHistoryEntry = ReadonlyArray<CartLine>
+
 /**
- * Native counterpart of web's `useCartBill`, minus undo/redo (with the toast
- * that offers it) and clear, which come with later tasks.
- * It only issues mutations; the visible cart is always the live line query.
+ * Native counterpart of web's `useCartBill`, with its undo/redo stack over
+ * the lines actually appended and its clear. It only issues mutations; the
+ * visible cart is always the live line query.
  *
  * Every mutation runs through one promise chain so taps apply in tap order
  * (the bill-line ledger is append-only, so out-of-order appends are wrong) and
@@ -60,6 +67,34 @@ export function useCartBill({
   const { t } = useTranslation()
   const { require } = useRequirePermission()
   const [pending, setPending] = useState(false)
+  /** The one place the cart checks `discard`, on the lines about to be written. */
+  const mayWrite = async (lines: ReadonlyArray<Pick<CartLine, "kind">>) =>
+    !linesNeedDiscard(lines) ||
+    (await require("discard", "access.action.removeLines"))
+  // Refs, as web: an undo toast's action runs long after the render that
+  // raised it, and a state snapshot there would pop the wrong entry. Every
+  // write runs inside `runQueued`, so they change one operation at a time.
+  const undoStackRef = useRef<ReadonlyArray<CartHistoryEntry>>([])
+  const redoStackRef = useRef<ReadonlyArray<CartHistoryEntry>>([])
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+  const setStacks = (
+    undoStack: ReadonlyArray<CartHistoryEntry>,
+    redoStack: ReadonlyArray<CartHistoryEntry>
+  ) => {
+    undoStackRef.current = undoStack
+    redoStackRef.current = redoStack
+    setCanUndo(undoStack.length > 0)
+    setCanRedo(redoStack.length > 0)
+  }
+  const record = (entry: CartHistoryEntry) =>
+    setStacks([...undoStackRef.current, entry], [])
+  const reportFailure = (what: string, error: { readonly type: string }) => {
+    nativeConsole.error(what, error)
+    toast.error(
+      t(error.type === "BillLocked" ? "bill.locked" : "app.saveFailed")
+    )
+  }
   const queueRef = useRef<Promise<unknown>>(Promise.resolve())
   const pendingCountRef = useRef(0)
   // Several taps before the new bill's row is visible must create it once.
@@ -134,16 +169,21 @@ export function useCartBill({
         })
       )
       if (!result.ok) {
-        nativeConsole.error("Failed to add catalog item to cart", result.error)
-        toast.error(
-          t(
-            result.error.type === "BillLocked"
-              ? "bill.locked"
-              : "app.saveFailed"
-          )
-        )
+        reportFailure("Failed to add catalog item to cart", result.error)
         return false
       }
+      record([
+        {
+          billId,
+          deviceId: device.id,
+          catalogItemId: catalogItem.id,
+          itemId: result.value.itemId,
+          type: "catalogItem",
+          kind: "add",
+          quantity,
+          totalAmount: NonNegativeInteger(catalogItem.unitAmount * quantity),
+        },
+      ])
       return true
     })
 
@@ -162,11 +202,7 @@ export function useCartBill({
     totalAmount: NonNegativeInteger
   ) =>
     runQueued(async () => {
-      if (
-        linesNeedDiscard([{ kind: "remove" }]) &&
-        !(await require("discard", "access.action.removeLines"))
-      )
-        return false
+      if (!(await mayWrite([{ kind: "remove" }]))) return false
       await using run = appRun()
       const result = await run(
         appendRemoveBillLine({
@@ -178,16 +214,21 @@ export function useCartBill({
         })
       )
       if (!result.ok) {
-        nativeConsole.error("Failed to remove from cart", result.error)
-        toast.error(
-          t(
-            result.error.type === "BillLocked"
-              ? "bill.locked"
-              : "app.saveFailed"
-          )
-        )
+        reportFailure("Failed to remove from cart", result.error)
         return false
       }
+      record([
+        {
+          billId,
+          deviceId: device.id,
+          catalogItemId: summary.catalogItemId,
+          itemId: summary.itemId,
+          type: summary.type,
+          kind: "remove",
+          quantity,
+          totalAmount,
+        },
+      ])
       return true
     })
 
@@ -200,6 +241,70 @@ export function useCartBill({
 
   const removeLine = (summary: BillLineSummary) =>
     removeFromCart(summary, summary.quantity, summary.totalAmount)
+
+  const clear = (summaries: ReadonlyArray<BillLineSummary>) => {
+    if (summaries.length === 0) return Promise.resolve(false)
+    return runQueued(async () => {
+      const lines: CartHistoryEntry = summaries.map((summary) => ({
+        billId,
+        deviceId: device.id,
+        catalogItemId: summary.catalogItemId,
+        itemId: summary.itemId,
+        type: summary.type,
+        kind: "remove" as const,
+        quantity: summary.quantity,
+        totalAmount: summary.totalAmount,
+      }))
+      if (!(await mayWrite(lines))) return false
+      await using run = appRun()
+      const result = await run(appendGuardedBillLines(billId, lines))
+      if (!result.ok) {
+        reportFailure("Failed to clear cart", result.error)
+        return false
+      }
+      record(lines)
+      return true
+    })
+  }
+
+  // The top of a stack is read inside `runQueued`, so two rapid taps pop two
+  // different entries instead of replaying one twice.
+  const undo = () =>
+    runQueued(async () => {
+      const entry = undoStackRef.current.at(-1)
+      if (entry === undefined) return false
+      const lines = entry.map(invertLine)
+      if (!(await mayWrite(lines))) return false
+      await using run = appRun()
+      const result = await run(appendGuardedBillLines(billId, lines))
+      if (!result.ok) {
+        reportFailure("Failed to undo cart change", result.error)
+        return false
+      }
+      setStacks(undoStackRef.current.slice(0, -1), [
+        ...redoStackRef.current,
+        entry,
+      ])
+      return true
+    })
+
+  const redo = () =>
+    runQueued(async () => {
+      const entry = redoStackRef.current.at(-1)
+      if (entry === undefined) return false
+      if (!(await mayWrite(entry))) return false
+      await using run = appRun()
+      const result = await run(appendGuardedBillLines(billId, entry))
+      if (!result.ok) {
+        reportFailure("Failed to redo cart change", result.error)
+        return false
+      }
+      setStacks(
+        [...undoStackRef.current, entry],
+        redoStackRef.current.slice(0, -1)
+      )
+      return true
+    })
 
   /**
    * Assigns (or clears) the bill's table on the same queue as every other
@@ -223,5 +328,17 @@ export function useCartBill({
       return true
     })
 
-  return { pending, assignTable, addOne, addQuantity, removeOne, removeLine }
+  return {
+    pending,
+    canUndo,
+    canRedo,
+    assignTable,
+    addOne,
+    addQuantity,
+    removeOne,
+    removeLine,
+    clear,
+    undo,
+    redo,
+  }
 }

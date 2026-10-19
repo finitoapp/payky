@@ -36,11 +36,13 @@ import { Redirect, router, useLocalSearchParams } from "expo-router"
 import ChevronDown from "lucide-react-native/icons/chevron-down"
 import Minus from "lucide-react-native/icons/minus"
 import Plus from "lucide-react-native/icons/plus"
+import Redo2 from "lucide-react-native/icons/redo-2"
 import ScanLine from "lucide-react-native/icons/scan-line"
 import ShoppingBag from "lucide-react-native/icons/shopping-bag"
 import Split from "lucide-react-native/icons/split"
 import Table2 from "lucide-react-native/icons/table-2"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
+import Undo2 from "lucide-react-native/icons/undo-2"
 import X from "lucide-react-native/icons/x"
 import {
   Suspense,
@@ -77,6 +79,7 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
 import { useProductLookup } from "../../hooks/use-product-lookup.ts"
+import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
@@ -379,6 +382,7 @@ function BillCart({
     [summaries]
   )
   const cart = useCartBill({ billId, currency, tableId, onTableSeedChange })
+  const toast = useToast()
   const confirm = useConfirm()
   const [tablePickerOpen, setTablePickerOpen] = useState(false)
   const [scanMode, setScanMode] = useState(false)
@@ -533,6 +537,18 @@ function BillCart({
     [deferredSearch, deferredFilter, deferredInBillIds, currency]
   )
   const gridItems = useEvoluQuery(gridQuery).data
+  // The action runs long after this render, so it must not capture it:
+  // `cart.undo` reads the top of its stack when it runs, as web's.
+  const showUndoToast = (message: string) =>
+    toast.withAction(message, {
+      label: t("bill.summary.undo"),
+      onPress: () => void cart.undo(),
+    })
+  const handleClear = async () => {
+    if (await cart.clear(summaries)) {
+      showUndoToast(t("bill.summary.clear.toast"))
+    }
+  }
   const inBillFilterOptions = useMemo(
     () => [{ value: "inBill" as const, label: t("bill.filter.inBill") }],
     [t]
@@ -691,11 +707,15 @@ function BillCart({
         <SafeAreaView edges={["bottom"]}>
           <CardContent pb={16}>
             <Collapsible
-              // Closes itself when the last line goes, as its trigger is then off.
-              open={summaryOpen && summaries.length > 0}
+              // Closes itself when the last line goes and nothing is left to
+              // undo, as its trigger is then off (web's).
+              open={summaryOpen && (summaries.length > 0 || cart.canUndo)}
               onOpenChange={setSummaryOpen}
             >
-              <CollapsibleTrigger pt={16} disabled={summaries.length === 0}>
+              <CollapsibleTrigger
+                pt={16}
+                disabled={summaries.length === 0 && !cart.canUndo}
+              >
                 <XStack items="center" justify="space-between" gap={8}>
                   <XStack items="center" gap={8}>
                     <Icon icon={ShoppingBag} color="muted-foreground" />
@@ -733,10 +753,53 @@ function BillCart({
                       }
                       onAddOne={(catalogItem) => void cart.addOne(catalogItem)}
                       onRemoveOne={() => void cart.removeOne(summary)}
-                      onRemove={() => void cart.removeLine(summary)}
+                      onRemove={async () => {
+                        // A failed removal recorded nothing, so offering to
+                        // undo it would invert the change before it.
+                        if (await cart.removeLine(summary)) {
+                          showUndoToast(
+                            t("bill.summary.removeLine.toast", {
+                              name: summary.name,
+                            })
+                          )
+                        }
+                      }}
                     />
                   ))}
                 </ScrollView>
+                <XStack items="center" justify="space-between" pt={16} py={8}>
+                  <XStack gap={4}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      h={44}
+                      px={12}
+                      iconStart={Undo2}
+                      label={t("bill.summary.undo")}
+                      disabled={!cart.canUndo || cart.pending}
+                      onPress={() => void cart.undo()}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      h={44}
+                      px={12}
+                      iconStart={Redo2}
+                      label={t("bill.summary.redo")}
+                      disabled={!cart.canRedo || cart.pending}
+                      onPress={() => void cart.redo()}
+                    />
+                  </XStack>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    h={44}
+                    px={12}
+                    label={t("bill.summary.clear")}
+                    disabled={summaries.length === 0 || cart.pending}
+                    onPress={() => void handleClear()}
+                  />
+                </XStack>
               </CollapsibleContent>
             </Collapsible>
             <XStack items="center" gap={8} pt={16}>

@@ -4,7 +4,7 @@ import Info from "lucide-react-native/icons/info"
 import OctagonX from "lucide-react-native/icons/octagon-x"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { styled, Text, View } from "tamagui"
-import { radius } from "../../theme/tokens.ts"
+import { fontWeight, radius } from "../../theme/tokens.ts"
 import { Icon } from "./icon.tsx"
 
 /**
@@ -12,19 +12,23 @@ import { Icon } from "./icon.tsx"
  * sonner's toast on `--normal-bg: popover`, `--normal-text:
  * popover-foreground`, `--normal-border: border`, `--border-radius:
  * radius` (8.8), 16 px padding, 13 px text and a 16 px icon per type
- * (`CircleCheck`, `OctagonX`, `Info`, `TriangleAlert`). The queue and the
- * timing stay in `components/app/toast-host.tsx`. Sonner's shadow is left
- * out; the border separates the toast from the screen.
+ * (`CircleCheck`, `OctagonX`, `Info`, `TriangleAlert`), none for sonner's
+ * plain `toast()`. An action is sonner's action button: 24 high, 8 px side
+ * padding, 12 px medium text in `--normal-bg` on `--normal-text`, radius 4.
+ * The queue and the timing stay in `components/app/toast-host.tsx`.
+ * Sonner's shadow is left out; the border separates the toast from the
+ * screen.
  */
 
-type ToastVariant = "success" | "error" | "info" | "warning"
+type ToastVariant = "default" | "success" | "error" | "info" | "warning"
 
 const icons = {
+  default: null,
   success: CircleCheck,
   error: OctagonX,
   info: Info,
   warning: TriangleAlert,
-} as const satisfies Record<ToastVariant, LucideIcon>
+} as const satisfies Record<ToastVariant, LucideIcon | null>
 
 const ToastFrame = styled(View, {
   name: "Toast",
@@ -43,22 +47,41 @@ export function Toast({
   variant,
   message,
   onPress,
+  action,
 }: {
   readonly variant: ToastVariant
   /** Already translated. */
   readonly message: string
   readonly onPress?: () => void
+  readonly action?: { readonly label: string; readonly onPress: () => void }
 }) {
+  const icon = icons[variant]
   return (
     <ToastFrame
       onPress={onPress}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
     >
-      <Icon icon={icons[variant]} color="popover-foreground" />
+      {icon === null ? null : <Icon icon={icon} color="popover-foreground" />}
       <Text flex={1} fontSize={13} color="popover-foreground">
         {message}
       </Text>
+      {action === undefined ? null : (
+        <View
+          h={24}
+          px={8}
+          rounded={4}
+          justify="center"
+          bg="popover-foreground"
+          accessibilityRole="button"
+          hitSlop={12}
+          onPress={action.onPress}
+        >
+          <Text fontSize={12} fontWeight={fontWeight.medium} color="popover">
+            {action.label}
+          </Text>
+        </View>
+      )}
     </ToastFrame>
   )
 }

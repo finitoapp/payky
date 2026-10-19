@@ -22,6 +22,17 @@ function ToastItem({ toast }: { readonly toast: ToastData }) {
       variant={toast.variant}
       message={toast.message}
       onPress={() => dismiss(toast.id)}
+      action={
+        toast.action === undefined
+          ? undefined
+          : {
+              label: toast.action.label,
+              onPress: () => {
+                dismiss(toast.id)
+                toast.action?.onPress()
+              },
+            }
+      }
     />
   )
 }

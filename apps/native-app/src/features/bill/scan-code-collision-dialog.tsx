@@ -1,16 +1,24 @@
 import { formatMoney } from "@payky/app-shared/format-money"
 import type { CatalogItemRow } from "@payky/core/modules/catalog-item/catalog-item"
 import { getStaffDisplayName } from "@payky/core/modules/catalog-item/catalog-item-utils"
-import { FlatList, Modal, Pressable } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, XStack, YStack } from "tamagui"
-import { Button } from "../../components/ui/button.tsx"
+import { Pressable } from "react-native"
+import { Text, YStack } from "tamagui"
+import { Card } from "../../components/ui/card.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
 
 /**
  * `scanCode` uniqueness can't be enforced across devices, so scanning a code
  * assigned to more than one catalog item is an expected outcome: staff pick
- * which one they meant, as web's `ScanCodeCollisionDialog`.
+ * which one they meant, as web's `ScanCodeCollisionDialog`: a dialog listing
+ * each candidate as a card row with its name and price.
  */
 export function ScanCodeCollisionDialog({
   candidates,
@@ -23,64 +31,53 @@ export function ScanCodeCollisionDialog({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const theme = useTheme()
 
   return (
-    <Modal
-      visible={candidates.length > 0}
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
+    <Dialog
+      open={candidates.length > 0}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
     >
-      <SafeAreaView
-        style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
-      >
-        <Text fontSize={24} fontWeight="600" accessibilityRole="header">
-          {t("bill.scan.collision.title")}
-        </Text>
-        <Text color="muted-foreground" pb="3">
-          {t("bill.scan.collision.description")}
-        </Text>
-        <FlatList
-          style={{ flex: 1 }}
-          data={candidates}
-          keyExtractor={(item) => item.id}
-          ItemSeparatorComponent={() => <YStack height={8} />}
-          renderItem={({ item }) => (
+      <DialogContent closeLabel={t("dialog.close")}>
+        <DialogHeader>
+          <DialogTitle>{t("bill.scan.collision.title")}</DialogTitle>
+          <DialogDescription>
+            {t("bill.scan.collision.description")}
+          </DialogDescription>
+        </DialogHeader>
+        <YStack gap={8}>
+          {candidates.map((candidate) => (
             <Pressable
+              key={candidate.id}
               accessibilityRole="button"
-              onPress={() => onSelect(item)}
+              onPress={() => onSelect(candidate)}
             >
-              <XStack
+              <Card
+                flexDirection="row"
+                items="center"
                 justify="space-between"
-                gap="3"
-                p="3"
-                borderWidth={1}
-                borderColor="border-color"
-                rounded="lg"
+                gap={8}
+                px={16}
+                py={12}
               >
-                <Text fontWeight="600" flex={1}>
-                  {getStaffDisplayName(item)}
+                <Text flex={1} fontWeight={fontWeight.medium}>
+                  {getStaffDisplayName(candidate)}
                 </Text>
-                <Text color="muted-foreground">
+                <Text fontSize={fontSize.sm} color="muted-foreground">
                   {formatMoney(
-                    { value: item.unitAmount, currency: item.currency },
+                    {
+                      value: candidate.unitAmount,
+                      currency: candidate.currency,
+                    },
                     locale
                   )}
                 </Text>
-              </XStack>
+              </Card>
             </Pressable>
-          )}
-        />
-        <YStack pt="3">
-          <Button
-            size="lg"
-            variant="outline"
-            label={t("paymentWait.back")}
-            onPress={onClose}
-          />
+          ))}
         </YStack>
-      </SafeAreaView>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   )
 }

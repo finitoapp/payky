@@ -245,7 +245,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/bill/assign-table-dialog.tsx",
     web: ["apps/web-app/src/features/bill/assign-table-dialog.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/bill/bill-page.tsx",
@@ -255,22 +255,28 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/bill/bill-scan-view.tsx",
     web: ["apps/web-app/src/features/bill/bill-scan-view.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Card: "the page passes its own item brick, a Card in the bill grid, as lastScanned, so its quantity controls are the grid's",
+    },
   },
   {
     native: "src/features/bill/create-catalog-item-dialog.tsx",
     web: ["apps/web-app/src/features/bill/create-catalog-item-dialog.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/bill/scan-code-collision-dialog.tsx",
     web: ["apps/web-app/src/features/bill/scan-code-collision-dialog.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/bill/split-bill-dialog.tsx",
     web: ["apps/web-app/src/features/bill/split-bill-dialog.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      DialogClose: "the native dialog has no close part; Cancel calls onClose",
+    },
   },
   {
     native: "src/features/onboarding/account-choice-step.tsx",

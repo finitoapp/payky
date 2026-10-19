@@ -11,21 +11,29 @@ import {
 import type { TableRow } from "@payky/core/modules/table/table"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import type { TableId } from "@payky/core/modules/table/table-types"
-import { useMemo } from "react"
-import { FlatList, Modal, Pressable, View } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, YStack } from "tamagui"
+import Ban from "lucide-react-native/icons/ban"
+import { type ReactNode, useMemo } from "react"
+import { Pressable } from "react-native"
+import { Text, View, YStack } from "tamagui"
 import { TableTileShell } from "../../components/table-tile-shell.tsx"
-import { Button } from "../../components/ui/button.tsx"
+import { Card } from "../../components/ui/card.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-
-type PickerEntry = { readonly table: TableRow | null }
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
 
 /**
  * Table picker for the bill, as web's `AssignTableDialog`: every table as an
  * occupancy tile (free, this bill's current table, or held by other bills),
- * so staff see which tables are free before assigning one.
+ * so staff see which tables are free before assigning one. Drawn as web's: a
+ * dialog with a two-column grid, "no table" first as a card with a `Ban`
+ * icon, each table a `TableTileShell`.
  */
 export function AssignTableDialog({
   open,
@@ -41,7 +49,6 @@ export function AssignTableDialog({
   readonly onAssign: (tableId: TableId | null) => void
 }) {
   const { t } = useTranslation()
-  const theme = useTheme()
   const tables = useEvoluQuery(tablesQuery).data
   const openBills = useEvoluQuery(openBillsQuery).data
 
@@ -55,57 +62,53 @@ export function AssignTableDialog({
     }
     return map
   }, [openBills, billId])
-  const entries = useMemo<ReadonlyArray<PickerEntry>>(
-    () => [{ table: null }, ...tables.map((table) => ({ table }))],
-    [tables]
+  const tiles: ReadonlyArray<ReactNode> = [
+    <NoTableTile
+      key="none"
+      selected={currentTableId === null}
+      onSelect={() => onAssign(null)}
+    />,
+    ...tables.map((table) => (
+      <TableAssignmentTile
+        key={table.id}
+        table={table}
+        bills={otherBillsByTableId.get(table.id) ?? []}
+        selected={currentTableId === table.id}
+        onSelect={() => onAssign(table.id)}
+      />
+    )),
+  ]
+  const rows = Array.from({ length: Math.ceil(tiles.length / 2) }, (_, row) =>
+    tiles.slice(row * 2, row * 2 + 2)
   )
 
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
     >
-      <SafeAreaView
-        style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
-      >
-        <Text fontSize={24} fontWeight="600" accessibilityRole="header" pb="3">
-          {t("bill.table.dialog.title")}
-        </Text>
-        <FlatList
-          style={{ flex: 1 }}
-          numColumns={2}
-          data={entries}
-          keyExtractor={(entry) => entry.table?.id ?? "none"}
-          renderItem={({ item: { table } }) => (
-            <View style={{ width: "50%", padding: 4 }}>
-              {table === null ? (
-                <NoTableTile
-                  selected={currentTableId === null}
-                  onSelect={() => onAssign(null)}
-                />
-              ) : (
-                <TableAssignmentTile
-                  table={table}
-                  bills={otherBillsByTableId.get(table.id) ?? []}
-                  selected={currentTableId === table.id}
-                  onSelect={() => onAssign(table.id)}
-                />
-              )}
+      <DialogContent closeLabel={t("dialog.close")}>
+        <DialogHeader>
+          <DialogTitle>{t("bill.table.dialog.title")}</DialogTitle>
+        </DialogHeader>
+        <YStack gap={8}>
+          {rows.map((row, rowIndex) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
+            <View key={rowIndex} flexDirection="row" gap={8}>
+              {row.map((tile, cellIndex) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: cells are positional
+                <View key={cellIndex} flex={1}>
+                  {tile}
+                </View>
+              ))}
+              {row.length === 1 ? <View flex={1} /> : null}
             </View>
-          )}
-        />
-        <YStack pt="3">
-          <Button
-            size="lg"
-            variant="outline"
-            label={t("paymentWait.back")}
-            onPress={onClose}
-          />
+          ))}
         </YStack>
-      </SafeAreaView>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -124,13 +127,19 @@ function NoTableTile({
       onPress={onSelect}
       style={{ flex: 1 }}
     >
-      <TableTileShell
-        name={t("bill.table.dialog.none")}
-        occupied={false}
-        selected={selected}
+      <Card
+        flex={1}
+        items="center"
+        gap={8}
+        p={16}
+        borderWidth={selected ? 2 : 1}
+        borderColor={selected ? "primary" : "card-ring"}
       >
-        {null}
-      </TableTileShell>
+        <Icon icon={Ban} size={20} color="muted-foreground" />
+        <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+          {t("bill.table.dialog.none")}
+        </Text>
+      </Card>
     </Pressable>
   )
 }
@@ -164,12 +173,14 @@ function TableAssignmentTile({
         selected={selected}
       >
         {onlyBill === undefined ? (
-          <Text color="muted-foreground">{t("tables.tile.free")}</Text>
+          <Text fontSize={fontSize.sm} color="muted-foreground">
+            {t("tables.tile.free")}
+          </Text>
         ) : bills.length === 1 ? (
           // Derived from the row's embedded lines/items: no query of its own.
           <OccupiedSummary bill={onlyBill} locale={locale} />
         ) : (
-          <Text color="muted-foreground">
+          <Text fontSize={fontSize.sm} color="muted-foreground">
             {t("tables.tile.multipleBills", { value: bills.length })}
           </Text>
         )}
@@ -194,11 +205,11 @@ function OccupiedSummary({
     [bill]
   )
   return (
-    <YStack>
-      <Text color="muted-foreground">
+    <YStack gap={2}>
+      <Text fontSize={fontSize.sm} color="muted-foreground">
         {t("bill.itemsCount", { value: itemCount })}
       </Text>
-      <Text fontWeight="600">
+      <Text fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
         {formatMoney({ value: totalAmount, currency: bill.currency }, locale)}
       </Text>
     </YStack>

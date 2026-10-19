@@ -26,6 +26,7 @@ export const enCommon = {
   "country.other": "Other",
   "country.sk": "Slovakia",
   "demoData.close": "Close",
+  "dialog.close": "Close",
   "demoData.failed.description":
     "The demo account may be incomplete. Remove it under Accounts and create a new one.",
   "demoData.failed.title": "Demo data could not be generated",

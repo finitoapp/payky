@@ -20,20 +20,36 @@ import {
 } from "@payky/core/modules/bill-line/bill-line-utils"
 import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
+import Minus from "lucide-react-native/icons/minus"
+import Plus from "lucide-react-native/icons/plus"
 import { useMemo, useState } from "react"
-import { Modal, Pressable, ScrollView } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, XStack, YStack } from "tamagui"
+import { Pressable } from "react-native"
+import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 
 /**
  * Native counterpart of web's `SplitBillDialog`: pick how many units of each
- * line move to a new bill or an open one of the same currency. A full-screen
- * modal rather than a dialog; it has no text input, so no keyboard handling.
- * The selection lives in the mounted body, which exists only while open, so
- * every opening starts empty (cancel discards the draft, as on web).
+ * line move to a new bill or an open one of the same currency, drawn as web's
+ * dialog: the destination as an outline toggle group, the lines with round
+ * ghost −/+ steppers, and the selected count, total and buttons in the
+ * footer. The whole card scrolls (web scrolls only the lines). The selection
+ * lives in the mounted body, which exists only while open, so every opening
+ * starts empty (cancel discards the draft, as on web).
  */
 export function SplitBillDialog({
   open,
@@ -54,11 +70,12 @@ export function SplitBillDialog({
   readonly onConfirm: (input: SplitBillConfirmInput) => void
 }) {
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
+    <Dialog
+      open={open}
+      dismissOnOverlayPress={!pending}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
     >
       {open ? (
         <SplitBillBody
@@ -70,7 +87,7 @@ export function SplitBillDialog({
           onConfirm={onConfirm}
         />
       ) : null}
-    </Modal>
+    </Dialog>
   )
 }
 
@@ -84,7 +101,6 @@ function SplitBillBody({
 }: Omit<Parameters<typeof SplitBillDialog>[0], "open">) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const theme = useTheme()
   const [selected, setSelected] = useState<SplitSelection>({})
   const [destination, setDestination] = useState<SplitDestination>("new")
   const [targetBillId, setTargetBillId] = useState<BillId | null>(null)
@@ -121,41 +137,41 @@ function SplitBillBody({
   }
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
-    >
-      <Text fontSize={24} fontWeight="600" accessibilityRole="header">
-        {t("bill.split.title")}
-      </Text>
-      <Text color="muted-foreground" pb="3">
-        {t("bill.split.description")}
-      </Text>
+    <DialogContent closeLabel={t("dialog.close")}>
+      <DialogHeader>
+        <DialogTitle>{t("bill.split.title")}</DialogTitle>
+        <DialogDescription>{t("bill.split.description")}</DialogDescription>
+      </DialogHeader>
 
-      <XStack gap="2" pb="2">
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            variant={destination === "new" ? "default" : "outline"}
-            label={t("bill.split.destination.new")}
-            onPress={() => setDestination("new")}
-          />
-        </YStack>
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            variant={destination === "existing" ? "default" : "outline"}
-            label={t("bill.split.destination.existing")}
+      <YStack gap={8}>
+        <ToggleGroup
+          value={destination}
+          onValueChange={setDestination}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="new" flex={1}>
+            {t("bill.split.destination.new")}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="existing"
+            flex={1}
             disabled={otherOpenBills.length === 0}
-            onPress={() => setDestination("existing")}
-          />
-        </YStack>
-      </XStack>
+          >
+            {t("bill.split.destination.existing")}
+          </ToggleGroupItem>
+        </ToggleGroup>
 
-      <ScrollView style={{ flex: 1 }}>
         {destination === "existing" ? (
-          <YStack gap="1" pb="3">
+          <YStack
+            gap={4}
+            p={4}
+            rounded={radius.md}
+            borderWidth={1}
+            borderColor="border-color"
+          >
             {otherOpenBills.length === 0 ? (
-              <Text color="muted-foreground">
+              <Text p={8} fontSize={fontSize.sm} color="muted-foreground">
                 {t("bill.split.destination.existing.empty")}
               </Text>
             ) : (
@@ -175,7 +191,7 @@ function SplitBillBody({
           </YStack>
         ) : null}
 
-        <XStack justify="flex-end" gap="2" pb="2">
+        <XStack justify="flex-end" gap={4}>
           <Button
             size="xs"
             variant="ghost"
@@ -189,10 +205,13 @@ function SplitBillBody({
             onPress={() => setSelected({})}
           />
         </XStack>
+      </YStack>
 
-        {summaries.map((summary) => (
+      <YStack>
+        {summaries.map((summary, index) => (
           <SplitBillRow
             key={summary.id}
+            first={index === 0}
             summary={summary}
             quantity={selected[summary.id] ?? 0}
             onChange={(quantity) =>
@@ -202,38 +221,36 @@ function SplitBillBody({
             }
           />
         ))}
-      </ScrollView>
+      </YStack>
 
-      <YStack gap="2" pt="3">
+      <DialogFooter flexDirection="column">
         <XStack justify="space-between">
-          <Text fontWeight="600">
-            {t("bill.split.selectedCount")} {itemCount}
+          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+            {`${t("bill.split.selectedCount")} ${itemCount}`}
           </Text>
-          <Text fontWeight="600">
+          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
             {formatMoney({ value: totalAmount, currency }, locale)}
           </Text>
         </XStack>
-        <XStack gap="2">
-          <YStack flex={1}>
-            <Button
-              size="lg"
-              variant="outline"
-              label={t("bill.split.cancel")}
-              onPress={onClose}
-            />
-          </YStack>
-          <YStack flex={1}>
-            <Button
-              size="lg"
-              label={t("bill.split.confirm")}
-              pending={pending}
-              disabled={!canConfirm}
-              onPress={confirm}
-            />
-          </YStack>
+        <XStack gap={8}>
+          <Button
+            size="lg"
+            flex={1}
+            variant="outline"
+            label={t("bill.split.cancel")}
+            onPress={onClose}
+          />
+          <Button
+            size="lg"
+            flex={1}
+            label={t("bill.split.confirm")}
+            pending={pending}
+            disabled={!canConfirm}
+            onPress={confirm}
+          />
         </XStack>
-      </YStack>
-    </SafeAreaView>
+      </DialogFooter>
+    </DialogContent>
   )
 }
 
@@ -265,28 +282,38 @@ function ExistingBillOption({
       onPress={onSelect}
     >
       <XStack
-        gap="2"
-        p="2"
+        gap={8}
+        p={8}
         items="center"
-        borderWidth={selected ? 2 : 1}
-        borderColor={selected ? "primary" : "border-color"}
-        rounded="md"
+        justify="space-between"
+        rounded={radius.md}
+        borderWidth={1}
+        borderColor={selected ? "primary" : "transparent"}
+        bg={selected ? "primary-10" : "transparent press:muted"}
       >
-        <YStack flex={1}>
-          <Text fontWeight="600" numberOfLines={1}>
+        <YStack flex={1} minW={0}>
+          <Text
+            fontSize={fontSize.sm}
+            fontWeight={fontWeight.medium}
+            numberOfLines={1}
+          >
             {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
           </Text>
           {tableName === null ? null : (
-            <Text color="muted-foreground" numberOfLines={1}>
+            <Text
+              fontSize={fontSize.xs}
+              color="muted-foreground"
+              numberOfLines={1}
+            >
               {tableName}
             </Text>
           )}
         </YStack>
-        <YStack items="flex-end">
-          <Text color="muted-foreground">
+        <YStack shrink={0} items="flex-end" gap={2}>
+          <Text fontSize={fontSize.xs} color="muted-foreground">
             {t("bill.itemsCount", { value: itemCount })}
           </Text>
-          <Text fontWeight="600">
+          <Text fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
             {formatMoney(
               { value: totalAmount, currency: bill.currency },
               locale
@@ -299,10 +326,12 @@ function ExistingBillOption({
 }
 
 function SplitBillRow({
+  first,
   summary,
   quantity,
   onChange,
 }: {
+  readonly first: boolean
   readonly summary: BillLineSummary
   readonly quantity: number
   readonly onChange: (quantity: number) => void
@@ -310,69 +339,58 @@ function SplitBillRow({
   const { t } = useTranslation()
   return (
     <XStack
-      py="2"
-      gap="2"
+      py={8}
+      gap={8}
       items="center"
-      borderBottomWidth={1}
+      justify="space-between"
+      borderTopWidth={first ? 0 : 1}
       borderColor="border-color"
     >
-      <YStack flex={1}>
-        <Text fontWeight="600" numberOfLines={1}>
+      <YStack flex={1} minW={0}>
+        <Text
+          fontSize={fontSize.sm}
+          fontWeight={fontWeight.medium}
+          numberOfLines={1}
+        >
           {summary.name}
         </Text>
-        <Text color="muted-foreground">
+        <Text fontSize={fontSize.xs} color="muted-foreground">
           {t("bill.split.availableCount", { value: summary.quantity })}
         </Text>
       </YStack>
-      <StepButton
-        label={t("bill.split.decrease.aria", { name: summary.name })}
-        symbol="−"
-        disabled={quantity === 0}
-        onPress={() => onChange(quantity - 1)}
-      />
-      <Text minW={28} text="center" fontWeight="600">
-        {quantity}
-      </Text>
-      <StepButton
-        label={t("bill.split.increase.aria", { name: summary.name })}
-        symbol="+"
-        disabled={quantity >= summary.quantity}
-        onPress={() => onChange(quantity + 1)}
-      />
+      <XStack items="center" gap={4} rounded={radius.md} bg="muted" p={4}>
+        <Button
+          variant="ghost"
+          size="icon"
+          rounded={radius.full}
+          iconStart={Minus}
+          accessibilityLabel={t("bill.split.decrease.aria", {
+            name: summary.name,
+          })}
+          disabled={quantity === 0}
+          onPress={() => onChange(quantity - 1)}
+        />
+        <Text
+          minW={24}
+          text="center"
+          fontSize={fontSize.sm}
+          fontWeight={fontWeight.semibold}
+          fontVariant={["tabular-nums"]}
+        >
+          {quantity}
+        </Text>
+        <Button
+          variant="ghost"
+          size="icon"
+          rounded={radius.full}
+          iconStart={Plus}
+          accessibilityLabel={t("bill.split.increase.aria", {
+            name: summary.name,
+          })}
+          disabled={quantity >= summary.quantity}
+          onPress={() => onChange(quantity + 1)}
+        />
+      </XStack>
     </XStack>
-  )
-}
-
-function StepButton({
-  label,
-  symbol,
-  disabled,
-  onPress,
-}: {
-  readonly label: string
-  readonly symbol: string
-  readonly disabled: boolean
-  readonly onPress: () => void
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={6}
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        borderWidth: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      <Text fontSize={20}>{symbol}</Text>
-    </Pressable>
   )
 }

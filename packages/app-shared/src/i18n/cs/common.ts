@@ -28,6 +28,7 @@ export const csCommon = {
   "country.other": "Jiná země",
   "country.sk": "Slovensko",
   "demoData.close": "Zavřít",
+  "dialog.close": "Zavřít",
   "demoData.failed.description":
     "Demo účet může být neúplný. Odeberte ho v sekci Účty a vytvořte nový.",
   "demoData.failed.title": "Demo data se nepodařilo vygenerovat",

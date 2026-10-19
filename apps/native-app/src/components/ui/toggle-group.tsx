@@ -122,12 +122,15 @@ export interface ToggleGroupItemProps
   /** Already translated text, or custom content. */
   readonly children: ReactNode
   readonly accessibilityLabel?: string
+  /** Disables this item alone, as web's item `disabled`. */
+  readonly disabled?: boolean
 }
 
 export function ToggleGroupItem({
   value,
   children,
   accessibilityLabel,
+  disabled = false,
   ...frameProps
 }: ToggleGroupItemProps) {
   const group = useContext(GroupContext)
@@ -135,16 +138,17 @@ export function ToggleGroupItem({
   if (group === undefined)
     throw new Error("ToggleGroupItem must be inside a ToggleGroup")
   const selected = group.value === value
+  const inactive = group.disabled || disabled
   return (
     <ItemFrame
       variant={group.variant}
       size={group.size}
       selected={selected}
-      disabled={group.disabled}
+      disabled={inactive}
       hitSlop={hitSlops[group.size]}
-      onPress={group.disabled ? undefined : () => group.onValueChange(value)}
+      onPress={inactive ? undefined : () => group.onValueChange(value)}
       accessibilityRole="radio"
-      accessibilityState={{ checked: selected, disabled: group.disabled }}
+      accessibilityState={{ checked: selected, disabled: inactive }}
       accessibilityLabel={
         accessibilityLabel ??
         (typeof children === "string" ? children : undefined)

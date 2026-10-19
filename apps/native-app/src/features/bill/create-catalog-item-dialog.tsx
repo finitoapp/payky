@@ -12,15 +12,28 @@ import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import type { TaxRateId } from "@payky/core/modules/tax-rate/tax-rate-types"
 import { useAtomValue } from "jotai"
 import { useState } from "react"
-import { Modal, ScrollView } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, YStack } from "tamagui"
 import { evoluAtom } from "../../atoms/evolu.ts"
-import { Field } from "../../components/field.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../components/ui/field.tsx"
+import { Input } from "../../components/ui/input.tsx"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -54,22 +67,21 @@ export function CreateCatalogItemDialog({
   readonly onCreated: (item: CatalogItemRow) => void
 }) {
   return (
-    <Modal
-      visible={scanCode !== null}
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
+    <Dialog
+      open={scanCode !== null}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
     >
       {scanCode === null ? null : (
         <CreateForm
           scanCode={scanCode}
           productLookup={productLookup}
           currency={currency}
-          onClose={onClose}
           onCreated={onCreated}
         />
       )}
-    </Modal>
+    </Dialog>
   )
 }
 
@@ -77,17 +89,14 @@ function CreateForm({
   scanCode,
   productLookup,
   currency,
-  onClose,
   onCreated,
 }: {
   readonly scanCode: string
   readonly productLookup: ReturnType<typeof useProductLookup>
   readonly currency: FiatCurrency
-  readonly onClose: () => void
   readonly onCreated: (item: CatalogItemRow) => void
 }) {
   const { t } = useTranslation()
-  const theme = useTheme()
   const toast = useToast()
   const runToast = useRunToast()
   const { require } = useRequirePermission()
@@ -171,65 +180,71 @@ function CreateForm({
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
-      <ScrollView
-        contentContainerStyle={{ padding: 16, gap: 12 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text fontSize={24} fontWeight="600" accessibilityRole="header">
-          {t("bill.scan.create.title")}
-        </Text>
-        <Text color="muted-foreground">
+    <DialogContent closeLabel={t("dialog.close")}>
+      <DialogHeader>
+        <DialogTitle>{t("bill.scan.create.title")}</DialogTitle>
+        <DialogDescription>
           {t("bill.scan.create.description", { code: scanCode })}
-        </Text>
-        <Field
-          label={t("settings.items.form.name.label")}
-          placeholder={t("settings.items.form.name.placeholder")}
-          value={name}
-          disabled={pending}
-          autoCorrect={false}
-          error={error("name")}
-          onChangeText={(next) => {
-            setName(next)
-            clear("name")
-          }}
-        />
-        <Field
-          label={t("settings.items.form.description.label")}
-          placeholder={t("settings.items.form.description.placeholder")}
-          value={description}
-          disabled={pending}
-          autoCorrect={false}
-          error={error("description")}
-          onChangeText={(next) => {
-            setDescription(next)
-            clear("description")
-          }}
-        />
-        {productLookup.isFetching ? (
-          <Text fontSize={13} color="muted-foreground">
-            {t("bill.scan.lookup.loading")}
-          </Text>
-        ) : product === undefined ? null : (
-          <Text fontSize={13} color="muted-foreground">
-            {t("bill.scan.lookup.source", { source: product.source })}
-          </Text>
-        )}
-        <Field
-          label={t("settings.items.form.price.label")}
-          keyboardType="decimal-pad"
-          value={price}
-          disabled={pending}
-          error={error("price")}
-          onChangeText={(next) => {
-            setPrice(next)
-            clear("price")
-          }}
-        />
-        <YStack gap="2">
-          <Text fontWeight="700">
-            {t("settings.items.form.category.label")}
-          </Text>
+        </DialogDescription>
+      </DialogHeader>
+      <FieldGroup>
+        <Field>
+          <FieldLabel>{t("settings.items.form.name.label")}</FieldLabel>
+          <Input
+            value={name}
+            disabled={pending}
+            invalid={errors.name !== undefined}
+            autoComplete="off"
+            autoCorrect={false}
+            autoFocus
+            placeholder={t("settings.items.form.name.placeholder")}
+            onChangeText={(next) => {
+              setName(next)
+              clear("name")
+            }}
+          />
+          <FieldError>{error("name")}</FieldError>
+        </Field>
+        <Field>
+          <FieldLabel>{t("settings.items.form.description.label")}</FieldLabel>
+          <Input
+            value={description}
+            disabled={pending}
+            invalid={errors.description !== undefined}
+            autoComplete="off"
+            autoCorrect={false}
+            placeholder={t("settings.items.form.description.placeholder")}
+            onChangeText={(next) => {
+              setDescription(next)
+              clear("description")
+            }}
+          />
+          <FieldError>{error("description")}</FieldError>
+          {productLookup.isFetching ? (
+            <FieldDescription>{t("bill.scan.lookup.loading")}</FieldDescription>
+          ) : product === undefined ? null : (
+            <FieldDescription>
+              {t("bill.scan.lookup.source", { source: product.source })}
+            </FieldDescription>
+          )}
+        </Field>
+        <Field>
+          <FieldLabel>{t("settings.items.form.price.label")}</FieldLabel>
+          <Input
+            value={price}
+            disabled={pending}
+            invalid={errors.price !== undefined}
+            autoComplete="off"
+            keyboardType="decimal-pad"
+            onChangeText={(next) => {
+              setPrice(next)
+              clear("price")
+            }}
+          />
+          <FieldError>{error("price")}</FieldError>
+        </Field>
+        <Field>
+          <FieldLabel>{t("settings.items.form.category.label")}</FieldLabel>
           <Select
             value={categoryId}
             onValueChange={setCategoryId}
@@ -244,16 +259,18 @@ function CreateForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent title={t("settings.items.form.category.label")}>
-              {categoryOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.title}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                {categoryOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.title}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
-        </YStack>
-        <YStack gap="2">
-          <Text fontWeight="700">{t("settings.items.form.taxRate.label")}</Text>
+        </Field>
+        <Field>
+          <FieldLabel>{t("settings.items.form.taxRate.label")}</FieldLabel>
           <Select
             value={taxRateId}
             onValueChange={setTaxRateId}
@@ -268,28 +285,24 @@ function CreateForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent title={t("settings.items.form.taxRate.label")}>
-              {taxRateOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.title}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                {taxRateOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.title}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
-        </YStack>
+        </Field>
+      </FieldGroup>
+      <DialogFooter>
         <Button
-          size="lg"
           label={t("bill.scan.create.save")}
           pending={pending}
           onPress={() => void submit()}
         />
-        <Button
-          size="lg"
-          variant="outline"
-          label={t("bill.scan.unknown.cancel")}
-          disabled={pending}
-          onPress={onClose}
-        />
-      </ScrollView>
-    </SafeAreaView>
+      </DialogFooter>
+    </DialogContent>
   )
 }

@@ -28,6 +28,7 @@ export const skCommon = {
   "country.other": "Iná krajina",
   "country.sk": "Slovensko",
   "demoData.close": "Zavrieť",
+  "dialog.close": "Zavrieť",
   "demoData.failed.description":
     "Demo účet môže byť neúplný. Odoberte ho v sekcii Účty a vytvorte nový.",
   "demoData.failed.title": "Demo dáta sa nepodarilo vygenerovať",

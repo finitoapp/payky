@@ -41,16 +41,12 @@ import { Screen } from "../../components/screen.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { VerticalNav } from "../../components/vertical-nav.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
-import {
-  useNostrIdentity,
-  useNostrProfile,
-} from "../../hooks/use-nostr-profile.ts"
 import { useThemePreference } from "../../hooks/use-theme-preference.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { useEetSettings } from "../shared/use-eet-settings.ts"
 import { homeModeLabelKeys } from "./home-screen/home-screen-settings-page.tsx"
 import { usePrivacySettings } from "./privacy/use-privacy-settings.ts"
-import { SettingsRow } from "./settings-row.tsx"
+import { ProfileCard } from "./profile/profile-card.tsx"
 import { themeLabelKeys } from "./theme/theme-settings-page.tsx"
 
 interface SettingRow {
@@ -114,7 +110,6 @@ function createSettingsNavItems(
 export function SettingsPage() {
   const { language, t } = useTranslation()
   const theme = useThemePreference()
-  const profile = useNostrProfile(useNostrIdentity().pubkey)
   const [settings] = useEvoluQuery(settingsQuery).data
   const [legalEntity] = useEvoluQuery(legalEntityQuery).data
   const [cash] = useEvoluQuery(cashRegisterAccountQuery).data
@@ -306,11 +301,7 @@ export function SettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.title")} />
-      <SettingsRow
-        title={t("settings.profile.title")}
-        value={profile.data?.name ?? t("settings.profile.setName")}
-        href="/settings/profile"
-      />
+      <ProfileCard />
       <VerticalNav title={t("settings.catalog")} items={catalogItems} />
       <VerticalNav title={t("settings.payments")} items={paymentItems} />
       <VerticalNav title={t("settings.taxesGroup")} items={taxItems} />

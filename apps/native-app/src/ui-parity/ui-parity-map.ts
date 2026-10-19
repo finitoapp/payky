@@ -1302,6 +1302,15 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
+    native: "src/features/settings/profile/profile-card.tsx",
+    web: ["apps/web-app/src/features/settings/profile/profile-card.tsx"],
+    status: "matched",
+    allowedDifferences: {
+      VerticalNavShell:
+        "web styles its Link with verticalNavShellClassName; native renders the exported shell component itself",
+    },
+  },
+  {
     native: "src/features/settings/profile/profile-settings-page.tsx",
     web: [
       "apps/web-app/src/features/settings/profile/profile-settings-page.tsx",
@@ -1373,8 +1382,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
         "Native keeps the existing ActivityIndicator footer while fetching more rows; web adds a ListSkeleton.",
       VerticalNavRow:
         "Native uses a row helper to preserve FlatList virtualization inside the VerticalNav shell.",
-      VerticalNav:
-        "The native row data has no per-entity icon field; screen-specific list rows will add web icons in their phase-4 steps.",
     },
   },
   {
@@ -1384,17 +1391,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     allowedDifferences: {
       Building2:
         "lucide-react-native 1.57.0 has no building-2 module; native uses its available building icon.",
-      ProfileCard:
-        "Native keeps its existing single-row profile destination; the web profile card includes an avatar and shortened npub.",
-    },
-  },
-  {
-    native: "src/features/settings/settings-row.tsx",
-    web: ["apps/web-app/src/features/settings/settings-page.tsx"],
-    status: "matched",
-    allowedDifferences: {
-      FadeHeader:
-        "This shared native part renders one settings row; the mapped web screen also includes its page header.",
     },
   },
   {

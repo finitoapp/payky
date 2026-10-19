@@ -45,7 +45,6 @@ import {
 import { FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import {
@@ -53,6 +52,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "../../components/ui/alert.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -204,8 +204,9 @@ function BillMessage({
     <SafeAreaView style={{ flex: 1 }}>
       <EmptyView message={message} />
       <YStack p="4" gap="2">
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("paymentDetail.bill.open")}
           onPress={() =>
             router.push({
@@ -214,7 +215,7 @@ function BillMessage({
             })
           }
         />
-        <AppButton label={t("paymentWait.back")} onPress={goHome} />
+        <Button size="lg" label={t("paymentWait.back")} onPress={goHome} />
       </YStack>
     </SafeAreaView>
   )
@@ -258,9 +259,10 @@ function BillCancellationCollisionMessage({
           )}
         </Text>
         {paymentIds.map((paymentId, index) => (
-          <AppButton
+          <Button
+            size="lg"
             key={paymentId}
-            variant="secondary"
+            variant="outline"
             label={
               paymentIds.length > 1
                 ? t("bill.collision.viewPayment.numbered", {
@@ -293,9 +295,10 @@ function BillLocked({
       <EmptyView message={t("bill.locked")} />
       <YStack p="4" gap="2">
         {paymentIds.map((paymentId, index) => (
-          <AppButton
+          <Button
+            size="lg"
             key={paymentId}
-            variant="secondary"
+            variant="outline"
             label={
               paymentIds.length > 1
                 ? t("bill.locked.viewPayment.numbered", { number: index + 1 })
@@ -510,8 +513,9 @@ function BillCart({
         <Text color="muted-foreground">{tableName}</Text>
       )}
 
-      <AppButton
-        variant={scanMode ? "primary" : "secondary"}
+      <Button
+        size="lg"
+        variant={scanMode ? "default" : "outline"}
         label={t("bill.scan.toggle.aria")}
         onPress={() => setScanMode((on) => !on)}
       />
@@ -626,8 +630,9 @@ function BillCart({
         <Text fontSize={32} fontWeight="600">
           {formatMoney({ value: totalAmount, currency }, locale)}
         </Text>
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={tableName ?? t("bill.table.assign")}
           onPress={() => setTablePickerOpen(true)}
         />
@@ -641,8 +646,9 @@ function BillCart({
             void cart.assignTable(nextTableId)
           }}
         />
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("bill.split.button.aria")}
           disabled={summaries.length === 0 || cart.pending || split.pending}
           onPress={() => setSplitOpen(true)}
@@ -656,7 +662,8 @@ function BillCart({
           pending={split.pending}
           onConfirm={(input) => void split.split(input)}
         />
-        <AppButton
+        <Button
+          size="lg"
           label={t("home.pay")}
           pending={chargePending}
           disabled={summaries.length === 0}

@@ -2,9 +2,9 @@ import { router } from "expo-router"
 import { type ReactNode, Suspense } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, XStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 type ActivityTab = "payments" | "bills"
@@ -29,23 +29,26 @@ export function ActivityShell({
       style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
     >
       <FadeHeader title={t("activity.title")} />
-      <AppButton
+      <Button
+        size="lg"
         label={t("stats.title")}
-        variant="secondary"
+        variant="outline"
         onPress={() => router.push("/stats")}
       />
       <XStack gap="2" mb="2">
         <XStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("activity.tabs.payments")}
-            variant={active === "payments" ? "primary" : "secondary"}
+            variant={active === "payments" ? "default" : "outline"}
             onPress={() => active !== "payments" && router.replace("/activity")}
           />
         </XStack>
         <XStack flex={1}>
-          <AppButton
+          <Button
+            size="lg"
             label={t("activity.tabs.bills")}
-            variant={active === "bills" ? "primary" : "secondary"}
+            variant={active === "bills" ? "default" : "outline"}
             onPress={() =>
               active !== "bills" && router.replace("/activity/bills")
             }

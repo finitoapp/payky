@@ -4,7 +4,7 @@ import { getStaffDisplayName } from "@payky/core/modules/catalog-item/catalog-it
 import { FlatList, Modal, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 
 /**
@@ -73,8 +73,9 @@ export function ScanCodeCollisionDialog({
           )}
         />
         <YStack pt="3">
-          <AppButton
-            variant="secondary"
+          <Button
+            size="lg"
+            variant="outline"
             label={t("paymentWait.back")}
             onPress={onClose}
           />

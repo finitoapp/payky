@@ -1,6 +1,6 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 /** The card tab, as web's `CardPaymentTab`: one button that opens the terminal. */
@@ -27,7 +27,8 @@ export function CardPaymentTab({
       <Text fontWeight="600" text="center">
         {t("paymentWait.cardPaid.prompt")}
       </Text>
-      <AppButton
+      <Button
+        size="lg"
         label={
           pending
             ? t("paymentWait.cardPaid.pending")

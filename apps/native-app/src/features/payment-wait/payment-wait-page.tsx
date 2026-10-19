@@ -50,12 +50,12 @@ import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { useSettleStoredSwitchioResult } from "../../components/app/switchio-restored-result.tsx"
-import { AppButton } from "../../components/app-button.tsx"
 import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
 import { Field } from "../../components/field.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { EmptyView } from "../../components/state-views.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
@@ -600,10 +600,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       {methods.length > 1 ? (
         <XStack gap="2" justify="center">
           {methods.map(({ id }) => (
-            <AppButton
+            <Button
+              size="lg"
               key={id}
               label={t(methodLabelKeys[id])}
-              variant={id === active?.id ? "primary" : "secondary"}
+              variant={id === active?.id ? "default" : "outline"}
               onPress={() => setSelected(id)}
             />
           ))}
@@ -619,9 +620,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           <Text color="red-600" text="center">
             {t("paymentWait.prepareError")}
           </Text>
-          <AppButton
+          <Button
+            size="lg"
             label={t("paymentWait.prepareRetry")}
-            variant="secondary"
+            variant="outline"
             onPress={retryPreparation}
           />
         </YStack>
@@ -716,7 +718,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               })}
             </Text>
           ) : null}
-          <AppButton
+          <Button
+            size="lg"
             label={
               markPending
                 ? t("paymentWait.cashPaid.pending")
@@ -734,9 +737,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         </YStack>
       )}
 
-      <AppButton
+      <Button
+        size="lg"
         label={t("paymentWait.cancel")}
-        variant="secondary"
+        variant="outline"
         pending={cancelPending}
         disabled={markPending || ibanPending || cardPending}
         onPress={() => void cancel()}
@@ -751,7 +755,7 @@ function Closed({ messageKey }: { readonly messageKey: TranslationKey }) {
   return (
     <Screen>
       <EmptyView message={t(messageKey)} />
-      <AppButton label={t("paymentWait.back")} onPress={goHome} />
+      <Button size="lg" label={t("paymentWait.back")} onPress={goHome} />
     </Screen>
   )
 }
@@ -762,7 +766,7 @@ function Paid() {
   return (
     <Screen>
       <EmptyView message={t("paymentWait.paid")} />
-      <AppButton label={t("paymentWait.back")} onPress={goHome} />
+      <Button size="lg" label={t("paymentWait.back")} onPress={goHome} />
     </Screen>
   )
 }

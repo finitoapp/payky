@@ -3,8 +3,8 @@ import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { useSyncExternalStore } from "react"
 import { ActivityIndicator } from "react-native"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { cashuArrivalMessage } from "./cashu-arrival.ts"
 
@@ -47,9 +47,10 @@ export function CashuPaymentTab({
         <Text color="muted-foreground" text="center">
           {t("paymentWait.cashu.quoteExpired")}
         </Text>
-        <AppButton
+        <Button
+          size="lg"
           label={t("paymentWait.cashu.newQuote")}
-          variant="secondary"
+          variant="outline"
           pending={newQuotePending}
           onPress={onNewQuote}
         />

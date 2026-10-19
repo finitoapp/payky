@@ -40,9 +40,9 @@ import { type ReactNode, useState } from "react"
 import { Modal, Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
-import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
 import { Screen } from "../../components/screen.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
@@ -149,15 +149,17 @@ export function PaymentRefunds({
       ))}
       {/* EET reversal status and retry come with the EET task. */}
       {canRefund ? (
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("paymentDetail.refunds.action")}
           onPress={() => setSheet("goods")}
         />
       ) : null}
       {canRefundTip ? (
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("paymentDetail.refunds.tipAction", {
             amount: money(refundableTipAmount),
           })}
@@ -361,7 +363,8 @@ function RefundSheet({
       <MethodChoice method={method} disabled={pending} onChange={setMethod} />
 
       <YStack gap="2">
-        <AppButton
+        <Button
+          size="lg"
           label={
             refundAmount === null
               ? t("refund.dialog.confirmEmpty")
@@ -371,8 +374,9 @@ function RefundSheet({
           disabled={refundAmount === null}
           onPress={() => void confirm()}
         />
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("refund.dialog.cancel")}
           disabled={pending}
           onPress={onClose}
@@ -433,13 +437,15 @@ function TipRefundSheet({
     >
       <MethodChoice method={method} disabled={pending} onChange={setMethod} />
       <YStack gap="2">
-        <AppButton
+        <Button
+          size="lg"
           label={t("refund.dialog.confirm", { amount: formattedTip })}
           pending={pending}
           onPress={() => void confirm()}
         />
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("refund.dialog.cancel")}
           disabled={pending}
           onPress={onClose}
@@ -549,9 +555,10 @@ function Choice<T extends string>({
       </Text>
       <YStack gap="2">
         {options.map((option) => (
-          <AppButton
+          <Button
+            size="lg"
             key={option.value}
-            variant={option.value === value ? "primary" : "secondary"}
+            variant={option.value === value ? "default" : "outline"}
             label={option.label}
             disabled={disabled}
             onPress={() => onChange(option.value)}

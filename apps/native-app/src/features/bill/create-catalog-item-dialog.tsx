@@ -16,9 +16,9 @@ import { Modal, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, YStack } from "tamagui"
 import { evoluAtom } from "../../atoms/evolu.ts"
-import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
 import { OptionSelect } from "../../components/option-select.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import type { useProductLookup } from "../../hooks/use-product-lookup.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
@@ -238,13 +238,15 @@ function CreateForm({
             onChange={setTaxRateId}
           />
         </YStack>
-        <AppButton
+        <Button
+          size="lg"
           label={t("bill.scan.create.save")}
           pending={pending}
           onPress={() => void submit()}
         />
-        <AppButton
-          variant="secondary"
+        <Button
+          size="lg"
+          variant="outline"
           label={t("bill.scan.unknown.cancel")}
           disabled={pending}
           onPress={onClose}

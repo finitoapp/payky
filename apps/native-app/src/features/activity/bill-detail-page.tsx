@@ -30,11 +30,11 @@ import { router, useLocalSearchParams } from "expo-router"
 import { Suspense } from "react"
 import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { CollisionAlert } from "../../components/collision-alert.tsx"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
@@ -123,7 +123,8 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
   return (
     <YStack gap="3">
       {billStatus.status === "open" ? (
-        <AppButton
+        <Button
+          size="lg"
           label={t("billDetail.backToBill")}
           onPress={() => router.push({ pathname: "/bill", params: { billId } })}
         />

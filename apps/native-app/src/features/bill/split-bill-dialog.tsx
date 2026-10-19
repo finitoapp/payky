@@ -24,7 +24,7 @@ import { useMemo, useState } from "react"
 import { Modal, Pressable, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 
@@ -133,15 +133,17 @@ function SplitBillBody({
 
       <XStack gap="2" pb="2">
         <YStack flex={1}>
-          <AppButton
-            variant={destination === "new" ? "primary" : "secondary"}
+          <Button
+            size="lg"
+            variant={destination === "new" ? "default" : "outline"}
             label={t("bill.split.destination.new")}
             onPress={() => setDestination("new")}
           />
         </YStack>
         <YStack flex={1}>
-          <AppButton
-            variant={destination === "existing" ? "primary" : "secondary"}
+          <Button
+            size="lg"
+            variant={destination === "existing" ? "default" : "outline"}
             label={t("bill.split.destination.existing")}
             disabled={otherOpenBills.length === 0}
             onPress={() => setDestination("existing")}
@@ -174,13 +176,15 @@ function SplitBillBody({
         ) : null}
 
         <XStack justify="flex-end" gap="2" pb="2">
-          <AppButton
-            variant="secondary"
+          <Button
+            size="xs"
+            variant="ghost"
             label={t("bill.split.selectAll")}
             onPress={() => setSelected(selectAllForSplit(summaries))}
           />
-          <AppButton
-            variant="secondary"
+          <Button
+            size="xs"
+            variant="ghost"
             label={t("bill.split.clearSelection")}
             onPress={() => setSelected({})}
           />
@@ -211,14 +215,16 @@ function SplitBillBody({
         </XStack>
         <XStack gap="2">
           <YStack flex={1}>
-            <AppButton
-              variant="secondary"
+            <Button
+              size="lg"
+              variant="outline"
               label={t("bill.split.cancel")}
               onPress={onClose}
             />
           </YStack>
           <YStack flex={1}>
-            <AppButton
+            <Button
+              size="lg"
               label={t("bill.split.confirm")}
               pending={pending}
               disabled={!canConfirm}

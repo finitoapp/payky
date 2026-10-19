@@ -4,7 +4,7 @@ import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { useEffect, useEffectEvent, useRef, useState } from "react"
 import { AppState } from "react-native"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
@@ -156,9 +156,10 @@ export function BoltCardReader({
         <Text color="muted-foreground" text="center">
           {t("paymentWait.boltCard.disabled")}
         </Text>
-        <AppButton
+        <Button
+          size="sm"
           label={t("paymentWait.boltCard.enable")}
-          variant="secondary"
+          variant="outline"
           onPress={openNfcSettings}
         />
       </YStack>

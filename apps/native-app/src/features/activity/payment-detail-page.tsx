@@ -36,12 +36,12 @@ import { taxRatesQuery } from "@payky/core/modules/tax-rate/tax-rate-queries"
 import { router, useLocalSearchParams } from "expo-router"
 import { Suspense } from "react"
 import { Text, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { CollisionAlert } from "../../components/collision-alert.tsx"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import {
   Timeline,
   TimelineContent,
@@ -138,7 +138,8 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
     <YStack gap="3">
       {status === "pending" ? (
         <YStack gap="1">
-          <AppButton
+          <Button
+            size="lg"
             label={t("paymentDetail.backToPayment")}
             onPress={() =>
               router.push({
@@ -226,13 +227,15 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
             title={t("paymentDetail.collision.title")}
             description={t("paymentDetail.collision.description")}
           >
-            <AppButton
+            <Button
+              size="lg"
               label={t("paymentDetail.collision.markPaid")}
               pending={collision.resolvePending}
               onPress={() => void collision.confirmPaid()}
             />
-            <AppButton
-              variant="secondary"
+            <Button
+              size="lg"
+              variant="outline"
               label={t("paymentDetail.collision.refund")}
               onPress={collision.refund}
             />
@@ -243,13 +246,15 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
             title={t("paymentDetail.excessCollision.title")}
             description={t("paymentDetail.excessCollision.description")}
           >
-            <AppButton
+            <Button
+              size="lg"
               label={t("paymentDetail.excessCollision.acknowledge")}
               pending={collision.excessResolvePending}
               onPress={() => void collision.acknowledgeExcess()}
             />
-            <AppButton
-              variant="secondary"
+            <Button
+              size="lg"
+              variant="outline"
               label={t("paymentDetail.collision.refund")}
               onPress={collision.refund}
             />
@@ -476,8 +481,9 @@ function PaymentBillCard({
         />
       }
     >
-      <AppButton
-        variant="secondary"
+      <Button
+        size="sm"
+        variant="ghost"
         label={t("paymentDetail.bill.open")}
         onPress={() =>
           router.push({
@@ -539,9 +545,10 @@ function PaymentBillCard({
         >
           {notice.reason === "multiplePayments"
             ? otherClaimedPaymentIds.map((otherPaymentId, index) => (
-                <AppButton
+                <Button
+                  size="lg"
                   key={otherPaymentId}
-                  variant="secondary"
+                  variant="outline"
                   label={
                     otherClaimedPaymentIds.length > 1
                       ? t("bill.collision.viewPayment.numbered", {

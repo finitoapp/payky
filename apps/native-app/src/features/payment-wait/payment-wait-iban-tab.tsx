@@ -4,9 +4,9 @@ import type { BankQrPayload } from "@payky/core/modules/payment/payment-iban-qr-
 import { useState } from "react"
 import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { CopyLink } from "../../components/copy-link.tsx"
 import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 const qrFormatShortKeys = {
@@ -63,10 +63,11 @@ export function IbanPaymentTab({
       {qrPayloads.length > 1 ? (
         <XStack gap="2">
           {qrPayloads.map(({ format }) => (
-            <AppButton
+            <Button
+              size="lg"
               key={format}
               label={t(qrFormatShortKeys[format])}
-              variant={format === activeFormat ? "primary" : "secondary"}
+              variant={format === activeFormat ? "default" : "outline"}
               onPress={() => onSelectFormat(format)}
             />
           ))}
@@ -104,22 +105,24 @@ export function IbanPaymentTab({
           )}
         </YStack>
       ) : null}
-      <AppButton
+      <Button
+        size="lg"
         label={
           detailsVisible
             ? t("paymentWait.ibanDetails.hide")
             : t("paymentWait.ibanDetails.show")
         }
-        variant="secondary"
+        variant="outline"
         onPress={() => setDetailsVisible((visible) => !visible)}
       />
-      <AppButton
+      <Button
+        size="lg"
         label={
           pending
             ? t("paymentWait.ibanPaid.pending")
             : t("paymentWait.ibanPaid.action")
         }
-        variant="secondary"
+        variant="outline"
         pending={pending}
         disabled={!canMarkPaid}
         onPress={onMarkPaid}

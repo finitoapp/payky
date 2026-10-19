@@ -19,10 +19,10 @@ import { Redirect, useLocalSearchParams } from "expo-router"
 import { useRef, useState } from "react"
 import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
 import { Screen } from "../../components/screen.tsx"
+import { Button } from "../../components/ui/button.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -164,7 +164,8 @@ function PaymentTipForm({
             error={customInvalid ? t("paymentTip.custom.invalid") : undefined}
             onChangeText={setCustomTip}
           />
-          <AppButton
+          <Button
+            size="lg"
             label={
               pending ? t("paymentTip.creating") : t("paymentTip.continue")
             }

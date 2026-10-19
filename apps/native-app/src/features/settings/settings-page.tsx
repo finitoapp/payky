@@ -74,8 +74,9 @@ function createSettingsNavItems(
       icon: <Icon icon={item.icon} size={20} color="muted-foreground" />,
       accessibilityLabel: label,
       label: (
+        // No flex={1}: it would grow to the row's height and, wrapping, pack
+        // a one-line label at the top instead of the row's center.
         <XStack
-          flex={1}
           minW={0}
           flexWrap="wrap"
           items="center"

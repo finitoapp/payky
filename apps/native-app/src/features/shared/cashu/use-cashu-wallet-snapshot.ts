@@ -14,7 +14,10 @@ export interface CashuWalletSnapshot {
   readonly balances: ReadonlyMap<MintUrl, number>
 }
 
-/** Account-scoped aggregate wallet data, refreshed as the shared store changes. */
+/**
+ * Account-scoped aggregate wallet data, refreshed as the shared store changes,
+ * and that store for the core helpers that write to it.
+ */
 export function useCashuWalletSnapshot() {
   const store = useAtomValue(cashuShardStoreAtom)
   const queryClient = useQueryClient()
@@ -50,5 +53,6 @@ export function useCashuWalletSnapshot() {
     isPending: query.isPending,
     isError: query.isError,
     refetch,
+    store,
   }
 }

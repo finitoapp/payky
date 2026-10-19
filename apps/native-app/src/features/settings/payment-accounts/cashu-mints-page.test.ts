@@ -71,11 +71,10 @@ it("removes a mint only through core's Task, after the owner gate and a confirma
       "/settings/payment-accounts/cashu/mints/https%3A%2F%2Fx.y"
     )
   ).toBe("admin")
-  const gate = detailPage.indexOf(
-    'require("admin", "access.action.cashuMints")'
-  )
-  const ask = detailPage.indexOf("await confirm({")
-  const task = detailPage.indexOf("run(removeKnownCashuMint(mint))")
+  const remove = detailPage.slice(detailPage.indexOf("const remove = "))
+  const gate = remove.indexOf('require("admin", "access.action.cashuMints")')
+  const ask = remove.indexOf("await confirm({")
+  const task = remove.indexOf("run(removeKnownCashuMint(mint))")
   expect(gate).toBeGreaterThan(-1)
   expect(ask).toBeGreaterThan(gate)
   expect(task).toBeGreaterThan(ask)
@@ -84,4 +83,17 @@ it("removes a mint only through core's Task, after the owner gate and a confirma
   expect(detailPage).not.toMatch(
     /cashuShardStore|loadProofs|removeCashuMint\(|deviceEvolu|loadCashuWallet|new Wallet|new Mint/u
   )
+})
+
+it("sets the default mint only through core's writer, after the owner gate", () => {
+  const setAsDefault = detailPage.slice(
+    detailPage.indexOf("const setAsDefault = "),
+    detailPage.indexOf("const remove = ")
+  )
+  const gate = setAsDefault.indexOf(
+    'require("admin", "access.action.cashuMints")'
+  )
+  const write = setAsDefault.indexOf("writeCashuDefaultMint(store, mint)")
+  expect(gate).toBeGreaterThan(-1)
+  expect(write).toBeGreaterThan(gate)
 })

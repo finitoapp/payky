@@ -15,10 +15,7 @@ import { Suspense } from "react"
 import { Image } from "react-native"
 import { Text, XStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
-import {
-  cashuShardStoreAtom,
-  cashuWalletDepAtom,
-} from "../../../atoms/cashu.ts"
+import { cashuWalletDepAtom } from "../../../atoms/cashu.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { LoadingView } from "../../../components/loading-view.tsx"
 import { RouteMessage } from "../../../components/route-message.tsx"
@@ -65,8 +62,7 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
   const { require } = useRequirePermission()
   const account = useAtomValue(accountAtom)
   const walletDep = useAtomValue(cashuWalletDepAtom)
-  const store = useAtomValue(cashuShardStoreAtom)
-  const { snapshot, refetch } = useCashuWalletSnapshot()
+  const { snapshot, refetch, store } = useCashuWalletSnapshot()
   const info = useQuery({
     queryKey: ["cashuMintInfo", account.id, mint],
     // A fetch that records nothing: the mint is not marked seen by looking.

@@ -20,17 +20,42 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/app/access-gate.tsx",
     web: ["apps/web-app/src/components/app/access-gate.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      FadeHeader:
+        "Web adds this route header above the PIN screen; native renders the gated route inside its shared Screen layout.",
+    },
   },
   {
     native: "src/components/app/app-background-jobs.tsx",
     web: ["apps/web-app/src/components/app/app-background-jobs.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/app/app-error-screen.tsx",
     web: ["apps/web-app/src/components/app/error-boundary.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Button:
+        "Web uses kit buttons for copy, repair, and retry; native keeps a plain React Native retry button in its root error boundary.",
+      Card: "Web renders a rich error card; native uses plain React Native because Expo Router mounts this boundary outside the app providers.",
+      CardContent:
+        "Web renders a rich error card; native uses plain React Native because Expo Router mounts this boundary outside the app providers.",
+      CardDescription:
+        "Web renders a rich error card; native uses plain React Native because Expo Router mounts this boundary outside the app providers.",
+      CardFooter:
+        "Web renders a rich error card; native uses plain React Native because Expo Router mounts this boundary outside the app providers.",
+      CardHeader:
+        "Web renders a rich error card; native uses plain React Native because Expo Router mounts this boundary outside the app providers.",
+      CardTitle:
+        "Web renders a rich error card; native uses plain React Native because Expo Router mounts this boundary outside the app providers.",
+      Collapsible:
+        "Web exposes expandable technical details; native displays the available error name, message, and version inline.",
+      CollapsibleContent:
+        "Web exposes expandable technical details; native displays the available error name, message, and version inline.",
+      CollapsibleTrigger:
+        "Web exposes expandable technical details; native displays the available error name, message, and version inline.",
+    },
   },
   {
     native: "src/components/app/confirm-host.tsx",
@@ -45,12 +70,20 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/app/device-registration.tsx",
     web: ["apps/web-app/src/components/app/device-registration.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/app/pin-prompt-host.tsx",
     web: ["apps/web-app/src/components/app/pin-prompt-host.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Dialog:
+        "Native presents the one-shot prompt in a React Native Modal; web uses the Dialog primitive.",
+      DialogContent:
+        "Native presents the one-shot prompt in a React Native Modal; web uses the Dialog primitive.",
+      DialogTitle:
+        "Native presents the one-shot prompt in a React Native Modal; web uses the Dialog primitive.",
+    },
   },
   {
     native: "src/components/app/pin-screen.tsx",
@@ -65,17 +98,20 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/app/sentry-controller.tsx",
     web: ["apps/web-app/src/components/app/sentry-controller.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/app/switchio-restored-result.tsx",
     web: ["apps/web-app/src/components/app/switchio-restored-result.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/app/toast-host.tsx",
     web: ["apps/web-app/src/components/ui/sonner.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Toast: "Native renders its UI-kit Toast; web mounts the Sonner host.",
+    },
   },
   {
     native: "src/components/collision-alert.tsx",
@@ -109,7 +145,21 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/field.tsx",
     web: ["apps/web-app/src/components/ui/field.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Field:
+        "Native's app-level Field composes the input, label, and validation display.",
+      FieldError:
+        "Native's app-level Field composes the input, label, and validation display.",
+      FieldLabel:
+        "Native's app-level Field composes the input, label, and validation display.",
+      Input:
+        "Native's app-level Field composes the input, label, and validation display.",
+      Label:
+        "Web's field module renders Label inside FieldLabel; native uses the native FieldLabel primitive.",
+      Separator:
+        "Web's field module includes an optional FieldSeparator; native's single-field app helper has no separator.",
+    },
   },
   {
     native: "src/components/inline-edit-field.tsx",
@@ -131,7 +181,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/components/loading-view.tsx",
     web: [],
     note: "Native-only ActivityIndicator fallback for Suspense; non-Suspense states render in their owning screens.",
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/not-found-card.tsx",
@@ -161,13 +211,19 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/scan-code-scanner.tsx",
     web: ["apps/web-app/src/components/scan-code-scanner.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Button:
+        "Native uses the UI-kit Button for permission grant/open-settings actions and the torch toggle; web uses browser permission UI and ScannerTorchButton.",
+      ScannerTorchButton:
+        "Web owns a ScannerTorchButton composition; native renders its torch toggle with the UI-kit Button.",
+    },
   },
   {
     native: "src/components/screen.tsx",
     web: [],
     note: "Native only: web lays a page out with the route layout and the phone column.",
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/search-input.tsx",
@@ -1021,7 +1077,46 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/items/scan-code-button.tsx",
     web: ["apps/web-app/src/features/settings/items/item-form-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Card: "The mapped web source is the full item form; this native row covers only its scan button.",
+      CardContent:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      CardDescription:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      CardHeader:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      CardTitle:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      FadeHeader:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      Field:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      FieldDescription:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      FieldError:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      FieldGroup:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      FieldLabel:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      Input:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      ScanCodeScannerDialog:
+        "Scanner layout belongs to the item-form rows, which document the web dialog and native inline scanner difference.",
+      Select:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      SelectContent:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      SelectGroup:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      SelectItem:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      SelectTrigger:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+      SelectValue:
+        "The mapped web source is the full item form; this native row covers only its scan button.",
+    },
   },
   {
     native: "src/features/settings/language/language-settings-page.tsx",
@@ -1254,7 +1349,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/settings-form-empty-state.tsx",
     web: ["apps/web-app/src/features/settings/settings-form-empty-state.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/settings-list-parts.tsx",

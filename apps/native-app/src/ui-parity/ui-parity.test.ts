@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { expect, test } from "vitest"
 import { kitComponents, kitElements } from "./ui-parity"
@@ -6,6 +6,26 @@ import { uiParityMap } from "./ui-parity-map"
 
 const repoRoot = path.resolve(import.meta.dirname, "../../../..")
 const nativePath = (file: string) => `apps/native-app/${file}`
+
+const isFeatureParitySource = (file: string): boolean => {
+  const segments = file.split(/[\\/]/u)
+  return (
+    file.endsWith(".tsx") &&
+    !file.endsWith(".test.tsx") &&
+    !file.endsWith(".spec.tsx") &&
+    segments[0] !== "preview" &&
+    !segments.includes("__tests__")
+  )
+}
+
+const featureParitySources = (): ReadonlyArray<string> =>
+  readdirSync(path.join(repoRoot, "apps/native-app/src/features"), {
+    recursive: true,
+  })
+    .map(String)
+    .filter(isFeatureParitySource)
+    .map((file) => `src/features/${file.split(/[\\/]/u).join("/")}`)
+    .sort()
 
 const kitSet = (file: string) =>
   kitComponents(file, readFileSync(path.join(repoRoot, file), "utf8"))
@@ -27,6 +47,37 @@ test("a native-only entry says why it has no web counterpart", () => {
 test("each native file is mapped once", () => {
   const natives = uiParityMap.map((entry) => entry.native)
   expect(natives.length).toBe(new Set(natives).size)
+})
+
+test("every parity entry is matched", () => {
+  const pending = uiParityMap
+    .filter((entry) => entry.status === "pending")
+    .map((entry) => entry.native)
+  expect(pending).toEqual([])
+})
+
+test("every native feature TSX source has a parity entry", () => {
+  const mapped = new Set(uiParityMap.map((entry) => entry.native))
+  const unmapped = featureParitySources().filter((file) => !mapped.has(file))
+  expect(unmapped).toEqual([])
+})
+
+test("feature parity discovery includes helpers and excludes preview and test TSX", () => {
+  const sources = [
+    "settings/page.tsx",
+    "settings/scan-code-button.tsx",
+    "preview/native-preview-page.tsx",
+    "settings/preview/banner.tsx",
+    "settings/page.test.tsx",
+    "settings/page.spec.tsx",
+    "settings/__tests__/page.tsx",
+    "settings/use-page.ts",
+  ]
+  expect(sources.filter(isFeatureParitySource)).toEqual([
+    "settings/page.tsx",
+    "settings/scan-code-button.tsx",
+    "settings/preview/banner.tsx",
+  ])
 })
 
 test("a matched screen renders the kit components its web files do", () => {

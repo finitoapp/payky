@@ -1,4 +1,5 @@
 import { sqliteTrue } from "@evolu/common"
+import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { countryLabelKey } from "@payky/app-shared/legal-entity-options"
 import {
   cardSwitchioAccountQuery,
@@ -12,10 +13,33 @@ import {
   parseEnabledHomeModes,
 } from "@payky/core/modules/app-settings/app-settings-utils"
 import { legalEntityQuery } from "@payky/core/modules/legal-entity/legal-entity-queries"
-import { Text, YStack } from "tamagui"
+import type { Href } from "expo-router"
+import type { LucideIcon } from "lucide-react-native"
+import BadgeDollarSign from "lucide-react-native/icons/badge-dollar-sign"
+import Building from "lucide-react-native/icons/building"
+import FolderIcon from "lucide-react-native/icons/folder"
+import HeartHandshake from "lucide-react-native/icons/heart-handshake"
+import House from "lucide-react-native/icons/house"
+import Info from "lucide-react-native/icons/info"
+import Landmark from "lucide-react-native/icons/landmark"
+import Languages from "lucide-react-native/icons/languages"
+import LifeBuoy from "lucide-react-native/icons/life-buoy"
+import LockKeyhole from "lucide-react-native/icons/lock-keyhole"
+import Percent from "lucide-react-native/icons/percent"
+import ReceiptText from "lucide-react-native/icons/receipt-text"
+import ShieldCheck from "lucide-react-native/icons/shield-check"
+import ShoppingBag from "lucide-react-native/icons/shopping-bag"
+import Sparkles from "lucide-react-native/icons/sparkles"
+import Stamp from "lucide-react-native/icons/stamp"
+import SunMoon from "lucide-react-native/icons/sun-moon"
+import Table2Icon from "lucide-react-native/icons/table-2"
+import UserRound from "lucide-react-native/icons/user-round"
+import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { languageOptions } from "../../components/language-options.ts"
 import { Screen } from "../../components/screen.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
+import { VerticalNav } from "../../components/vertical-nav.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import {
   useNostrIdentity,
@@ -26,37 +50,66 @@ import { useTranslation } from "../../hooks/use-translation.ts"
 import { useEetSettings } from "../shared/use-eet-settings.ts"
 import { homeModeLabelKeys } from "./home-screen/home-screen-settings-page.tsx"
 import { usePrivacySettings } from "./privacy/use-privacy-settings.ts"
-import { SettingsRow, type SettingsRowData } from "./settings-row.tsx"
+import { SettingsRow } from "./settings-row.tsx"
 import { themeLabelKeys } from "./theme/theme-settings-page.tsx"
 
-function SettingsGroup({
-  title,
-  rows,
-}: {
-  readonly title: string
-  readonly rows: ReadonlyArray<SettingsRowData>
-}) {
-  // A group none of whose destinations exist natively yet is not shown.
-  if (rows.length === 0) return null
-  return (
-    <YStack gap="2">
-      <Text fontSize={12} fontWeight="700" color="muted-foreground">
-        {title}
-      </Text>
-      {rows.map((row) => (
-        <SettingsRow key={row.href} {...row} />
-      ))}
-    </YStack>
-  )
+interface SettingRow {
+  readonly icon: LucideIcon
+  readonly title: TranslationKey
+  readonly description?: TranslationKey
+  readonly value?: string
+  readonly href: Href
 }
 
-/**
- * The settings menu, like web's `SettingsPage` but listing only what exists
- * natively: web's groups, in web's order. Each later settings task adds its
- * row to its group: catalog (items, categories, tables), payments, taxes,
- * account and sync, and support rows stay unlisted until their screens land.
- * The route is `free`; each destination carries its own gate.
- */
+function createSettingsNavItems(
+  settings: ReadonlyArray<SettingRow>,
+  t: (key: TranslationKey) => string
+) {
+  return settings.map((item) => {
+    const label = t(item.title)
+
+    return {
+      kind: "link" as const,
+      href: item.href,
+      icon: <Icon icon={item.icon} size={20} color="muted-foreground" />,
+      accessibilityLabel: label,
+      label: (
+        <XStack
+          flex={1}
+          minW={0}
+          flexWrap="wrap"
+          items="center"
+          justify="space-between"
+          gap={8}
+        >
+          <YStack flex={1} minW={0} gap={4}>
+            <Text fontSize={14} fontWeight="600">
+              {label}
+            </Text>
+            {item.description === undefined ? null : (
+              <Text fontSize={12} color="muted-foreground">
+                {t(item.description)}
+              </Text>
+            )}
+          </YStack>
+          {item.value === undefined ? null : (
+            <Text
+              color="muted-foreground"
+              fontSize={14}
+              numberOfLines={1}
+              self="flex-end"
+              flexShrink={1}
+            >
+              {item.value}
+            </Text>
+          )}
+        </XStack>
+      ),
+    }
+  })
+}
+
+/** The settings groups follow web's order; unavailable native routes stay omitted. */
 export function SettingsPage() {
   const { language, t } = useTranslation()
   const theme = useThemePreference()
@@ -82,126 +135,188 @@ export function SettingsPage() {
       .join(", ") || t("settings.paymentAccounts.nav.none")
   const enabledHomeModes = parseEnabledHomeModes(settings?.enabledHomeModesJson)
   const fiatCurrency = getFiatCurrency(settings)
-  const catalogRows: ReadonlyArray<SettingsRowData> = [
-    { title: t("settings.items.title"), href: "/settings/items" },
-    { title: t("settings.categories.title"), href: "/settings/categories" },
-    { title: t("settings.tables.title"), href: "/settings/tables" },
-  ]
-  const paymentRows: ReadonlyArray<SettingsRowData> = [
-    {
-      title: t("settings.legalEntity.title"),
-      value:
-        legalEntity === undefined
-          ? fiatCurrency
-          : `${t(countryLabelKey(legalEntity.country))} · ${fiatCurrency}`,
-      href: "/settings/legal-entity",
-    },
-    {
-      title: t("settings.paymentAccounts.title"),
-      value: paymentMethodsValue,
-      href: "/settings/payment-accounts",
-    },
-    {
-      title: t("settings.eet.title"),
-      value: t(
-        !eet.isEnabled
-          ? "settings.eet.nav.off"
-          : eet.isSandboxActive
-            ? "settings.eet.nav.sandbox"
-            : "settings.eet.nav.production"
-      ),
-      href: "/settings/eet",
-    },
-    {
-      title: t("settings.tips.title"),
-      value: t(
-        settings?.tipsEnabled === sqliteTrue
-          ? "settings.tips.nav.on"
-          : "settings.tips.nav.off"
-      ),
-      href: "/settings/tips",
-    },
-  ]
-  const taxRows: ReadonlyArray<SettingsRowData> = [
-    { title: t("settings.taxRates.title"), href: "/settings/tax-rates" },
-    {
-      title: t("settings.paymentNumberSeries.title"),
-      href: "/settings/payment-number-series",
-    },
-  ]
-  const accountRows: ReadonlyArray<SettingsRowData> = [
-    {
-      title: t("settings.accounts.nav.title"),
-      value: t("settings.accounts.nav.description"),
-      href: "/settings/accounts",
-    },
-    {
-      title: t("settings.security.title"),
-      value: t("settings.security.description"),
-      href: "/settings/security",
-    },
-    { title: t("access.title"), href: "/settings/access" },
-  ]
-  const appearanceRows: ReadonlyArray<SettingsRowData> = [
-    {
-      title: t("settings.language.title"),
-      value: languageOptions.find((option) => option.value === language)?.label,
-      href: "/settings/language",
-    },
-    {
-      title: t("settings.theme.title"),
-      value: t(themeLabelKeys[theme]),
-      href: "/settings/theme",
-    },
-    {
-      title: t("settings.homeScreen.title"),
-      value: enabledHomeModes
-        .map((mode) => t(homeModeLabelKeys[mode]))
-        .join(", "),
-      href: "/settings/home-screen",
-    },
-  ]
-  const supportRows: ReadonlyArray<SettingsRowData> = [
-    ...(aiAssistantAccess === "off"
-      ? []
-      : [
-          {
-            title: t("settings.assistant.title"),
-            value: t("settings.assistant.description"),
-            href: "/settings/assistant",
-          },
-        ]),
-    {
-      title: t("settings.supportChat.title"),
-      value: t("settings.supportChat.description"),
-      href: "/settings/support",
-    },
-    {
-      title: t("settings.donations.title"),
-      value: t("settings.donations.description"),
-      href: "/settings/donations",
-    },
-    {
-      title: t("settings.about.title"),
-      value: t("settings.about.description"),
-      href: "/settings/about",
-    },
-  ]
+  const businessValue =
+    legalEntity === undefined
+      ? fiatCurrency
+      : `${t(countryLabelKey(legalEntity.country))} · ${fiatCurrency}`
+
+  const catalogItems = createSettingsNavItems(
+    [
+      {
+        icon: ShoppingBag,
+        title: "settings.items.title",
+        description: "settings.items.description",
+        href: "/settings/items",
+      },
+      {
+        icon: FolderIcon,
+        title: "settings.categories.title",
+        description: "settings.categories.description",
+        href: "/settings/categories",
+      },
+      {
+        icon: Table2Icon,
+        title: "settings.tables.title",
+        description: "settings.tables.description",
+        href: "/settings/tables",
+      },
+    ],
+    t
+  )
+  const paymentItems = createSettingsNavItems(
+    [
+      {
+        icon: Building,
+        title: "settings.legalEntity.title",
+        value: businessValue,
+        href: "/settings/legal-entity",
+      },
+      {
+        icon: Landmark,
+        title: "settings.paymentAccounts.title",
+        value: paymentMethodsValue,
+        href: "/settings/payment-accounts",
+      },
+      {
+        icon: BadgeDollarSign,
+        title: "settings.tips.title",
+        value: t(
+          settings?.tipsEnabled === sqliteTrue
+            ? "settings.tips.nav.on"
+            : "settings.tips.nav.off"
+        ),
+        href: "/settings/tips",
+      },
+    ],
+    t
+  )
+  const taxItems = createSettingsNavItems(
+    [
+      {
+        icon: Percent,
+        title: "settings.taxRates.title",
+        description: "settings.taxRates.nav.description",
+        href: "/settings/tax-rates",
+      },
+      {
+        icon: ReceiptText,
+        title: "settings.paymentNumberSeries.title",
+        description: "settings.paymentNumberSeries.description",
+        href: "/settings/payment-number-series",
+      },
+      {
+        icon: Stamp,
+        title: "settings.eet.title",
+        value: t(
+          !eet.isEnabled
+            ? "settings.eet.nav.off"
+            : eet.isSandboxActive
+              ? "settings.eet.nav.sandbox"
+              : "settings.eet.nav.production"
+        ),
+        href: "/settings/eet",
+      },
+    ],
+    t
+  )
+  const accountItems = createSettingsNavItems(
+    [
+      {
+        icon: UserRound,
+        title: "settings.accounts.nav.title",
+        description: "settings.accounts.nav.description",
+        href: "/settings/accounts",
+      },
+      {
+        icon: ShieldCheck,
+        title: "settings.security.title",
+        description: "settings.security.description",
+        href: "/settings/security",
+      },
+      {
+        icon: LockKeyhole,
+        title: "access.title",
+        description: "access.nav.description",
+        href: "/settings/access",
+      },
+    ],
+    t
+  )
+  const appearanceItems = createSettingsNavItems(
+    [
+      {
+        icon: Languages,
+        title: "settings.language.title",
+        value: languageOptions.find((option) => option.value === language)
+          ?.label,
+        href: "/settings/language",
+      },
+      {
+        icon: SunMoon,
+        title: "settings.theme.title",
+        value: t(themeLabelKeys[theme]),
+        href: "/settings/theme",
+      },
+      {
+        icon: House,
+        title: "settings.homeScreen.title",
+        value: enabledHomeModes
+          .map((mode) => t(homeModeLabelKeys[mode]))
+          .join(", "),
+        href: "/settings/home-screen",
+      },
+    ],
+    t
+  )
+  const supportItems = createSettingsNavItems(
+    [
+      {
+        icon: LifeBuoy,
+        title: "settings.supportChat.title",
+        description: "settings.supportChat.description",
+        href: "/settings/support",
+      },
+      ...(aiAssistantAccess === "off"
+        ? []
+        : [
+            {
+              icon: Sparkles,
+              title: "settings.assistant.title",
+              description: "settings.assistant.description",
+              href: "/settings/assistant",
+            } as const,
+          ]),
+      {
+        icon: HeartHandshake,
+        title: "settings.donations.title",
+        description: "settings.donations.description",
+        href: "/settings/donations",
+      },
+      {
+        icon: Info,
+        title: "settings.about.title",
+        description: "settings.about.description",
+        href: "/settings/about",
+      },
+    ],
+    t
+  )
 
   return (
     <Screen>
+      <YStack h={24} />
       <FadeHeader title={t("settings.title")} />
       <SettingsRow
         title={t("settings.profile.title")}
         value={profile.data?.name ?? t("settings.profile.setName")}
         href="/settings/profile"
       />
-      <SettingsGroup title={t("settings.catalog")} rows={catalogRows} />
-      <SettingsGroup title={t("settings.payments")} rows={paymentRows} />
-      <SettingsGroup title={t("settings.taxesGroup")} rows={taxRows} />
-      <SettingsGroup title={t("settings.accountAndSync")} rows={accountRows} />
-      <SettingsGroup title={t("settings.appearance")} rows={appearanceRows} />
-      <SettingsGroup title={t("settings.support")} rows={supportRows} />
+      <VerticalNav title={t("settings.catalog")} items={catalogItems} />
+      <VerticalNav title={t("settings.payments")} items={paymentItems} />
+      <VerticalNav title={t("settings.taxesGroup")} items={taxItems} />
+      <VerticalNav title={t("settings.accountAndSync")} items={accountItems} />
+      <VerticalNav title={t("settings.appearance")} items={appearanceItems} />
+      <VerticalNav title={t("settings.support")} items={supportItems} />
     </Screen>
   )
 }

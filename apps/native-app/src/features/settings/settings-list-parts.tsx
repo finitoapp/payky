@@ -1,12 +1,20 @@
 import type { Query, QueryRows, Row } from "@evolu/common"
 import type { EvoluSchema } from "@payky/core/evolu/schema"
-import { router } from "expo-router"
+import { type Href, router } from "expo-router"
+import Plus from "lucide-react-native/icons/plus"
 import { type ReactNode, Suspense } from "react"
-import { ActivityIndicator, FlatList, Pressable } from "react-native"
+import { ActivityIndicator, FlatList } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/state-views.tsx"
+import { Button } from "../../components/ui/button.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
+import {
+  VerticalNav,
+  type VerticalNavItem,
+  VerticalNavRow,
+} from "../../components/vertical-nav.tsx"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 
 /**
@@ -22,7 +30,7 @@ export function SettingsListShell({
 }: {
   readonly title: string
   readonly addLabel: string
-  readonly addHref?: string
+  readonly addHref?: Href
   readonly children: ReactNode
 }) {
   const theme = useTheme()
@@ -34,22 +42,14 @@ export function SettingsListShell({
         title={title}
         endAddon={
           addHref === undefined ? null : (
-            <Pressable
-              accessibilityRole="button"
+            <Button
+              variant="ghost"
+              size="default"
               accessibilityLabel={addLabel}
-              hitSlop={8}
-              style={{
-                minWidth: 44,
-                minHeight: 44,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
               onPress={() => router.push(addHref)}
             >
-              <Text fontSize={28} color="primary">
-                +
-              </Text>
-            </Pressable>
+              <Icon icon={Plus} size={20} color="primary" strokeWidth={3} />
+            </Button>
           )
         }
       />
@@ -65,47 +65,40 @@ export interface SettingsListRowData {
   readonly subtitle?: string | undefined
   readonly trailing?: string | undefined
   /** The edit screen the row opens. */
-  readonly href?: string | undefined
+  readonly href?: Href | undefined
 }
 
-function SettingsListRow({ row }: { readonly row: SettingsListRowData }) {
-  const { href } = row
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={row.title}
-      disabled={href === undefined}
-      onPress={() => href !== undefined && router.push(href)}
+function toVerticalNavItem(row: SettingsListRowData): VerticalNavItem {
+  const label = (
+    <XStack
+      flex={1}
+      minW={0}
+      flexWrap="wrap"
+      items="center"
+      justify="space-between"
+      gap={8}
     >
-      <XStack
-        minH={56}
-        items="center"
-        gap="3"
-        px="3"
-        py="2"
-        rounded="lg"
-        borderWidth={1}
-        borderColor="border-color"
-      >
-        <YStack flex={1}>
-          <Text fontWeight="600" numberOfLines={1}>
-            {row.title}
-          </Text>
-          {row.subtitle === undefined ? null : (
-            <Text fontSize={13} color="muted-foreground" numberOfLines={1}>
-              {row.subtitle}
-            </Text>
-          )}
-        </YStack>
-        {row.trailing === undefined ? null : (
-          <Text color="muted-foreground" numberOfLines={1}>
-            {row.trailing}
+      <YStack flex={1} minW={0} gap={4}>
+        <Text fontWeight="600" numberOfLines={1}>
+          {row.title}
+        </Text>
+        {row.subtitle === undefined ? null : (
+          <Text fontSize={13} color="muted-foreground" numberOfLines={1}>
+            {row.subtitle}
           </Text>
         )}
-        {href === undefined ? null : <Text color="muted-foreground">›</Text>}
-      </XStack>
-    </Pressable>
+      </YStack>
+      {row.trailing === undefined ? null : (
+        <Text color="muted-foreground" numberOfLines={1}>
+          {row.trailing}
+        </Text>
+      )}
+    </XStack>
   )
+
+  return row.href === undefined
+    ? { kind: "static", id: row.id, label, disableAction: true }
+    : { kind: "link", id: row.id, href: row.href, label }
 }
 
 /**
@@ -138,36 +131,39 @@ export function SettingsEntityList<R extends Row>({
   )
 
   return (
-    <FlatList
-      style={{ flex: 1 }}
-      contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
-      keyboardShouldPersistTaps="handled"
-      data={rows.map(renderRow)}
-      keyExtractor={(row) => row.id}
-      onEndReachedThreshold={0.5}
-      onEndReached={() => {
-        if (hasMore && !isPending) loadMore()
-      }}
-      ListEmptyComponent={
-        hasAny ? (
-          <Text color="muted-foreground" text="center" py="6">
-            {emptySearchLabel}
-          </Text>
-        ) : (
-          <YStack items="center" gap="2" py="6">
-            <Text fontSize={18} fontWeight="700" text="center">
-              {emptyTitle}
+    <VerticalNav items={[]} fill>
+      <FlatList
+        style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled"
+        data={rows.map(renderRow)}
+        keyExtractor={(row) => row.id}
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          if (hasMore && !isPending) loadMore()
+        }}
+        ListEmptyComponent={
+          hasAny ? (
+            <Text color="muted-foreground" text="center" py="6">
+              {emptySearchLabel}
             </Text>
-            <Text color="muted-foreground" text="center">
-              {emptyDescription}
-            </Text>
-          </YStack>
-        )
-      }
-      ListFooterComponent={
-        hasMore ? <ActivityIndicator style={{ padding: 16 }} /> : undefined
-      }
-      renderItem={({ item }) => <SettingsListRow row={item} />}
-    />
+          ) : (
+            <YStack items="center" gap="2" py="6">
+              <Text fontSize={18} fontWeight="700" text="center">
+                {emptyTitle}
+              </Text>
+              <Text color="muted-foreground" text="center">
+                {emptyDescription}
+              </Text>
+            </YStack>
+          )
+        }
+        ListFooterComponent={
+          hasMore ? <ActivityIndicator style={{ padding: 16 }} /> : undefined
+        }
+        renderItem={({ item, index }) => (
+          <VerticalNavRow item={toVerticalNavItem(item)} first={index === 0} />
+        )}
+      />
+    </VerticalNav>
   )
 }

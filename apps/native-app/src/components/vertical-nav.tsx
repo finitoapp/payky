@@ -67,24 +67,36 @@ export function VerticalNav({
   items,
   empty,
   title,
+  children,
+  fill = false,
 }: {
   readonly items: ReadonlyArray<VerticalNavItem>
   readonly empty?: ReactNode
   readonly title?: string
+  /** Custom virtualized body, still inside the shared card shell. */
+  readonly children?: ReactNode
+  /** Let an embedded list fill its parent. */
+  readonly fill?: boolean
 }) {
   return (
-    <VerticalNavShell>
+    <VerticalNavShell flex={fill ? 1 : undefined}>
       {title === undefined || title === "" ? null : (
         <VerticalNavTitle accessibilityRole="header">{title}</VerticalNavTitle>
       )}
-      {items.length === 0 && empty !== undefined ? (
-        <NavRow
+      {children !== undefined ? (
+        children
+      ) : items.length === 0 && empty !== undefined ? (
+        <VerticalNavRow
           item={{ kind: "static", disableAction: true, label: empty }}
           first
         />
       ) : (
         items.map((item, index) => (
-          <NavRow key={item.id ?? index} item={item} first={index === 0} />
+          <VerticalNavRow
+            key={item.id ?? index}
+            item={item}
+            first={index === 0}
+          />
         ))
       )}
     </VerticalNavShell>
@@ -104,7 +116,7 @@ const press = (item: VerticalNavItem): (() => void) | undefined => {
   }
 }
 
-function NavRow({
+export function VerticalNavRow({
   item,
   first,
 }: {

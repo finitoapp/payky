@@ -767,17 +767,35 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/settings/settings-list-page.tsx",
       "apps/web-app/src/features/settings/settings-entity-list.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      ListSkeleton:
+        "Native keeps the existing ActivityIndicator footer while fetching more rows; web adds a ListSkeleton.",
+      VerticalNavRow:
+        "Native uses a row helper to preserve FlatList virtualization inside the VerticalNav shell.",
+      VerticalNav:
+        "The native row data has no per-entity icon field; screen-specific list rows will add web icons in their phase-4 steps.",
+    },
   },
   {
     native: "src/features/settings/settings-page.tsx",
     web: ["apps/web-app/src/features/settings/settings-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Building2:
+        "lucide-react-native 1.57.0 has no building-2 module; native uses its available building icon.",
+      ProfileCard:
+        "Native keeps its existing single-row profile destination; the web profile card includes an avatar and shortened npub.",
+    },
   },
   {
     native: "src/features/settings/settings-row.tsx",
-    web: ["apps/web-app/src/components/vertical-nav.tsx"],
-    status: "pending",
+    web: ["apps/web-app/src/features/settings/settings-page.tsx"],
+    status: "matched",
+    allowedDifferences: {
+      FadeHeader:
+        "This shared native part renders one settings row; the mapped web screen also includes its page header.",
+    },
   },
   {
     native: "src/features/settings/support/dm-inbox-warning.tsx",

@@ -24,6 +24,10 @@ import { fontSize, fontWeight, radius } from "../theme/tokens.ts"
  * Motion, as web's: switching slides the pill from the segment that had it
  * to the new one (web's spring, bounce 0, 0.35 s, as an ease-out), and the
  * label fades in once the pill has mostly arrived (0.2 s delay, 0.15 s).
+ * All of it runs on the native driver (the pill moves by translateX and
+ * stretches by scaleX), so a busy JS thread does not make it stutter; while
+ * it slides, its round ends stretch with the scale, where web's motion
+ * corrects the radius.
  * Segments sharing a `pillId` are what the pill slides between: the new
  * active segment starts its pill at the window rect the previous one was
  * last drawn at. Reduced motion switches at once. Segments must not clip,
@@ -59,8 +63,8 @@ export function SlidingPillSegmentContent({
 }) {
   const theme = useTheme()
   const pillRef = useRef<ComponentRef<typeof NativeView>>(null)
-  const [left] = useState(() => new Animated.Value(0))
-  const [right] = useState(() => new Animated.Value(0))
+  const [translateX] = useState(() => new Animated.Value(0))
+  const [scaleX] = useState(() => new Animated.Value(1))
   const [labelOpacity] = useState(() => new Animated.Value(1))
   // Set when this segment has just become the active one, so its pill waits
   // hidden for its own rect and slides in from the previous one.
@@ -78,31 +82,33 @@ export function SlidingPillSegmentContent({
       if (!arriving) return
       void AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
         setArriving(false)
-        if (reduced || from === undefined) {
-          left.setValue(0)
-          right.setValue(0)
+        if (reduced || from === undefined || width === 0) {
+          translateX.setValue(0)
+          scaleX.setValue(1)
           labelOpacity.setValue(1)
           return
         }
-        left.setValue(from.x - x)
-        right.setValue(x + width - (from.x + from.width))
+        // Centre to centre, width as a scale: transforms run on the native
+        // thread, so the slide stays smooth while JS renders the new tab.
+        translateX.setValue(from.x + from.width / 2 - (x + width / 2))
+        scaleX.setValue(from.width / width)
         labelOpacity.setValue(0)
         Animated.parallel([
-          Animated.timing(left, {
+          Animated.timing(translateX, {
             toValue: 0,
             ...slide,
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
-          Animated.timing(right, {
-            toValue: 0,
+          Animated.timing(scaleX, {
+            toValue: 1,
             ...slide,
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
           Animated.timing(labelOpacity, {
             toValue: 1,
             delay: 200,
             duration: 150,
-            useNativeDriver: false,
+            useNativeDriver: true,
           }),
         ]).start()
       })
@@ -131,9 +137,10 @@ export function SlidingPillSegmentContent({
             style={{
               position: "absolute",
               top: 0,
+              right: 0,
               bottom: 0,
-              left,
-              right,
+              left: 0,
+              transform: [{ translateX }, { scaleX }],
               borderRadius: radius.full,
               backgroundColor: theme.color?.val,
               opacity: arriving ? 0 : 1,

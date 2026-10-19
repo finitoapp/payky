@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { memo, useMemo } from "react"
 import Svg, { Path, Rect } from "react-native-svg"
 import { qrPath } from "./qr-matrix.ts"
 
@@ -7,8 +7,10 @@ const quietZone = 2
 /**
  * A QR drawn on a white square, whatever the theme: scanners need contrast.
  * Without `size` it fills its parent, as web's `QRCodeSVG className="size-full"`.
+ * Memoized: the payment screen re-renders on every tab switch, and redrawing
+ * a large SVG path for the same value is wasted work.
  */
-export function QrCode({
+export const QrCode = memo(function QrCode({
   value,
   size,
 }: {
@@ -31,4 +33,4 @@ export function QrCode({
       />
     </Svg>
   )
-}
+})

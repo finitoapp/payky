@@ -153,6 +153,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const accounts = useEvoluQuery(enabledPaymentMethodAccountsQuery).data
   const [settings] = useEvoluQuery(settingsQuery).data
   const masterKey = useAtomValue(accountAtom).masterKey
+  // A secp256k1 derivation in JS: once per account, not on every render.
+  const nostrPubkey = useMemo(
+    () => getNostrIdentity(masterKey).pubkey,
+    [masterKey]
+  )
   const [edited, setEdited] = useState<string | null>(null)
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null)
   const [ibanErrorKey, setIbanErrorKey] = useState<TranslationKey | null>(null)
@@ -183,9 +188,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     void (async () => {
       try {
         await using run = appRun()
-        const result = await run(
-          fetchNostrProfile({ pubkey: getNostrIdentity(masterKey).pubkey })
-        )
+        const result = await run(fetchNostrProfile({ pubkey: nostrPubkey }))
         if (!ignore && result.ok) setProfileName(result.value.name ?? null)
       } catch (error) {
         nativeConsole.error("Failed to read the profile name", error)
@@ -194,7 +197,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     return () => {
       ignore = true
     }
-  }, [appRun, masterKey])
+  }, [appRun, nostrPubkey])
 
   // The enabled accounts in the payment's currency, like web's tab list, in
   // the merchant's method order.
@@ -295,21 +298,60 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 
   const ibanNumber = ibanAccount?.iban ?? null
   const ibanName = ibanAccount?.name ?? null
-  const bankQrPayloads: ReadonlyArray<BankQrPayload> =
-    payment !== undefined &&
-    payment.ibanAccountId !== null &&
-    ibanNumber !== null &&
-    ibanName !== null
-      ? createBankQrPayloads({
-          profileName,
-          bankAccountName: ibanName,
-          iban: ibanNumber,
-          amount: payment.amount,
-          currency: payment.currency,
-          specificSymbol: payment.specificSymbol,
-          variableSymbol: payment.variableSymbol,
-        })
-      : []
+  // Rebuilt only when what they encode changes, not on every tab switch.
+  const hasPayment = payment !== undefined
+  const ibanAccountIdOfPayment = payment?.ibanAccountId
+  const paymentAmount = payment?.amount
+  const paymentCurrency = payment?.currency
+  const specificSymbol = payment?.specificSymbol ?? null
+  const variableSymbol = payment?.variableSymbol ?? null
+  const bankQrPayloads: ReadonlyArray<BankQrPayload> = useMemo(
+    () =>
+      hasPayment &&
+      ibanAccountIdOfPayment !== null &&
+      paymentAmount !== undefined &&
+      paymentCurrency !== undefined &&
+      ibanNumber !== null &&
+      ibanName !== null
+        ? createBankQrPayloads({
+            profileName,
+            bankAccountName: ibanName,
+            iban: ibanNumber,
+            amount: paymentAmount,
+            currency: paymentCurrency,
+            specificSymbol,
+            variableSymbol,
+          })
+        : [],
+    [
+      hasPayment,
+      ibanAccountIdOfPayment,
+      paymentAmount,
+      paymentCurrency,
+      ibanNumber,
+      ibanName,
+      profileName,
+      specificSymbol,
+      variableSymbol,
+    ]
+  )
+  const cashuLnInvoice = payment?.cashuLnInvoice ?? null
+  const cashuMintUrl = payment?.cashuMintUrl ?? null
+  const cashuAmountSats = payment?.cashuAmountSats ?? 0
+  const cashuQrPayload = useMemo(
+    () =>
+      cashuLnInvoice === null || cashuMintUrl === null
+        ? null
+        : buildCashuPaymentUri({
+            paymentId,
+            lnInvoice: cashuLnInvoice,
+            amountSats: cashuAmountSats,
+            mintUrl: cashuMintUrl,
+            nostrPubkey,
+            relays: nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS,
+          }),
+    [paymentId, cashuLnInvoice, cashuAmountSats, cashuMintUrl, nostrPubkey]
+  )
   const defaultQrFormat = ibanAccount?.ibanDefaultQrFormat ?? "spayd"
   const activeQrFormat = selectedQrFormat ?? defaultQrFormat
   const bankQrPayload =
@@ -405,20 +447,6 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const canMarkCashPaid =
     cashRegisterAccountId !== null && cashRegisterAccountId !== undefined
   const cashuQuoteExpiresAt = payment.cashuQuoteExpiresAt ?? null
-  const cashuQrPayload =
-    payment.cashuLnInvoice === null ||
-    payment.cashuLnInvoice === undefined ||
-    payment.cashuMintUrl === null ||
-    payment.cashuMintUrl === undefined
-      ? null
-      : buildCashuPaymentUri({
-          paymentId,
-          lnInvoice: payment.cashuLnInvoice,
-          amountSats: payment.cashuAmountSats ?? 0,
-          mintUrl: payment.cashuMintUrl,
-          nostrPubkey: getNostrIdentity(masterKey).pubkey,
-          relays: nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS,
-        })
   const ibanAccountId = payment.ibanAccountId
   const canMarkIbanPaid = ibanAccountId !== null && ibanAccountId !== undefined
   const preparing =

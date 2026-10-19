@@ -11,4 +11,12 @@ describe("qrPath", () => {
     // The top-left finder pattern starts at the origin.
     expect(path).toContain("M0 0h1v1h-1z")
   })
+
+  it("reuses a recent value's path and forgets the oldest past eight", () => {
+    const first = qrPath("cache-0")
+    expect(qrPath("cache-0")).toBe(first)
+    for (let index = 1; index <= 8; index++) qrPath(`cache-${index}`)
+    expect(qrPath("cache-0")).not.toBe(first)
+    expect(qrPath("cache-0")).toEqual(first)
+  })
 })

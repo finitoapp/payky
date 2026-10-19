@@ -1,3 +1,4 @@
+import { memo } from "react"
 import { View } from "tamagui"
 import { useCopyToClipboard } from "../hooks/use-copy-to-clipboard.ts"
 import { useTranslation } from "../hooks/use-translation.ts"
@@ -13,9 +14,13 @@ import { QrCode } from "./qr-code.tsx"
  * ring-foreground/10 active:scale-[0.98]`.
  *
  * Native differences: only web's `ready` state; no native caller shows the
- * pending or empty one.
+ * pending or empty one. Memoized, as `QrCode` is, so screen re-renders skip it.
  */
-export function CopyableQrCode({ value }: { readonly value: string }) {
+export const CopyableQrCode = memo(function CopyableQrCode({
+  value,
+}: {
+  readonly value: string
+}) {
   const { t } = useTranslation()
   const copy = useCopyToClipboard()
   return (
@@ -40,4 +45,4 @@ export function CopyableQrCode({ value }: { readonly value: string }) {
       <QrCode value={value} />
     </View>
   )
-}
+})

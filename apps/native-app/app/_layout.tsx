@@ -4,12 +4,12 @@ import Inter from "@tamagui/font-inter/otf/Inter-Regular.otf"
 import InterSemiBold from "@tamagui/font-inter/otf/Inter-SemiBold.otf"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { useFonts } from "expo-font"
-import { Stack } from "expo-router"
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { createStore, Provider } from "jotai"
 import { Suspense, useEffect, useState } from "react"
 import { useColorScheme } from "react-native"
-import { TamaguiProvider, Theme } from "tamagui"
+import { TamaguiProvider, Theme, useTheme } from "tamagui"
 import { AccessGate } from "../src/components/app/access-gate.tsx"
 import {
   AppEvoluConsumers,
@@ -91,7 +91,7 @@ function ThemedApp() {
         <Theme name={theme}>
           <StatusBar style={theme === "dark" ? "light" : "dark"} />
           <AccessGate>
-            <Stack screenOptions={{ headerShown: false }} />
+            <ThemedStack dark={theme === "dark"} />
           </AccessGate>
           <AppEvoluConsumers />
           <CashuEvoluConsumers />
@@ -107,5 +107,27 @@ function ThemedApp() {
         </Theme>
       </TamaguiProvider>
     </QueryClientProvider>
+  )
+}
+
+/**
+ * The navigator on the app's theme. React Navigation draws screens and their
+ * transitions on its own theme's background, light grey by default, so a
+ * route that suspends on its first open (rendering nothing until its data is
+ * there) showed that grey meanwhile: a white flash, most visible in dark.
+ */
+function ThemedStack({ dark }: { readonly dark: boolean }) {
+  const theme = useTheme()
+  const base = dark ? DarkTheme : DefaultTheme
+  const background = theme.background.val
+  return (
+    <ThemeProvider
+      value={{
+        ...base,
+        colors: { ...base.colors, background, card: background },
+      }}
+    >
+      <Stack screenOptions={{ headerShown: false }} />
+    </ThemeProvider>
   )
 }

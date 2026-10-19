@@ -1,9 +1,11 @@
 import { router } from "expo-router"
 import ArrowLeft from "lucide-react-native/icons/arrow-left"
-import type { ReactNode } from "react"
+import { type ReactNode, useEffect, useState } from "react"
+import { Animated } from "react-native"
 import { Text, View, XStack } from "tamagui"
 import { useTranslation } from "../hooks/use-translation.ts"
 import { fontSize, fontWeight } from "../theme/tokens.ts"
+import { useScreenScroll } from "./screen.tsx"
 import { Button } from "./ui/button.tsx"
 import { Icon } from "./ui/icon.tsx"
 
@@ -18,10 +20,18 @@ const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"))
  * Tailwind mirrored: `py-3 gap-4`, slots `w-10`, title `flex-1 text-xl
  * font-bold text-center`.
  *
- * Native differences: the bar is static, not fixed and fading with the
- * page scroll (step 3.2 adds that); `px-4` comes from `Screen`'s padding;
- * the title is one line.
+ * Inside a `Screen` it fades out over the first 75 px of scroll and drifts
+ * up at 1/2.5 of the scroll speed, as web's fixed bar does: it stays the
+ * first child of the scroll content and is shifted down by the rest of the
+ * offset. Once faded it stops taking touches, so a tap on the content under
+ * it never goes back.
+ *
+ * Native differences: `px-4` comes from `Screen`'s padding; the title is
+ * one line.
  */
+
+const fadeDistance = 75
+const driftRatio = 1 / 2.5
 export function FadeHeader({
   title,
   startAddon,
@@ -37,7 +47,18 @@ export function FadeHeader({
   readonly customStartAddonOnClick?: () => void
 }) {
   const { t } = useTranslation()
-  return (
+  const scrollY = useScreenScroll()
+  const [faded, setFaded] = useState(false)
+
+  useEffect(() => {
+    if (scrollY === null) return
+    const listener = scrollY.addListener(({ value }) => {
+      setFaded(value >= fadeDistance)
+    })
+    return () => scrollY.removeListener(listener)
+  }, [scrollY])
+
+  const bar = (
     <XStack items="center" gap={16} py={12}>
       <View w={40} items="flex-start">
         {startAddon === undefined ? (
@@ -67,5 +88,30 @@ export function FadeHeader({
         {endAddon}
       </View>
     </XStack>
+  )
+  if (scrollY === null) return bar
+  return (
+    <Animated.View
+      pointerEvents={faded ? "none" : "auto"}
+      style={{
+        zIndex: 10,
+        opacity: scrollY.interpolate({
+          inputRange: [0, fadeDistance],
+          outputRange: [1, 0],
+          extrapolate: "clamp",
+        }),
+        transform: [
+          {
+            translateY: scrollY.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 1 - driftRatio],
+              extrapolateLeft: "clamp",
+            }),
+          },
+        ],
+      }}
+    >
+      {bar}
+    </Animated.View>
   )
 }

@@ -15,8 +15,14 @@ import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -71,34 +77,74 @@ export function LegalEntitySettingsPage() {
             {t("settings.legalEntity.country.placeholder")}
           </Text>
         ) : null}
-        <OptionSelect<string>
-          // Nothing is selected until a country is chosen: the row does not exist.
+        {/* Nothing is selected until a country is chosen: the row does not exist. */}
+        <Select
           value={
             country.value === undefined
               ? ""
               : z.encode(countryCodec, country.value)
           }
-          options={countryOptions.map((option) => ({
-            value: option,
-            title: t(countryLabelKey(option === OTHER_COUNTRY ? null : option)),
-          }))}
-          onChange={(value) => {
+          onValueChange={(value) => {
             const parsed = z.safeDecode(countryCodec, value)
             if (parsed.success) void country.choose(parsed.data)
           }}
-        />
+          items={Object.fromEntries(
+            countryOptions
+              .map((option) => ({
+                value: option,
+                title: t(
+                  countryLabelKey(option === OTHER_COUNTRY ? null : option)
+                ),
+              }))
+              .map((option) => [option.value, option.title])
+          )}
+        >
+          <SelectTrigger
+            fullWidth
+            accessibilityLabel={t("settings.legalEntity.country.label")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent title={t("settings.legalEntity.country.label")}>
+            {countryOptions
+              .map((option) => ({
+                value: option,
+                title: t(
+                  countryLabelKey(option === OTHER_COUNTRY ? null : option)
+                ),
+              }))
+              .map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.title}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
       </YStack>
 
       <YStack gap="2">
         <Text fontWeight="700">{t("settings.legalEntity.currency.label")}</Text>
-        <OptionSelect
+        <Select
           value={currency.value}
-          options={fiatCurrencyOptions.map((option) => ({
-            value: option.value,
-            title: t(option.label),
-          }))}
-          onChange={(value) => void currency.choose(value)}
-        />
+          onValueChange={(value) => void currency.choose(value)}
+          items={Object.fromEntries(
+            fiatCurrencyOptions.map((option) => [option.value, t(option.label)])
+          )}
+        >
+          <SelectTrigger
+            fullWidth
+            accessibilityLabel={t("settings.legalEntity.currency.label")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent title={t("settings.legalEntity.currency.label")}>
+            {fiatCurrencyOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {t(option.label)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Text fontSize={13} color="muted-foreground">
           {t("settings.legalEntity.currency.description")}
         </Text>

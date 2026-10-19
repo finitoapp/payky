@@ -17,8 +17,14 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, YStack } from "tamagui"
 import { evoluAtom } from "../../atoms/evolu.ts"
 import { Field } from "../../components/field.tsx"
-import { OptionSelect } from "../../components/option-select.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import type { useProductLookup } from "../../hooks/use-product-lookup.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
@@ -224,19 +230,51 @@ function CreateForm({
           <Text fontWeight="700">
             {t("settings.items.form.category.label")}
           </Text>
-          <OptionSelect
+          <Select
             value={categoryId}
-            options={categoryOptions}
-            onChange={setCategoryId}
-          />
+            onValueChange={setCategoryId}
+            items={Object.fromEntries(
+              categoryOptions.map((option) => [option.value, option.title])
+            )}
+          >
+            <SelectTrigger
+              fullWidth
+              accessibilityLabel={t("settings.items.form.category.label")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent title={t("settings.items.form.category.label")}>
+              {categoryOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </YStack>
         <YStack gap="2">
           <Text fontWeight="700">{t("settings.items.form.taxRate.label")}</Text>
-          <OptionSelect
+          <Select
             value={taxRateId}
-            options={taxRateOptions}
-            onChange={setTaxRateId}
-          />
+            onValueChange={setTaxRateId}
+            items={Object.fromEntries(
+              taxRateOptions.map((option) => [option.value, option.title])
+            )}
+          >
+            <SelectTrigger
+              fullWidth
+              accessibilityLabel={t("settings.items.form.taxRate.label")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent title={t("settings.items.form.taxRate.label")}>
+              {taxRateOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </YStack>
         <Button
           size="lg"

@@ -27,9 +27,15 @@ import { Text, YStack } from "tamagui"
 import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
-import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select.tsx"
 import { useConfirmedRun } from "../../../hooks/use-confirmed-run.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../../hooks/use-hardware-scanner.ts"
@@ -159,14 +165,27 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
       />
       <YStack gap="2">
         <Text fontWeight="700">{t("settings.items.form.currency.label")}</Text>
-        <OptionSelect
+        <Select
           value={currency.value}
-          options={fiatCurrencyOptions.map((option) => ({
-            value: option.value,
-            title: option.value,
-          }))}
-          onChange={(value) => void currency.choose(value)}
-        />
+          onValueChange={(value) => void currency.choose(value)}
+          items={Object.fromEntries(
+            fiatCurrencyOptions.map((option) => [option.value, option.value])
+          )}
+        >
+          <SelectTrigger
+            fullWidth
+            accessibilityLabel={t("settings.items.form.currency.label")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent title={t("settings.items.form.currency.label")}>
+            {fiatCurrencyOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.value}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </YStack>
       <InlineEditField
         label={t("settings.items.form.description.label")}
@@ -194,25 +213,57 @@ function EditCatalogItemForm({ item }: { readonly item: CatalogItemRow }) {
       />
       <YStack gap="2">
         <Text fontWeight="700">{t("settings.items.form.category.label")}</Text>
-        <OptionSelect
+        <Select
           value={z.encode(categoryCodec, category.value)}
-          options={categoryOptions}
-          onChange={(value) =>
+          onValueChange={(value) =>
             void category.choose(
               z.safeDecode(categoryCodec, value).data ?? null
             )
           }
-        />
+          items={Object.fromEntries(
+            categoryOptions.map((option) => [option.value, option.title])
+          )}
+        >
+          <SelectTrigger
+            fullWidth
+            accessibilityLabel={t("settings.items.form.category.label")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent title={t("settings.items.form.category.label")}>
+            {categoryOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </YStack>
       <YStack gap="2">
         <Text fontWeight="700">{t("settings.items.form.taxRate.label")}</Text>
-        <OptionSelect
+        <Select
           value={z.encode(taxRateCodec, taxRate.value)}
-          options={taxRateOptions}
-          onChange={(value) =>
+          onValueChange={(value) =>
             void taxRate.choose(z.safeDecode(taxRateCodec, value).data ?? null)
           }
-        />
+          items={Object.fromEntries(
+            taxRateOptions.map((option) => [option.value, option.title])
+          )}
+        >
+          <SelectTrigger
+            fullWidth
+            accessibilityLabel={t("settings.items.form.taxRate.label")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent title={t("settings.items.form.taxRate.label")}>
+            {taxRateOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Text fontSize={13} color="muted-foreground">
           {t("settings.items.form.taxRate.description")}
         </Text>

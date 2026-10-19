@@ -169,6 +169,7 @@ function PermissionsEditor({
         {t("access.device.preset", { name: device.name })}
       </Text>
       <PresetPicker
+        label={t("access.device.preset", { name: device.name })}
         value={presetOf(granted)}
         onChange={(preset) => setGranted(new Set(accessPresets[preset]))}
       />

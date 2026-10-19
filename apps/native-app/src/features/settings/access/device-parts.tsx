@@ -6,8 +6,14 @@ import { NonEmptyString255Schema } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { Field } from "../../../components/field.tsx"
-import { OptionSelect } from "../../../components/option-select.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select.tsx"
 import { accessPresetLabelKeys } from "../../../core/access-labels.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -54,9 +60,12 @@ export function DeviceHeading({
  * is shown as "Custom" and picking a preset replaces it (access/0004).
  */
 export function PresetPicker({
+  label,
   value,
   onChange,
 }: {
+  /** Already translated: whose permissions these are. */
+  readonly label: string
   readonly value: AccessPreset | null
   readonly onChange: (preset: AccessPreset) => void
 }) {
@@ -70,13 +79,26 @@ export function PresetPicker({
   }
 
   return (
-    <OptionSelect<AccessPreset | "custom">
+    <Select
       value={value ?? "custom"}
-      options={options}
-      onChange={(preset) => {
+      onValueChange={(preset) => {
         if (preset !== "custom") onChange(preset)
       }}
-    />
+      items={Object.fromEntries(
+        options.map((option) => [option.value, option.title])
+      )}
+    >
+      <SelectTrigger fullWidth accessibilityLabel={label}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent title={label}>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.title}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }
 

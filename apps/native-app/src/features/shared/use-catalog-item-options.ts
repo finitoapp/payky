@@ -7,7 +7,7 @@ import {
   filterSelectableTaxRates,
   formatTaxRateLabel,
 } from "@payky/core/modules/tax-rate/tax-rate-utils"
-import type { SelectOption } from "../../components/option-select.tsx"
+import type { OptionToggleGroupOption } from "../../components/option-toggle-group.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
@@ -22,7 +22,7 @@ export const useCatalogItemOptions = (currentTaxRateId?: TaxRateId | null) => {
   const { data: taxRates } = useEvoluQuery(taxRatesQuery)
 
   const categoryOptions: ReadonlyArray<
-    SelectOption<CatalogCategoryId | typeof NO_OPTION>
+    OptionToggleGroupOption<CatalogCategoryId | typeof NO_OPTION>
   > = [
     { value: NO_OPTION, title: t("settings.items.form.category.none") },
     ...categories.map((category) => ({
@@ -31,7 +31,7 @@ export const useCatalogItemOptions = (currentTaxRateId?: TaxRateId | null) => {
     })),
   ]
   const taxRateOptions: ReadonlyArray<
-    SelectOption<TaxRateId | typeof NO_OPTION>
+    OptionToggleGroupOption<TaxRateId | typeof NO_OPTION>
   > = [
     { value: NO_OPTION, title: t("settings.items.form.taxRate.none") },
     ...filterSelectableTaxRates(taxRates, currentTaxRateId).map((taxRate) => ({

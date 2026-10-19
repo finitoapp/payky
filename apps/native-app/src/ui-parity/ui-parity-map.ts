@@ -138,11 +138,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
-    native: "src/components/option-select.tsx",
-    web: ["apps/web-app/src/components/option-toggle-group.tsx"],
-    status: "pending",
-  },
-  {
     native: "src/components/password-textarea.tsx",
     web: ["apps/web-app/src/components/password-textarea.tsx"],
     status: "matched",

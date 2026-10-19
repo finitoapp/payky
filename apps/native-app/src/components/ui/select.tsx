@@ -27,7 +27,7 @@ import { Icon } from "./icon.tsx"
 
 interface SelectContextValue {
   readonly value: string | null
-  readonly items: Readonly<Record<string, string>> | undefined
+  readonly items: Readonly<Partial<Record<string, string>>> | undefined
   readonly open: boolean
   readonly setOpen: (open: boolean) => void
   readonly select: (value: string) => void
@@ -53,7 +53,7 @@ export function Select<Value extends string>({
   readonly value: Value | null
   readonly onValueChange: (value: Value) => void
   /** Already translated labels; `SelectValue` shows the selected one. */
-  readonly items?: Readonly<Record<Value, string>>
+  readonly items?: Readonly<Partial<Record<Value, string>>>
   readonly disabled?: boolean
   readonly children: ReactNode
 }) {

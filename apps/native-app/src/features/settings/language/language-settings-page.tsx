@@ -3,7 +3,7 @@ import type { DeviceLocale } from "@payky/core/evolu/device-client"
 import { Text, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { languageOptions } from "../../../components/language-options.ts"
-import { OptionSelect } from "../../../components/option-select.tsx"
+import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import {
   useLocale,
@@ -40,7 +40,7 @@ export function LanguageSettingsPage() {
         <Text color="muted-foreground">
           {t("settings.language.mode.description")}
         </Text>
-        <OptionSelect
+        <OptionToggleGroup
           value={language}
           options={languageOptions.map(({ value, label }) => ({
             value,
@@ -54,7 +54,7 @@ export function LanguageSettingsPage() {
         <Text color="muted-foreground">
           {t("settings.language.locale.description")}
         </Text>
-        <OptionSelect
+        <OptionToggleGroup
           value={locale}
           options={localeOptions.map(({ value, label }) => ({
             value,

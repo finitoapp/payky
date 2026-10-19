@@ -1,7 +1,7 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { AiAssistantAccess } from "@payky/core/evolu/device-client"
 import { Text, YStack } from "tamagui"
-import { OptionSelect } from "../../../components/option-select.tsx"
+import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { usePrivacySettings } from "./use-privacy-settings.ts"
@@ -46,14 +46,14 @@ export function AiAssistantCard() {
       <Text color="muted-foreground">
         {t("settings.privacy.aiAssistant.description")}
       </Text>
-      <OptionSelect
+      {/* It decides what leaves the device, on a `free` page (access/0002). */}
+      <OptionToggleGroup
         value={aiAssistantAccess}
         options={accessOptions.map((option) => ({
           value: option.value,
           title: t(option.title),
           description: t(option.description),
         }))}
-        // It decides what leaves the device, on a `free` page (access/0002).
         onChange={(next) => {
           void (async () => {
             if (await require("admin", "access.action.aiAccess")) {

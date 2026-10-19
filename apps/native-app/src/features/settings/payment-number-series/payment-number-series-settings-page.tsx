@@ -20,7 +20,7 @@ import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
 import { Text, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
-import { OptionSelect } from "../../../components/option-select.tsx"
+import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
@@ -168,7 +168,7 @@ function SeriesFormatSection() {
         <Text fontWeight="600">
           {t("settings.paymentNumberSeries.year.label")}
         </Text>
-        <OptionSelect
+        <OptionToggleGroup
           value={year.value}
           options={options(yearFormatOptions)}
           onChange={(value) => void year.choose(value)}
@@ -178,7 +178,7 @@ function SeriesFormatSection() {
         <Text fontWeight="600">
           {t("settings.paymentNumberSeries.month.label")}
         </Text>
-        <OptionSelect
+        <OptionToggleGroup
           value={month.value}
           options={options(monthFormatOptions)}
           onChange={(value) => void month.choose(value)}
@@ -188,7 +188,7 @@ function SeriesFormatSection() {
         <Text fontWeight="600">
           {t("settings.paymentNumberSeries.day.label")}
         </Text>
-        <OptionSelect
+        <OptionToggleGroup
           value={day.value}
           options={options(dayFormatOptions)}
           onChange={(value) => void day.choose(value)}

@@ -160,6 +160,7 @@ export function TurnOnWizard({
                 {t("access.device.preset", { name: device.name })}
               </Text>
               <PresetPicker
+                label={t("access.device.preset", { name: device.name })}
                 value={presets[device.id] ?? "basic"}
                 onChange={(preset) =>
                   setPresets((current) => ({ ...current, [device.id]: preset }))

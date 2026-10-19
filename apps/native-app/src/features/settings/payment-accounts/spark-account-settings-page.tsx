@@ -34,7 +34,7 @@ import { accountAtom } from "../../../atoms/account.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Field } from "../../../components/field.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
-import { OptionSelect } from "../../../components/option-select.tsx"
+import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
 import { useAccess } from "../../../core/use-access.ts"
@@ -294,7 +294,7 @@ function ChangeSparkWalletModal({
                 {t("settings.sparkAccount.wallet.changeDialog.description")}
               </Text>
 
-              <OptionSelect<SparkWalletKind>
+              <OptionToggleGroup<SparkWalletKind>
                 value={target}
                 options={[
                   {

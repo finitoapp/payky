@@ -19,8 +19,18 @@ import { useState } from "react"
 import { Text, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
-import { OptionSelect } from "../../../components/option-select.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../../components/ui/toggle-group.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -94,9 +104,14 @@ export function FiatBankAccountSettingsPage() {
       />
       {/* Only saved Czech accounts have two display formats. */}
       {iban !== null && czechIbanToBban(iban) !== null ? (
-        <OptionSelect<BankAccountDisplayFormat>
+        <ToggleGroup
+          size="sm"
+          variant="outline"
+          spacing={0}
           value={ibanFormat}
-          options={[
+          onValueChange={setIbanFormat}
+        >
+          {[
             {
               value: "bban",
               title: t("settings.fiatBankAccount.iban.format.bban"),
@@ -105,9 +120,12 @@ export function FiatBankAccountSettingsPage() {
               value: "iban",
               title: t("settings.fiatBankAccount.iban.format.iban"),
             },
-          ]}
-          onChange={setIbanFormat}
-        />
+          ].map((option) => (
+            <ToggleGroupItem key={option.value} value={option.value}>
+              {option.title}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       ) : null}
 
       <Text fontWeight="700">{t("settings.fiatBankAccount.advanced")}</Text>
@@ -115,16 +133,29 @@ export function FiatBankAccountSettingsPage() {
         <Text fontWeight="600">
           {t("settings.fiatBankAccount.currency.label")}
         </Text>
-        <OptionSelect<FiatCurrency>
+        <Select
           value={currencyChoice.value}
-          options={fiatCurrencyOptions.map((option) => ({
-            value: option.value,
-            title: t(option.label),
-          }))}
-          onChange={(next) => {
+          onValueChange={(next) => {
             void currencyChoice.choose(next)
           }}
-        />
+          items={Object.fromEntries(
+            fiatCurrencyOptions.map((option) => [option.value, t(option.label)])
+          )}
+        >
+          <SelectTrigger
+            fullWidth
+            accessibilityLabel={t("settings.fiatBankAccount.currency.label")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent title={t("settings.fiatBankAccount.currency.label")}>
+            {fiatCurrencyOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {t(option.label)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Text fontSize={13} color="muted-foreground">
           {t("settings.fiatBankAccount.currency.description")}
         </Text>
@@ -133,16 +164,32 @@ export function FiatBankAccountSettingsPage() {
         <Text fontWeight="600">
           {t("settings.fiatBankAccount.qrFormat.label")}
         </Text>
-        <OptionSelect<BankQrFormat>
+        <Select
           value={qrFormatChoice.value}
-          options={fiatBankAccountQrFormatOptions.map((option) => ({
-            value: option.value,
-            title: t(option.label),
-          }))}
-          onChange={(next) => {
+          onValueChange={(next) => {
             void qrFormatChoice.choose(next)
           }}
-        />
+          items={Object.fromEntries(
+            fiatBankAccountQrFormatOptions.map((option) => [
+              option.value,
+              t(option.label),
+            ])
+          )}
+        >
+          <SelectTrigger
+            fullWidth
+            accessibilityLabel={t("settings.fiatBankAccount.qrFormat.label")}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent title={t("settings.fiatBankAccount.qrFormat.label")}>
+            {fiatBankAccountQrFormatOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {t(option.label)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Text fontSize={13} color="muted-foreground">
           {t("settings.fiatBankAccount.qrFormat.description")}
         </Text>

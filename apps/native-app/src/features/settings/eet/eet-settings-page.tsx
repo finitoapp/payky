@@ -27,7 +27,7 @@ import { Text, XStack, YStack } from "tamagui"
 import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
-import { OptionSelect } from "../../../components/option-select.tsx"
+import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import {
   Alert,
@@ -216,7 +216,7 @@ function TipSection({ tipOwner }: { readonly tipOwner: EetTipOwner }) {
       title={t("settings.eet.tip.title")}
       description={t("settings.eet.tip.description")}
     >
-      <OptionSelect<EetTipOwner>
+      <OptionToggleGroup<EetTipOwner>
         value={choice.value}
         options={[
           {
@@ -283,7 +283,7 @@ function EnvironmentSection({
       title={t("settings.eet.environment.title")}
       description={t("settings.eet.environment.description")}
     >
-      <OptionSelect<EetEnvironment>
+      <OptionToggleGroup<EetEnvironment>
         value={choice.value}
         options={[
           {

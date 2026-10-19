@@ -34,12 +34,15 @@ const fadeDistance = 75
 const driftRatio = 1 / 2.5
 export function FadeHeader({
   title,
+  subtitle,
   startAddon,
   endAddon,
   customStartAddonOnClick,
 }: {
   /** Already translated. */
   readonly title?: string
+  /** A muted second line under the title, as web's bill header has. */
+  readonly subtitle?: string
   /** Replaces the back button; `null` leaves the slot empty. */
   readonly startAddon?: ReactNode | null
   /** A trailing control, such as a list's "+". */
@@ -74,16 +77,26 @@ export function FadeHeader({
           startAddon
         )}
       </View>
-      <Text
-        flex={1}
-        text="center"
-        fontSize={fontSize.xl}
-        fontWeight={fontWeight.bold}
-        numberOfLines={1}
-        accessibilityRole="header"
-      >
-        {title}
-      </Text>
+      <View flex={1} items="center">
+        <Text
+          text="center"
+          fontSize={fontSize.xl}
+          fontWeight={fontWeight.bold}
+          numberOfLines={1}
+          accessibilityRole="header"
+        >
+          {title}
+        </Text>
+        {subtitle === undefined ? null : (
+          <Text
+            fontSize={fontSize.sm}
+            color="muted-foreground"
+            numberOfLines={1}
+          >
+            {subtitle}
+          </Text>
+        )}
+      </View>
       <View w={40} items="flex-end">
         {endAddon}
       </View>

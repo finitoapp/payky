@@ -48,15 +48,20 @@ export function Collapsible({
 
 export function CollapsibleTrigger({
   children,
+  disabled = false,
   ...viewProps
-}: Omit<GetProps<typeof View>, "onPress"> & { readonly children: ReactNode }) {
+}: Omit<GetProps<typeof View>, "onPress" | "disabled"> & {
+  readonly children: ReactNode
+  /** As web's trigger `disabled`: the panel stays as it is. */
+  readonly disabled?: boolean
+}) {
   const { open, setOpen } = useCollapsible()
   return (
     <View
       accessibilityRole="button"
-      accessibilityState={{ expanded: open }}
+      accessibilityState={{ expanded: open, disabled }}
       hitSlop={8}
-      onPress={() => setOpen(!open)}
+      onPress={disabled ? undefined : () => setOpen(!open)}
       {...viewProps}
     >
       {children}

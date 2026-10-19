@@ -33,7 +33,15 @@ import {
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { TableId } from "@payky/core/modules/table/table-types"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
+import Minus from "lucide-react-native/icons/minus"
+import Plus from "lucide-react-native/icons/plus"
+import ScanLine from "lucide-react-native/icons/scan-line"
+import ShoppingBag from "lucide-react-native/icons/shopping-bag"
+import Split from "lucide-react-native/icons/split"
+import Table2 from "lucide-react-native/icons/table-2"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
+import X from "lucide-react-native/icons/x"
 import {
   Suspense,
   useDeferredValue,
@@ -42,9 +50,10 @@ import {
   useRef,
   useState,
 } from "react"
-import { FlatList, Pressable } from "react-native"
+import { FlatList, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, XStack, YStack } from "tamagui"
+import { Text, useTheme, View, XStack, YStack } from "tamagui"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import {
@@ -53,6 +62,13 @@ import {
   AlertTitle,
 } from "../../components/ui/alert.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import { Card, CardContent } from "../../components/ui/card.tsx"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../../components/ui/collapsible.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
@@ -60,6 +76,7 @@ import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
 import { useProductLookup } from "../../hooks/use-product-lookup.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
 import { CategoryFilterBar } from "../shared/category-filter-bar.tsx"
 import {
@@ -360,6 +377,7 @@ function BillCart({
   const [lookupCode, setLookupCode] = useState<string | null>(null)
   const productLookup = useProductLookup(lookupCode)
   const [splitOpen, setSplitOpen] = useState(false)
+  const [summaryOpen, setSummaryOpen] = useState(false)
   const split = useSplitBill({
     billId,
     tableId,
@@ -498,85 +516,95 @@ function BillCart({
 
   return (
     <SafeAreaView
+      edges={["top", "left", "right"]}
       style={{
         flex: 1,
-        padding: 16,
-        gap: 12,
+        paddingHorizontal: 12,
         backgroundColor: theme.background.val,
       }}
     >
-      <Text fontSize={24} fontWeight="600" accessibilityRole="header">
-        {title}
-      </Text>
+      <FadeHeader title={title} subtitle={tableName} />
 
-      {tableName === undefined ? null : (
-        <Text color="muted-foreground">{tableName}</Text>
-      )}
-
-      <Button
-        size="lg"
-        variant={scanMode ? "default" : "outline"}
-        label={t("bill.scan.toggle.aria")}
-        onPress={() => setScanMode((on) => !on)}
-      />
-      {/* Search arrives later. */}
-      <CategoryFilterBar
-        categories={categories}
-        usedCategoryIds={usedCategoryIds}
-        value={categoryFilter}
-        onValueChange={setCategoryFilter}
-        allLabel={t("bill.category.all")}
-        uncategorizedLabel={t("bill.category.uncategorized")}
-        extraOptions={inBillFilterOptions}
-      />
-      {scanMode ? (
-        <BillScanView
-          paused={scanDialogOpen}
-          onScan={handleScan}
-          lastScanned={
-            lastScanned === null ? null : (
-              <ItemBrick
-                catalogItem={lastScanned}
-                summaries={summaries}
-                locale={locale}
-                onAdd={() => void cart.addOne(lastScanned)}
-                onRemove={(summary) => void cart.removeOne(summary)}
-              />
-            )
-          }
-        />
-      ) : (
-        <FlatList
-          style={{ flex: 1 }}
-          numColumns={2}
-          columnWrapperStyle={{ gap: 8 }}
-          contentContainerStyle={{ gap: 8 }}
-          data={gridItems}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={
-            currencyItems.length === 0 ? (
-              <CatalogEmpty />
-            ) : (
-              <EmptyView
-                message={t(
-                  categoryFilter === "inBill"
-                    ? "bill.filter.inBill.empty"
-                    : "bill.emptySearch"
-                )}
-              />
-            )
-          }
-          renderItem={({ item }) => (
-            <ItemBrick
-              catalogItem={item}
-              summaries={summaries}
-              locale={locale}
-              onAdd={() => void cart.addOne(item)}
-              onRemove={(summary) => void cart.removeOne(summary)}
+      <XStack mt={8} gap={8} items="center">
+        <YStack flex={1} minW={0}>
+          {scanMode ? null : (
+            <CategoryFilterBar
+              categories={categories}
+              usedCategoryIds={usedCategoryIds}
+              value={categoryFilter}
+              onValueChange={setCategoryFilter}
+              allLabel={t("bill.category.all")}
+              uncategorizedLabel={t("bill.category.uncategorized")}
+              extraOptions={inBillFilterOptions}
             />
           )}
+        </YStack>
+        <Button
+          variant={scanMode ? "default" : "outline"}
+          size="icon"
+          w={48}
+          h={48}
+          shrink={0}
+          iconStart={ScanLine}
+          accessibilityLabel={t("bill.scan.toggle.aria")}
+          accessibilityState={{ selected: scanMode }}
+          onPress={() => setScanMode((on) => !on)}
         />
-      )}
+      </XStack>
+
+      <YStack flex={1} mt={8}>
+        {scanMode ? (
+          <BillScanView
+            paused={scanDialogOpen}
+            onScan={handleScan}
+            lastScanned={
+              lastScanned === null ? null : (
+                <ItemBrick
+                  catalogItem={lastScanned}
+                  summaries={summaries}
+                  locale={locale}
+                  onAdd={() => void cart.addOne(lastScanned)}
+                  onRemove={(summary) => void cart.removeOne(summary)}
+                />
+              )
+            }
+          />
+        ) : (
+          <FlatList
+            style={{ flex: 1 }}
+            numColumns={2}
+            columnWrapperStyle={{ gap: 8 }}
+            contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
+            data={gridItems}
+            keyExtractor={(item) => item.id}
+            ListEmptyComponent={
+              currencyItems.length === 0 ? (
+                <CatalogEmpty />
+              ) : (
+                <Text mt={40} color="muted-foreground" text="center">
+                  {t(
+                    categoryFilter === "inBill"
+                      ? "bill.filter.inBill.empty"
+                      : "bill.emptySearch"
+                  )}
+                </Text>
+              )
+            }
+            renderItem={({ item }) => (
+              // Half the row at most, so an odd last brick keeps its column.
+              <View flex={1} maxW="50%">
+                <ItemBrick
+                  catalogItem={item}
+                  summaries={summaries}
+                  locale={locale}
+                  onAdd={() => void cart.addOne(item)}
+                  onRemove={(summary) => void cart.removeOne(summary)}
+                />
+              </View>
+            )}
+          />
+        )}
+      </YStack>
       <CreateCatalogItemDialog
         scanCode={createCode}
         productLookup={productLookup}
@@ -599,82 +627,135 @@ function BillCart({
           addScanned(item)
         }}
       />
-
-      <FlatList
-        style={{ flexGrow: 0, maxHeight: 180 }}
-        data={summaries}
-        keyExtractor={(summary) => summary.id}
-        ListEmptyComponent={<EmptyView message={t("bill.summary.empty")} />}
-        renderItem={({ item: summary }) => (
-          <SummaryRow
-            summary={summary}
-            locale={locale}
-            disabled={cart.pending}
-            catalogItem={
-              summary.catalogItemId === null
-                ? undefined
-                : catalogItemsById.get(summary.catalogItemId)
-            }
-            onAddOne={(catalogItem) => void cart.addOne(catalogItem)}
-            onRemoveOne={() => void cart.removeOne(summary)}
-            onRemove={() => void cart.removeLine(summary)}
-          />
-        )}
+      <AssignTableDialog
+        open={tablePickerOpen}
+        onClose={() => setTablePickerOpen(false)}
+        billId={billId}
+        currentTableId={tableId}
+        onAssign={(nextTableId) => {
+          setTablePickerOpen(false)
+          void cart.assignTable(nextTableId)
+        }}
+      />
+      <SplitBillDialog
+        open={splitOpen}
+        onClose={() => setSplitOpen(false)}
+        billId={billId}
+        summaries={summaries}
+        currency={currency}
+        pending={split.pending}
+        onConfirm={(input) => void split.split(input)}
       />
 
-      <YStack gap="2">
-        <Text color="muted-foreground">
-          {t("bill.summary.total")} ·{" "}
-          {t("bill.itemsCount", { value: itemCount })}
-        </Text>
-        <Text fontSize={32} fontWeight="600">
-          {formatMoney({ value: totalAmount, currency }, locale)}
-        </Text>
-        <Button
-          size="lg"
-          variant="outline"
-          label={tableName ?? t("bill.table.assign")}
-          onPress={() => setTablePickerOpen(true)}
-        />
-        <AssignTableDialog
-          open={tablePickerOpen}
-          onClose={() => setTablePickerOpen(false)}
-          billId={billId}
-          currentTableId={tableId}
-          onAssign={(nextTableId) => {
-            setTablePickerOpen(false)
-            void cart.assignTable(nextTableId)
-          }}
-        />
-        <Button
-          size="lg"
-          variant="outline"
-          label={t("bill.split.button.aria")}
-          disabled={summaries.length === 0 || cart.pending || split.pending}
-          onPress={() => setSplitOpen(true)}
-        />
-        <SplitBillDialog
-          open={splitOpen}
-          onClose={() => setSplitOpen(false)}
-          billId={billId}
-          summaries={summaries}
-          currency={currency}
-          pending={split.pending}
-          onConfirm={(input) => void split.split(input)}
-        />
-        <Button
-          size="lg"
-          label={t("home.pay")}
-          pending={chargePending}
-          disabled={summaries.length === 0}
-          onPress={() => void charge()}
-        />
-      </YStack>
+      {/* The bottom panel: the bill's summary, collapsed to its total. */}
+      <Card
+        mx={-12}
+        py={0}
+        gap={0}
+        borderBottomWidth={0}
+        borderBottomLeftRadius={0}
+        borderBottomRightRadius={0}
+      >
+        <SafeAreaView edges={["bottom"]}>
+          <CardContent pb={16}>
+            <Collapsible
+              // Closes itself when the last line goes, as its trigger is then off.
+              open={summaryOpen && summaries.length > 0}
+              onOpenChange={setSummaryOpen}
+            >
+              <CollapsibleTrigger pt={16} disabled={summaries.length === 0}>
+                <XStack items="center" justify="space-between" gap={8}>
+                  <XStack items="center" gap={8}>
+                    <Icon icon={ShoppingBag} color="muted-foreground" />
+                    <Text fontSize={fontSize.base} color="muted-foreground">
+                      {t("bill.itemsCount", { value: itemCount })}
+                    </Text>
+                  </XStack>
+                  <XStack items="center" gap={8}>
+                    <Text
+                      fontSize={fontSize.base}
+                      fontWeight={fontWeight.semibold}
+                      fontVariant={["tabular-nums"]}
+                    >
+                      {formatMoney({ value: totalAmount, currency }, locale)}
+                    </Text>
+                    <View rotate={summaryOpen ? "0deg" : "180deg"}>
+                      <Icon icon={ChevronDown} />
+                    </View>
+                  </XStack>
+                </XStack>
+              </CollapsibleTrigger>
+              <CollapsibleContent pt={16}>
+                <ScrollView style={{ maxHeight: 192 }}>
+                  {summaries.map((summary, index) => (
+                    <SummaryRow
+                      key={summary.id}
+                      first={index === 0}
+                      summary={summary}
+                      locale={locale}
+                      disabled={cart.pending}
+                      catalogItem={
+                        summary.catalogItemId === null
+                          ? undefined
+                          : catalogItemsById.get(summary.catalogItemId)
+                      }
+                      onAddOne={(catalogItem) => void cart.addOne(catalogItem)}
+                      onRemoveOne={() => void cart.removeOne(summary)}
+                      onRemove={() => void cart.removeLine(summary)}
+                    />
+                  ))}
+                </ScrollView>
+              </CollapsibleContent>
+            </Collapsible>
+            <XStack items="center" gap={8} pt={16}>
+              <Button
+                variant="outline"
+                size="icon"
+                w={48}
+                h={48}
+                shrink={0}
+                iconStart={Split}
+                accessibilityLabel={t("bill.split.button.aria")}
+                disabled={
+                  summaries.length === 0 || cart.pending || split.pending
+                }
+                onPress={() => setSplitOpen(true)}
+              />
+              <Button
+                variant="outline"
+                flex={1}
+                h={48}
+                iconStart={Table2}
+                accessibilityLabel={t("bill.table.aria")}
+                label={tableName ?? t("bill.table.assign")}
+                onPress={() => setTablePickerOpen(true)}
+              />
+              <Button
+                flex={1}
+                h={48}
+                accessibilityLabel={t("home.pay")}
+                pending={chargePending}
+                disabled={summaries.length === 0}
+                onPress={() => void charge()}
+              >
+                <Text
+                  fontSize={fontSize.sm}
+                  fontWeight={fontWeight.bold}
+                  color="primary-foreground"
+                >
+                  {t("home.pay")}
+                </Text>
+              </Button>
+            </XStack>
+          </CardContent>
+        </SafeAreaView>
+      </Card>
     </SafeAreaView>
   )
 }
 
 function SummaryRow({
+  first,
   summary,
   locale,
   disabled,
@@ -683,6 +764,7 @@ function SummaryRow({
   onRemoveOne,
   onRemove,
 }: {
+  readonly first: boolean
   readonly summary: BillLineSummary
   readonly locale: string
   readonly disabled: boolean
@@ -698,46 +780,90 @@ function SummaryRow({
 
   return (
     <XStack
-      py="2"
-      gap="2"
+      py={4}
+      gap={8}
       items="center"
-      borderBottomWidth={1}
+      justify="space-between"
+      borderTopWidth={first ? 0 : 1}
       borderColor="border-color"
     >
-      <YStack flex={1}>
-        <Text fontWeight="600" numberOfLines={1}>
+      <YStack flex={1} minW={0}>
+        <Text
+          fontSize={fontSize.sm}
+          fontWeight={fontWeight.medium}
+          numberOfLines={1}
+        >
           {summary.name}
         </Text>
         {/* A single piece costs what the line total already says. */}
         {summary.quantity === 1 ? null : (
-          <Text color="muted-foreground">
+          <Text
+            fontSize={fontSize.xs}
+            color="muted-foreground"
+            fontVariant={["tabular-nums"]}
+          >
             {summary.quantity} × {money(getBillLineSummaryUnitAmount(summary))}
           </Text>
         )}
       </YStack>
       {/* No `disabled` on "−"/"+": the cart queues taps, and a button disabled mid-tap drops one. */}
-      <RoundButton
-        label={t("bill.summary.decrement.aria", { name: summary.name })}
-        symbol="−"
-        onPress={onRemoveOne}
-      />
-      <Text minW={28} text="center" fontWeight="600">
-        {summary.quantity}
-      </Text>
-      <RoundButton
-        label={t("bill.summary.increment.aria", { name: summary.name })}
-        symbol="+"
-        disabled={catalogItem === undefined}
-        onPress={() => {
-          if (catalogItem !== undefined) onAddOne(catalogItem)
-        }}
-      />
-      <Text minW={72} text="right" fontWeight="600">
+      <XStack
+        shrink={0}
+        items="center"
+        gap={2}
+        rounded={radius.md}
+        bg="muted"
+        p={2}
+      >
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          rounded={radius.full}
+          iconStart={Minus}
+          accessibilityLabel={t("bill.summary.decrement.aria", {
+            name: summary.name,
+          })}
+          onPress={onRemoveOne}
+        />
+        <Text
+          minW={24}
+          text="center"
+          fontSize={fontSize.sm}
+          fontWeight={fontWeight.semibold}
+          fontVariant={["tabular-nums"]}
+        >
+          {summary.quantity}
+        </Text>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          rounded={radius.full}
+          iconStart={Plus}
+          accessibilityLabel={t("bill.summary.increment.aria", {
+            name: summary.name,
+          })}
+          disabled={catalogItem === undefined}
+          onPress={() => {
+            if (catalogItem !== undefined) onAddOne(catalogItem)
+          }}
+        />
+      </XStack>
+      <Text
+        minW={80}
+        text="right"
+        fontSize={fontSize.sm}
+        fontWeight={fontWeight.semibold}
+        fontVariant={["tabular-nums"]}
+      >
         {money(summary.totalAmount)}
       </Text>
-      <RoundButton
-        label={t("bill.summary.removeLine.aria", { name: summary.name })}
-        symbol="×"
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        iconStart={X}
+        accessibilityLabel={t("bill.summary.removeLine.aria", {
+          name: summary.name,
+        })}
         disabled={disabled}
         onPress={onRemove}
       />
@@ -745,52 +871,31 @@ function SummaryRow({
   )
 }
 
-function RoundButton({
-  label,
-  symbol,
-  disabled = false,
-  onPress,
-}: {
-  readonly label: string
-  readonly symbol: string
-  readonly disabled?: boolean
-  readonly onPress: () => void
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      hitSlop={6}
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        borderWidth: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      <Text fontSize={20}>{symbol}</Text>
-    </Pressable>
-  )
-}
-
-/**
- * Items are created in settings (web `/settings/items/new`); native has no
- * catalog editing until C12, so an empty catalog only explains itself.
- */
+/** As web's `BillEmptyCatalog`: what is missing and the way to add it. */
 function CatalogEmpty() {
   const { t } = useTranslation()
   return (
-    <YStack items="center" gap="2" p="4">
-      <Text fontWeight="600">{t("settings.items.empty.title")}</Text>
-      <Text color="muted-foreground" text="center">
+    <YStack items="center" gap={12}>
+      <Text
+        fontSize={fontSize.lg}
+        fontWeight={fontWeight.semibold}
+        text="center"
+      >
+        {t("settings.items.empty.title")}
+      </Text>
+      <Text
+        maxW={288}
+        fontSize={fontSize.sm}
+        color="muted-foreground"
+        text="center"
+      >
         {t("settings.items.empty.description")}
       </Text>
+      <Button
+        variant="outline"
+        label={t("settings.items.add")}
+        onPress={() => router.push("/settings/items/new")}
+      />
     </YStack>
   )
 }
@@ -821,41 +926,97 @@ function ItemBrick({
   )
   const latestSummary = getLatestCatalogItemSummary(summaries, catalogItem.id)
 
+  const inCart = quantity > 0
+
   return (
-    <YStack
-      flex={1}
-      minH={96}
-      borderWidth={1}
-      borderColor="border-color"
-      rounded="lg"
-      overflow="hidden"
-    >
-      <Pressable
+    <Card flex={1} p={12} gap={4} bg={inCart ? "primary-15" : "card"}>
+      {/*
+       * A tap anywhere on the tile adds one, as on a till; the corner
+       * controls above it are kept in the layout but invisible until the
+       * item is on the bill, so the tile does not reflow under the finger.
+       */}
+      <View
+        position="absolute"
+        t={0}
+        r={0}
+        b={0}
+        l={0}
+        bg="transparent press:card-ring"
         accessibilityRole="button"
         accessibilityLabel={t("bill.brick.add.aria", { name })}
         onPress={onAdd}
-        style={{ flex: 1, padding: 12 }}
+      />
+      <XStack
+        items="flex-start"
+        justify="space-between"
+        gap={8}
+        pointerEvents="box-none"
       >
-        <Text fontWeight="600">
-          {quantity > 0 ? `${quantity} × ` : ""}
+        <Text
+          flex={1}
+          pt={2}
+          fontWeight={fontWeight.medium}
+          pointerEvents="none"
+        >
           {name}
         </Text>
-        <Text color="muted-foreground">
+        <YStack
+          shrink={0}
+          h={28}
+          minW={28}
+          px={8}
+          rounded={radius.full}
+          bg="primary"
+          items="center"
+          justify="center"
+          opacity={inCart ? 1 : 0}
+          pointerEvents="none"
+          accessibilityElementsHidden={!inCart}
+        >
+          <Text
+            fontSize={12.8}
+            fontWeight={fontWeight.bold}
+            fontVariant={["tabular-nums"]}
+            color="primary-foreground"
+          >
+            {quantity}
+          </Text>
+        </YStack>
+      </XStack>
+      <XStack
+        items="flex-end"
+        justify="space-between"
+        gap={8}
+        pointerEvents="box-none"
+      >
+        <Text
+          pb={4}
+          fontWeight={fontWeight.semibold}
+          color="foreground-70"
+          fontVariant={["tabular-nums"]}
+          pointerEvents="none"
+        >
           {formatMoney(
             { value: catalogItem.unitAmount, currency: catalogItem.currency },
             locale
           )}
         </Text>
-      </Pressable>
-      {quantity > 0 && latestSummary !== undefined ? (
-        <XStack justify="flex-end" px="2" pb="2">
-          <RoundButton
-            label={t("bill.brick.remove.aria", { name })}
-            symbol="−"
-            onPress={() => onRemove(latestSummary)}
-          />
-        </XStack>
-      ) : null}
-    </YStack>
+        <Button
+          variant="secondary"
+          size="icon"
+          w={40}
+          h={40}
+          shrink={0}
+          rounded={radius.full}
+          iconStart={Minus}
+          accessibilityLabel={t("bill.brick.remove.aria", { name })}
+          opacity={inCart ? 1 : 0}
+          disabled={!inCart}
+          onPress={() => {
+            if (latestSummary !== undefined) onRemove(latestSummary)
+          }}
+        />
+      </XStack>
+    </Card>
   )
 }

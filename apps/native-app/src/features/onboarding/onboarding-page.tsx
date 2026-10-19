@@ -285,6 +285,7 @@ export function OnboardingPage() {
             <RestoreAccountStep
               error={restoreError}
               pending={restoring}
+              submitFullWidth
               onRestore={(phrase) => {
                 void restore(phrase).then((started) => {
                   if (started) setForm(initialOnboardingFormState)

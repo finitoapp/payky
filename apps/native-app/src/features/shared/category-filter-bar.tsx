@@ -1,8 +1,11 @@
 import type { CatalogCategoryId } from "@payky/core/modules/catalog-category/catalog-category-types"
 import type { CategoryFilter } from "@payky/core/modules/catalog-item/catalog-item-types"
 import { useMemo } from "react"
-import { FlatList, Pressable } from "react-native"
-import { Text, useTheme } from "tamagui"
+import { ScrollView } from "react-native"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
 
 interface FilterChip<Value extends string> {
   readonly value: Value
@@ -34,7 +37,6 @@ export function CategoryFilterBar<Extra extends string = never>({
   readonly uncategorizedLabel: string
   readonly extraOptions?: ReadonlyArray<FilterChip<Extra>>
 }) {
-  const theme = useTheme()
   const chips = useMemo(() => {
     const result: FilterChip<CategoryFilter | Extra>[] = [
       { value: "all", label: allLabel },
@@ -53,35 +55,27 @@ export function CategoryFilterBar<Extra extends string = never>({
   if (chips.length <= 1) return null
 
   return (
-    <FlatList
+    <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       style={{ flexGrow: 0 }}
-      contentContainerStyle={{ gap: 8 }}
-      data={chips}
-      keyExtractor={(chip) => chip.value}
-      renderItem={({ item: chip }) => (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: chip.value === value }}
-          onPress={() => onValueChange(chip.value)}
-          style={{
-            minHeight: 44,
-            paddingHorizontal: 16,
-            justifyContent: "center",
-            borderRadius: 8,
-            borderWidth: chip.value === value ? 2 : 1,
-            borderColor:
-              chip.value === value
-                ? theme.primary.val
-                : theme["border-color"].val,
-          }}
-        >
-          <Text fontWeight={chip.value === value ? "600" : "400"}>
+    >
+      <ToggleGroup
+        value={value}
+        onValueChange={onValueChange}
+        variant="outline"
+      >
+        {chips.map((chip) => (
+          <ToggleGroupItem
+            key={chip.value}
+            value={chip.value}
+            minH={44}
+            px={16}
+          >
             {chip.label}
-          </Text>
-        </Pressable>
-      )}
-    />
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </ScrollView>
   )
 }

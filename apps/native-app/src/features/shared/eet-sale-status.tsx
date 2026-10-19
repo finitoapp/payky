@@ -13,8 +13,9 @@ import {
   getEetSaleOverdueAt,
   isEetSaleOverdue,
 } from "@payky/core/modules/eet/eet-utils"
-import { Text } from "tamagui"
+import { Badge } from "../../components/ui/badge.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
+import type { ThemeColor } from "../../theme/themes.ts"
 
 interface EetSaleStatusFields {
   readonly environment: EetEnvironment
@@ -33,13 +34,16 @@ const eetSaleStatusLabelKey = {
   unsupported: "eet.status.unsupported",
 } satisfies Record<EetSaleStatus, TranslationKey>
 
-const eetSaleStatusColor = {
-  pending: "warning",
-  confirmed: "success",
-  testConfirmed: "info",
-  rejected: "destructive",
-  unsupported: "destructive",
-} as const satisfies Record<EetSaleStatus, string>
+const eetSaleStatusColors = {
+  pending: { background: "warning-10", text: "warning" },
+  confirmed: { background: "success-10", text: "success" },
+  testConfirmed: { background: "info-10", text: "info" },
+  rejected: { background: "destructive-10", text: "destructive" },
+  unsupported: { background: "destructive-10", text: "destructive" },
+} as const satisfies Record<
+  EetSaleStatus,
+  { readonly background: ThemeColor; readonly text: ThemeColor }
+>
 
 export function useEetSaleStatus(sale: EetSaleStatusFields) {
   const now = useNow([getEetSaleOverdueAt(sale.saleAt)])
@@ -64,16 +68,15 @@ export function EetSaleStatusLabel({
 }) {
   const { t } = useTranslation()
   const { status, isOverdue } = useEetSaleStatus(sale)
+  const colors = eetSaleStatusColors[status]
 
   return (
-    <Text
-      fontSize={13}
-      fontWeight="600"
-      color={eetSaleStatusColor[status]}
+    <Badge
+      variant="secondary"
+      bg={colors.background}
+      labelColor={colors.text}
+      label={`${t(eetSaleStatusLabelKey[status])}${isOverdue ? ` · ${t("eet.status.overdue")}` : ""}`}
       testID="eet-sale-status"
-    >
-      {t(eetSaleStatusLabelKey[status])}
-      {isOverdue ? ` · ${t("eet.status.overdue")}` : ""}
-    </Text>
+    />
   )
 }

@@ -16,9 +16,11 @@ import {
 } from "@payky/core/modules/shared/payky-uri"
 import { router } from "expo-router"
 import { useAtomValue, useSetAtom, useStore } from "jotai"
+import RotateCcw from "lucide-react-native/icons/rotate-ccw"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useEffect, useRef, useState } from "react"
-import { Text, YStack } from "tamagui"
+import { ActivityIndicator } from "react-native"
+import { Text, useTheme, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import {
@@ -96,6 +98,7 @@ export function AccountTransferTarget({
   const setRestoredAccount = useSetAtom(restoredAccountAtom)
   const [view, setView] = useState<View>({ phase: "scan", error: null })
   const cancelRef = useRef<(() => void) | null>(null)
+  const theme = useTheme()
 
   // Leaving the screen or switching account mid-session tells the source it
   // was cancelled.
@@ -201,17 +204,19 @@ export function AccountTransferTarget({
       ) : null}
 
       {view.phase === "connecting" || view.phase === "adding" ? (
-        <Text accessibilityLiveRegion="polite">
-          {t("accountTransfer.target.connecting")}
-        </Text>
+        <XStack items="center" gap="2" accessibilityLiveRegion="polite">
+          <ActivityIndicator size="small" color={theme.primary.val} />
+          <Text>{t("accountTransfer.target.connecting")}</Text>
+        </XStack>
       ) : null}
 
       {view.phase === "code" ? (
         <YStack gap="3" accessibilityLiveRegion="polite">
           <Text>{t("accountTransfer.target.code.instructions")}</Text>
           <Text
-            fontSize={40}
-            fontWeight="700"
+            fontSize={48}
+            fontWeight="600"
+            letterSpacing={4.8}
             text="center"
             // Read digit by digit, not as one number.
             accessibilityLabel={view.code.split("").join(" ")}
@@ -221,9 +226,15 @@ export function AccountTransferTarget({
           <Text color="muted-foreground">
             {t("accountTransfer.target.code.warning")}
           </Text>
-          <Text color="muted-foreground">
-            {t("accountTransfer.target.code.waiting")}
-          </Text>
+          <XStack items="center" gap="2">
+            <ActivityIndicator
+              size="small"
+              color={theme["muted-foreground"].val}
+            />
+            <Text color="muted-foreground">
+              {t("accountTransfer.target.code.waiting")}
+            </Text>
+          </XStack>
         </YStack>
       ) : null}
 
@@ -236,17 +247,18 @@ export function AccountTransferTarget({
 
       {view.phase === "connecting" || view.phase === "code" ? (
         <Button
-          size="lg"
           label={t("accountTransfer.cancel")}
           variant="outline"
+          self="flex-start"
           onPress={cancelSession}
         />
       ) : null}
 
       {view.phase === "failed" ? (
         <Button
-          size="lg"
           label={t("accountTransfer.target.scanAgain")}
+          iconStart={RotateCcw}
+          self="flex-start"
           onPress={() => setView({ phase: "scan", error: null })}
         />
       ) : null}

@@ -1357,29 +1357,41 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/shared/account/account-transfer-target.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    note: "Native keeps the validated QR scan filter; the source has an optional phrase fallback and a transfer-phase screen wake lock that native does not. These remain behavior gaps. The code text uses the native Inter typeface because the configured native fonts have no mono family.",
   },
   {
     native: "src/features/shared/bill-cancellation-collision-actions.tsx",
     web: [
       "apps/web-app/src/features/activity/bill-cancellation-collision-panel.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      CollisionAlert:
+        "native activity callers wrap the shared action block; the whole-screen bill cancellation page supplies its own warning and summary",
+    },
   },
   {
     native: "src/features/shared/category-filter-bar.tsx",
     web: ["apps/web-app/src/features/shared/category-filter-bar.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "The native rail uses horizontal swipe scrolling without the web edge fade or desktop scrollbar; filters, order, and touch sizing match.",
   },
   {
     native: "src/features/shared/chat-composer.tsx",
     web: ["apps/web-app/src/features/settings/chat/chat-layout.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "This native entry mirrors ChatComposer only; the mapped web module also exports FadeHeader and ChatScrollArea. Native follow/jump-to-latest behavior remains a separate gap.",
+    allowedDifferences: {
+      FadeHeader:
+        "sibling layout export in the web chat module; not part of the ChatComposer block",
+    },
   },
   {
     native: "src/features/shared/eet-sale-status.tsx",
     web: ["apps/web-app/src/features/shared/eet-sale-status.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "Native activity/payment detail still lacks the web EET sale status blocks; this shared status component remains used in EET settings only.",
   },
   {
     native: "src/features/shared/refund-badge.tsx",
@@ -1389,12 +1401,17 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/shared/restore-account-step.tsx",
     web: ["apps/web-app/src/features/shared/account/restore-account-form.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "The submit button matches the onboarding full-width/min-height-44 wrapper and the Settings default-size/end-aligned layout; native hitSlop retains the touch target.",
   },
   {
     native: "src/features/shared/tax-recap.tsx",
     web: ["apps/web-app/src/features/shared/tax-recap.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Separator:
+        "native uses the kit Separator between recap rows where web uses divide-y CSS",
+    },
   },
   {
     native: "src/features/stats/device-breakdown.tsx",

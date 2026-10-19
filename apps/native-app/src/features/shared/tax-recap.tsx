@@ -1,8 +1,12 @@
 import { formatMoney } from "@payky/app-shared/format-money"
-import type { TaxRecapRow } from "@payky/core/modules/bill-line/bill-line-tax-utils"
+import {
+  hasTaxableLines,
+  type TaxRecapRow,
+} from "@payky/core/modules/bill-line/bill-line-tax-utils"
 import { type Currency, Integer } from "@payky/core/modules/shared/schema"
 import { taxRatePercentageToDecimalString } from "@payky/core/modules/tax-rate/tax-rate-utils"
 import { Text, XStack, YStack } from "tamagui"
+import { Separator } from "../../components/ui/separator.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 
 /** VAT breakdown by rate; nothing when no line carries a tax rate. */
@@ -18,29 +22,40 @@ export function TaxRecap({
   const money = (value: number) =>
     formatMoney({ value: Integer(value), currency }, locale)
 
+  if (!hasTaxableLines(rows)) return null
+
   return (
     <YStack gap="2">
-      <Text fontSize={13} fontWeight="600" color="muted-foreground">
+      <Text fontSize="sm" fontWeight="500" color="muted-foreground">
         {t("taxRecap.title")}
       </Text>
-      {rows.map((row) => (
-        <XStack key={row.taxRateId ?? "none"} justify="space-between" gap="3">
-          <YStack flex={1}>
-            <Text numberOfLines={1} fontWeight="600">
-              {row.name === null || row.ratePercentage === null
-                ? t("taxRecap.noTax")
-                : t("taxRecap.rateLabel", {
-                    name: row.name,
-                    rate: taxRatePercentageToDecimalString(row.ratePercentage),
-                  })}
-            </Text>
-            <Text fontSize={12} color="muted-foreground">
-              {`${t("taxRecap.base")}: ${money(row.baseAmount)} · ${t("taxRecap.tax")}: ${money(row.taxAmount)}`}
-            </Text>
+      <YStack>
+        {rows.map((row, index) => (
+          <YStack key={row.taxRateId ?? "none"}>
+            {index > 0 ? <Separator /> : null}
+            <XStack items="center" justify="space-between" gap="2" py="2">
+              <YStack flex={1} minW={0}>
+                <Text numberOfLines={1} fontSize="sm" fontWeight="500">
+                  {row.name === null || row.ratePercentage === null
+                    ? t("taxRecap.noTax")
+                    : t("taxRecap.rateLabel", {
+                        name: row.name,
+                        rate: taxRatePercentageToDecimalString(
+                          row.ratePercentage
+                        ),
+                      })}
+                </Text>
+                <Text fontSize="xs" color="muted-foreground">
+                  {`${t("taxRecap.base")}: ${money(row.baseAmount)} · ${t("taxRecap.tax")}: ${money(row.taxAmount)}`}
+                </Text>
+              </YStack>
+              <Text fontSize="sm" fontWeight="600">
+                {money(row.grossAmount)}
+              </Text>
+            </XStack>
           </YStack>
-          <Text fontWeight="600">{money(row.grossAmount)}</Text>
-        </XStack>
-      ))}
+        ))}
+      </YStack>
     </YStack>
   )
 }

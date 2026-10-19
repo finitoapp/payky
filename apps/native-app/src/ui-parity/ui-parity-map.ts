@@ -230,6 +230,10 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [],
     note: "Native only: web lays a page out with the route layout and the phone column.",
     status: "matched",
+    allowedDifferences: {
+      Button:
+        "the chat mode's jump-to-latest button, which web draws in ChatScrollArea (settings/chat/chat-layout.tsx)",
+    },
   },
   {
     native: "src/components/search-input.tsx",
@@ -816,7 +820,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       FadeHeader:
         "The web ChatLayout renders the same page header internally; native places FadeHeader directly in Screen.",
     },
-    note: "Native chat currently lacks web ChatScrollArea's follow-while-reading and jump-to-latest behavior; track that shared chat behavior in 4.12.",
+    note: "Web ChatScrollArea's follow-while-reading and jump-to-latest behavior is Screen's followKey mode on native.",
   },
   {
     native: "src/features/settings/categories/categories-settings-page.tsx",
@@ -1424,7 +1428,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       FadeHeader:
         "The web ChatLayout renders the same page header internally; native places FadeHeader directly in Screen.",
     },
-    note: "Native chat currently lacks web ChatScrollArea's follow-while-reading and jump-to-latest behavior; track that shared chat behavior in 4.12.",
+    note: "Web ChatScrollArea's follow-while-reading and jump-to-latest behavior is Screen's followKey mode on native.",
   },
   {
     native: "src/features/settings/tables/edit-table-page.tsx",
@@ -1511,7 +1515,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/shared/chat-composer.tsx",
     web: ["apps/web-app/src/features/settings/chat/chat-layout.tsx"],
     status: "matched",
-    note: "This native entry mirrors ChatComposer only; the mapped web module also exports FadeHeader and ChatScrollArea. Native follow/jump-to-latest behavior remains a separate gap.",
+    note: "This native entry mirrors ChatComposer only; the mapped web module also exports FadeHeader and ChatScrollArea. Native follow/jump-to-latest is Screen's followKey mode.",
     allowedDifferences: {
       FadeHeader:
         "sibling layout export in the web chat module; not part of the ChatComposer block",

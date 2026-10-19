@@ -95,6 +95,7 @@ function AssistantChat({ access }: { readonly access: Access }) {
 
   return (
     <Screen
+      followKey={answering ? last.id : null}
       // Web docks the composer card at the screen's edges, unframed.
       footer={
         <ChatComposer

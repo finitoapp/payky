@@ -95,9 +95,12 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
     (team.isPending || inbox.isPending || messages.isPending)
   const reloading = team.isFetching || inbox.isFetching || messages.isFetching
   const timeline = buildTimeline(entries)
+  const last = entries.at(-1)
+  const ownJustSent = last?.fromSupport === false && last.status === "sending"
 
   return (
     <Screen
+      followKey={ownJustSent ? last.id : null}
       // Web docks the composer card at the screen's edges, unframed.
       footer={
         <ChatComposer

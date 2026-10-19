@@ -57,7 +57,12 @@ import {
   useRef,
   useState,
 } from "react"
-import { ActivityIndicator, FlatList, ScrollView } from "react-native"
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, View, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
@@ -597,6 +602,9 @@ function BillCart({
       label: t("bill.summary.undo"),
       onPress: () => void cart.undo(),
     })
+  // Closes itself when the last line goes and nothing is left to undo, as
+  // its trigger is then off (web's).
+  const summaryExpanded = summaryOpen && (summaries.length > 0 || cart.canUndo)
   const handleClear = async () => {
     if (await cart.clear(summaries)) {
       showUndoToast(t("bill.summary.clear.toast"))
@@ -803,6 +811,23 @@ function BillCart({
         onConfirm={(input) => void split.split(input)}
       />
 
+      {summaryExpanded ? (
+        // Web's backdrop: dims the screen while the summary is open, and a
+        // tap on it closes the summary instead of adding an item. Wider
+        // than the screen padding, as the panel is.
+        <Pressable
+          accessible={false}
+          onPress={() => setSummaryOpen(false)}
+          style={{
+            position: "absolute",
+            top: 0,
+            right: -12,
+            bottom: 0,
+            left: -12,
+            backgroundColor: "rgba(0,0,0,0.4)",
+          }}
+        />
+      ) : null}
       {/* The bottom panel: the bill's summary, collapsed to its total. */}
       <Card
         mx={-12}
@@ -814,12 +839,7 @@ function BillCart({
       >
         <SafeAreaView edges={["bottom"]}>
           <CardContent pb={16}>
-            <Collapsible
-              // Closes itself when the last line goes and nothing is left to
-              // undo, as its trigger is then off (web's).
-              open={summaryOpen && (summaries.length > 0 || cart.canUndo)}
-              onOpenChange={setSummaryOpen}
-            >
+            <Collapsible open={summaryExpanded} onOpenChange={setSummaryOpen}>
               <CollapsibleTrigger
                 pt={16}
                 disabled={summaries.length === 0 && !cart.canUndo}

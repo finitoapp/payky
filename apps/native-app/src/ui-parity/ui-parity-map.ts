@@ -94,6 +94,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "pending",
   },
   {
+    native: "src/components/detail-row.tsx",
+    web: ["apps/web-app/src/components/detail-row.tsx"],
+    status: "matched",
+  },
+  {
     native: "src/components/fade-header.tsx",
     web: ["apps/web-app/src/components/fade-header.tsx"],
     status: "matched",
@@ -120,6 +125,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     },
   },
   {
+    native: "src/components/not-found-card.tsx",
+    web: ["apps/web-app/src/components/not-found-card.tsx"],
+    status: "matched",
+  },
+  {
     native: "src/components/option-toggle-group.tsx",
     web: ["apps/web-app/src/components/option-toggle-group.tsx"],
     status: "matched",
@@ -133,6 +143,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/components/qr-code.tsx",
     web: ["apps/web-app/src/components/copyable-qr-code.tsx"],
     status: "pending",
+  },
+  {
+    native: "src/components/route-message.tsx",
+    web: ["apps/web-app/src/components/route-message.tsx"],
+    status: "matched",
   },
   {
     native: "src/components/scan-code-scanner.tsx",

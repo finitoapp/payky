@@ -9,10 +9,10 @@ import {
 } from "@payky/core/modules/shared/schema"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { type ReactNode, useState } from "react"
-import { Pressable, Text as RNText, ScrollView } from "react-native"
+import { Pressable, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
-import { CopyLink } from "../../components/copy-link.tsx"
+import { DetailRow } from "../../components/detail-row.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import {
   Alert,
@@ -126,55 +126,6 @@ export function StatusBadge({
     >
       {label}
     </Text>
-  )
-}
-
-export function DetailRow({
-  label,
-  value,
-  emphasize = false,
-  mono = false,
-}: {
-  readonly label: string
-  readonly value: string
-  readonly emphasize?: boolean
-  /** Identifiers: selectable, with a Copy link. */
-  readonly mono?: boolean
-}) {
-  const theme = useTheme()
-  const { t } = useTranslation()
-
-  return (
-    <XStack justify="space-between" gap="3">
-      <Text color="muted-foreground">{label}</Text>
-      {mono ? (
-        <>
-          <RNText
-            selectable
-            numberOfLines={1}
-            style={{
-              flex: 1,
-              textAlign: "right",
-              fontSize: 12,
-              color: theme.color.val,
-            }}
-          >
-            {value}
-          </RNText>
-          <CopyLink
-            value={value}
-            label={t("withdraw.detail.copy")}
-            accessibilityLabel={t("paymentDetail.copy", { label })}
-            copied={t("paymentDetail.copied")}
-            failed={t("paymentDetail.copyError")}
-          />
-        </>
-      ) : (
-        <Text flex={1} text="right" fontWeight={emphasize ? "600" : "400"}>
-          {value}
-        </Text>
-      )}
-    </XStack>
   )
 }
 

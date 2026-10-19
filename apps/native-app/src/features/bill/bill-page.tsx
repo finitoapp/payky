@@ -46,6 +46,7 @@ import { FlatList, Pressable } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
+import { RouteMessage } from "../../components/route-message.tsx"
 import { EmptyView, LoadingView } from "../../components/state-views.tsx"
 import {
   Alert,
@@ -100,7 +101,7 @@ export function BillRoute() {
     )
 
   const parsed = BillId.safeParse(billId)
-  if (!parsed.success) return <EmptyView message={t("bill.invalidId")} />
+  if (!parsed.success) return <RouteMessage>{t("bill.invalidId")}</RouteMessage>
 
   return (
     <Suspense fallback={<LoadingView />}>

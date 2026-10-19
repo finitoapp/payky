@@ -32,7 +32,9 @@ import { Suspense } from "react"
 import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
-import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { DetailRow } from "../../components/detail-row.tsx"
+import { NotFoundCard } from "../../components/not-found-card.tsx"
+import { LoadingView } from "../../components/state-views.tsx"
 import {
   Alert,
   AlertDescription,
@@ -55,7 +57,6 @@ import {
   BillCoverageWarning,
   BillLines,
   Card,
-  DetailRow,
   DetailScreen,
   OptionalRow,
   paymentStatusTone,
@@ -87,7 +88,7 @@ export function BillDetailPage() {
           <BillDetail billId={parsed.data} />
         </Suspense>
       ) : (
-        <EmptyView message={t("billDetail.invalidId")} />
+        <NotFoundCard messageKey="billDetail.invalidId" />
       )}
     </DetailScreen>
   )
@@ -108,7 +109,7 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
 
   // A deleted or never-synced id: the same page, not an error.
   if (bill === undefined || billStatus === undefined)
-    return <EmptyView message={t("billDetail.notFound")} />
+    return <NotFoundCard messageKey="billDetail.notFound" />
 
   const table = tables.find((candidate) => candidate.id === bill.tableId)
   const totalAmount = deriveBillSummaryTotal(summaries)

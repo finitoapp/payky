@@ -53,6 +53,7 @@ import { useSettleStoredSwitchioResult } from "../../components/app/switchio-res
 import { AppButton } from "../../components/app-button.tsx"
 import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
 import { Field } from "../../components/field.tsx"
+import { RouteMessage } from "../../components/route-message.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { EmptyView } from "../../components/state-views.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
@@ -105,7 +106,8 @@ export function PaymentWaitPage() {
   const { t } = useTranslation()
   const { paymentId } = useLocalSearchParams<{ paymentId: string }>()
   const parsed = PaymentId.safeParse(paymentId)
-  if (!parsed.success) return <EmptyView message={t("paymentWait.invalidId")} />
+  if (!parsed.success)
+    return <RouteMessage>{t("paymentWait.invalidId")}</RouteMessage>
   return <PaymentWaitRequest paymentId={parsed.data} />
 }
 
@@ -361,7 +363,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   }, [status, active, preparationKey, prepared, preparation])
 
   if (payment === undefined || status === null)
-    return <EmptyView message={t("paymentWait.notFound")} />
+    return <RouteMessage>{t("paymentWait.notFound")}</RouteMessage>
   if (status === "canceled") return <Closed messageKey="paymentWait.canceled" />
   if (status === "paid") return <Paid />
 

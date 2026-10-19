@@ -21,8 +21,8 @@ import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
 import { Field } from "../../components/field.tsx"
+import { RouteMessage } from "../../components/route-message.tsx"
 import { Screen } from "../../components/screen.tsx"
-import { EmptyView } from "../../components/state-views.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -36,7 +36,7 @@ export function PaymentTipPage() {
   const [settings] = useEvoluQuery(settingsQuery).data
 
   if (search === null)
-    return <EmptyView message={t("paymentTip.invalidLink")} />
+    return <RouteMessage>{t("paymentTip.invalidLink")}</RouteMessage>
   if (settings === undefined) return null
   // Tips switched off: nothing to choose, back to the keypad (as web).
   if (settings.tipsEnabled !== sqliteTrue) return <Redirect href="/" />

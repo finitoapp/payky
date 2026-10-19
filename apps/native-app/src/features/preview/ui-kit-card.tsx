@@ -5,7 +5,9 @@ import Plus from "lucide-react-native/icons/plus"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Text, View } from "tamagui"
+import { DetailRow } from "../../components/detail-row.tsx"
 import { ListSkeleton } from "../../components/list-skeleton.tsx"
+import { NotFoundCard } from "../../components/not-found-card.tsx"
 import { OptionToggleGroup } from "../../components/option-toggle-group.tsx"
 import {
   Alert,
@@ -339,6 +341,19 @@ export function UiKitCard() {
       />
       <VerticalNav items={[]} empty="Empty list" />
       <ListSkeleton rows={3} title="LIST SKELETON" />
+      <Card>
+        <CardContent gap={8}>
+          <DetailRow label="Detail row" value="Value" />
+          <DetailRow label="Emphasized" value="1 234,00 Kč" emphasize />
+          <DetailRow
+            label="Stacked"
+            value="A long value under its label"
+            stacked
+          />
+          <DetailRow label="Mono" value="0f3a9c2e7b1d4e5f" mono />
+        </CardContent>
+      </Card>
+      <NotFoundCard messageKey="paymentDetail.notFound" />
       <Stepper value={2}>
         <StepperNav>
           {[1, 2, 3].map((step) => (

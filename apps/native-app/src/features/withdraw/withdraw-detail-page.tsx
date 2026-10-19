@@ -35,7 +35,8 @@ import { accountAtom } from "../../atoms/account.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import { AppButton } from "../../components/app-button.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
-import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { NotFoundCard } from "../../components/not-found-card.tsx"
+import { LoadingView } from "../../components/state-views.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useAsyncValue } from "../../hooks/use-async-value.ts"
@@ -77,7 +78,7 @@ export function WithdrawDetailPage() {
           <WithdrawDetail withdrawalId={parsed.data} />
         </Suspense>
       ) : (
-        <EmptyView message={t("withdraw.detail.notFound")} />
+        <NotFoundCard messageKey="withdraw.detail.notFound" />
       )}
     </SafeAreaView>
   )
@@ -88,11 +89,10 @@ function WithdrawDetail({
 }: {
   readonly withdrawalId: WithdrawalId
 }) {
-  const { t } = useTranslation()
   const [row] = useEvoluQuery(withdrawalDetailQuery(withdrawalId)).data
   const view = row === undefined ? null : toWithdrawalView(row)
   if (view === null) {
-    return <EmptyView message={t("withdraw.detail.notFound")} />
+    return <NotFoundCard messageKey="withdraw.detail.notFound" />
   }
   return (
     <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 24 }}>

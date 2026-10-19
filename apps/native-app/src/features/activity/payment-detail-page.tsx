@@ -38,7 +38,9 @@ import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { Suspense } from "react"
 import { Text, YStack } from "tamagui"
 import { AppButton } from "../../components/app-button.tsx"
-import { EmptyView, LoadingView } from "../../components/state-views.tsx"
+import { DetailRow } from "../../components/detail-row.tsx"
+import { NotFoundCard } from "../../components/not-found-card.tsx"
+import { LoadingView } from "../../components/state-views.tsx"
 import {
   Alert,
   AlertDescription,
@@ -67,7 +69,6 @@ import {
   BillCoverageWarning,
   BillLines,
   Card,
-  DetailRow,
   DetailScreen,
   OptionalRow,
   paymentStatusTone,
@@ -99,7 +100,7 @@ export function PaymentDetailPage() {
           <PaymentDetail paymentId={parsed.data} />
         </Suspense>
       ) : (
-        <EmptyView message={t("paymentDetail.invalidId")} />
+        <NotFoundCard messageKey="paymentDetail.invalidId" />
       )}
     </DetailScreen>
   )
@@ -122,7 +123,7 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
 
   // A deleted or never-synced id: the same page, not an error.
   if (payment === undefined)
-    return <EmptyView message={t("paymentDetail.notFound")} />
+    return <NotFoundCard messageKey="paymentDetail.notFound" />
 
   const {
     status,

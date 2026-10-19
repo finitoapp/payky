@@ -1,8 +1,16 @@
+import ExternalLink from "lucide-react-native/icons/external-link"
 import { Linking } from "react-native"
 import { Text, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 const SOFTPOS_URL = "https://switchio.com/try-softpos/"
@@ -18,22 +26,27 @@ export function CardSwitchioSettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.paymentAccounts.method.cardSwitchio")} />
-      <YStack gap="3">
-        <Text fontWeight="600">
-          {t("settings.cardSwitchioAccount.info.title")}
-        </Text>
-        <Text color="muted-foreground">
-          {t("settings.cardSwitchioAccount.info.description")}
-        </Text>
-        <Text>{`• ${t("settings.cardSwitchioAccount.info.softpos")}`}</Text>
-        <Text>{`• ${t("settings.cardSwitchioAccount.info.contract")}`}</Text>
-        <Button
-          size="lg"
-          variant="outline"
-          label={t("settings.cardSwitchioAccount.info.softposLink")}
-          onPress={() => void Linking.openURL(SOFTPOS_URL)}
-        />
-      </YStack>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.cardSwitchioAccount.info.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.cardSwitchioAccount.info.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <YStack gap="2">
+            <Text>{`• ${t("settings.cardSwitchioAccount.info.softpos")}`}</Text>
+            <Text>{`• ${t("settings.cardSwitchioAccount.info.contract")}`}</Text>
+            <Button
+              size="lg"
+              variant="outline"
+              iconStart={ExternalLink}
+              label={t("settings.cardSwitchioAccount.info.softposLink")}
+              onPress={() => void Linking.openURL(SOFTPOS_URL)}
+            />
+          </YStack>
+        </CardContent>
+      </Card>
     </Screen>
   )
 }

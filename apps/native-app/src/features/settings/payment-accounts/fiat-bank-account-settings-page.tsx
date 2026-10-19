@@ -15,11 +15,30 @@ import {
   isFioBankIban,
 } from "@payky/core/modules/shared/iban-utils"
 import type { FiatCurrency, Iban } from "@payky/core/modules/shared/schema"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
+import ChevronUp from "lucide-react-native/icons/chevron-up"
+import Plug from "lucide-react-native/icons/plug"
+import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  useCollapsible,
+} from "../../../components/ui/collapsible.tsx"
+import { FieldDescription, FieldGroup } from "../../../components/ui/field.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import {
   Select,
   SelectContent,
@@ -31,11 +50,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "../../../components/ui/toggle-group.tsx"
+import { VerticalNav } from "../../../components/vertical-nav.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { SettingsRow } from "../settings-row.tsx"
 
 /**
  * The bank transfer account, as web's `FiatBankAccountSettingsPage`: the IBAN
@@ -85,125 +104,182 @@ export function FiatBankAccountSettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.paymentAccounts.method.iban")} />
-      <Text fontWeight="700">{t("settings.fiatBankAccount.form.title")}</Text>
-      <Text color="muted-foreground">
-        {t("settings.fiatBankAccount.form.description")}
-      </Text>
-
-      <InlineEditField
-        label={t("settings.fiatBankAccount.iban.label")}
-        description={
-          bank === undefined
-            ? t("settings.fiatBankAccount.iban.description")
-            : `${bank ?? t("settings.fiatBankAccount.iban.unknownBank")}\n${t("settings.fiatBankAccount.iban.description")}`
-        }
-        defaultValue={iban}
-        codec={optionalIbanCodecs[ibanFormat]}
-        errorKey="settings.fiatBankAccount.iban.invalid"
-        onSave={(nextIban) => save({ iban: nextIban ?? undefined })}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.fiatBankAccount.form.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.fiatBankAccount.form.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <InlineEditField
+              label={t("settings.fiatBankAccount.iban.label")}
+              description={
+                bank === undefined
+                  ? t("settings.fiatBankAccount.iban.description")
+                  : `${bank ?? t("settings.fiatBankAccount.iban.unknownBank")}\n${t("settings.fiatBankAccount.iban.description")}`
+              }
+              defaultValue={iban}
+              codec={optionalIbanCodecs[ibanFormat]}
+              errorKey="settings.fiatBankAccount.iban.invalid"
+              labelAction={
+                iban !== null && czechIbanToBban(iban) !== null ? (
+                  <ToggleGroup
+                    size="sm"
+                    variant="outline"
+                    spacing={0}
+                    value={ibanFormat}
+                    onValueChange={setIbanFormat}
+                  >
+                    {[
+                      {
+                        value: "bban",
+                        title: t("settings.fiatBankAccount.iban.format.bban"),
+                      },
+                      {
+                        value: "iban",
+                        title: t("settings.fiatBankAccount.iban.format.iban"),
+                      },
+                    ].map((option) => (
+                      <ToggleGroupItem key={option.value} value={option.value}>
+                        {option.title}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                ) : undefined
+              }
+              onSave={(nextIban) => save({ iban: nextIban ?? undefined })}
+            />
+            <Collapsible>
+              <CollapsibleTrigger>
+                <AdvancedSettingsLabel
+                  label={t("settings.fiatBankAccount.advanced")}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent pt="4">
+                <FieldGroup>
+                  <YStack gap="2">
+                    <Text fontSize={14} fontWeight="600">
+                      {t("settings.fiatBankAccount.currency.label")}
+                    </Text>
+                    <Select
+                      value={currencyChoice.value}
+                      onValueChange={(next) => {
+                        void currencyChoice.choose(next)
+                      }}
+                      items={Object.fromEntries(
+                        fiatCurrencyOptions.map((option) => [
+                          option.value,
+                          t(option.label),
+                        ])
+                      )}
+                    >
+                      <SelectTrigger
+                        fullWidth
+                        accessibilityLabel={t(
+                          "settings.fiatBankAccount.currency.label"
+                        )}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent
+                        title={t("settings.fiatBankAccount.currency.label")}
+                      >
+                        {fiatCurrencyOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {t(option.label)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      {t("settings.fiatBankAccount.currency.description")}
+                    </FieldDescription>
+                  </YStack>
+                  <YStack gap="2">
+                    <Text fontSize={14} fontWeight="600">
+                      {t("settings.fiatBankAccount.qrFormat.label")}
+                    </Text>
+                    <Select
+                      value={qrFormatChoice.value}
+                      onValueChange={(next) => {
+                        void qrFormatChoice.choose(next)
+                      }}
+                      items={Object.fromEntries(
+                        fiatBankAccountQrFormatOptions.map((option) => [
+                          option.value,
+                          t(option.label),
+                        ])
+                      )}
+                    >
+                      <SelectTrigger
+                        fullWidth
+                        accessibilityLabel={t(
+                          "settings.fiatBankAccount.qrFormat.label"
+                        )}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent
+                        title={t("settings.fiatBankAccount.qrFormat.label")}
+                      >
+                        {fiatBankAccountQrFormatOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {t(option.label)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      {t("settings.fiatBankAccount.qrFormat.description")}
+                    </FieldDescription>
+                  </YStack>
+                </FieldGroup>
+              </CollapsibleContent>
+            </Collapsible>
+          </FieldGroup>
+        </CardContent>
+      </Card>
+      <VerticalNav
+        items={[
+          {
+            kind: "link",
+            href: "/settings/payment-accounts/iban/fio-plugin",
+            icon: <Icon icon={Plug} color="muted-foreground" />,
+            label: (
+              <YStack gap="1">
+                <Text fontSize={14} fontWeight="600">
+                  {t("settings.fioPlugin.title")}
+                </Text>
+                <Text fontSize={13} color="muted-foreground">
+                  {t("settings.fioPlugin.description")}
+                </Text>
+                {iban !== null && !isFioBankIban(iban) ? (
+                  <XStack items="flex-start" gap="1">
+                    <Icon icon={TriangleAlert} size={14} color="warning" />
+                    <Text flex={1} fontSize={13} color="warning">
+                      {t("settings.fioPlugin.notFioIbanWarning")}
+                    </Text>
+                  </XStack>
+                ) : null}
+              </YStack>
+            ),
+          },
+        ]}
       />
-      {/* Only saved Czech accounts have two display formats. */}
-      {iban !== null && czechIbanToBban(iban) !== null ? (
-        <ToggleGroup
-          size="sm"
-          variant="outline"
-          spacing={0}
-          value={ibanFormat}
-          onValueChange={setIbanFormat}
-        >
-          {[
-            {
-              value: "bban",
-              title: t("settings.fiatBankAccount.iban.format.bban"),
-            },
-            {
-              value: "iban",
-              title: t("settings.fiatBankAccount.iban.format.iban"),
-            },
-          ].map((option) => (
-            <ToggleGroupItem key={option.value} value={option.value}>
-              {option.title}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      ) : null}
-
-      <Text fontWeight="700">{t("settings.fiatBankAccount.advanced")}</Text>
-      <YStack gap="2">
-        <Text fontWeight="600">
-          {t("settings.fiatBankAccount.currency.label")}
-        </Text>
-        <Select
-          value={currencyChoice.value}
-          onValueChange={(next) => {
-            void currencyChoice.choose(next)
-          }}
-          items={Object.fromEntries(
-            fiatCurrencyOptions.map((option) => [option.value, t(option.label)])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.fiatBankAccount.currency.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.fiatBankAccount.currency.label")}>
-            {fiatCurrencyOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {t(option.label)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Text fontSize={13} color="muted-foreground">
-          {t("settings.fiatBankAccount.currency.description")}
-        </Text>
-      </YStack>
-      <YStack gap="2">
-        <Text fontWeight="600">
-          {t("settings.fiatBankAccount.qrFormat.label")}
-        </Text>
-        <Select
-          value={qrFormatChoice.value}
-          onValueChange={(next) => {
-            void qrFormatChoice.choose(next)
-          }}
-          items={Object.fromEntries(
-            fiatBankAccountQrFormatOptions.map((option) => [
-              option.value,
-              t(option.label),
-            ])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.fiatBankAccount.qrFormat.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.fiatBankAccount.qrFormat.label")}>
-            {fiatBankAccountQrFormatOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {t(option.label)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Text fontSize={13} color="muted-foreground">
-          {t("settings.fiatBankAccount.qrFormat.description")}
-        </Text>
-      </YStack>
-      <SettingsRow
-        title={t("settings.fioPlugin.title")}
-        value={t("settings.fioPlugin.description")}
-        href="/settings/payment-accounts/iban/fio-plugin"
-      />
-      {iban !== null && !isFioBankIban(iban) ? (
-        <Text fontSize={13} color="muted-foreground">
-          {t("settings.fioPlugin.notFioIbanWarning")}
-        </Text>
-      ) : null}
     </Screen>
+  )
+}
+
+function AdvancedSettingsLabel({ label }: { readonly label: string }) {
+  const { open } = useCollapsible()
+  return (
+    <XStack items="center" justify="space-between" w="100%">
+      <Text fontSize={14} fontWeight="600">
+        {label}
+      </Text>
+      <Icon icon={open ? ChevronUp : ChevronDown} color="muted-foreground" />
+    </XStack>
   )
 }

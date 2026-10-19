@@ -7,6 +7,10 @@ const page = readFileSync(
   new URL("./spark-account-settings-page.tsx", import.meta.url),
   "utf8"
 )
+const dialog = readFileSync(
+  new URL("../../../components/ui/dialog.tsx", import.meta.url),
+  "utf8"
+)
 
 it("keeps Spark configuration owner-only and resets secrets for both identities", () => {
   expect(requiredPermission("/settings/payment-accounts/spark")).toBe("admin")
@@ -27,8 +31,13 @@ it("validates imported mnemonics and warns before every wallet switch", () => {
   )
   expect(page).toMatch(/settings\.sparkAccount\.wallet\.warning\.invoices/)
   expect(page).toMatch(/settings\.sparkAccount\.wallet\.warning\.funds/)
-  expect(page).toMatch(/onRequestClose=\{close\}/)
-  expect(page).toMatch(/setMnemonic\(""\)/)
+  expect(page).toMatch(
+    /<Dialog[\s\S]*onOpenChange=\{\(nextOpen\) => \{\s*if \(!nextOpen\) close\(\)/
+  )
+  expect(dialog).toMatch(/onRequestClose=\{\(\) => onOpenChange\(false\)\}/)
+  expect(page).toMatch(
+    /const close = \(\) => \{\s*setTarget\("custom"\)\s*setMnemonic\(""\)/
+  )
   expect(page).toMatch(
     /selectCustomSparkWallet\(\{ mnemonic: selectedMnemonic \}\)/
   )

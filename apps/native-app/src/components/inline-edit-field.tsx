@@ -31,6 +31,7 @@ export function InlineEditField<T extends string | number | null>({
   defaultValue,
   codec,
   errorKey,
+  labelAction,
   trailing,
   onSave,
   startEditing = false,
@@ -45,6 +46,8 @@ export function InlineEditField<T extends string | number | null>({
   readonly defaultValue: T
   readonly codec: z.core.$ZodType<T, string>
   readonly errorKey: TranslationKey
+  /** A control beside the label, hidden while editing with its space kept. */
+  readonly labelAction?: ReactNode
   /** A control inside the input while idle, hidden during an edit. */
   readonly trailing?: ReactNode
   readonly onSave: (value: T) => Promise<boolean>
@@ -91,7 +94,22 @@ export function InlineEditField<T extends string | number | null>({
 
   return (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
+      {labelAction === undefined ? (
+        <FieldLabel>{label}</FieldLabel>
+      ) : (
+        <XStack w="100%" items="center" justify="space-between" gap="2">
+          <FieldLabel>{label}</FieldLabel>
+          <View
+            opacity={draft === null ? 1 : 0}
+            pointerEvents={draft === null ? "auto" : "none"}
+            importantForAccessibility={
+              draft === null ? "auto" : "no-hide-descendants"
+            }
+          >
+            {labelAction}
+          </View>
+        </XStack>
+      )}
       <View position="relative">
         <Input
           value={draft ?? z.encode(codec, defaultValue)}

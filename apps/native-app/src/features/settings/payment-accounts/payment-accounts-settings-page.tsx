@@ -22,10 +22,22 @@ import {
 } from "@payky/core/modules/app-settings/app-settings-utils"
 import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
+import type { LucideIcon } from "lucide-react-native"
+import Banknote from "lucide-react-native/icons/banknote"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
+import ChevronRight from "lucide-react-native/icons/chevron-right"
+import ChevronUp from "lucide-react-native/icons/chevron-up"
+import Coins from "lucide-react-native/icons/coins"
+import CreditCard from "lucide-react-native/icons/credit-card"
+import Landmark from "lucide-react-native/icons/landmark"
+import Zap from "lucide-react-native/icons/zap"
 import { Pressable, Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
+import { Button } from "../../../components/ui/button.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useCashuRunToast, useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -36,6 +48,7 @@ import {
 } from "../../../platform/switchio.ts"
 
 interface PaymentMethodRowState {
+  readonly icon: LucideIcon
   readonly title: TranslationKey
   readonly switchLabel: TranslationKey
   readonly enabled: boolean
@@ -86,6 +99,7 @@ export function PaymentAccountsSettingsPage() {
 
   const rows = {
     iban: {
+      icon: Landmark,
       title: "settings.paymentAccounts.method.iban",
       switchLabel: "settings.fiatBankAccount.enabled.label",
       enabled: bankEnabled,
@@ -114,6 +128,7 @@ export function PaymentAccountsSettingsPage() {
         }),
     },
     spark: {
+      icon: Zap,
       title: "settings.paymentAccounts.method.spark",
       switchLabel: "settings.sparkAccount.enabled.label",
       enabled: sparkEnabled,
@@ -128,6 +143,7 @@ export function PaymentAccountsSettingsPage() {
         }),
     },
     cashRegister: {
+      icon: Banknote,
       title: "settings.paymentAccounts.method.cashRegister",
       switchLabel: "settings.cashRegisterAccount.enabled.label",
       enabled: cashEnabled,
@@ -143,6 +159,7 @@ export function PaymentAccountsSettingsPage() {
         }),
     },
     cardSwitchio: {
+      icon: CreditCard,
       title: "settings.paymentAccounts.method.cardSwitchio",
       switchLabel: "settings.cardSwitchioAccount.enabled.label",
       enabled: cardEnabled,
@@ -166,6 +183,7 @@ export function PaymentAccountsSettingsPage() {
         }),
     },
     cashu: {
+      icon: Coins,
       title: "settings.paymentAccounts.method.cashu",
       switchLabel: "settings.cashuAccount.enabled.label",
       enabled: cashuEnabled,
@@ -202,16 +220,19 @@ export function PaymentAccountsSettingsPage() {
       <Text color="muted-foreground">
         {t("settings.paymentAccounts.order.description")}
       </Text>
-      {order.map((method, index) => (
-        <PaymentMethodRow
-          key={method}
-          row={rows[method]}
-          isDefault={method === firstAvailable}
-          canMoveUp={index > 0}
-          canMoveDown={index < order.length - 1}
-          onMove={(offset) => move(index, offset)}
-        />
-      ))}
+      <YStack rounded="md" borderWidth={1} borderColor="border-color">
+        {order.map((method, index) => (
+          <PaymentMethodRow
+            key={method}
+            row={rows[method]}
+            isDefault={method === firstAvailable}
+            isFirst={index === 0}
+            canMoveUp={index > 0}
+            canMoveDown={index < order.length - 1}
+            onMove={(offset) => move(index, offset)}
+          />
+        ))}
+      </YStack>
     </Screen>
   )
 }
@@ -219,12 +240,14 @@ export function PaymentAccountsSettingsPage() {
 function PaymentMethodRow({
   row,
   isDefault,
+  isFirst,
   canMoveUp,
   canMoveDown,
   onMove,
 }: {
   readonly row: PaymentMethodRowState
   readonly isDefault: boolean
+  readonly isFirst: boolean
   readonly canMoveUp: boolean
   readonly canMoveDown: boolean
   readonly onMove: (offset: -1 | 1) => void
@@ -237,30 +260,24 @@ function PaymentMethodRow({
   )
   const { href } = row
 
-  const badges = [
-    isDefault ? t("settings.paymentAccounts.default") : null,
-    row.experimental ? t("settings.paymentAccounts.experimental") : null,
-  ].filter((badge) => badge !== null)
-
   return (
     <XStack
       items="center"
-      gap="2"
-      px="2"
-      py="1"
-      rounded="lg"
-      borderWidth={1}
+      gap="1"
+      px="1"
+      py="2"
+      borderTopWidth={isFirst ? 0 : 1}
       borderColor="border-color"
     >
       <YStack>
         <MoveButton
-          glyph="▲"
+          icon={ChevronUp}
           label={t("settings.paymentAccounts.moveUp.aria", { name })}
           disabled={!canMoveUp}
           onPress={() => onMove(-1)}
         />
         <MoveButton
-          glyph="▼"
+          icon={ChevronDown}
           label={t("settings.paymentAccounts.moveDown.aria", { name })}
           disabled={!canMoveDown}
           onPress={() => onMove(1)}
@@ -275,19 +292,42 @@ function PaymentMethodRow({
           if (href !== null) router.push(href)
         }}
       >
-        <Text
-          fontWeight="600"
-          color={row.enabled ? undefined : "muted-foreground"}
-        >
-          {badges.length === 0 ? name : `${name} · ${badges.join(" · ")}`}
-        </Text>
-        {row.status === null ? null : (
-          <Text fontSize={13} color="muted-foreground">
-            {row.status}
-          </Text>
-        )}
+        <XStack items="center" gap="3" py="1">
+          <Icon icon={row.icon} color="muted-foreground" size={20} />
+          <YStack flex={1} gap="1">
+            <XStack items="center" gap="2">
+              <Text
+                fontWeight="600"
+                flexShrink={1}
+                color={row.enabled ? undefined : "muted-foreground"}
+              >
+                {name}
+              </Text>
+              {isDefault ? (
+                <Badge
+                  variant="secondary"
+                  label={t("settings.paymentAccounts.default")}
+                />
+              ) : null}
+              {row.experimental ? (
+                <Badge
+                  bg="warning-10"
+                  labelColor="warning"
+                  label={t("settings.paymentAccounts.experimental")}
+                />
+              ) : null}
+            </XStack>
+            {row.status === null ? null : (
+              <Text fontSize={13} color="muted-foreground">
+                {row.status}
+              </Text>
+            )}
+          </YStack>
+        </XStack>
       </Pressable>
-      {href === null ? null : <Text color="muted-foreground">›</Text>}
+      {href === null ? null : (
+        <Icon icon={ChevronRight} color="muted-foreground" />
+      )}
       {row.saveEnabled === null ? null : (
         <Switch
           accessibilityLabel={t(row.switchLabel)}
@@ -303,34 +343,25 @@ function PaymentMethodRow({
 }
 
 function MoveButton({
-  glyph,
+  icon,
   label,
   disabled,
   onPress,
 }: {
-  readonly glyph: string
+  readonly icon: LucideIcon
   readonly label: string
   readonly disabled: boolean
   readonly onPress: () => void
 }) {
   return (
-    <Pressable
-      accessibilityRole="button"
+    <Button
+      variant="ghost"
+      size="icon-lg"
       accessibilityLabel={label}
-      accessibilityState={{ disabled }}
       disabled={disabled}
-      hitSlop={4}
-      style={{
-        minWidth: 44,
-        minHeight: 36,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
       onPress={onPress}
     >
-      <Text fontSize={16} color={disabled ? "muted-foreground" : undefined}>
-        {glyph}
-      </Text>
-    </Pressable>
+      <Icon icon={icon} size={24} color="color" />
+    </Button>
   )
 }

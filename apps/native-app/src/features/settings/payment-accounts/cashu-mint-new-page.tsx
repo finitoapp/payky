@@ -3,11 +3,16 @@ import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { addKnownCashuMint } from "@payky/core/cashu/cashu-mints"
 import { router } from "expo-router"
 import { useState } from "react"
-import { Text } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useCashuRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -51,23 +56,27 @@ export function CashuMintNewPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.cashuMints.add")} />
-      <Field
-        label={t("settings.cashuMints.url")}
-        value={url}
-        disabled={pending}
-        keyboardType="url"
-        autoCapitalize="none"
-        autoCorrect={false}
-        placeholder="https://"
-        error={errorKey === null ? undefined : t(errorKey)}
-        onChangeText={(text) => {
-          setUrl(text)
-          setErrorKey(null)
-        }}
-      />
-      <Text color="muted-foreground">
-        {t("settings.cashuMints.addDescription")}
-      </Text>
+      <Field>
+        <FieldLabel>{t("settings.cashuMints.url")}</FieldLabel>
+        <Input
+          value={url}
+          disabled={pending}
+          keyboardType="url"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          placeholder="https://"
+          invalid={errorKey !== null}
+          onChangeText={(text) => {
+            setUrl(text)
+            setErrorKey(null)
+          }}
+        />
+        <FieldDescription>
+          {t("settings.cashuMints.addDescription")}
+        </FieldDescription>
+        <FieldError>{errorKey === null ? undefined : t(errorKey)}</FieldError>
+      </Field>
       <Button
         size="lg"
         label={t("settings.cashuMints.add")}

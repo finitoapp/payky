@@ -20,7 +20,7 @@ const snapshotSubscription = readFileSync(
 
 it("keeps the Cashu overview owner-only and read-only", () => {
   expect(requiredPermission("/settings/payment-accounts/cashu")).toBe("admin")
-  expect(page).toContain('href="/cashu-withdraw"')
+  expect(page).toContain('href: "/cashu-withdraw"')
   expect(page).not.toMatch(/saveCashuAccount|writeCashu|Wallet\.|Mint\./u)
   expect(snapshotHook).toContain(
     'queryKey: ["cashuWalletSnapshot", store.linkyAppOwner.id]'

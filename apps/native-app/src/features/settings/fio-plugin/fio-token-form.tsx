@@ -2,10 +2,24 @@ import { parseFioToken } from "@payky/app-shared/fio-token"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { addFioPluginToken } from "@payky/core/modules/fio-plugin/fio-plugin-actions"
 import { fioPluginId } from "@payky/core/modules/fio-plugin/fio-plugin-utils"
+import Plus from "lucide-react-native/icons/plus"
 import { useState } from "react"
-import { Text, YStack } from "tamagui"
-import { Field } from "../../../components/field.tsx"
+import { PasswordTextarea } from "../../../components/password-textarea.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -43,43 +57,45 @@ export function FioTokenForm() {
   }
 
   return (
-    <YStack gap="2">
-      <Text fontWeight="700">{t("settings.fioPlugin.tokens.add.title")}</Text>
-      <Text color="muted-foreground">
-        {t("settings.fioPlugin.tokens.add.description")}
-      </Text>
-      <Field
-        label={t("settings.fioPlugin.token.label")}
-        value={token}
-        disabled={pending}
-        secureTextEntry={!revealed}
-        autoCapitalize="none"
-        autoComplete="off"
-        autoCorrect={false}
-        error={error === null ? undefined : t(error)}
-        onChangeText={(text) => {
-          setToken(text)
-          setError(null)
-        }}
-      />
-      <Text fontSize={13} color="muted-foreground">
-        {t("settings.fioPlugin.token.description")}
-      </Text>
-      <Button
-        size="lg"
-        label={t(revealed ? "passwordTextarea.hide" : "passwordTextarea.show")}
-        variant="outline"
-        disabled={pending}
-        onPress={() => setRevealed(!revealed)}
-      />
-      <Button
-        size="lg"
-        label={t("settings.fioPlugin.tokens.add.submit")}
-        pending={pending}
-        onPress={() => {
-          void submit()
-        }}
-      />
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.fioPlugin.tokens.add.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.fioPlugin.tokens.add.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <Field>
+            <FieldLabel>{t("settings.fioPlugin.token.label")}</FieldLabel>
+            <PasswordTextarea
+              shown={revealed}
+              onShownChange={setRevealed}
+              value={token}
+              hideLabel={t("passwordTextarea.hide")}
+              showLabel={t("passwordTextarea.show")}
+              disabled={pending}
+              invalid={error !== null}
+              contextMenuHidden
+              onChangeText={(text) => {
+                setToken(text)
+                setError(null)
+              }}
+            />
+            <FieldDescription>
+              {t("settings.fioPlugin.token.description")}
+            </FieldDescription>
+            <FieldError>{error === null ? undefined : t(error)}</FieldError>
+          </Field>
+          <Button
+            size="lg"
+            iconStart={Plus}
+            label={t("settings.fioPlugin.tokens.add.submit")}
+            pending={pending}
+            onPress={() => void submit()}
+          />
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }

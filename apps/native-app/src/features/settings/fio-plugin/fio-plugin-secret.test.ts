@@ -20,13 +20,26 @@ it("keeps the FIO token out of storage, logs and query keys", () => {
 
 it("takes the token with secure text entry, validated through parseFioToken, and clears it once stored", () => {
   const form = read("fio-token-form.tsx")
-  expect(form).toMatch(/secureTextEntry=\{!revealed\}/)
+  const passwordTextarea = readFileSync(
+    new URL("../../../components/password-textarea.tsx", import.meta.url),
+    "utf8"
+  )
+  expect(form).toMatch(
+    /<PasswordTextarea[\s\S]*shown=\{revealed\}[\s\S]*onShownChange=\{setRevealed\}[\s\S]*value=\{token\}/
+  )
+  expect(form).not.toMatch(/key=\{token/u)
+  expect(passwordTextarea).toMatch(/secureTextEntry=\{!shown\}/)
+  expect(passwordTextarea).toMatch(/autoComplete="off"/)
+  expect(passwordTextarea).toMatch(/importantForAutofill="no"/)
+  expect(passwordTextarea).toMatch(/autoCorrect=\{false\}/)
+  expect(passwordTextarea).toMatch(/spellCheck=\{false\}/)
+  expect(passwordTextarea).toMatch(/autoCapitalize="none"/)
   const submit = form.slice(form.indexOf("const submit = async"))
   const order = [
     /parseFioToken\(token\)/,
     /await runToast\(/,
     /addFioPluginToken\(/,
-    /if \(!saved\) return\s+setToken\(""\)/,
+    /if \(!saved\) return\s+setToken\(""\)\s+setRevealed\(false\)/,
   ]
   let at = 0
   for (const pattern of order) {

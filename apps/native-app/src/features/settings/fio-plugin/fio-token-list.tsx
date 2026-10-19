@@ -3,9 +3,18 @@ import { deleteFioPluginToken } from "@payky/core/modules/fio-plugin/fio-plugin-
 import { fioPluginTokensByPluginIdQuery } from "@payky/core/modules/fio-plugin/fio-plugin-queries"
 import type { FioPluginTokenId } from "@payky/core/modules/fio-plugin/fio-plugin-types"
 import { fioPluginId } from "@payky/core/modules/fio-plugin/fio-plugin-utils"
+import Trash from "lucide-react-native/icons/trash"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
+import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -30,47 +39,62 @@ export function FioTokenList() {
   }
 
   return (
-    <YStack gap="2">
-      <Text fontWeight="700">{t("settings.fioPlugin.tokens.title")}</Text>
-      <Text color="muted-foreground">
-        {t("settings.fioPlugin.tokens.description")}
-      </Text>
-      {tokens.length === 0 ? (
-        <Text color="muted-foreground">
-          {t("settings.fioPlugin.tokens.empty")}
-        </Text>
-      ) : (
-        tokens.map((token) => (
-          <XStack
-            key={token.id}
-            items="center"
-            gap="2"
-            p="3"
-            rounded="lg"
-            borderWidth={1}
-            borderColor="border-color"
-          >
-            <YStack flex={1}>
-              <Text fontWeight="600">
-                {t("settings.fioPlugin.tokens.item")}
-              </Text>
-              <Text fontSize={13} color="muted-foreground" numberOfLines={1}>
-                {maskFioToken(token.token)}
-              </Text>
-            </YStack>
-            <Button
-              size="sm"
-              label={t("settings.fioPlugin.tokens.remove")}
-              variant="outline"
-              pending={pendingTokenId === token.id}
-              disabled={pendingTokenId !== null}
-              onPress={() => {
-                void remove(token.id)
-              }}
-            />
-          </XStack>
-        ))
-      )}
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.fioPlugin.tokens.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.fioPlugin.tokens.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {tokens.length === 0 ? (
+          <Text fontSize={14} color="muted-foreground">
+            {t("settings.fioPlugin.tokens.empty")}
+          </Text>
+        ) : (
+          <YStack gap="3">
+            {tokens.map((token) => (
+              <XStack
+                key={token.id}
+                items="center"
+                gap="2"
+                p="3"
+                rounded="lg"
+                borderWidth={1}
+                borderColor="border-color"
+              >
+                <YStack flex={1} gap="1">
+                  <Text fontWeight="600">
+                    {t("settings.fioPlugin.tokens.item")}
+                  </Text>
+                  <Text
+                    fontSize={13}
+                    color="muted-foreground"
+                    numberOfLines={1}
+                  >
+                    {maskFioToken(token.token)}
+                  </Text>
+                </YStack>
+                <Badge
+                  variant="secondary"
+                  label={t("settings.fioPlugin.tokens.active")}
+                />
+                <Button
+                  size="sm"
+                  iconStart={Trash}
+                  label={t("settings.fioPlugin.tokens.remove")}
+                  variant="outline"
+                  pending={pendingTokenId === token.id}
+                  disabled={pendingTokenId !== null}
+                  onPress={() => {
+                    void remove(token.id)
+                  }}
+                />
+              </XStack>
+            ))}
+          </YStack>
+        )}
+      </CardContent>
+    </Card>
   )
 }

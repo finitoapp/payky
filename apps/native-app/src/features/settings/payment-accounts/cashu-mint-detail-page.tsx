@@ -6,15 +6,25 @@ import { normalizeMintUrl } from "@payky/core/modules/cashu/cashu-utils"
 import { useQuery } from "@tanstack/react-query"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue } from "jotai"
+import Trash2 from "lucide-react-native/icons/trash"
 import { Suspense } from "react"
 import { Image } from "react-native"
-import { Text, XStack, YStack } from "tamagui"
+import { Text, XStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { cashuWalletDepAtom } from "../../../atoms/cashu.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
+import { RouteMessage } from "../../../components/route-message.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { LoadingView } from "../../../components/state-views.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useCashuRunToast } from "../../../hooks/use-run-toast.ts"
@@ -27,12 +37,7 @@ export function CashuMintDetailPage() {
   const { mint } = useLocalSearchParams<{ mint: string }>()
   const parsed = normalizeMintUrl(mint ?? "")
   if (parsed === null) {
-    return (
-      <Screen>
-        <FadeHeader title={t("settings.cashuMints.title")} />
-        <Text color="muted-foreground">{t("settings.cashuMints.invalid")}</Text>
-      </Screen>
-    )
+    return <RouteMessage>{t("settings.cashuMints.invalid")}</RouteMessage>
   }
   return (
     <Suspense fallback={<LoadingView />}>
@@ -85,44 +90,49 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
   return (
     <Screen>
       <FadeHeader title={info.data?.name ?? formatMintLabel(mint)} />
-      <YStack
-        gap="2"
-        p="4"
-        rounded="lg"
-        borderWidth={1}
-        borderColor="border-color"
-      >
-        <XStack items="center" gap="2">
-          {info.data?.iconUrl ? (
-            <Image
-              source={{ uri: info.data.iconUrl }}
-              accessibilityIgnoresInvertColors
-              style={{ width: 24, height: 24, borderRadius: 12 }}
-            />
-          ) : null}
-          <Text flex={1} fontWeight="700">
-            {formatMintLabel(mint)}
-          </Text>
-        </XStack>
-        {isDefault ? (
-          <Text color="muted-foreground" fontSize={13}>
-            {t("settings.cashuMints.default")}
-          </Text>
-        ) : null}
-        <Text color="muted-foreground">
-          {info.isError
-            ? t("settings.cashuMints.infoUnavailable")
-            : t("settings.cashuMints.balance", {
-                amount: t("withdraw.sats", {
-                  amount: formatSatsAmount(balance, locale),
-                }),
-              })}
-        </Text>
-      </YStack>
+      <Card>
+        <CardHeader>
+          <XStack items="center" gap="2">
+            {info.data?.iconUrl ? (
+              <Image
+                source={{ uri: info.data.iconUrl }}
+                accessibilityIgnoresInvertColors
+                style={{ width: 24, height: 24, borderRadius: 12 }}
+              />
+            ) : null}
+            <CardTitle flex={1} flexWrap="wrap">
+              {formatMintLabel(mint)}
+            </CardTitle>
+            {isDefault ? (
+              <Badge
+                variant="secondary"
+                label={t("settings.cashuMints.default")}
+              />
+            ) : null}
+          </XStack>
+          <CardDescription>
+            {info.isError
+              ? t("settings.cashuMints.infoUnavailable")
+              : t("settings.cashuMints.balance", {
+                  amount: t("withdraw.sats", {
+                    amount: formatSatsAmount(balance, locale),
+                  }),
+                })}
+          </CardDescription>
+        </CardHeader>
+        {isDefault ? null : (
+          <CardContent>
+            <Text color="muted-foreground">
+              {t("settings.cashuMints.defaultWarning")}
+            </Text>
+          </CardContent>
+        )}
+      </Card>
       {isDefault ? null : (
         <Button
           size="lg"
           variant="ghost"
+          iconStart={Trash2}
           label={t("settings.cashuMints.remove")}
           onPress={() => void remove()}
         />

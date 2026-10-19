@@ -21,29 +21,55 @@ import { TimestampMs } from "@payky/core/modules/shared/schema"
 import { createDefaultSparkPaymentWallet } from "@payky/core/spark/spark-wallet"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAtomValue } from "jotai"
+import ArrowUpFromLine from "lucide-react-native/icons/arrow-up-from-line"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
+import KeyRound from "lucide-react-native/icons/key-round"
+import Wallet from "lucide-react-native/icons/wallet"
 import { useState } from "react"
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  Switch,
-} from "react-native"
+import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { Field } from "../../../components/field.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
+import { PasswordTextarea } from "../../../components/password-textarea.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../../../components/ui/collapsible.tsx"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog.tsx"
+import {
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  Field as UiField,
+} from "../../../components/ui/field.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
+import { VerticalNav } from "../../../components/vertical-nav.tsx"
 import { useAccess } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { SettingsRow } from "../settings-row.tsx"
 
 const privacyModeQueryKey = (
   activeAccountId: string,
@@ -93,46 +119,95 @@ function SparkAccountSettingsContent({
   return (
     <Screen>
       <FadeHeader title={t("settings.paymentAccounts.method.spark")} />
-      <YStack gap="3">
-        <Text fontWeight="700">{t("settings.sparkAccount.form.title")}</Text>
-        <Text color="muted-foreground">
-          {t(
-            isDefaultWallet
-              ? "settings.sparkAccount.form.description"
-              : "settings.sparkAccount.form.customDescription"
-          )}
-        </Text>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.sparkAccount.form.title")}</CardTitle>
+          <CardDescription>
+            {t(
+              isDefaultWallet
+                ? "settings.sparkAccount.form.description"
+                : "settings.sparkAccount.form.customDescription"
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            {secret === null || accountId === undefined ? null : (
+              <SparkWalletSummary
+                key={accountId}
+                secret={secret}
+                isDefaultWallet={isDefaultWallet}
+              />
+            )}
 
-        {secret === null || accountId === undefined ? null : (
-          <SparkWalletSummary
-            key={accountId}
-            secret={secret}
-            isDefaultWallet={isDefaultWallet}
-          />
-        )}
+            {secret === null ? null : (
+              <UiField>
+                <FieldLabel>
+                  {t("settings.sparkAccount.mnemonic.label")}
+                </FieldLabel>
+                <PasswordTextarea
+                  value={sparkSecretToMnemonic(secret)}
+                  hideLabel={t("passwordTextarea.hide")}
+                  showLabel={t("passwordTextarea.show")}
+                  disabled
+                  contextMenuHidden
+                />
+                <FieldDescription>
+                  {t("settings.sparkAccount.mnemonic.description")}
+                </FieldDescription>
+              </UiField>
+            )}
 
-        {secret === null || accountId === undefined ? null : (
-          <SparkPrivacyMode
-            key={`${accountId}:privacy`}
-            activeAccountId={activeAccountId}
-            sparkAccountId={accountId}
-            secret={secret}
-          />
-        )}
+            <Collapsible>
+              <CollapsibleTrigger>
+                <AdvancedSettingsLabel
+                  label={t("settings.sparkAccount.advanced")}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent pt="4">
+                <FieldGroup>
+                  {secret === null || accountId === undefined ? null : (
+                    <SparkPrivacyMode
+                      key={`${accountId}:privacy`}
+                      activeAccountId={activeAccountId}
+                      sparkAccountId={accountId}
+                      secret={secret}
+                    />
+                  )}
+                  {accountId === undefined ? null : (
+                    <SparkSyncPointerField
+                      key={accountId}
+                      accountId={accountId}
+                    />
+                  )}
+                </FieldGroup>
+              </CollapsibleContent>
+            </Collapsible>
+          </FieldGroup>
+        </CardContent>
+      </Card>
 
-        <Text fontWeight="700">{t("settings.sparkAccount.advanced")}</Text>
-        {accountId === undefined ? null : (
-          <SparkSyncPointerField key={accountId} accountId={accountId} />
-        )}
-
-        {secret === null ? null : (
-          <SettingsRow
-            title={t("settings.withdrawals.title")}
-            value={t("settings.withdrawals.description")}
-            href="/withdraw"
-          />
-        )}
-      </YStack>
+      {secret === null ? null : (
+        <VerticalNav
+          items={[
+            {
+              kind: "link",
+              href: "/withdraw",
+              icon: <Icon icon={ArrowUpFromLine} color="muted-foreground" />,
+              label: (
+                <YStack gap="1">
+                  <Text fontSize={14} fontWeight="600">
+                    {t("settings.withdrawals.title")}
+                  </Text>
+                  <Text fontSize={13} color="muted-foreground">
+                    {t("settings.withdrawals.description")}
+                  </Text>
+                </YStack>
+              ),
+            },
+          ]}
+        />
+      )}
     </Screen>
   )
 }
@@ -146,7 +221,7 @@ function SparkWalletSummary({
 }) {
   const { t } = useTranslation()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [revealed, setRevealed] = useState(false)
+  const WalletIcon = isDefaultWallet ? KeyRound : Wallet
   const currentTitle = t(
     isDefaultWallet
       ? "settings.sparkAccount.wallet.payky.title"
@@ -159,50 +234,30 @@ function SparkWalletSummary({
   )
 
   return (
-    <YStack gap="3">
-      <YStack
-        gap="2"
+    <UiField>
+      <FieldLabel>{t("settings.sparkAccount.wallet.label")}</FieldLabel>
+      <XStack
+        items="center"
+        gap="3"
         p="3"
         rounded="lg"
         borderWidth={1}
         borderColor="border-color"
       >
-        <Text fontWeight="700">{t("settings.sparkAccount.wallet.label")}</Text>
-        <Text>{currentTitle}</Text>
-        <Text fontSize={13} color="muted-foreground">
-          {currentDescription}
-        </Text>
+        <Icon icon={WalletIcon} color="muted-foreground" />
+        <YStack flex={1} gap="1">
+          <Text fontWeight="600">{currentTitle}</Text>
+          <Text fontSize={13} color="muted-foreground">
+            {currentDescription}
+          </Text>
+        </YStack>
         <Button
           size="sm"
           label={t("settings.sparkAccount.wallet.change")}
           variant="outline"
           onPress={() => setDialogOpen(true)}
         />
-      </YStack>
-
-      <Field
-        label={t("settings.sparkAccount.mnemonic.label")}
-        value={sparkSecretToMnemonic(secret)}
-        secureTextEntry={!revealed}
-        disabled
-        autoCapitalize="none"
-        autoCorrect={false}
-        autoComplete="off"
-        spellCheck={false}
-        importantForAutofill="no"
-        contextMenuHidden
-        multiline={revealed}
-        minH={revealed ? 96 : 48}
-      />
-      <Text fontSize={13} color="muted-foreground">
-        {t("settings.sparkAccount.mnemonic.description")}
-      </Text>
-      <Button
-        size="lg"
-        label={t(revealed ? "passwordTextarea.hide" : "passwordTextarea.show")}
-        variant="outline"
-        onPress={() => setRevealed((current) => !current)}
-      />
+      </XStack>
 
       <ChangeSparkWalletModal
         open={dialogOpen}
@@ -210,7 +265,7 @@ function SparkWalletSummary({
         currentSecret={secret}
         isDefaultWallet={isDefaultWallet}
       />
-    </YStack>
+    </UiField>
   )
 }
 
@@ -231,7 +286,6 @@ function ChangeSparkWalletModal({
   const runToast = useRunToast()
   const [target, setTarget] = useState<SparkWalletKind>("custom")
   const [mnemonic, setMnemonic] = useState("")
-  const [revealed, setRevealed] = useState(false)
   const normalized = normalizeMnemonic(mnemonic)
   const wordCount = normalized === "" ? 0 : normalized.split(" ").length
   const parsed = SparkMnemonicSchema.safeParse(normalized)
@@ -248,7 +302,6 @@ function ChangeSparkWalletModal({
   const close = () => {
     setTarget("custom")
     setMnemonic("")
-    setRevealed(false)
     onClose()
   }
 
@@ -268,129 +321,110 @@ function ChangeSparkWalletModal({
   }
 
   return (
-    <Modal
-      visible={open}
-      transparent
-      animationType="fade"
-      onRequestClose={close}
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) close()
+      }}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <YStack flex={1} justify="center" p="4" bg="rgba(0,0,0,0.5)">
-          <ScrollView keyboardShouldPersistTaps="handled">
-            <YStack
-              bg="card"
-              rounded="6"
-              p="4"
-              gap="3"
-              accessibilityViewIsModal
-            >
-              <Text fontSize="lg" fontWeight="700" accessibilityRole="header">
-                {t("settings.sparkAccount.wallet.changeDialog.title")}
-              </Text>
-              <Text color="muted-foreground">
-                {t("settings.sparkAccount.wallet.changeDialog.description")}
-              </Text>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {t("settings.sparkAccount.wallet.changeDialog.title")}
+          </DialogTitle>
+          <DialogDescription>
+            {t("settings.sparkAccount.wallet.changeDialog.description")}
+          </DialogDescription>
+        </DialogHeader>
+        <YStack gap="4">
+          <OptionToggleGroup<SparkWalletKind>
+            value={target}
+            options={[
+              {
+                value: "payky",
+                icon: KeyRound,
+                title: t("settings.sparkAccount.wallet.payky.title"),
+                description: t(
+                  isDefaultWallet
+                    ? "settings.sparkAccount.wallet.changeDialog.inUse"
+                    : "settings.sparkAccount.wallet.payky.description"
+                ),
+              },
+              {
+                value: "custom",
+                icon: Wallet,
+                title: t("settings.sparkAccount.wallet.custom.title"),
+                description: t(
+                  "settings.sparkAccount.wallet.custom.description"
+                ),
+              },
+            ]}
+            onChange={setTarget}
+          />
 
-              <OptionToggleGroup<SparkWalletKind>
-                value={target}
-                options={[
-                  {
-                    value: "payky",
-                    title: t("settings.sparkAccount.wallet.payky.title"),
-                    description: t(
-                      isDefaultWallet
-                        ? "settings.sparkAccount.wallet.changeDialog.inUse"
-                        : "settings.sparkAccount.wallet.payky.description"
-                    ),
-                  },
-                  {
-                    value: "custom",
-                    title: t("settings.sparkAccount.wallet.custom.title"),
-                    description: t(
-                      "settings.sparkAccount.wallet.custom.description"
-                    ),
-                  },
-                ]}
-                onChange={setTarget}
+          {target === "custom" ? (
+            <UiField>
+              <FieldLabel>
+                {t("settings.sparkAccount.mnemonic.label")}
+              </FieldLabel>
+              <PasswordTextarea
+                key={open ? "open" : "closed"}
+                value={mnemonic}
+                hideLabel={t("passwordTextarea.hide")}
+                showLabel={t("passwordTextarea.show")}
+                invalid={mnemonicErrorKey !== null}
+                contextMenuHidden
+                onChangeText={setMnemonic}
               />
+              <FieldDescription>
+                {t("settings.sparkAccount.wallet.changeDialog.wordCount", {
+                  value: wordCount,
+                })}
+              </FieldDescription>
+              <FieldError>
+                {mnemonicErrorKey === null ? undefined : t(mnemonicErrorKey)}
+              </FieldError>
+            </UiField>
+          ) : null}
 
-              {target === "custom" ? (
-                <>
-                  <Field
-                    label={t("settings.sparkAccount.mnemonic.label")}
-                    value={mnemonic}
-                    secureTextEntry={!revealed}
-                    multiline={revealed}
-                    minH={revealed ? 96 : 48}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="off"
-                    spellCheck={false}
-                    importantForAutofill="no"
-                    keyboardType="visible-password"
-                    contextMenuHidden
-                    error={
-                      mnemonicErrorKey === null
-                        ? undefined
-                        : t(mnemonicErrorKey)
-                    }
-                    onChangeText={setMnemonic}
-                  />
-                  <Text fontSize={13} color="muted-foreground">
-                    {t("settings.sparkAccount.wallet.changeDialog.wordCount", {
-                      value: wordCount,
-                    })}
-                  </Text>
-                  <Button
-                    size="lg"
-                    label={t(
-                      revealed
-                        ? "passwordTextarea.hide"
-                        : "passwordTextarea.show"
-                    )}
-                    variant="outline"
-                    onPress={() => setRevealed((current) => !current)}
-                  />
-                </>
-              ) : null}
-
-              <YStack gap="2">
-                <Text color="muted-foreground">
-                  {t("settings.sparkAccount.wallet.warning.invoices")}
-                </Text>
-                <Text color="muted-foreground">
-                  {t("settings.sparkAccount.wallet.warning.funds")}
-                </Text>
-              </YStack>
-
-              <XStack gap="2">
-                <YStack flex={1}>
-                  <Button
-                    size="lg"
-                    label={t("settings.sparkAccount.wallet.cancel")}
-                    variant="outline"
-                    onPress={close}
-                  />
-                </YStack>
-                <YStack flex={1}>
-                  <Button
-                    size="lg"
-                    label={t("settings.sparkAccount.wallet.switch")}
-                    disabled={!canSwitch}
-                    onPress={() => {
-                      void switchWallet()
-                    }}
-                  />
-                </YStack>
-              </XStack>
-            </YStack>
-          </ScrollView>
+          <YStack gap="2">
+            <Text color="muted-foreground">
+              {`• ${t("settings.sparkAccount.wallet.warning.invoices")}`}
+            </Text>
+            <Text color="muted-foreground">
+              {`• ${t("settings.sparkAccount.wallet.warning.funds")}`}
+            </Text>
+          </YStack>
         </YStack>
-      </KeyboardAvoidingView>
-    </Modal>
+        <DialogFooter>
+          <Button
+            size="lg"
+            w="100%"
+            label={t("settings.sparkAccount.wallet.cancel")}
+            variant="outline"
+            onPress={close}
+          />
+          <Button
+            size="lg"
+            w="100%"
+            label={t("settings.sparkAccount.wallet.switch")}
+            disabled={!canSwitch}
+            onPress={() => void switchWallet()}
+          />
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function AdvancedSettingsLabel({ label }: { readonly label: string }) {
+  return (
+    <XStack items="center" justify="space-between" w="100%">
+      <Text fontSize={14} fontWeight="600">
+        {label}
+      </Text>
+      <Icon icon={ChevronDown} color="muted-foreground" />
+    </XStack>
   )
 }
 

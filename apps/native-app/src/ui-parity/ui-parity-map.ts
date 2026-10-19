@@ -587,21 +587,53 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/fio-plugin/fio-plugin-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Alert: "web-only browser runtime warning, omitted in the native app",
+      AlertDescription:
+        "web-only browser runtime warning, omitted in the native app",
+      AlertTitle: "web-only browser runtime warning, omitted in the native app",
+      Badge: "rendered by the sibling fio-token-list.tsx",
+      Button:
+        "rendered by the sibling fio-token-form.tsx and fio-token-list.tsx",
+      FieldError: "rendered by the sibling fio-token-form.tsx",
+      PasswordTextarea: "rendered by the sibling fio-token-form.tsx",
+    },
   },
   {
     native: "src/features/settings/fio-plugin/fio-token-form.tsx",
     web: [
       "apps/web-app/src/features/settings/fio-plugin/fio-plugin-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Alert: "web-only browser runtime warning, omitted in the native app",
+      AlertDescription:
+        "web-only browser runtime warning, omitted in the native app",
+      AlertTitle: "web-only browser runtime warning, omitted in the native app",
+      Badge: "rendered by the sibling fio-token-list.tsx",
+      FadeHeader: "rendered by the parent fio-plugin-settings-page.tsx",
+    },
   },
   {
     native: "src/features/settings/fio-plugin/fio-token-list.tsx",
     web: [
       "apps/web-app/src/features/settings/fio-plugin/fio-plugin-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Alert: "web-only browser runtime warning, omitted in the native app",
+      AlertDescription:
+        "web-only browser runtime warning, omitted in the native app",
+      AlertTitle: "web-only browser runtime warning, omitted in the native app",
+      FadeHeader: "rendered by the parent fio-plugin-settings-page.tsx",
+      Field: "rendered by the sibling fio-token-form.tsx",
+      FieldDescription: "rendered by the sibling fio-token-form.tsx",
+      FieldError: "rendered by the sibling fio-token-form.tsx",
+      FieldGroup: "rendered by the sibling fio-token-form.tsx",
+      FieldLabel: "rendered by the sibling fio-token-form.tsx",
+      PasswordTextarea: "rendered by the sibling fio-token-form.tsx",
+    },
   },
   {
     native: "src/features/settings/home-screen/home-screen-settings-page.tsx",
@@ -693,7 +725,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/payment-accounts/card-switchio-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native:
@@ -701,24 +733,36 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/cashu/cashu-account-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/payment-accounts/cashu-mint-detail-page.tsx",
     web: [
       "apps/web-app/src/features/settings/cashu/cashu-mint-detail-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Field:
+        "the web-only move-between-mints panel is not implemented in the native screen",
+      FieldDescription:
+        "the web-only move-between-mints panel is not implemented in the native screen",
+      FieldError:
+        "the web-only move-between-mints panel is not implemented in the native screen",
+      FieldLabel:
+        "the web-only move-between-mints panel is not implemented in the native screen",
+      Input:
+        "the web-only move-between-mints panel is not implemented in the native screen",
+    },
   },
   {
     native: "src/features/settings/payment-accounts/cashu-mint-new-page.tsx",
     web: ["apps/web-app/src/features/settings/cashu/cashu-mint-new-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/payment-accounts/cashu-mints-page.tsx",
     web: ["apps/web-app/src/features/settings/cashu/cashu-mints-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native:
@@ -726,7 +770,23 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/payment-accounts/fiat-bank-account-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Select:
+        "native bottom-sheet selector replaces web's feature-level InlineEditSelect",
+      SelectContent:
+        "native bottom-sheet selector replaces web's feature-level InlineEditSelect",
+      SelectItem:
+        "native bottom-sheet selector replaces web's feature-level InlineEditSelect",
+      SelectTrigger:
+        "native bottom-sheet selector replaces web's feature-level InlineEditSelect",
+      SelectValue:
+        "native bottom-sheet selector replaces web's feature-level InlineEditSelect",
+      ToggleGroup:
+        "native toggle group replaces web's shared BankAccountFormatToggle helper",
+      ToggleGroupItem:
+        "native toggle group replaces web's shared BankAccountFormatToggle helper",
+    },
   },
   {
     native:
@@ -734,7 +794,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/payment-accounts/payment-accounts-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native:
@@ -742,7 +802,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/payment-accounts/spark-account-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
   },
   {
     native:

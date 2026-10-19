@@ -21,10 +21,23 @@ import {
 } from "@payky/core/modules/shared/schema"
 import { format, subDays } from "date-fns"
 import { Switch } from "react-native"
-import { Text, XStack, YStack } from "tamagui"
+import { YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
 import { useAccess } from "../../../core/use-access.ts"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
@@ -111,67 +124,76 @@ function FioPluginForm() {
 
   return (
     <YStack gap="3">
-      <Text fontWeight="700">{t("settings.fioPlugin.form.title")}</Text>
-      <Text color="muted-foreground">
-        {t("settings.fioPlugin.form.description")}
-      </Text>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.fioPlugin.form.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.fioPlugin.form.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Field orientation="horizontal">
+              <Switch
+                accessibilityLabel={t("settings.fioPlugin.active.label")}
+                value={activeChoice.value}
+                disabled={activeChoice.saving}
+                onValueChange={(next) => {
+                  void activeChoice.choose(next)
+                }}
+              />
+              <YStack flex={1} gap="1">
+                <FieldLabel>{t("settings.fioPlugin.active.label")}</FieldLabel>
+                <FieldDescription>
+                  {t("settings.fioPlugin.active.description")}
+                </FieldDescription>
+              </YStack>
+            </Field>
 
-      <XStack gap="3" items="center">
-        <Switch
-          accessibilityLabel={t("settings.fioPlugin.active.label")}
-          value={activeChoice.value}
-          disabled={activeChoice.saving}
-          onValueChange={(next) => {
-            void activeChoice.choose(next)
-          }}
-        />
-        <YStack flex={1}>
-          <Text fontWeight="600">{t("settings.fioPlugin.active.label")}</Text>
-          <Text fontSize={13} color="muted-foreground">
-            {t("settings.fioPlugin.active.description")}
-          </Text>
-        </YStack>
-      </XStack>
+            <InlineEditField
+              label={t("settings.fioPlugin.interval.label")}
+              description={t("settings.fioPlugin.interval.description")}
+              keyboardType="number-pad"
+              defaultValue={numberOfSecondsBetweenChecks}
+              codec={positiveIntegerCodec}
+              errorKey="settings.fioPlugin.interval.invalid"
+              onSave={(next) =>
+                savePlugin({ numberOfSecondsBetweenChecks: next })
+              }
+            />
 
-      <InlineEditField
-        label={t("settings.fioPlugin.interval.label")}
-        description={t("settings.fioPlugin.interval.description")}
-        keyboardType="number-pad"
-        defaultValue={numberOfSecondsBetweenChecks}
-        codec={positiveIntegerCodec}
-        errorKey="settings.fioPlugin.interval.invalid"
-        onSave={(next) => savePlugin({ numberOfSecondsBetweenChecks: next })}
-      />
+            <InlineEditField
+              label={t("settings.fioPlugin.syncLookbackDays.label")}
+              description={t("settings.fioPlugin.syncLookbackDays.description")}
+              keyboardType="number-pad"
+              defaultValue={syncLookbackDays}
+              codec={positiveIntegerCodec}
+              errorKey="settings.fioPlugin.syncLookbackDays.invalid"
+              onSave={(next) => savePlugin({ syncLookbackDays: next })}
+            />
 
-      <InlineEditField
-        label={t("settings.fioPlugin.syncLookbackDays.label")}
-        description={t("settings.fioPlugin.syncLookbackDays.description")}
-        keyboardType="number-pad"
-        defaultValue={syncLookbackDays}
-        codec={positiveIntegerCodec}
-        errorKey="settings.fioPlugin.syncLookbackDays.invalid"
-        onSave={(next) => savePlugin({ syncLookbackDays: next })}
-      />
-
-      <InlineEditField
-        label={t("settings.fioPlugin.lastSyncedDate.label")}
-        description={t("settings.fioPlugin.lastSyncedDate.description")}
-        placeholder="yyyy-MM-dd"
-        keyboardType="numbers-and-punctuation"
-        defaultValue={lastSyncedDate}
-        codec={dateCodec}
-        errorKey="settings.fioPlugin.lastSyncedDate.invalid"
-        onSave={(next) =>
-          runToast(async (run) => {
-            await run.ok(
-              updateFioPluginSyncPointer({
-                id: fioPluginId,
-                lastSyncedDate: next,
-              })
-            )
-          })
-        }
-      />
+            <InlineEditField
+              label={t("settings.fioPlugin.lastSyncedDate.label")}
+              description={t("settings.fioPlugin.lastSyncedDate.description")}
+              placeholder="yyyy-MM-dd"
+              keyboardType="numbers-and-punctuation"
+              defaultValue={lastSyncedDate}
+              codec={dateCodec}
+              errorKey="settings.fioPlugin.lastSyncedDate.invalid"
+              onSave={(next) =>
+                runToast(async (run) => {
+                  await run.ok(
+                    updateFioPluginSyncPointer({
+                      id: fioPluginId,
+                      lastSyncedDate: next,
+                    })
+                  )
+                })
+              }
+            />
+          </FieldGroup>
+        </CardContent>
+      </Card>
     </YStack>
   )
 }

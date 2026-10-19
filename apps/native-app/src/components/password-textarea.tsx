@@ -23,12 +23,22 @@ import { Textarea, type TextareaProps } from "./ui/textarea.tsx"
 export function PasswordTextarea({
   hideLabel,
   showLabel,
+  shown: shownProp,
+  onShownChange,
   ...props
 }: TextareaProps & {
   readonly hideLabel: string
   readonly showLabel: string
+  readonly shown?: boolean
+  readonly onShownChange?: (shown: boolean) => void
 }) {
-  const [shown, setShown] = useState(false)
+  const [internalShown, setInternalShown] = useState(false)
+  const shown = shownProp ?? internalShown
+  const toggleShown = () => {
+    const nextShown = !shown
+    if (shownProp === undefined) setInternalShown(nextShown)
+    onShownChange?.(nextShown)
+  }
   return (
     <View w="100%">
       <Textarea
@@ -49,7 +59,7 @@ export function PasswordTextarea({
           variant="ghost"
           size="icon"
           accessibilityLabel={shown ? hideLabel : showLabel}
-          onPress={() => setShown((current) => !current)}
+          onPress={toggleShown}
         >
           <Icon icon={shown ? EyeOff : Eye} color="muted-foreground" />
         </Button>

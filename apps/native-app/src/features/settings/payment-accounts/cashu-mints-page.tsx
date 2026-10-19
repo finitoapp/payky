@@ -1,12 +1,14 @@
 import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { router } from "expo-router"
-import type { ReactNode } from "react"
+import Plus from "lucide-react-native/icons/plus"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { FailureView, LoadingView } from "../../../components/state-views.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import { VerticalNav } from "../../../components/vertical-nav.tsx"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
 import { useCashuKnownMints } from "../../shared/cashu/use-cashu-known-mints.ts"
 import { useCashuWalletSnapshot } from "../../shared/cashu/use-cashu-wallet-snapshot.ts"
@@ -37,6 +39,13 @@ export function CashuMintsPage() {
     snapshot.defaultMint,
     mints.data
   )
+  const balanceAction = (mint: (typeof known)[number]) => (
+    <Text fontSize={12} color="muted-foreground" fontVariant={["tabular-nums"]}>
+      {t("withdraw.sats", {
+        amount: formatSatsAmount(snapshot.balances.get(mint) ?? 0, locale),
+      })}
+    </Text>
+  )
 
   return (
     <Screen>
@@ -46,101 +55,66 @@ export function CashuMintsPage() {
           {t("settings.cashuAccount.syncing")}
         </Text>
       ) : null}
-      <MintSection title={t("settings.cashuMints.known")}>
-        {known.length === 0 && snapshot.hydrated ? (
-          <Text color="muted-foreground">{t("settings.cashuMints.empty")}</Text>
-        ) : (
-          known.map((mint) => (
-            <MintRow
-              key={mint}
-              mint={mint}
-              isDefault={mint === snapshot.defaultMint}
-              balance={
-                snapshot.hydrated ? (snapshot.balances.get(mint) ?? 0) : null
-              }
-              locale={locale}
-            />
-          ))
+      <YStack gap="4">
+        <VerticalNav
+          title={t("settings.cashuMints.known")}
+          items={known.map((mint) => ({
+            id: mint,
+            kind: "link" as const,
+            href: {
+              pathname:
+                "/settings/payment-accounts/cashu/mints/[mint]" as const,
+              params: { mint },
+            },
+            accessibilityLabel: formatMintLabel(mint),
+            label: (
+              <XStack flex={1} items="center" gap="2">
+                <Text flex={1} flexShrink={1} numberOfLines={1}>
+                  {formatMintLabel(mint)}
+                </Text>
+                {mint === snapshot.defaultMint ? (
+                  <Badge
+                    variant="secondary"
+                    label={t("settings.cashuMints.default")}
+                  />
+                ) : null}
+              </XStack>
+            ),
+            action: snapshot.hydrated ? balanceAction(mint) : undefined,
+          }))}
+          empty={snapshot.hydrated ? t("settings.cashuMints.empty") : undefined}
+        />
+        {suggested.length === 0 ? null : (
+          <VerticalNav
+            title={t("settings.cashuMints.suggested")}
+            items={suggested.map((mint) => ({
+              id: mint,
+              kind: "link" as const,
+              href: {
+                pathname:
+                  "/settings/payment-accounts/cashu/mints/[mint]" as const,
+                params: { mint },
+              },
+              accessibilityLabel: formatMintLabel(mint),
+              label: (
+                <Text flex={1} numberOfLines={1}>
+                  {formatMintLabel(mint)}
+                </Text>
+              ),
+              action: balanceAction(mint),
+            }))}
+          />
         )}
-      </MintSection>
-      {suggested.length === 0 ? null : (
-        <MintSection title={t("settings.cashuMints.suggested")}>
-          {suggested.map((mint) => (
-            <MintRow key={mint} mint={mint} locale={locale} />
-          ))}
-        </MintSection>
-      )}
+      </YStack>
       <Button
         size="lg"
         variant="outline"
+        iconStart={Plus}
         label={t("settings.cashuMints.add")}
         onPress={() =>
           router.push("/settings/payment-accounts/cashu/mints/new")
         }
       />
     </Screen>
-  )
-}
-
-function MintSection({
-  title,
-  children,
-}: {
-  readonly title: string
-  readonly children: ReactNode
-}) {
-  return (
-    <YStack gap="2">
-      <Text fontWeight="700">{title}</Text>
-      {children}
-    </YStack>
-  )
-}
-
-function MintRow({
-  mint,
-  isDefault = false,
-  balance,
-  locale,
-}: {
-  readonly mint: string
-  readonly isDefault?: boolean
-  readonly balance?: number | null
-  readonly locale: string
-}) {
-  const { t } = useTranslation()
-  return (
-    <XStack
-      items="center"
-      gap="3"
-      p="3"
-      rounded="lg"
-      borderWidth={1}
-      borderColor="border-color"
-      accessibilityRole="button"
-      accessibilityLabel={formatMintLabel(mint)}
-      onPress={() =>
-        router.push({
-          pathname: "/settings/payment-accounts/cashu/mints/[mint]",
-          params: { mint },
-        })
-      }
-    >
-      <YStack flex={1} gap="1">
-        <Text>{formatMintLabel(mint)}</Text>
-        {isDefault ? (
-          <Text color="muted-foreground" fontSize={13}>
-            {t("settings.cashuMints.default")}
-          </Text>
-        ) : null}
-      </YStack>
-      {balance === null || balance === undefined ? null : (
-        <Text fontVariant={["tabular-nums"]}>
-          {t("withdraw.sats", {
-            amount: formatSatsAmount(balance, locale),
-          })}
-        </Text>
-      )}
-    </XStack>
   )
 }

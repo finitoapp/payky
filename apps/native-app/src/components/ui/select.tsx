@@ -21,7 +21,8 @@ import { Icon } from "./icon.tsx"
  * Native differences: the list opens in `ui/dialog` (a centered sheet on the
  * proven RN `Modal`) rather than a popup anchored to the trigger, as plan
  * fallback to Tamagui `Select`'s untried `Adapt`/`Sheet`; items are at
- * least 44 high for touch. `SelectContent` takes the translated `title` the
+ * least 44 high for touch; the default trigger is 40 high, not 32, so it
+ * lines up with `ui/input` (which is 40 for the same touch reason). `SelectContent` takes the translated `title` the
  * sheet shows, usually the field's label.
  */
 
@@ -95,7 +96,8 @@ const TriggerFrame = styled(View, {
 
   variants: {
     size: {
-      default: { h: 32 },
+      // Web h-8; 40 to match the kit Input next to it in a form.
+      default: { h: 40 },
       sm: { h: 28, rounded: radius.md },
     },
     disabled: { true: { opacity: 0.5, pointerEvents: "none" } },

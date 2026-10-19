@@ -5,6 +5,7 @@ import InterSemiBold from "@tamagui/font-inter/otf/Inter-SemiBold.otf"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { useFonts } from "expo-font"
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router"
+import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
 import { createStore, Provider } from "jotai"
 import { Suspense, useEffect, useState } from "react"
@@ -29,6 +30,11 @@ import { resolveTheme } from "../src/core/theme-preference.ts"
 import { removeStaleExportFolders } from "../src/features/settings/evolu-export/evolu-export-io.ts"
 import { useThemePreference } from "../src/hooks/use-theme-preference.ts"
 import { tamaguiConfig } from "../tamagui.config.ts"
+
+// Kept until the first screen is ready (`AccessGate` hides it) instead of
+// Expo Router hiding it as soon as this layout renders, so the start shows
+// the splash's logo throughout rather than loaders in turn.
+void SplashScreen.preventAutoHideAsync()
 
 /**
  * Expo Router's root error boundary. `retry` remounts this layout, whose

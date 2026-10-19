@@ -4,6 +4,7 @@ import {
 } from "@payky/app-shared/i18n/resources"
 import { getPreferredDeviceLanguage } from "@payky/core/modules/device/device-utils"
 import Constants from "expo-constants"
+import * as SplashScreen from "expo-splash-screen"
 import { useEffect } from "react"
 import {
   Pressable,
@@ -42,6 +43,10 @@ export function AppErrorScreen({
   useEffect(() => {
     captureReportedError(error)
   }, [error])
+  // A crash before the first screen would stay behind the held splash.
+  useEffect(() => {
+    SplashScreen.hide()
+  }, [])
 
   const name = error instanceof Error ? error.name : t("appError.unknown")
   const message =

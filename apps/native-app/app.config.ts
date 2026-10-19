@@ -46,8 +46,19 @@ export default {
     // No organization/project/auth token: builds upload no source maps.
     "@sentry/react-native/expo",
     ["expo-sqlite", { useSQLCipher: true }],
+    [
+      "expo-splash-screen",
+      {
+        // The Payky icon on the palette's `background` (src/theme/palette.ts),
+        // as AppLoader draws it. The app holds this splash until its first
+        // screen is ready (app/_layout.tsx).
+        image: "./assets/payky-icon.png",
+        imageWidth: 140,
+        backgroundColor: "#fbfaf7",
+        dark: { image: "./assets/payky-icon.png", backgroundColor: "#101214" },
+      },
+    ],
     "./plugins/with-no-data-extraction.cjs",
-    "./plugins/with-splash-screen.cjs",
     "./plugins/with-hardware-key-events.cjs",
     "./plugins/with-switchio-result-capture.cjs",
     "./plugins/with-library-compile-sdk.cjs",

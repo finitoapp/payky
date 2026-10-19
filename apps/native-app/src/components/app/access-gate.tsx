@@ -3,10 +3,10 @@ import {
   accessSessionAtom,
 } from "@payky/app-shared/access-state"
 import { router, usePathname } from "expo-router"
+import * as SplashScreen from "expo-splash-screen"
 import { useAtom, useAtomValue, useSetAtom, useStore } from "jotai"
 import { type ReactNode, type SetStateAction, Suspense, useEffect } from "react"
 import { AppState, View } from "react-native"
-import { Text } from "tamagui"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import {
   endsSessionOnAppState,
@@ -16,6 +16,7 @@ import {
 import { requiredPermission } from "../../core/route-access.ts"
 import { useAccess } from "../../core/use-access.ts"
 import { Screen } from "../screen.tsx"
+import { AppLoader } from "./app-loader.tsx"
 import { PinScreen } from "./pin-screen.tsx"
 
 // `Date.now()` is branded by Evolu's globals; the shared atom holds a plain number.
@@ -127,9 +128,24 @@ export function AccessGate({ children }: { readonly children: ReactNode }) {
         touch(store)
       }}
     >
-      <Suspense fallback={<Text>Bootstrapping…</Text>}>
+      {/* Only an account switch shows it: the start keeps the splash on. */}
+      <Suspense fallback={<AppLoader />}>
+        <HideSplashScreen />
         <Gate>{children}</Gate>
       </Suspense>
     </View>
   )
+}
+
+/**
+ * Hides the native splash, which the root layout keeps on, once the gate
+ * has what it needs (the account, its database, the access rules): it sits
+ * in the same Suspense boundary, so it mounts together with the first
+ * screen or the PIN screen.
+ */
+function HideSplashScreen() {
+  useEffect(() => {
+    SplashScreen.hide()
+  }, [])
+  return null
 }

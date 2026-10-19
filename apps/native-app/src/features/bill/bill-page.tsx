@@ -95,6 +95,7 @@ import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { hapticButtonPress } from "../../platform/haptics.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 import { BillCancellationCollisionActions } from "../shared/bill-cancellation-collision-actions.tsx"
 import { CategoryFilterBar } from "../shared/category-filter-bar.tsx"
@@ -975,7 +976,10 @@ function BillCart({
                 accessibilityLabel={t("home.pay")}
                 pending={chargePending}
                 disabled={summaries.length === 0}
-                onPress={() => void charge()}
+                onPress={() => {
+                  hapticButtonPress()
+                  void charge()
+                }}
               >
                 <Text
                   fontSize={fontSize.sm}
@@ -1186,7 +1190,10 @@ function ItemBrick({
         bg="transparent press:card-ring"
         accessibilityRole="button"
         accessibilityLabel={t("bill.brick.add.aria", { name })}
-        onPress={onAdd}
+        onPress={() => {
+          hapticButtonPress()
+          onAdd()
+        }}
       />
       <XStack
         items="flex-start"
@@ -1255,7 +1262,9 @@ function ItemBrick({
           opacity={inCart ? 1 : 0}
           disabled={!inCart}
           onPress={() => {
-            if (latestSummary !== undefined) onRemove(latestSummary)
+            if (latestSummary === undefined) return
+            hapticButtonPress()
+            onRemove(latestSummary)
           }}
         />
       </XStack>

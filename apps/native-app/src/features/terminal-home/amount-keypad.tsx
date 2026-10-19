@@ -17,6 +17,7 @@ import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { hapticButtonPress } from "../../platform/haptics.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 
 type AmountInputAtom = PrimitiveAtom<string>
@@ -119,6 +120,7 @@ function Keys({
               rounded={radius.full}
               accessibilityLabel={label(key)}
               onPress={() => {
+                hapticButtonPress()
                 setAmountInput((current) =>
                   applyAmountKey(current, key, currency)
                 )
@@ -186,7 +188,9 @@ function ChargeButton({
       pending={pending}
       disabled={amount === null}
       onPress={() => {
-        if (amount !== null) void charge(amount)
+        if (amount === null) return
+        hapticButtonPress()
+        void charge(amount)
       }}
     >
       <Text fontSize={fontSize.base} fontWeight={fontWeight.bold}>

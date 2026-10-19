@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { AppState, Linking } from "react-native"
 import { Text, View, YStack } from "tamagui"
 import { useTranslation } from "../hooks/use-translation.ts"
+import { hapticConfirm } from "../platform/haptics.ts"
 import { scanPermissionView, shouldAcceptScan } from "../platform/scan-state.ts"
 import { Button } from "./ui/button.tsx"
 
@@ -71,6 +72,7 @@ export function ScanCodeScanner({
         return
       lastRef.current = { value: rawValue, at: now }
       busyRef.current = true
+      hapticConfirm()
       try {
         await onScan(rawValue)
       } finally {

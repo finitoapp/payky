@@ -40,6 +40,7 @@ import {
 } from "../../components/ui/toggle-group.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { hapticButtonPress } from "../../platform/haptics.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 
 /**
@@ -368,7 +369,10 @@ function SplitBillRow({
             name: summary.name,
           })}
           disabled={quantity === 0}
-          onPress={() => onChange(quantity - 1)}
+          onPress={() => {
+            hapticButtonPress()
+            onChange(quantity - 1)
+          }}
         />
         <Text
           minW={24}
@@ -388,7 +392,10 @@ function SplitBillRow({
             name: summary.name,
           })}
           disabled={quantity >= summary.quantity}
-          onPress={() => onChange(quantity + 1)}
+          onPress={() => {
+            hapticButtonPress()
+            onChange(quantity + 1)
+          }}
         />
       </XStack>
     </XStack>

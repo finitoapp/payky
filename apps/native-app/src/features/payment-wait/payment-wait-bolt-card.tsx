@@ -11,6 +11,7 @@ import { Icon } from "../../components/ui/icon.tsx"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
+import { hapticConfirm } from "../../platform/haptics.ts"
 import {
   getNfcStatus,
   type NfcStatus,
@@ -84,6 +85,7 @@ export function BoltCardReader({
   const handleTag = useEffectEvent(async (uri: string | null) => {
     if (busyRef.current || inFlightPayments.has(paymentId)) return
     busyRef.current = true
+    hapticConfirm()
 
     if (uri === null) {
       busyRef.current = false

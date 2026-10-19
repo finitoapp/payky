@@ -314,7 +314,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/payment-tip/payment-tip-page.tsx",
     web: ["apps/web-app/src/features/payment-tip/payment-tip-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      RouteMessage:
+        "web answers an invalid tip link in its route file (_terminal.payment.tip.tsx); native's route renders this page, which does it",
+    },
   },
   {
     native: "src/features/payment-wait/payment-wait-bolt-card.tsx",

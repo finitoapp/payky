@@ -17,15 +17,27 @@ import {
 } from "@payky/core/modules/shared/schema"
 import { Redirect, useLocalSearchParams } from "expo-router"
 import { useRef, useState } from "react"
-import { Pressable } from "react-native"
-import { Text, XStack, YStack } from "tamagui"
-import { Field } from "../../components/field.tsx"
+import { Text, YStack } from "tamagui"
+import { FadeHeader } from "../../components/fade-header.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../components/ui/field.tsx"
+import { Input } from "../../components/ui/input.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
 import { parseTipSearch } from "./tip-search.ts"
 
 /** Web's tip step: the order total, preset tips, custom tip or none. */
@@ -97,122 +109,168 @@ function PaymentTipForm({
     }
   }
 
-  const options = [
-    ...percentages.map((percentage) => ({
-      key: `p${percentage}`,
-      label: t("settings.tips.percentages.value", { value: percentage }),
-      tipAmount: calculatePercentageTipAmount({ amount, percentage }),
-    })),
-    ...fixedAmounts.map((fixed) => ({
-      key: `f${fixed}`,
-      label: `+${formatMinor(fixed)}`,
-      tipAmount: NonNegativeInteger(fixed),
-    })),
-  ]
+  const tipTotal = (tipAmount: NonNegativeInteger) =>
+    formatMinor(calculatePaymentAmounts({ amount, tipAmount }).amount)
+  const percentageOptions = percentages.map((percentage) => ({
+    value: String(percentage),
+    label: t("settings.tips.percentages.value", { value: percentage }),
+    tipAmount: calculatePercentageTipAmount({ amount, percentage }),
+  }))
+  const fixedOptions = fixedAmounts.map((fixed) => ({
+    value: String(fixed),
+    label: `+${formatMinor(fixed)}`,
+    tipAmount: NonNegativeInteger(fixed),
+  }))
 
   return (
-    <Screen>
-      <YStack items="center" gap="2" pt="4">
-        <Text color="muted-foreground">{t("paymentTip.orderTotal")}</Text>
-        <Text fontSize={36} fontWeight="600" accessibilityRole="header">
-          {formatMinor(amount)}
+    <Screen
+      footer={
+        customOpen ? (
+          <YStack px={16} pb={16}>
+            <Button
+              size="lg"
+              h={56}
+              label={
+                pending ? t("paymentTip.creating") : t("paymentTip.continue")
+              }
+              pending={pending}
+              disabled={customMinor === null}
+              onPress={() => {
+                if (customMinor !== null)
+                  void confirm(NonNegativeInteger(customMinor))
+              }}
+            />
+          </YStack>
+        ) : null
+      }
+    >
+      <FadeHeader />
+      <YStack items="center" gap={8}>
+        <Text
+          fontSize={fontSize.sm}
+          fontWeight={fontWeight.medium}
+          color="muted-foreground"
+        >
+          {t("paymentTip.orderTotal")}
         </Text>
-        <Text fontWeight="600" text="center">
-          {t("paymentTip.title")}
+        <Text
+          fontSize={36}
+          fontWeight={fontWeight.semibold}
+          fontVariant={["tabular-nums"]}
+          accessibilityRole="header"
+        >
+          {formatMinor(amount)}
         </Text>
       </YStack>
 
-      <XStack flexWrap="wrap" gap="3">
-        {options.map((option) => (
+      <YStack flex={1} justify="center" gap={16} py={16}>
+        <Text text="center" fontWeight={fontWeight.semibold}>
+          {t("paymentTip.title")}
+        </Text>
+        {/* One tap confirms a preset, as web: the group never holds a value. */}
+        {[percentageOptions, fixedOptions].map((group) =>
+          group.length === 0 ? null : (
+            <ToggleGroup
+              key={group === percentageOptions ? "percentages" : "fixed"}
+              value={null}
+              onValueChange={(value) => {
+                const option = group.find(
+                  (candidate) => candidate.value === value
+                )
+                if (option !== undefined) void confirm(option.tipAmount)
+              }}
+              variant="outline"
+              columns={2}
+              spacing={3}
+              disabled={pending}
+            >
+              {group.map((option) => (
+                <TipOption
+                  key={option.value}
+                  value={option.value}
+                  label={option.label}
+                  detail={tipTotal(option.tipAmount)}
+                />
+              ))}
+            </ToggleGroup>
+          )
+        )}
+        <ToggleGroup
+          value={customOpen ? "custom" : null}
+          onValueChange={(value) => {
+            if (value === "custom") setCustomOpen(true)
+            else void confirm(NonNegativeInteger(0))
+          }}
+          variant="outline"
+          columns={2}
+          spacing={3}
+          disabled={pending}
+        >
           <TipOption
-            key={option.key}
-            label={option.label}
-            total={formatMinor(
-              calculatePaymentAmounts({ amount, tipAmount: option.tipAmount })
-                .amount
-            )}
-            disabled={pending}
-            onPress={() => void confirm(option.tipAmount)}
-          />
-        ))}
-        <TipOption
-          label={t("paymentTip.custom.label")}
-          total={t("paymentTip.custom.actionDescription")}
-          disabled={pending}
-          onPress={() => setCustomOpen(true)}
-        />
-        <TipOption
-          label={t("paymentTip.none")}
-          total={formatMinor(amount)}
-          disabled={pending}
-          onPress={() => void confirm(NonNegativeInteger(0))}
-        />
-      </XStack>
-
-      {customOpen ? (
-        <YStack gap="3">
-          <Text color="muted-foreground">
-            {t("paymentTip.custom.description")}
-          </Text>
-          <Field
+            value="custom"
             label={t("paymentTip.custom.label")}
-            value={customTip}
-            keyboardType="decimal-pad"
-            autoComplete="off"
-            disabled={pending}
-            placeholder={t("paymentTip.custom.placeholder")}
-            error={customInvalid ? t("paymentTip.custom.invalid") : undefined}
-            onChangeText={setCustomTip}
+            detail={t("paymentTip.custom.actionDescription")}
           />
-          <Button
-            size="lg"
-            label={
-              pending ? t("paymentTip.creating") : t("paymentTip.continue")
-            }
-            pending={pending}
-            disabled={customMinor === null}
-            onPress={() => {
-              if (customMinor !== null)
-                void confirm(NonNegativeInteger(customMinor))
-            }}
+          <TipOption
+            value="none"
+            label={t("paymentTip.none")}
+            detail={formatMinor(amount)}
           />
-        </YStack>
-      ) : null}
+        </ToggleGroup>
+
+        {customOpen ? (
+          <FieldGroup>
+            <Field>
+              <FieldLabel>{t("paymentTip.custom.label")}</FieldLabel>
+              <FieldDescription>
+                {t("paymentTip.custom.description")}
+              </FieldDescription>
+              <Input
+                value={customTip}
+                keyboardType="decimal-pad"
+                autoComplete="off"
+                autoFocus
+                disabled={pending}
+                invalid={customInvalid}
+                placeholder={t("paymentTip.custom.placeholder")}
+                onChangeText={setCustomTip}
+              />
+              <FieldError>
+                {customInvalid ? t("paymentTip.custom.invalid") : undefined}
+              </FieldError>
+            </Field>
+          </FieldGroup>
+        ) : null}
+      </YStack>
     </Screen>
   )
 }
 
+/** Web's tip option: `h-[clamp(4.5rem,10dvh,6rem)] flex-col gap-1 py-3 text-lg`. */
 function TipOption({
+  value,
   label,
-  total,
-  disabled,
-  onPress,
+  detail,
 }: {
+  readonly value: string
   readonly label: string
-  readonly total: string
-  readonly disabled: boolean
-  readonly onPress: () => void
+  readonly detail: string
 }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${label} ${total}`}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={{
-        flexBasis: "47%",
-        flexGrow: 1,
-        minHeight: 72,
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-        borderRadius: 12,
-        opacity: disabled ? 0.6 : 1,
-      }}
+    <ToggleGroupItem
+      value={value}
+      accessibilityLabel={`${label} ${detail}`}
+      flexDirection="column"
+      h={80}
+      gap={4}
+      py={12}
     >
-      <Text fontWeight="600">{label}</Text>
-      <Text color="muted-foreground">{total}</Text>
-    </Pressable>
+      <Text fontSize={fontSize.lg} fontWeight={fontWeight.semibold}>
+        {label}
+      </Text>
+      <Text fontSize={fontSize.sm} color="muted-foreground">
+        {detail}
+      </Text>
+    </ToggleGroupItem>
   )
 }

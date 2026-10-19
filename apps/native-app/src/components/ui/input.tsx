@@ -25,7 +25,10 @@ const InputFrame = styled(TamaguiInput, {
   borderWidth: 1,
   borderColor: "input focus:ring",
   bg: "input-bg",
-  px: 10,
+  // Not `px`: on native Tamagui expands it to paddingStart/End too, which
+  // beat a caller's `pl`/`pr` (an icon inside the field).
+  pl: 10,
+  pr: 10,
   py: 4,
   color: "color",
   fontSize: fontSize.base,

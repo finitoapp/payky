@@ -209,3 +209,12 @@ test("kitBypasses allows the rest of both packages and type-only imports", () =>
     `)
   ).toEqual([])
 })
+
+test("text fields pad with pl/pr, so a caller's inner icon padding wins", () => {
+  // On native Tamagui expands `px` to paddingStart/End as well, and Yoga
+  // prefers those over the caller's paddingLeft/Right.
+  const violations = ["input.tsx", "textarea.tsx"].filter((file) =>
+    /\bpx\s*[:=]/u.test(readFileSync(path.join(uiDir, file), "utf8"))
+  )
+  expect(violations).toEqual([])
+})

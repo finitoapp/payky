@@ -136,9 +136,10 @@ export function SettingsEntityList<R extends Row>({
   )
 
   return (
-    <VerticalNav items={[]} fill>
+    <VerticalNav items={[]} shrink>
       <FlatList
-        style={{ flex: 1 }}
+        // RN's ScrollView grows by default; the card ends with the last row.
+        style={{ flexGrow: 0 }}
         keyboardShouldPersistTaps="handled"
         data={rows.map(renderRow)}
         keyExtractor={(row) => row.id}

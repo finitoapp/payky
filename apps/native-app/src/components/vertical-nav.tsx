@@ -72,18 +72,21 @@ export function VerticalNav({
   empty,
   title,
   children,
-  fill = false,
+  shrink = false,
 }: {
   readonly items: ReadonlyArray<VerticalNavItem>
   readonly empty?: ReactNode
   readonly title?: string
   /** Custom virtualized body, still inside the shared card shell. */
   readonly children?: ReactNode
-  /** Let an embedded list fill its parent. */
-  readonly fill?: boolean
+  /**
+   * Size the card to an embedded list's rows but shrink it to its parent,
+   * so a long list scrolls inside the card and a short one ends with it.
+   */
+  readonly shrink?: boolean
 }) {
   return (
-    <VerticalNavShell flex={fill ? 1 : undefined}>
+    <VerticalNavShell shrink={shrink ? 1 : undefined}>
       {title === undefined || title === "" ? null : (
         <VerticalNavTitle accessibilityRole="header">{title}</VerticalNavTitle>
       )}

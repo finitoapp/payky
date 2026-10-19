@@ -17,11 +17,20 @@ import { updatePaymentNumberSeries } from "@payky/core/modules/payment-number-se
 import { paymentNumberSeriesQuery } from "@payky/core/modules/payment-number-series/payment-number-series-queries"
 import { createDefaultPaymentNumberSeries } from "@payky/core/modules/payment-number-series/payment-number-series-utils"
 import { NonNegativeInteger } from "@payky/core/modules/shared/schema"
+import ReceiptText from "lucide-react-native/icons/receipt-text"
 import { Text, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { InlineEditField } from "../../../components/inline-edit-field.tsx"
 import { OptionToggleGroup } from "../../../components/option-toggle-group.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import { FieldGroup } from "../../../components/ui/field.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -34,8 +43,10 @@ export function PaymentNumberSeriesSettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.paymentNumberSeries.title")} />
-      <LastNumberSection />
-      <SeriesFormatSection />
+      <YStack gap={16}>
+        <LastNumberSection />
+        <SeriesFormatSection />
+      </YStack>
     </Screen>
   )
 }
@@ -59,37 +70,45 @@ function LastNumberSection() {
     })
 
   return (
-    <YStack gap="3">
-      <Text fontWeight="700">
-        {t("settings.paymentNumberSeries.lastNumber.title")}
-      </Text>
-      <Text color="muted-foreground">
-        {t("settings.paymentNumberSeries.lastNumber.description")}
-      </Text>
-      <InlineEditField
-        label={t("settings.paymentNumberSeries.lastNumber.serialNumber.label")}
-        description={t(
-          "settings.paymentNumberSeries.lastNumber.serialNumber.description"
-        )}
-        keyboardType="number-pad"
-        defaultValue={serialNumber}
-        codec={nonNegativeIntegerCodec}
-        errorKey="settings.paymentNumberSeries.lastNumber.serialNumber.invalid"
-        onSave={(next) => save({ serialNumber: next, date })}
-      />
-      <InlineEditField
-        label={t("settings.paymentNumberSeries.lastNumber.date.label")}
-        description={t(
-          "settings.paymentNumberSeries.lastNumber.date.description"
-        )}
-        placeholder="yyyy-MM-dd"
-        keyboardType="numbers-and-punctuation"
-        defaultValue={date}
-        codec={optionalDateCodec}
-        errorKey="settings.paymentNumberSeries.lastNumber.date.invalid"
-        onSave={(next) => save({ serialNumber, date: next })}
-      />
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {t("settings.paymentNumberSeries.lastNumber.title")}
+        </CardTitle>
+        <CardDescription>
+          {t("settings.paymentNumberSeries.lastNumber.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <InlineEditField
+            label={t(
+              "settings.paymentNumberSeries.lastNumber.serialNumber.label"
+            )}
+            description={t(
+              "settings.paymentNumberSeries.lastNumber.serialNumber.description"
+            )}
+            keyboardType="number-pad"
+            defaultValue={serialNumber}
+            codec={nonNegativeIntegerCodec}
+            errorKey="settings.paymentNumberSeries.lastNumber.serialNumber.invalid"
+            onSave={(next) => save({ serialNumber: next, date })}
+          />
+          <InlineEditField
+            label={t("settings.paymentNumberSeries.lastNumber.date.label")}
+            description={t(
+              "settings.paymentNumberSeries.lastNumber.date.description"
+            )}
+            placeholder="yyyy-MM-dd"
+            keyboardType="numbers-and-punctuation"
+            defaultValue={date}
+            codec={optionalDateCodec}
+            errorKey="settings.paymentNumberSeries.lastNumber.date.invalid"
+            onSave={(next) => save({ serialNumber, date: next })}
+          />
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -133,67 +152,72 @@ function SeriesFormatSection() {
   ) =>
     list.map((option) => ({
       value: option.value,
+      icon: ReceiptText,
       title: t(option.label),
       description: t(option.description),
     }))
 
   return (
-    <YStack gap="3">
-      <Text fontWeight="700">
-        {t("settings.paymentNumberSeries.form.title")}
-      </Text>
-      <Text color="muted-foreground">
-        {t("settings.paymentNumberSeries.form.description")}
-      </Text>
-      <InlineEditField
-        label={t("settings.paymentNumberSeries.serialNumberDigits.label")}
-        description={t(
-          "settings.paymentNumberSeries.serialNumberDigits.description"
-        )}
-        keyboardType="number-pad"
-        defaultValue={series.serialNumberDigits}
-        codec={positiveIntegerCodec}
-        errorKey="settings.paymentNumberSeries.serialNumberDigits.invalid"
-        onSave={(serialNumberDigits) => save({ serialNumberDigits })}
-      />
-      <InlineEditField
-        label={t("settings.paymentNumberSeries.prefix.label")}
-        description={t("settings.paymentNumberSeries.prefix.description")}
-        defaultValue={series.prefix}
-        codec={optionalTextCodec}
-        errorKey="settings.paymentNumberSeries.prefix.invalid"
-        onSave={(prefix) => save({ prefix })}
-      />
-      <YStack gap="2">
-        <Text fontWeight="600">
-          {t("settings.paymentNumberSeries.year.label")}
-        </Text>
-        <OptionToggleGroup
-          value={year.value}
-          options={options(yearFormatOptions)}
-          onChange={(value) => void year.choose(value)}
-        />
-      </YStack>
-      <YStack gap="2">
-        <Text fontWeight="600">
-          {t("settings.paymentNumberSeries.month.label")}
-        </Text>
-        <OptionToggleGroup
-          value={month.value}
-          options={options(monthFormatOptions)}
-          onChange={(value) => void month.choose(value)}
-        />
-      </YStack>
-      <YStack gap="2">
-        <Text fontWeight="600">
-          {t("settings.paymentNumberSeries.day.label")}
-        </Text>
-        <OptionToggleGroup
-          value={day.value}
-          options={options(dayFormatOptions)}
-          onChange={(value) => void day.choose(value)}
-        />
-      </YStack>
-    </YStack>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("settings.paymentNumberSeries.form.title")}</CardTitle>
+        <CardDescription>
+          {t("settings.paymentNumberSeries.form.description")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <InlineEditField
+            label={t("settings.paymentNumberSeries.serialNumberDigits.label")}
+            description={t(
+              "settings.paymentNumberSeries.serialNumberDigits.description"
+            )}
+            keyboardType="number-pad"
+            defaultValue={series.serialNumberDigits}
+            codec={positiveIntegerCodec}
+            errorKey="settings.paymentNumberSeries.serialNumberDigits.invalid"
+            onSave={(serialNumberDigits) => save({ serialNumberDigits })}
+          />
+          <InlineEditField
+            label={t("settings.paymentNumberSeries.prefix.label")}
+            description={t("settings.paymentNumberSeries.prefix.description")}
+            defaultValue={series.prefix}
+            codec={optionalTextCodec}
+            errorKey="settings.paymentNumberSeries.prefix.invalid"
+            onSave={(prefix) => save({ prefix })}
+          />
+          <YStack gap="2">
+            <Text fontWeight="600">
+              {t("settings.paymentNumberSeries.year.label")}
+            </Text>
+            <OptionToggleGroup
+              value={year.value}
+              options={options(yearFormatOptions)}
+              onChange={(value) => void year.choose(value)}
+            />
+          </YStack>
+          <YStack gap="2">
+            <Text fontWeight="600">
+              {t("settings.paymentNumberSeries.month.label")}
+            </Text>
+            <OptionToggleGroup
+              value={month.value}
+              options={options(monthFormatOptions)}
+              onChange={(value) => void month.choose(value)}
+            />
+          </YStack>
+          <YStack gap="2">
+            <Text fontWeight="600">
+              {t("settings.paymentNumberSeries.day.label")}
+            </Text>
+            <OptionToggleGroup
+              value={day.value}
+              options={options(dayFormatOptions)}
+              onChange={(value) => void day.choose(value)}
+            />
+          </YStack>
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }

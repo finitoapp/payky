@@ -15,13 +15,32 @@ import {
   parseTipPercentages,
 } from "@payky/core/modules/app-settings/app-settings-tips"
 import { Integer } from "@payky/core/modules/shared/schema"
+import Plus from "lucide-react-native/icons/plus"
+import RotateCcw from "lucide-react-native/icons/rotate-ccw"
+import Trash from "lucide-react-native/icons/trash"
 import { useState } from "react"
-import { Switch } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
-import { Field } from "../../../components/field.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import { Checkbox } from "../../../components/ui/checkbox.tsx"
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
+import { Input } from "../../../components/ui/input.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
@@ -123,96 +142,100 @@ function TipsSettingsForm({
   }
 
   return (
-    <>
-      <Text fontWeight="700">{t("settings.tips.form.title")}</Text>
-      <Text color="muted-foreground">
-        {t("settings.tips.form.description")}
-      </Text>
+    <Card>
+      <CardHeader>
+        <CardTitle size="sm">{t("settings.tips.form.title")}</CardTitle>
+        <CardDescription>{t("settings.tips.form.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <Field orientation="horizontal">
+            <Checkbox
+              checked={enabled}
+              disabled={pending}
+              accessibilityLabel={t("settings.tips.enabled.label")}
+              onCheckedChange={setEnabled}
+            />
+            <FieldContent>
+              <FieldLabel>{t("settings.tips.enabled.label")}</FieldLabel>
+              <FieldDescription>
+                {t("settings.tips.enabled.description")}
+              </FieldDescription>
+            </FieldContent>
+          </Field>
 
-      <XStack gap="3" items="center">
-        <Switch
-          accessibilityLabel={t("settings.tips.enabled.label")}
-          value={enabled}
-          disabled={pending}
-          onValueChange={setEnabled}
+          <TipPresetField
+            addLabel={t("settings.tips.percentages.add")}
+            description={t("settings.tips.percentages.description")}
+            disabled={pending}
+            error={percentageError}
+            keyboardType="number-pad"
+            inputValue={percentageInput}
+            label={t("settings.tips.percentages.label")}
+            onAdd={addPercentage}
+            onInputChange={(value) => {
+              setPercentageInput(value)
+              setPercentageError(null)
+            }}
+            onRemove={(value) =>
+              setPercentages(
+                percentages.filter((percentage) => percentage !== value)
+              )
+            }
+            placeholder={t("settings.tips.percentages.placeholder")}
+            presets={percentages}
+            renderPreset={(value) =>
+              t("settings.tips.percentages.value", { value })
+            }
+          />
+
+          <TipPresetField
+            addLabel={t("settings.tips.fixedAmounts.add")}
+            description={t("settings.tips.fixedAmounts.description", {
+              currency: settings.fiatCurrency,
+            })}
+            disabled={pending}
+            error={fixedAmountError}
+            keyboardType="decimal-pad"
+            inputValue={fixedAmountInput}
+            label={t("settings.tips.fixedAmounts.label")}
+            onAdd={addFixedAmount}
+            onInputChange={(value) => {
+              setFixedAmountInput(value)
+              setFixedAmountError(null)
+            }}
+            onRemove={(value) =>
+              setFixedAmounts(fixedAmounts.filter((amount) => amount !== value))
+            }
+            placeholder={t("settings.tips.fixedAmounts.placeholder")}
+            presets={fixedAmounts}
+            renderPreset={(value) =>
+              formatMoney(
+                { value: Integer(value), currency: settings.fiatCurrency },
+                locale
+              )
+            }
+          />
+
+          <Button
+            label={t("settings.tips.reset")}
+            iconStart={RotateCcw}
+            variant="outline"
+            disabled={pending}
+            onPress={resetToDefaults}
+          />
+        </FieldGroup>
+      </CardContent>
+      <CardFooter justify="flex-end">
+        <Button
+          label={t("settings.tips.save")}
+          pending={pending}
+          onPress={() => {
+            void save()
+          }}
         />
-        <YStack flex={1}>
-          <Text fontWeight="600">{t("settings.tips.enabled.label")}</Text>
-          <Text fontSize={13} color="muted-foreground">
-            {t("settings.tips.enabled.description")}
-          </Text>
-        </YStack>
-      </XStack>
-
-      <TipPresetField
-        addLabel={t("settings.tips.percentages.add")}
-        description={t("settings.tips.percentages.description")}
-        disabled={pending}
-        error={percentageError}
-        keyboardType="number-pad"
-        inputValue={percentageInput}
-        label={t("settings.tips.percentages.label")}
-        onAdd={addPercentage}
-        onInputChange={(value) => {
-          setPercentageInput(value)
-          setPercentageError(null)
-        }}
-        onRemove={(value) =>
-          setPercentages(
-            percentages.filter((percentage) => percentage !== value)
-          )
-        }
-        placeholder={t("settings.tips.percentages.placeholder")}
-        presets={percentages}
-        renderPreset={(value) =>
-          t("settings.tips.percentages.value", { value })
-        }
-      />
-
-      <TipPresetField
-        addLabel={t("settings.tips.fixedAmounts.add")}
-        description={t("settings.tips.fixedAmounts.description", {
-          currency: settings.fiatCurrency,
-        })}
-        disabled={pending}
-        error={fixedAmountError}
-        keyboardType="decimal-pad"
-        inputValue={fixedAmountInput}
-        label={t("settings.tips.fixedAmounts.label")}
-        onAdd={addFixedAmount}
-        onInputChange={(value) => {
-          setFixedAmountInput(value)
-          setFixedAmountError(null)
-        }}
-        onRemove={(value) =>
-          setFixedAmounts(fixedAmounts.filter((amount) => amount !== value))
-        }
-        placeholder={t("settings.tips.fixedAmounts.placeholder")}
-        presets={fixedAmounts}
-        renderPreset={(value) =>
-          formatMoney(
-            { value: Integer(value), currency: settings.fiatCurrency },
-            locale
-          )
-        }
-      />
-
-      <Button
-        size="lg"
-        label={t("settings.tips.reset")}
-        variant="outline"
-        disabled={pending}
-        onPress={resetToDefaults}
-      />
-      <Button
-        size="lg"
-        label={t("settings.tips.save")}
-        pending={pending}
-        onPress={() => {
-          void save()
-        }}
-      />
-    </>
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -248,51 +271,61 @@ function TipPresetField({
   const { t } = useTranslation()
 
   return (
-    <YStack gap="2">
-      {presets.map((value) => {
-        const text = renderPreset(value)
-        return (
-          <XStack
-            key={value}
-            items="center"
-            gap="2"
-            px="3"
-            rounded="lg"
-            borderWidth={1}
-            borderColor="border-color"
-          >
-            <Text flex={1} fontWeight="600">
-              {text}
-            </Text>
-            <Button
-              size="lg"
-              label={t("settings.tips.preset.remove", { value: text })}
-              variant="outline"
-              disabled={disabled}
-              onPress={() => onRemove(value)}
-            />
-          </XStack>
-        )
-      })}
-      <Field
-        label={label}
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <FieldDescription>{description}</FieldDescription>
+      <YStack
+        rounded="lg"
+        borderWidth={1}
+        borderColor="border-color"
+        overflow="hidden"
+      >
+        {presets.map((value, index) => {
+          const text = renderPreset(value)
+          return (
+            <XStack
+              key={value}
+              items="center"
+              gap="3"
+              px="3"
+              py="2"
+              {...(index > 0
+                ? { borderTopWidth: 1, borderColor: "border-color" }
+                : {})}
+            >
+              <Text flex={1} fontWeight="600">
+                {text}
+              </Text>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                accessibilityLabel={t("settings.tips.preset.remove", {
+                  value: text,
+                })}
+                disabled={disabled}
+                iconStart={Trash}
+                onPress={() => onRemove(value)}
+              />
+            </XStack>
+          )
+        })}
+      </YStack>
+      <Input
         value={inputValue}
         disabled={disabled}
         keyboardType={keyboardType}
+        invalid={error !== null}
         placeholder={placeholder}
-        error={error === null ? undefined : t(error)}
         onChangeText={onInputChange}
       />
-      <Text fontSize={13} color="muted-foreground">
-        {description}
-      </Text>
       <Button
-        size="lg"
         label={addLabel}
+        iconStart={Plus}
         variant="outline"
         disabled={disabled}
         onPress={onAdd}
       />
-    </YStack>
+      <FieldError>{error === null ? undefined : t(error)}</FieldError>
+    </Field>
   )
 }

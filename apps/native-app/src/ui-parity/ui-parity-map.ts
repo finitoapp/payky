@@ -660,7 +660,27 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/legal-entity/legal-entity-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Checkbox:
+        "native uses the existing controlled checkbox for VAT payer status; the web source routes the same immediate save through InlineEditCheckbox",
+      Field:
+        "native renders the existing country and currency controls inside the shared Field layout; web's InlineEditSelect owns that layout",
+      FieldContent:
+        "native renders VAT text in the shared FieldContent layout; web's InlineEditCheckbox owns that layout",
+      FieldLabel:
+        "native renders the select labels as FieldLabel parts; web's InlineEditSelect owns those labels",
+      Select:
+        "native uses the platform choice sheet and shows the unset country prompt above the empty select; web uses InlineEditSelect with its placeholder inside the field",
+      SelectContent:
+        "native's SelectContent presents the available values in the platform choice sheet; web's InlineEditSelect owns its select presentation",
+      SelectItem:
+        "native renders the country and currency options as SelectItem rows; web's InlineEditSelect owns its option list",
+      SelectTrigger:
+        "native uses a SelectTrigger for the platform choice sheet; web's InlineEditSelect owns its select trigger",
+      SelectValue:
+        "native uses SelectValue to show the current choice; web's InlineEditSelect owns its value display",
+    },
   },
   {
     native:
@@ -725,7 +745,13 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/payment-number-series/payment-number-series-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      DateInput:
+        "native edits the existing yyyy-MM-dd value with a keyboard field; web uses the browser date input",
+      OptionToggleGroup:
+        "native renders the option groups directly and saves each choice immediately; web wraps the same immediate choices in InlineEditToggleGroup",
+    },
   },
   {
     native: "src/features/settings/privacy/ai-assistant-card.tsx",
@@ -869,7 +895,14 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/tax-rates/tax-rates-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Star: "the default-rate button uses the native secondary variant but the lucide-react-native star remains unfilled; the web fills its star icon",
+      CardDescription:
+        "native uses CardDescription for descriptive copy that the web renders as a paragraph",
+      CardTitle:
+        "native uses CardTitle for the add-rate heading that the web renders as a paragraph",
+    },
   },
   {
     native: "src/features/settings/theme/theme-settings-page.tsx",
@@ -878,8 +911,15 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   },
   {
     native: "src/features/settings/tips/tips-settings-page.tsx",
-    web: ["apps/web-app/src/features/settings/tips/tips-settings-page.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/settings/settings-form-card.tsx",
+      "apps/web-app/src/features/settings/tips/tips-settings-page.tsx",
+    ],
+    status: "matched",
+    allowedDifferences: {
+      SavedMessage:
+        "native keeps its existing success toast after Save; web SettingsFormCard displays an inline saved message",
+    },
   },
   {
     native: "src/features/shared/account-transfer-target.tsx",

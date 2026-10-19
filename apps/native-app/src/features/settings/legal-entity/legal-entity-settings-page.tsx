@@ -11,11 +11,25 @@ import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-u
 import { setLegalEntity } from "@payky/core/modules/legal-entity/legal-entity-actions"
 import { legalEntityQuery } from "@payky/core/modules/legal-entity/legal-entity-queries"
 import type { CountryCode } from "@payky/core/modules/legal-entity/legal-entity-types"
-import { Switch } from "react-native"
-import { Text, XStack, YStack } from "tamagui"
+import { Text } from "tamagui"
 import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
+import { Checkbox } from "../../../components/ui/checkbox.tsx"
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "../../../components/ui/field.tsx"
 import {
   Select,
   SelectContent,
@@ -66,108 +80,125 @@ export function LegalEntitySettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.legalEntity.title")} />
-      <Text color="muted-foreground">
-        {t("settings.legalEntity.description")}
-      </Text>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.legalEntity.title")}</CardTitle>
+          <CardDescription>
+            {t("settings.legalEntity.description")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Field>
+              <FieldLabel>{t("settings.legalEntity.country.label")}</FieldLabel>
+              {country.value === undefined ? (
+                <Text color="muted-foreground">
+                  {t("settings.legalEntity.country.placeholder")}
+                </Text>
+              ) : null}
+              {/* Nothing is selected until a country is chosen: the row does not exist. */}
+              <Select
+                value={
+                  country.value === undefined
+                    ? ""
+                    : z.encode(countryCodec, country.value)
+                }
+                onValueChange={(value) => {
+                  const parsed = z.safeDecode(countryCodec, value)
+                  if (parsed.success) void country.choose(parsed.data)
+                }}
+                items={Object.fromEntries(
+                  countryOptions
+                    .map((option) => ({
+                      value: option,
+                      title: t(
+                        countryLabelKey(
+                          option === OTHER_COUNTRY ? null : option
+                        )
+                      ),
+                    }))
+                    .map((option) => [option.value, option.title])
+                )}
+              >
+                <SelectTrigger
+                  fullWidth
+                  accessibilityLabel={t("settings.legalEntity.country.label")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent title={t("settings.legalEntity.country.label")}>
+                  {countryOptions
+                    .map((option) => ({
+                      value: option,
+                      title: t(
+                        countryLabelKey(
+                          option === OTHER_COUNTRY ? null : option
+                        )
+                      ),
+                    }))
+                    .map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </Field>
 
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.legalEntity.country.label")}</Text>
-        {country.value === undefined ? (
-          <Text color="muted-foreground">
-            {t("settings.legalEntity.country.placeholder")}
-          </Text>
-        ) : null}
-        {/* Nothing is selected until a country is chosen: the row does not exist. */}
-        <Select
-          value={
-            country.value === undefined
-              ? ""
-              : z.encode(countryCodec, country.value)
-          }
-          onValueChange={(value) => {
-            const parsed = z.safeDecode(countryCodec, value)
-            if (parsed.success) void country.choose(parsed.data)
-          }}
-          items={Object.fromEntries(
-            countryOptions
-              .map((option) => ({
-                value: option,
-                title: t(
-                  countryLabelKey(option === OTHER_COUNTRY ? null : option)
-                ),
-              }))
-              .map((option) => [option.value, option.title])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.legalEntity.country.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.legalEntity.country.label")}>
-            {countryOptions
-              .map((option) => ({
-                value: option,
-                title: t(
-                  countryLabelKey(option === OTHER_COUNTRY ? null : option)
-                ),
-              }))
-              .map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.title}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-      </YStack>
+            <Field>
+              <FieldLabel>
+                {t("settings.legalEntity.currency.label")}
+              </FieldLabel>
+              <Select
+                value={currency.value}
+                onValueChange={(value) => void currency.choose(value)}
+                items={Object.fromEntries(
+                  fiatCurrencyOptions.map((option) => [
+                    option.value,
+                    t(option.label),
+                  ])
+                )}
+              >
+                <SelectTrigger
+                  fullWidth
+                  accessibilityLabel={t("settings.legalEntity.currency.label")}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent title={t("settings.legalEntity.currency.label")}>
+                  {fiatCurrencyOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {t(option.label)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                {t("settings.legalEntity.currency.description")}
+              </FieldDescription>
+            </Field>
 
-      <YStack gap="2">
-        <Text fontWeight="700">{t("settings.legalEntity.currency.label")}</Text>
-        <Select
-          value={currency.value}
-          onValueChange={(value) => void currency.choose(value)}
-          items={Object.fromEntries(
-            fiatCurrencyOptions.map((option) => [option.value, t(option.label)])
-          )}
-        >
-          <SelectTrigger
-            fullWidth
-            accessibilityLabel={t("settings.legalEntity.currency.label")}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent title={t("settings.legalEntity.currency.label")}>
-            {fiatCurrencyOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {t(option.label)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Text fontSize={13} color="muted-foreground">
-          {t("settings.legalEntity.currency.description")}
-        </Text>
-      </YStack>
-
-      <XStack gap="3" items="center">
-        <Switch
-          accessibilityLabel={t("settings.legalEntity.vatPayer.label")}
-          value={vat.value}
-          // The country comes first: saving this while none is chosen would
-          // write "other" on the user's behalf.
-          disabled={legalEntity === undefined || vat.saving}
-          onValueChange={(next) => void vat.choose(next)}
-        />
-        <YStack flex={1}>
-          <Text fontWeight="600">
-            {t("settings.legalEntity.vatPayer.label")}
-          </Text>
-          <Text fontSize={13} color="muted-foreground">
-            {t("settings.legalEntity.vatPayer.description")}
-          </Text>
-        </YStack>
-      </XStack>
+            <Field orientation="horizontal">
+              <Checkbox
+                checked={vat.value}
+                accessibilityLabel={t("settings.legalEntity.vatPayer.label")}
+                // The country comes first: saving this while none is chosen
+                // would write "other" on the user's behalf.
+                disabled={legalEntity === undefined || vat.saving}
+                onCheckedChange={(next) => void vat.choose(next)}
+              />
+              <FieldContent>
+                <FieldLabel>
+                  {t("settings.legalEntity.vatPayer.label")}
+                </FieldLabel>
+                <FieldDescription>
+                  {t("settings.legalEntity.vatPayer.description")}
+                </FieldDescription>
+              </FieldContent>
+            </Field>
+          </FieldGroup>
+        </CardContent>
+      </Card>
     </Screen>
   )
 }

@@ -21,6 +21,7 @@ import { Button } from "../../../components/ui/button.tsx"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { fontSize, fontWeight } from "../../../theme/tokens.ts"
 
 /**
  * Creates a demo account and switches to it; `DemoDataSeed` then fills it
@@ -63,49 +64,57 @@ export function DemoDataPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.demoData.title")} />
-      {account.demo === null ? null : (
-        <Alert variant="info" icon={DatabaseZap}>
-          <AlertTitle>{t("settings.demoData.current.title")}</AlertTitle>
+      <YStack gap={20}>
+        {account.demo === null ? null : (
+          <Alert variant="info" icon={DatabaseZap}>
+            <AlertTitle>{t("settings.demoData.current.title")}</AlertTitle>
+            <AlertDescription>
+              {t("settings.demoData.current.description")}
+            </AlertDescription>
+          </Alert>
+        )}
+        <Alert variant="destructive" icon={TriangleAlert}>
+          <AlertTitle>{t("settings.demoData.warning.title")}</AlertTitle>
           <AlertDescription>
-            {t("settings.demoData.current.description")}
+            <YStack gap={8} pl={20}>
+              {(
+                [
+                  t("settings.demoData.warning.newAccount", {
+                    name: accountName,
+                  }),
+                  t("settings.demoData.warning.irreversible"),
+                  t("settings.demoData.warning.relays"),
+                  t("settings.demoData.warning.services"),
+                  t("settings.demoData.warning.duration"),
+                ] as const
+              ).map((item, index) => (
+                <Text
+                  key={item}
+                  fontSize={fontSize.sm}
+                  color="muted-foreground"
+                  // Web's <strong> around the relays item.
+                  fontWeight={index === 2 ? fontWeight.bold : fontWeight.normal}
+                >
+                  {`• ${item}`}
+                </Text>
+              ))}
+            </YStack>
           </AlertDescription>
         </Alert>
-      )}
-      <Alert variant="destructive" icon={TriangleAlert}>
-        <AlertTitle>{t("settings.demoData.warning.title")}</AlertTitle>
-        <AlertDescription>
-          <YStack gap="2" pl="4">
-            <Text color="muted-foreground">
-              {`• ${t("settings.demoData.warning.newAccount", { name: accountName })}`}
-            </Text>
-            <Text color="muted-foreground">
-              {`• ${t("settings.demoData.warning.irreversible")}`}
-            </Text>
-            <Text fontSize="sm" fontWeight="700">
-              {`• ${t("settings.demoData.warning.relays")}`}
-            </Text>
-            <Text color="muted-foreground">
-              {`• ${t("settings.demoData.warning.services")}`}
-            </Text>
-            <Text color="muted-foreground">
-              {`• ${t("settings.demoData.warning.duration")}`}
-            </Text>
-          </YStack>
-        </AlertDescription>
-      </Alert>
-      <Button
-        size="lg"
-        label={t(
-          pending
-            ? "settings.demoData.action.pending"
-            : "settings.demoData.action"
-        )}
-        variant="destructive"
-        pending={pending}
-        onPress={() => {
-          void create()
-        }}
-      />
+        <Button
+          size="lg"
+          label={t(
+            pending
+              ? "settings.demoData.action.pending"
+              : "settings.demoData.action"
+          )}
+          variant="destructive"
+          pending={pending}
+          onPress={() => {
+            void create()
+          }}
+        />
+      </YStack>
     </Screen>
   )
 }

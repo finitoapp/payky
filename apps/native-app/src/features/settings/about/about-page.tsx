@@ -5,13 +5,15 @@ import DatabaseZap from "lucide-react-native/icons/database-zap"
 import GitFork from "lucide-react-native/icons/git-fork"
 import ScrollText from "lucide-react-native/icons/scroll-text"
 import ShieldCheck from "lucide-react-native/icons/shield-check"
-import { Platform } from "react-native"
+import { Image, Platform } from "react-native"
 import { Text, YStack } from "tamagui"
+import paykyIcon from "../../../../assets/payky-icon.png"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Icon } from "../../../components/ui/icon.tsx"
 import { VerticalNav } from "../../../components/vertical-nav.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { fontSize } from "../../../theme/tokens.ts"
 
 export function AboutPage() {
   const { t } = useTranslation()
@@ -32,17 +34,22 @@ export function AboutPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.about.title")} />
-      <YStack items="center" gap="3" py="8">
-        <Text fontSize="2xl" fontWeight="700" text="center">
-          {t("settings.about.app.title")}
-        </Text>
+      {/* Web's icon-animated.svg; RN cannot play an SVG animation, so this
+          is the static app icon. No shadow: native cards have none. */}
+      <YStack items="center" gap={32} pt={32} pb={16}>
+        <Image
+          source={paykyIcon}
+          style={{ width: 160, height: 160, borderRadius: 24 }}
+          accessibilityLabel={t("settings.about.app.title")}
+          accessibilityIgnoresInvertColors
+        />
         {version === undefined ? null : (
-          <Text color="muted-foreground">
+          <Text fontSize={fontSize.sm} color="muted-foreground">
             {t("settings.appVersion")} <Text fontWeight="700">{version}</Text>
           </Text>
         )}
         {Platform.OS === "android" && versionCode !== undefined ? (
-          <Text color="muted-foreground">
+          <Text fontSize={fontSize.sm} color="muted-foreground">
             {t("settings.appVersionCode")}{" "}
             <Text fontWeight="700">{versionCode}</Text>
           </Text>

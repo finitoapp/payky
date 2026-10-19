@@ -112,28 +112,64 @@ function Keys({
       {rows.map((row) => (
         <XStack key={row.join("")}>
           {row.map((key) => (
-            <Button
+            <KeypadKey
               key={key}
-              variant="ghost"
-              flex={1}
-              h={72}
-              rounded={radius.full}
-              accessibilityLabel={label(key)}
-              onPress={() => {
+              label={label(key)}
+              onKey={() => {
                 hapticButtonPress()
                 setAmountInput((current) =>
                   applyAmountKey(current, key, currency)
                 )
               }}
             >
-              <Text fontSize={fontSize["3xl"]}>
-                {key === "." ? decimalSeparator : key}
-              </Text>
-            </Button>
+              {key === "." ? decimalSeparator : key}
+            </KeypadKey>
           ))}
         </XStack>
       ))}
     </YStack>
+  )
+}
+
+const PRESS_IN_EXPIRES_MS = 5000
+
+/**
+ * A key that types as the finger lands, as web's keypad does on
+ * `pointerdown`, rather than on release: fast typing feels immediate. A
+ * screen reader activates it without a touch, so `onPress` types only when
+ * no `onPressIn` came just before it; a press the finger slid off of has
+ * no `onPress`, and its stamp expires.
+ * ponytail: holding a key past PRESS_IN_EXPIRES_MS types it again on release.
+ */
+function KeypadKey({
+  label,
+  children,
+  onKey,
+}: {
+  readonly label: string
+  readonly children: string
+  readonly onKey: () => void
+}) {
+  const typedOnPressInAt = useRef<number | null>(null)
+  return (
+    <Button
+      variant="ghost"
+      flex={1}
+      h={72}
+      rounded={radius.full}
+      accessibilityLabel={label}
+      onPressIn={() => {
+        typedOnPressInAt.current = Date.now()
+        onKey()
+      }}
+      onPress={() => {
+        const at = typedOnPressInAt.current
+        typedOnPressInAt.current = null
+        if (at === null || Date.now() - at > PRESS_IN_EXPIRES_MS) onKey()
+      }}
+    >
+      <Text fontSize={fontSize["3xl"]}>{children}</Text>
+    </Button>
   )
 }
 

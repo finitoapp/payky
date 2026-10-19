@@ -93,9 +93,9 @@ export function Card({
 }
 
 const toneColors = {
-  success: "green-600",
-  warning: "orange-600",
-  danger: "red-600",
+  success: "success",
+  warning: "warning",
+  danger: "destructive",
   muted: "muted-foreground",
 } as const satisfies Record<StatusTone, string>
 

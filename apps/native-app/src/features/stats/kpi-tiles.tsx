@@ -246,7 +246,7 @@ function DeltaLabel({ tile }: { readonly tile: Tile }) {
     <Text
       fontSize={12}
       color={
-        good === null ? "muted-foreground" : good ? "green-600" : "red-600"
+        good === null ? "muted-foreground" : good ? "success" : "destructive"
       }
     >
       {`${arrow} ${percent}${difference === 0 ? "" : ` · ${tile.formatDifference(difference)}`}`.trim()}

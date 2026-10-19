@@ -218,7 +218,7 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
             </Text>
           )}
           {refundLabel === null ? null : (
-            <Text color="orange-600">{refundLabel}</Text>
+            <Text color="warning">{refundLabel}</Text>
           )}
         </YStack>
 

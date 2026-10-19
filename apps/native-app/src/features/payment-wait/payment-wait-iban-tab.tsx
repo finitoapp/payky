@@ -128,7 +128,7 @@ export function IbanPaymentTab({
         onPress={onMarkPaid}
       />
       {errorKey === null ? null : (
-        <Text color="red-600" accessibilityRole="alert">
+        <Text color="destructive" accessibilityRole="alert">
           {t(errorKey)}
         </Text>
       )}

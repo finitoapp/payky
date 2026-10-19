@@ -617,7 +617,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         </Text>
       ) : preparationStatus?.status === "failed" ? (
         <YStack gap="3" items="center">
-          <Text color="red-600" text="center">
+          <Text color="destructive" text="center">
             {t("paymentWait.prepareError")}
           </Text>
           <Button
@@ -730,7 +730,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             onPress={() => void markPaid()}
           />
           {errorKey === null ? null : (
-            <Text color="red-600" accessibilityRole="alert">
+            <Text color="destructive" accessibilityRole="alert">
               {t(errorKey)}
             </Text>
           )}

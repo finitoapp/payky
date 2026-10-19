@@ -10,9 +10,9 @@ import type { useTranslation } from "../../hooks/use-translation.ts"
 export type StatusTone = "success" | "warning" | "danger" | "muted"
 
 const toneColors = {
-  success: "green-600",
-  warning: "orange-600",
-  danger: "red-600",
+  success: "success",
+  warning: "warning",
+  danger: "destructive",
   muted: "muted-foreground",
 } as const satisfies Record<StatusTone, string>
 
@@ -54,9 +54,9 @@ export function IssueBadges({
         <Text
           key={issue}
           fontSize={12}
-          color="orange-600"
+          color="warning"
           borderWidth={1}
-          borderColor="orange-600"
+          borderColor="warning"
           rounded="sm"
           px="2"
         >
@@ -107,7 +107,7 @@ function ActivityRow({ row }: { readonly row: ActivityRowData }) {
         px="3"
         items="center"
         borderLeftWidth={row.issues.length > 0 ? 3 : 0}
-        borderLeftColor="orange-600"
+        borderLeftColor="warning"
       >
         <StatusDot tone={row.statusTone} glyph={row.statusGlyph} />
         <YStack flex={1} gap="1">
@@ -119,7 +119,7 @@ function ActivityRow({ row }: { readonly row: ActivityRowData }) {
           </Text>
           <IssueBadges issues={row.issues} />
           {row.refundLabel === undefined ? null : (
-            <Text fontSize={12} color="orange-600">
+            <Text fontSize={12} color="warning">
               {row.refundLabel}
             </Text>
           )}

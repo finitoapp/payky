@@ -204,10 +204,10 @@ export function OnboardingPage() {
           />
           {profilePublishFailed ? (
             <YStack gap="1" accessibilityRole="alert">
-              <Text color="red-600" fontWeight="600">
+              <Text color="destructive" fontWeight="600">
                 {t("onboarding.businessName.publishFailed.title")}
               </Text>
-              <Text color="red-600">
+              <Text color="destructive">
                 {t("onboarding.businessName.publishFailed.description")}
               </Text>
             </YStack>

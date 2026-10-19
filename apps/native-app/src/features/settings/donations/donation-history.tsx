@@ -45,7 +45,7 @@ export function DonationHistory() {
         <Text color="muted-foreground">…</Text>
       ) : isError && items.length === 0 ? (
         <YStack gap="2">
-          <Text color="red-600" accessibilityRole="alert">
+          <Text color="destructive" accessibilityRole="alert">
             {t("settings.donations.history.error")}
           </Text>
           <Button
@@ -91,7 +91,7 @@ export function DonationHistory() {
         ))
       )}
       {isFetchNextPageError ? (
-        <Text color="red-600" accessibilityRole="alert">
+        <Text color="destructive" accessibilityRole="alert">
           {t("settings.donations.history.error")}
         </Text>
       ) : null}

@@ -76,7 +76,7 @@ export function EvoluExportPage() {
           p="4"
           rounded="lg"
           borderWidth={1}
-          borderColor="red-600"
+          borderColor="destructive"
         >
           <Text fontWeight="700">
             {t("settings.evoluExport.warning.title")}
@@ -135,7 +135,7 @@ export function EvoluExportPage() {
               {t("settings.evoluExport.status.title")}
             </Text>
             {failed ? (
-              <Text color="red-600" accessibilityRole="alert">
+              <Text color="destructive" accessibilityRole="alert">
                 {t("settings.evoluExport.status.error")}
               </Text>
             ) : (

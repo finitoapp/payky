@@ -34,11 +34,11 @@ const eetSaleStatusLabelKey = {
 } satisfies Record<EetSaleStatus, TranslationKey>
 
 const eetSaleStatusColor = {
-  pending: "orange-600",
-  confirmed: "green-600",
-  testConfirmed: "blue-600",
-  rejected: "red-600",
-  unsupported: "red-600",
+  pending: "warning",
+  confirmed: "success",
+  testConfirmed: "info",
+  rejected: "destructive",
+  unsupported: "destructive",
 } as const satisfies Record<EetSaleStatus, string>
 
 export function useEetSaleStatus(sale: EetSaleStatusFields) {

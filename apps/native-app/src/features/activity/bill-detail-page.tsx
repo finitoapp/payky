@@ -291,7 +291,7 @@ function BillPaymentRowView({
             tone={paymentStatusTone[status]}
           />
           {refundLabel === null ? null : (
-            <Text fontSize={12} color="orange-600">
+            <Text fontSize={12} color="warning">
               {refundLabel}
             </Text>
           )}

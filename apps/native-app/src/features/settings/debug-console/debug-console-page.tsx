@@ -15,9 +15,9 @@ const methodColors = {
   trace: "muted-foreground",
   debug: "muted-foreground",
   log: "color",
-  info: "blue-600",
-  warn: "orange-600",
-  error: "red-600",
+  info: "info",
+  warn: "warning",
+  error: "destructive",
 } as const satisfies Record<ConsoleOutputHistoryEntry["method"], string>
 
 /** The last captured console entries, newest first; in memory only, gone on restart. */

@@ -41,7 +41,7 @@ export function DeviceHeading({
           </Text>
         ) : null}
         {device.pinBlockedAt !== null ? (
-          <Text fontSize={12} fontWeight="700" color="red-600">
+          <Text fontSize={12} fontWeight="700" color="destructive">
             {t("access.device.blocked")}
           </Text>
         ) : null}

@@ -187,7 +187,7 @@ export function AccountTransferTarget({
           </Text>
           <ScanCodeScanner types={QR_SCAN_TYPES} onScan={onScan} />
           {view.error !== null ? (
-            <Text color="red-600" accessibilityRole="alert">
+            <Text color="destructive" accessibilityRole="alert">
               {t(view.error)}
             </Text>
           ) : null}

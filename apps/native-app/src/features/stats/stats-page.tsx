@@ -94,7 +94,7 @@ function PeriodSummary({
         })}
       </Text>
       {live ? (
-        <Text fontSize={12} color="green-600">
+        <Text fontSize={12} color="success">
           {`● ${t("stats.live")}`}
         </Text>
       ) : loadedAt === undefined ? null : (

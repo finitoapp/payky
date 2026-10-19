@@ -103,7 +103,7 @@ function EetTestResult({ submission }: { readonly submission: EetSubmission }) {
       borderColor="border-color"
       testID="eet-test-result"
     >
-      <Text fontWeight="700" color={isSuccess ? "green-600" : "red-600"}>
+      <Text fontWeight="700" color={isSuccess ? "success" : "destructive"}>
         {t(outcomeTitleKeys[outcome.type])}
       </Text>
       {outcome.type === "accepted" ? (

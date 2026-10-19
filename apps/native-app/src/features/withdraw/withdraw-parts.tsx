@@ -111,9 +111,9 @@ export function LightningAddress({ address }: { readonly address: string }) {
 }
 
 const statusColors = {
-  done: "green-600",
-  failed: "red-600",
-  pending: "orange-600",
+  done: "success",
+  failed: "destructive",
+  pending: "warning",
 } as const satisfies Record<WithdrawalView["state"]["status"], string>
 
 /** The state in words, coloured as well so it reads at a glance. */

@@ -105,3 +105,17 @@ test("lucide icons are imported per module, never from the package root", () => 
     .map(relativeToSrc)
   expect(violations).toEqual([])
 })
+
+test("colors come from the web palette, never Tamagui's default color scales", () => {
+  // `red-600` and friends exist only in @tamagui/config's palette and have no
+  // web counterpart; web's roles are `destructive`, `success`, `warning`, `info`.
+  const defaultScale =
+    /["'](?:red|green|orange|blue|yellow|gray|purple|pink)\d*-\d+["']/u
+  const violations = [
+    ...sourceFiles(srcDir),
+    ...sourceFiles(path.resolve(srcDir, "../app")),
+  ]
+    .filter((file) => defaultScale.test(readFileSync(file, "utf8")))
+    .map(relativeToSrc)
+  expect(violations).toEqual([])
+})

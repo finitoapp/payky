@@ -43,7 +43,7 @@ export function ProfileSettingsPage() {
         <ProfileEditor profile={profile.data} />
       ) : profile.failed && !profile.loading ? (
         <YStack gap="2" accessibilityRole="alert">
-          <Text color="red-600">{t("settings.profile.loadFailed")}</Text>
+          <Text color="destructive">{t("settings.profile.loadFailed")}</Text>
           <Button
             size="lg"
             label={t("settings.profile.retry")}
@@ -162,7 +162,7 @@ function ProfileEditor({ profile }: { readonly profile: NostrProfile }) {
           </YStack>
         </XStack>
         {pictureInvalid ? (
-          <Text color="red-600" accessibilityRole="alert">
+          <Text color="destructive" accessibilityRole="alert">
             {t("settings.profile.picture.invalid")}
           </Text>
         ) : null}

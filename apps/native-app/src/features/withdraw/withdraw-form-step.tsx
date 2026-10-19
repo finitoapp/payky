@@ -242,7 +242,7 @@ export function WithdrawFormFields({
           </Text>
         ) : null}
         {state.addressUnavailable ? (
-          <Text fontSize={13} color="red-600" accessibilityRole="alert">
+          <Text fontSize={13} color="destructive" accessibilityRole="alert">
             {t("withdraw.error.lightningAddressUnavailable")}
           </Text>
         ) : null}
@@ -301,7 +301,7 @@ export function WithdrawFormFields({
         {state.range === null ? null : (
           <Text
             fontSize={13}
-            color={outOfRange ? "red-600" : "muted-foreground"}
+            color={outOfRange ? "destructive" : "muted-foreground"}
           >
             {t("withdraw.amount.range", {
               min: sats(state.range.minSendableSats),
@@ -312,7 +312,7 @@ export function WithdrawFormFields({
         {onchainMinimumSats === null ? null : (
           <Text
             fontSize={13}
-            color={belowOnchainMinimum ? "red-600" : "muted-foreground"}
+            color={belowOnchainMinimum ? "destructive" : "muted-foreground"}
           >
             {t("withdraw.amount.onchainMinimum", {
               amount: sats(onchainMinimumSats),
@@ -371,7 +371,7 @@ export function WithdrawFormFields({
       </Collapsible>
 
       {submitError === null ? null : (
-        <Text color="red-600" accessibilityRole="alert">
+        <Text color="destructive" accessibilityRole="alert">
           {submitError}
         </Text>
       )}

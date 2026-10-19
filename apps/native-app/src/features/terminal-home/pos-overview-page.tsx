@@ -36,8 +36,8 @@ const tableFilterLabelKeys = {
 
 const elapsedColors = {
   normal: "muted-foreground",
-  long: "orange-600",
-  veryLong: "red-600",
+  long: "warning",
+  veryLong: "destructive",
 } as const satisfies Record<ReturnType<typeof elapsedSeverity>, string>
 
 type TFn = ReturnType<typeof useTranslation>["t"]
@@ -278,7 +278,7 @@ function TableTile({
             {t("tables.tile.itemCount", { value: itemCount })}
           </Text>
           {paymentState !== undefined && (
-            <Text color="blue-600" fontWeight="600">
+            <Text color="info" fontWeight="600">
               {t(`tables.tile.${paymentState}`)}
             </Text>
           )}

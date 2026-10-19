@@ -167,7 +167,7 @@ export function BoltCardReader({
   }
 
   return state.step === "failed" ? (
-    <Text color="red-600" text="center" accessibilityRole="alert">
+    <Text color="destructive" text="center" accessibilityRole="alert">
       {state.message}
     </Text>
   ) : (

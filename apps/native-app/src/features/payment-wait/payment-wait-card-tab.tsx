@@ -39,13 +39,13 @@ export function CardPaymentTab({
         onPress={onPayCard}
       />
       {unresolvedTransactionId !== null ? (
-        <Text color="red-600" text="center" accessibilityRole="alert">
+        <Text color="destructive" text="center" accessibilityRole="alert">
           {t("paymentWait.cardPaid.unresolved", {
             transactionId: unresolvedTransactionId,
           })}
         </Text>
       ) : errorKey !== null ? (
-        <Text color="red-600" text="center" accessibilityRole="alert">
+        <Text color="destructive" text="center" accessibilityRole="alert">
           {t(errorKey)}
         </Text>
       ) : null}

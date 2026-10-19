@@ -124,7 +124,7 @@ export function PaymentRefunds({
       title={t("paymentDetail.refunds.title")}
       badge={
         badge === null ? undefined : (
-          <Text fontSize={12} color="orange-600">
+          <Text fontSize={12} color="warning">
             {badge}
           </Text>
         )

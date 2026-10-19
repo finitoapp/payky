@@ -101,7 +101,7 @@ function DonationsInvoiceSettingsPage({
           </YStack>
           {canVerify ? (
             <Text
-              color={verification.failed ? "red-600" : "muted-foreground"}
+              color={verification.failed ? "destructive" : "muted-foreground"}
               accessibilityLiveRegion="polite"
             >
               {t(

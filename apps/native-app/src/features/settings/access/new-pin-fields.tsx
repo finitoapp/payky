@@ -62,7 +62,7 @@ export function NewPinFields({
       />
       <Text
         fontSize={13}
-        color={state.check.invalid ? "red-600" : "muted-foreground"}
+        color={state.check.invalid ? "destructive" : "muted-foreground"}
       >
         {t("access.newPin.description")}
       </Text>

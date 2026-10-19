@@ -192,12 +192,12 @@ export function DonationsSettingsPage() {
             })}
       </Text>
       {loadErrorKey === null ? null : (
-        <Text color="red-600" accessibilityRole="alert">
+        <Text color="destructive" accessibilityRole="alert">
           {t(loadErrorKey)}
         </Text>
       )}
       {invoiceFailed ? (
-        <Text color="red-600" accessibilityRole="alert">
+        <Text color="destructive" accessibilityRole="alert">
           {t("settings.donations.invoice.error")}
         </Text>
       ) : null}

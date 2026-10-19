@@ -204,7 +204,7 @@ export function ExpiryRow({ msLeft }: { readonly msLeft: number }) {
   const { t } = useTranslation()
   return (
     <Row label={t("withdraw.review.expiresIn")}>
-      <Text color={msLeft <= EXPIRY_WARNING_MS ? "red-600" : "color"}>
+      <Text color={msLeft <= EXPIRY_WARNING_MS ? "destructive" : "color"}>
         {formatCountdown(msLeft)}
       </Text>
     </Row>
@@ -256,7 +256,7 @@ export function ReviewFooter({
       <Text color="muted-foreground">{t("withdraw.review.warning")}</Text>
 
       {error === null ? null : (
-        <Text color="red-600" accessibilityRole="alert">
+        <Text color="destructive" accessibilityRole="alert">
           {error}
         </Text>
       )}

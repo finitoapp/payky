@@ -81,7 +81,7 @@ export function TransportSyncStatus({ url }: { readonly url: string }) {
   return (
     <Text
       fontSize={12}
-      color={kind === "error" ? "red-600" : "muted-foreground"}
+      color={kind === "error" ? "destructive" : "muted-foreground"}
     >
       {t(transportSyncKindLabels[kind])}
       {detail === null ? "" : ` · ${detail}`}

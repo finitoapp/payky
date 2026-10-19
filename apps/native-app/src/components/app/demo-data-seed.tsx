@@ -8,6 +8,7 @@ import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useCashuAppRun } from "../../hooks/use-app-run.ts"
+import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import {
   AlertDialog,
@@ -55,6 +56,7 @@ export function DemoDataSeed() {
   const cashuAppRun = useCashuAppRun()
   const { t, language } = useTranslation()
   const [state, setState] = useState<SeedState>({ status: "idle" })
+  useScreenWakeLock(state.status === "running")
   const [dismissed, setDismissed] = useState(false)
   const started = useRef(false)
   const stopRequested = useRef(false)

@@ -61,6 +61,7 @@ import {
 } from "../../../components/ui/stepper.tsx"
 import { nativeEnv } from "../../../core/native-env.ts"
 import { useAccess, useRequirePermission } from "../../../core/use-access.ts"
+import { useScreenWakeLock } from "../../../hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 type FailureReason = Extract<TransferSourceState, { phase: "failed" }>["reason"]
@@ -126,6 +127,7 @@ export function AccountTransferSourcePage() {
   )
 
   const counting = state?.phase === "waiting" || state?.phase === "locked"
+  useScreenWakeLock(counting || state?.phase === "sending")
   useEffect(() => {
     if (!counting) return
     const timer = setInterval(() => setNow(Date.now()), 1000)

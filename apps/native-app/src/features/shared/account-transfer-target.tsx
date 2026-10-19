@@ -40,6 +40,7 @@ import { Button } from "../../components/ui/button.tsx"
 import { nativeEnv } from "../../core/native-env.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
+import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
@@ -97,6 +98,7 @@ export function AccountTransferTarget({
   const reloadAppEvolu = useSetAtom(reloadAppEvoluAtom)
   const setRestoredAccount = useSetAtom(restoredAccountAtom)
   const [view, setView] = useState<View>({ phase: "scan", error: null })
+  useScreenWakeLock(view.phase === "connecting" || view.phase === "code")
   const cancelRef = useRef<(() => void) | null>(null)
   const theme = useTheme()
 

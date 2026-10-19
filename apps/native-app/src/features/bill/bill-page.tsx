@@ -92,6 +92,7 @@ import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
 import { useProductLookup } from "../../hooks/use-product-lookup.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
+import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
@@ -164,6 +165,7 @@ function BillPage({
   /** A code scanned on the home screen, which opened this bill to add it. */
   readonly initialScanCode: string | undefined
 }) {
+  useScreenWakeLock(true)
   const { t } = useTranslation()
   const locale = useLocale()
   // Only meaningful before the bill row exists: it seeds the table the lazily

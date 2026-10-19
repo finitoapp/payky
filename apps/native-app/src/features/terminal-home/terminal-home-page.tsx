@@ -31,6 +31,7 @@ import { nativeRun } from "../../core/native-runtime.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
+import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { radius } from "../../theme/tokens.ts"
 import { AmountKeypad } from "./amount-keypad.tsx"
@@ -52,6 +53,7 @@ export function TerminalHomePage() {
   const { t } = useTranslation()
   const [settings] = useEvoluQuery(settingsQuery).data
   const { mode, enabledModes, setMode } = useTerminalHomeMode()
+  useScreenWakeLock(true)
   const confirmOpen = useIsConfirmOpen()
   // A scan in either mode starts a new bill without a table; the bill then
   // adds the item as if it had been scanned there (scanner/0001).

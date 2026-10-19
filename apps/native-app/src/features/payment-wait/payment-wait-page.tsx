@@ -80,6 +80,7 @@ import { useAppRun, useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useCashuRunToast, useRunToast } from "../../hooks/use-run-toast.ts"
+import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { isSwitchioSupported } from "../../platform/switchio.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
@@ -295,6 +296,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           hasActiveClaim: claims.length > 0,
           now,
         })
+  useScreenWakeLock(status === "pending")
 
   const ibanNumber = ibanAccount?.iban ?? null
   const ibanName = ibanAccount?.name ?? null

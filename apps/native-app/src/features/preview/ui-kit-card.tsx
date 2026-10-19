@@ -391,6 +391,7 @@ export function UiKitCard() {
           <View key={label} px={16} h={36} justify="center">
             <SlidingPillSegmentContent
               active={index === 0}
+              pillId="preview-pill"
               icon={
                 <Icon
                   icon={Plus}

@@ -672,6 +672,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                   >
                     <SlidingPillSegmentContent
                       active={isActive}
+                      pillId="payment-method-pill"
                       icon={
                         <Icon
                           icon={methodIcons[id]}

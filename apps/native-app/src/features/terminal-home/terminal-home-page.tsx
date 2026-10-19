@@ -87,6 +87,7 @@ export function TerminalHomePage() {
                   >
                     <SlidingPillSegmentContent
                       active={active}
+                      pillId="home-mode-pill"
                       icon={
                         <Icon
                           icon={icon}

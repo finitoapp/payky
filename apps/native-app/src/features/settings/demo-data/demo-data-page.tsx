@@ -3,6 +3,7 @@ import { runMutationWithCompletion } from "@payky/core/modules/shared/evolu-util
 import { NonEmptyString255 } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { useAtomValue, useSetAtom } from "jotai"
+import DatabaseZap from "lucide-react-native/icons/database-zap"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
 import { Text, YStack } from "tamagui"
@@ -63,23 +64,33 @@ export function DemoDataPage() {
     <Screen>
       <FadeHeader title={t("settings.demoData.title")} />
       {account.demo === null ? null : (
-        <YStack gap="1" accessibilityRole="alert">
-          <Text fontWeight="700">{t("settings.demoData.current.title")}</Text>
-          <Text color="muted-foreground">
+        <Alert variant="info" icon={DatabaseZap}>
+          <AlertTitle>{t("settings.demoData.current.title")}</AlertTitle>
+          <AlertDescription>
             {t("settings.demoData.current.description")}
-          </Text>
-        </YStack>
+          </AlertDescription>
+        </Alert>
       )}
       <Alert variant="destructive" icon={TriangleAlert}>
         <AlertTitle>{t("settings.demoData.warning.title")}</AlertTitle>
         <AlertDescription>
-          {`• ${t("settings.demoData.warning.newAccount", { name: accountName })}`}
-          {`• ${t("settings.demoData.warning.irreversible")}`}
-          <Text fontSize={14} fontWeight="700">
-            {`• ${t("settings.demoData.warning.relays")}`}
-          </Text>
-          {`• ${t("settings.demoData.warning.services")}`}
-          {`• ${t("settings.demoData.warning.duration")}`}
+          <YStack gap="2" pl="4">
+            <Text color="muted-foreground">
+              {`• ${t("settings.demoData.warning.newAccount", { name: accountName })}`}
+            </Text>
+            <Text color="muted-foreground">
+              {`• ${t("settings.demoData.warning.irreversible")}`}
+            </Text>
+            <Text fontSize="sm" fontWeight="700">
+              {`• ${t("settings.demoData.warning.relays")}`}
+            </Text>
+            <Text color="muted-foreground">
+              {`• ${t("settings.demoData.warning.services")}`}
+            </Text>
+            <Text color="muted-foreground">
+              {`• ${t("settings.demoData.warning.duration")}`}
+            </Text>
+          </YStack>
         </AlertDescription>
       </Alert>
       <Button

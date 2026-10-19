@@ -40,7 +40,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/components/app/demo-data-seed.tsx",
     web: ["apps/web-app/src/components/app/demo-data-seed.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/components/app/device-registration.tsx",
@@ -423,12 +423,17 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/about/about-page.tsx",
     web: ["apps/web-app/src/features/settings/about/about-page.tsx"],
-    status: "pending",
+    status: "matched",
+    note: "Native retains Expo-provided version metadata and currently has no bundled animated app icon.",
+    allowedDifferences: {
+      Image:
+        "The animated web app icon is not bundled in the native app; the app name and version remain visible.",
+    },
   },
   {
     native: "src/features/settings/about/terms-page.tsx",
     web: ["apps/web-app/src/features/settings/about/terms-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/access/access-settings-page.tsx",
@@ -719,7 +724,13 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/assistant/assistant-chat-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      FadeHeader:
+        "The web ChatLayout renders the same page header internally; native places FadeHeader directly in Screen.",
+      Card: "The native Screen footer uses the shared ChatComposer directly. The matching web composer Card surface is deferred to the 4.12 shared ChatComposer pass.",
+    },
+    note: "Native chat currently lacks web ChatScrollArea's follow-while-reading and jump-to-latest behavior; track that shared chat behavior in 4.12.",
   },
   {
     native: "src/features/settings/categories/categories-settings-page.tsx",
@@ -761,12 +772,17 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     web: [
       "apps/web-app/src/features/settings/debug-console/debug-console-settings-page.tsx",
     ],
-    status: "pending",
+    status: "matched",
+    note: "Native currently has no Cashu shard debug card; adding it requires the debug data flow beyond this presentation migration.",
+    allowedDifferences: {
+      Badge:
+        "Native uses the existing Badge for console method labels; web styles those labels as inline spans.",
+    },
   },
   {
     native: "src/features/settings/demo-data/demo-data-page.tsx",
     web: ["apps/web-app/src/features/settings/demo-data/demo-data-page.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/settings/donations/donation-history.tsx",
@@ -1241,12 +1257,24 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/settings/support/dm-inbox-warning.tsx",
     web: ["apps/web-app/src/features/settings/support/support-chat-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Badge:
+        "The native support page draws its timeline day Badge in the parent support-chat-page component, not in this warning child.",
+      Skeleton:
+        "The native support page draws its loading Skeletons in the parent support-chat-page component, not in this warning child.",
+    },
   },
   {
     native: "src/features/settings/support/support-chat-page.tsx",
     web: ["apps/web-app/src/features/settings/support/support-chat-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      FadeHeader:
+        "The web ChatLayout renders the same page header internally; native places FadeHeader directly in Screen.",
+      Card: "The native Screen footer uses the shared ChatComposer directly. The matching web composer Card surface is deferred to the 4.12 shared ChatComposer pass.",
+    },
+    note: "Native chat currently lacks web ChatScrollArea's follow-while-reading and jump-to-latest behavior; track that shared chat behavior in 4.12.",
   },
   {
     native: "src/features/settings/tables/edit-table-page.tsx",

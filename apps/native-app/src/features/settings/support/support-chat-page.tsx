@@ -1,3 +1,4 @@
+import { formatRelativeDate } from "@payky/app-shared/format-date"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { splitMentions } from "@payky/app-shared/support-chat-mentions"
 import {
@@ -12,18 +13,20 @@ import CircleAlert from "lucide-react-native/icons/circle-alert"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import { LoadingView } from "../../../components/state-views.tsx"
 import {
   Alert,
   AlertAction,
   AlertDescription,
 } from "../../../components/ui/alert.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import { Skeleton } from "../../../components/ui/skeleton.tsx"
 import {
   useNostrIdentity,
   useNostrMemberProfile,
 } from "../../../hooks/use-nostr-profile.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
+import { radius } from "../../../theme/tokens.ts"
 import { ChatComposer } from "../../shared/chat-composer.tsx"
 import { DmInboxWarning } from "./dm-inbox-warning.tsx"
 import { useSendSupportMessage } from "./use-send-support-message.ts"
@@ -88,7 +91,27 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
   const timeline = buildTimeline(entries)
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <YStack
+          px="4"
+          py="3"
+          borderTopWidth={1}
+          borderColor="border-color"
+          bg="background"
+        >
+          <ChatComposer
+            label={t("settings.supportChat.message.label")}
+            placeholder={t("settings.supportChat.message.placeholder")}
+            sendLabel={t("settings.supportChat.send")}
+            disabled={team.data === undefined}
+            onSend={(text) => {
+              void sendAndOpenReplies(text)
+            }}
+          />
+        </YStack>
+      }
+    >
       <FadeHeader title={t("settings.supportChat.title")} />
       {failure === null ? null : (
         <Alert variant="destructive" icon={CircleAlert}>
@@ -107,7 +130,11 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
         </Alert>
       )}
       {loading ? (
-        <LoadingView />
+        <YStack gap="2" mt="auto" accessibilityElementsHidden>
+          <Skeleton h={40} w="67%" rounded={radius["2xl"]} />
+          <Skeleton h={56} w="50%" self="flex-end" rounded={radius["2xl"]} />
+          <Skeleton h={40} w="60%" rounded={radius["2xl"]} />
+        </YStack>
       ) : timeline.length === 0 && failure === null ? (
         <Text color="muted-foreground" text="center">
           {t("settings.supportChat.empty")}
@@ -135,15 +162,6 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
           onPublish={dmRelayList.publish}
         />
       ) : null}
-      <ChatComposer
-        label={t("settings.supportChat.message.label")}
-        placeholder={t("settings.supportChat.message.placeholder")}
-        sendLabel={t("settings.supportChat.send")}
-        disabled={team.data === undefined}
-        onSend={(text) => {
-          void sendAndOpenReplies(text)
-        }}
-      />
     </Screen>
   )
 }
@@ -160,17 +178,12 @@ function TimelineRow({
   const locale = useLocale()
   if (item.kind === "day") {
     return (
-      <Text
-        self="center"
-        my="2"
-        fontSize={12}
-        fontWeight="600"
-        color="muted-foreground"
-      >
-        {new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
-          item.date
-        )}
-      </Text>
+      <YStack self="center" my="2">
+        <Badge
+          variant="secondary"
+          label={formatRelativeDate(item.date, new Date(), locale)}
+        />
+      </YStack>
     )
   }
   return (

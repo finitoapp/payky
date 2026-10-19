@@ -3,13 +3,21 @@ import { markDemoAccountSeeded } from "@payky/core/evolu/device-account"
 import { router } from "expo-router"
 import { useAtomValue } from "jotai"
 import { useEffect, useRef, useState } from "react"
-import { Modal } from "react-native"
 import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog.tsx"
 import { Button } from "../ui/button.tsx"
 
 /** The most history generated, from today back; stopping ends it sooner. */
@@ -89,16 +97,15 @@ export function DemoDataSeed() {
   const running = state.status === "running"
 
   return (
-    <Modal
-      transparent
-      animationType="fade"
-      onRequestClose={() => {
-        if (!running) setDismissed(true)
+    <AlertDialog
+      open={!dismissed}
+      onOpenChange={(open) => {
+        if (!open && !running) setDismissed(true)
       }}
     >
-      <YStack flex={1} justify="center" p="6" bg="rgba(0,0,0,0.6)">
-        <YStack gap="3" p="5" rounded="lg" bg="background">
-          <Text fontWeight="700" fontSize={20}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
             {t(
               state.status === "running"
                 ? "demoData.running.title"
@@ -106,8 +113,8 @@ export function DemoDataSeed() {
                   ? "demoData.failed.title"
                   : "demoData.finished.title"
             )}
-          </Text>
-          <Text color="muted-foreground">
+          </AlertDialogTitle>
+          <AlertDialogDescription>
             {state.status === "running"
               ? t("demoData.running.description")
               : state.status === "failed"
@@ -116,49 +123,46 @@ export function DemoDataSeed() {
                     payments: String(state.payments),
                     days: String(state.days),
                   })}
-          </Text>
-          {state.status === "running" ? (
-            <>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {state.status === "running" ? (
+          <YStack gap="2" py="2">
+            <YStack height={8} rounded="lg" bg="border-color" overflow="hidden">
               <YStack
                 height={8}
-                rounded="lg"
-                bg="border-color"
-                overflow="hidden"
-              >
-                <YStack
-                  height={8}
-                  bg="primary"
-                  width={`${(state.done / state.total) * 100}%`}
-                />
-              </YStack>
-              <Text fontSize="sm" color="muted-foreground">
-                {t(
-                  stopping
-                    ? "demoData.running.stopping"
-                    : "demoData.running.progress",
-                  { done: String(state.done), total: String(state.total) }
-                )}
-              </Text>
-              <Button
-                size="lg"
-                label={t("demoData.stop")}
-                variant="outline"
-                disabled={stopping}
-                onPress={() => {
-                  stopRequested.current = true
-                  setStopping(true)
-                }}
+                bg="primary"
+                width={`${(state.done / state.total) * 100}%`}
               />
-            </>
-          ) : (
+            </YStack>
+            <Text fontSize="sm" color="muted-foreground">
+              {t(
+                stopping
+                  ? "demoData.running.stopping"
+                  : "demoData.running.progress",
+                { done: String(state.done), total: String(state.total) }
+              )}
+            </Text>
             <Button
+              label={t("demoData.stop")}
               size="lg"
+              variant="outline"
+              disabled={stopping}
+              onPress={() => {
+                stopRequested.current = true
+                setStopping(true)
+              }}
+            />
+          </YStack>
+        ) : (
+          <AlertDialogFooter>
+            <AlertDialogAction
               label={t("demoData.close")}
+              size="lg"
               onPress={() => setDismissed(true)}
             />
-          )}
-        </YStack>
-      </YStack>
-    </Modal>
+          </AlertDialogFooter>
+        )}
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

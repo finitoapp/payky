@@ -1,21 +1,39 @@
 import Constants from "expo-constants"
+import Bug from "lucide-react-native/icons/bug"
+import DatabaseBackup from "lucide-react-native/icons/database-backup"
+import DatabaseZap from "lucide-react-native/icons/database-zap"
+import GitFork from "lucide-react-native/icons/git-fork"
+import ScrollText from "lucide-react-native/icons/scroll-text"
+import ShieldCheck from "lucide-react-native/icons/shield-check"
 import { Platform } from "react-native"
 import { Text, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
+import { VerticalNav } from "../../../components/vertical-nav.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { SettingsRow } from "../settings-row.tsx"
 
 export function AboutPage() {
   const { t } = useTranslation()
   const version = Constants.expoConfig?.version
   const versionCode = Constants.expoConfig?.android?.versionCode
 
+  const label = (title: string, description: string) => (
+    <YStack gap="1">
+      <Text fontSize="sm" fontWeight="600">
+        {title}
+      </Text>
+      <Text fontSize="xs" color="muted-foreground">
+        {description}
+      </Text>
+    </YStack>
+  )
+
   return (
     <Screen>
       <FadeHeader title={t("settings.about.title")} />
       <YStack items="center" gap="3" py="8">
-        <Text fontSize={24} fontWeight="700">
+        <Text fontSize="2xl" fontWeight="700" text="center">
           {t("settings.about.app.title")}
         </Text>
         {version === undefined ? null : (
@@ -30,30 +48,69 @@ export function AboutPage() {
           </Text>
         ) : null}
       </YStack>
-      <SettingsRow
-        title={t("settings.about.privacy.title")}
-        value={t("settings.about.privacy.description")}
-        href="/settings/about/privacy"
+      <VerticalNav
+        title={t("settings.about.app.title")}
+        items={[
+          {
+            kind: "link",
+            href: "/settings/about/privacy",
+            label: label(
+              t("settings.about.privacy.title"),
+              t("settings.about.privacy.description")
+            ),
+            icon: <Icon icon={ShieldCheck} color="muted-foreground" />,
+          },
+          {
+            kind: "link",
+            href: "/settings/about/terms",
+            label: label(
+              t("settings.about.terms.title"),
+              t("settings.about.terms.description")
+            ),
+            icon: <Icon icon={ScrollText} color="muted-foreground" />,
+          },
+          {
+            kind: "href",
+            href: "https://github.com/finitoapp/payky",
+            label: label(
+              t("settings.about.github.title"),
+              t("settings.about.github.description")
+            ),
+            icon: <Icon icon={GitFork} color="muted-foreground" />,
+          },
+        ]}
       />
-      <SettingsRow
-        title={t("settings.about.terms.title")}
-        value={t("settings.about.terms.description")}
-        href="/settings/about/terms"
-      />
-      <SettingsRow
-        title={t("settings.evoluExport.title")}
-        value={t("settings.evoluExport.description")}
-        href="/settings/evolu-export"
-      />
-      <SettingsRow
-        title={t("settings.demoData.title")}
-        value={t("settings.demoData.description")}
-        href="/settings/demo-data"
-      />
-      <SettingsRow
-        title={t("settings.debugConsole.title")}
-        value={t("settings.debugConsole.description")}
-        href="/settings/debug-console"
+      <VerticalNav
+        title={t("settings.developers")}
+        items={[
+          {
+            kind: "link",
+            href: "/settings/evolu-export",
+            label: label(
+              t("settings.evoluExport.title"),
+              t("settings.evoluExport.description")
+            ),
+            icon: <Icon icon={DatabaseBackup} color="muted-foreground" />,
+          },
+          {
+            kind: "link",
+            href: "/settings/demo-data",
+            label: label(
+              t("settings.demoData.title"),
+              t("settings.demoData.description")
+            ),
+            icon: <Icon icon={DatabaseZap} color="muted-foreground" />,
+          },
+          {
+            kind: "link",
+            href: "/settings/debug-console",
+            label: label(
+              t("settings.debugConsole.title"),
+              t("settings.debugConsole.description")
+            ),
+            icon: <Icon icon={Bug} color="muted-foreground" />,
+          },
+        ]}
       />
     </Screen>
   )

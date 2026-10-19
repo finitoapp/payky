@@ -3,21 +3,42 @@ import {
   formatConsoleArgs,
 } from "@payky/app-shared/console-history"
 import { format } from "date-fns"
+import Pause from "lucide-react-native/icons/pause"
+import Play from "lucide-react-native/icons/play"
+import Trash from "lucide-react-native/icons/trash"
 import { useEffect, useState } from "react"
+import { ScrollView } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
+import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card.tsx"
 import { nativeConsoleHistory } from "../../../core/native-runtime.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
 const methodColors = {
-  trace: "muted-foreground",
-  debug: "muted-foreground",
+  trace: "info",
+  debug: "info",
   log: "color",
   info: "info",
   warn: "warning",
   error: "destructive",
+} as const satisfies Record<ConsoleOutputHistoryEntry["method"], string>
+
+const methodBackgrounds = {
+  trace: "info-10",
+  debug: "info-10",
+  log: "muted-20",
+  info: "info-10",
+  warn: "warning-10",
+  error: "destructive-10",
 } as const satisfies Record<ConsoleOutputHistoryEntry["method"], string>
 
 /** The last captured console entries, newest first; in memory only, gone on restart. */
@@ -39,78 +60,110 @@ export function DebugConsolePage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.debugConsole.title")} />
-      <Text fontWeight="700">{t("settings.debugConsole.history.title")}</Text>
-      <XStack gap="2">
-        <YStack flex={1}>
-          <Button
-            size="lg"
-            label={t(
-              paused
-                ? "settings.debugConsole.resume"
-                : "settings.debugConsole.pause"
-            )}
-            variant="outline"
-            onPress={() => setPaused((value) => !value)}
-          />
-        </YStack>
-        <YStack flex={1}>
-          <Button
-            size="sm"
-            label={t("settings.debugConsole.clear")}
-            variant="ghost"
-            disabled={entries.length === 0}
-            onPress={() => {
-              nativeConsoleHistory.clearEntries()
-              setEntries([])
-            }}
-          />
-        </YStack>
-      </XStack>
-      {entries.length === 0 ? (
-        <Text color="muted-foreground" text="center">
-          {t("settings.debugConsole.empty")}
-        </Text>
-      ) : (
-        <YStack gap="2" testID="debug-console-entries">
-          {entries.toReversed().map((entry, index) => (
-            <YStack
-              // biome-ignore lint/suspicious/noArrayIndexKey: console entries do not expose stable ids
-              key={index}
-              gap="1"
-              p="2"
-              rounded="md"
-              borderWidth={1}
-              borderColor="border-color"
-            >
-              <XStack gap="2" items="center">
-                <Text fontSize={11} color="muted-foreground">
-                  {format(entry.createdAt, "HH:mm:ss.SSS")}
-                </Text>
-                <Text
-                  fontSize={10}
-                  fontWeight="700"
-                  color={methodColors[entry.method]}
-                >
-                  {entry.method.toUpperCase()}
-                </Text>
-                {entry.path.length === 0 ? null : (
-                  <Text
-                    flex={1}
-                    fontSize={11}
-                    color="muted-foreground"
-                    numberOfLines={1}
-                  >
-                    {entry.path.join(" › ")}
-                  </Text>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("settings.debugConsole.history.title")}</CardTitle>
+          <CardAction>
+            <XStack gap="1">
+              <Button
+                size="sm"
+                label={t(
+                  paused
+                    ? "settings.debugConsole.resume"
+                    : "settings.debugConsole.pause"
                 )}
-              </XStack>
-              <Text fontSize={11} userSelect="text">
-                {formatConsoleArgs(entry.args)}
-              </Text>
+                iconStart={paused ? Play : Pause}
+                variant="ghost"
+                onPress={() => setPaused((value) => !value)}
+              />
+              <Button
+                size="sm"
+                label={t("settings.debugConsole.clear")}
+                iconStart={Trash}
+                variant="ghost"
+                disabled={entries.length === 0}
+                onPress={() => {
+                  nativeConsoleHistory.clearEntries()
+                  setEntries([])
+                }}
+              />
+            </XStack>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          {entries.length === 0 ? (
+            <Text py="8" color="muted-foreground" text="center" fontSize="sm">
+              {t("settings.debugConsole.empty")}
+            </Text>
+          ) : (
+            <YStack gap="2" testID="debug-console-entries">
+              {entries.toReversed().map((entry, index) => (
+                <YStack
+                  // biome-ignore lint/suspicious/noArrayIndexKey: console entries do not expose stable ids
+                  key={index}
+                  gap="1"
+                  p="2"
+                  rounded="md"
+                  borderWidth={1}
+                  borderColor="border-color"
+                  bg="muted-20"
+                >
+                  <XStack minW={0} gap="2" items="center">
+                    <Text
+                      fontSize={11}
+                      color="muted-foreground"
+                      style={{ fontFamily: "monospace" }}
+                    >
+                      {format(entry.createdAt, "HH:mm:ss.SSS")}
+                    </Text>
+                    <Badge
+                      variant="secondary"
+                      label={entry.method.toUpperCase()}
+                      labelColor={methodColors[entry.method]}
+                      bg={methodBackgrounds[entry.method]}
+                    />
+                    {entry.path.length === 0 ? null : (
+                      <Text
+                        flex={1}
+                        minW={0}
+                        fontSize={11}
+                        color="muted-foreground"
+                        style={{ fontFamily: "monospace" }}
+                        numberOfLines={1}
+                      >
+                        {entry.path.join("/")}
+                      </Text>
+                    )}
+                  </XStack>
+                  <YStack
+                    maxHeight={192}
+                    overflow="hidden"
+                    rounded="sm"
+                    bg="background"
+                  >
+                    <ScrollView
+                      nestedScrollEnabled
+                      style={{ maxHeight: 192 }}
+                      contentContainerStyle={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 6,
+                      }}
+                    >
+                      <Text
+                        fontSize={11}
+                        style={{ fontFamily: "monospace" }}
+                        userSelect="text"
+                      >
+                        {formatConsoleArgs(entry.args)}
+                      </Text>
+                    </ScrollView>
+                  </YStack>
+                </YStack>
+              ))}
             </YStack>
-          ))}
-        </YStack>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </Screen>
   )
 }

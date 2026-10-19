@@ -20,12 +20,14 @@ import {
   useSetAtom,
   useStore,
 } from "jotai"
+import MessageSquarePlus from "lucide-react-native/icons/message-square-plus"
 import { useEffect, useRef, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
 import { Button } from "../../../components/ui/button.tsx"
+import { Icon } from "../../../components/ui/icon.tsx"
 import { apiUrl } from "../../../core/native-env.ts"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
@@ -89,16 +91,45 @@ function AssistantChat({ access }: { readonly access: Access }) {
   const answering = last?.status === "answering"
 
   return (
-    <Screen>
-      <FadeHeader title={t("settings.assistant.title")} />
-      {turns.length === 0 ? null : (
-        <Button
-          size="lg"
-          label={t("settings.assistant.newConversation")}
-          variant="outline"
-          onPress={startOver}
-        />
-      )}
+    <Screen
+      footer={
+        <YStack
+          px="4"
+          py="3"
+          borderTopWidth={1}
+          borderColor="border-color"
+          bg="background"
+        >
+          <ChatComposer
+            label={t("settings.assistant.message.label")}
+            placeholder={t("settings.assistant.message.placeholder")}
+            sendLabel={t("settings.assistant.send")}
+            onSend={ask}
+            disabled={false}
+            stop={
+              answering
+                ? { label: t("settings.assistant.stop"), onStop: stop }
+                : undefined
+            }
+          />
+        </YStack>
+      }
+    >
+      <FadeHeader
+        title={t("settings.assistant.title")}
+        endAddon={
+          turns.length === 0 ? undefined : (
+            <Button
+              size="icon"
+              accessibilityLabel={t("settings.assistant.newConversation")}
+              variant="ghost"
+              onPress={startOver}
+            >
+              <Icon icon={MessageSquarePlus} size={20} color="primary" />
+            </Button>
+          )
+        }
+      />
       {turns.length === 0 ? (
         <EmptyConversation access={access} onAsk={ask} />
       ) : (
@@ -113,18 +144,6 @@ function AssistantChat({ access }: { readonly access: Access }) {
           ))}
         </YStack>
       )}
-      <ChatComposer
-        label={t("settings.assistant.message.label")}
-        placeholder={t("settings.assistant.message.placeholder")}
-        sendLabel={t("settings.assistant.send")}
-        onSend={ask}
-        disabled={false}
-        stop={
-          answering
-            ? { label: t("settings.assistant.stop"), onStop: stop }
-            : undefined
-        }
-      />
     </Screen>
   )
 }

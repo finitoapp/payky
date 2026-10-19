@@ -6,8 +6,19 @@ import {
 } from "@payky/core/modules/sales-stats/sales-stats-utils"
 import { type Currency, Integer } from "@payky/core/modules/shared/schema"
 import { startOfDay, subMilliseconds } from "date-fns"
+import ArrowDown from "lucide-react-native/icons/arrow-down"
+import ArrowUp from "lucide-react-native/icons/arrow-up"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
+import ChevronRight from "lucide-react-native/icons/chevron-right"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  useCollapsible,
+} from "../../components/ui/collapsible.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 
 /**
@@ -68,9 +79,8 @@ export function KpiTiles({
 const tileProps = {
   gap: "1",
   p: "3",
-  rounded: "lg",
-  borderWidth: 1,
-  borderColor: "border-color",
+  rounded: "md",
+  bg: "card",
 } as const
 
 function CurrencyKpis({
@@ -84,7 +94,7 @@ function CurrencyKpis({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const [open, setOpen] = useState(false)
+  const [calculationOpen, setCalculationOpen] = useState(false)
   const money = (value: number, currency: Currency = current.currency) =>
     formatMoney({ value: Integer(value), currency }, locale)
   const signedMoney = (value: number) =>
@@ -151,21 +161,19 @@ function CurrencyKpis({
         <Text fontSize={12} color="muted-foreground">
           {netRevenue.label}
         </Text>
-        <Text fontSize={30} fontWeight="700">
+        <Text fontSize={30} fontWeight="600">
           {netRevenue.value}
         </Text>
         <DeltaLabel tile={netRevenue} />
-        <Text
-          fontSize={12}
-          fontWeight="600"
-          color="muted-foreground"
-          accessibilityRole="button"
-          onPress={() => setOpen((value) => !value)}
-        >
-          {`${open ? "▾" : "▸"} ${t("stats.kpi.howCalculated")}`}
-        </Text>
-        {open ? (
-          <YStack gap="1" pt="2">
+        <Collapsible open={calculationOpen} onOpenChange={setCalculationOpen}>
+          <CalculationTrigger label={t("stats.kpi.howCalculated")} />
+          <CollapsibleContent
+            gap="1"
+            pt="2"
+            mt="2"
+            borderTopWidth={1}
+            borderColor="border-color"
+          >
             <BreakdownLine label={t("stats.kpi.breakdown.sales")}>
               {money(current.gross)}
             </BreakdownLine>
@@ -175,8 +183,8 @@ function CurrencyKpis({
             <BreakdownLine label={`= ${netRevenue.label}`} total>
               {netRevenue.value}
             </BreakdownLine>
-          </YStack>
-        ) : null}
+          </CollapsibleContent>
+        </Collapsible>
       </YStack>
       <XStack flexWrap="wrap" gap="2">
         {tiles.map((tile) => (
@@ -184,7 +192,7 @@ function CurrencyKpis({
             <Text fontSize={12} color="muted-foreground">
               {tile.label}
             </Text>
-            <Text fontSize={20} fontWeight="700">
+            <Text fontSize={20} fontWeight="600">
               {tile.value}
             </Text>
             <DeltaLabel tile={tile} />
@@ -219,6 +227,22 @@ export function BreakdownLine({
   )
 }
 
+function CalculationTrigger({ label }: { readonly label: string }) {
+  const { open } = useCollapsible()
+  return (
+    <CollapsibleTrigger mt="1" flexDirection="row" items="center" gap="1">
+      <Text fontSize={12} fontWeight="500" color="muted-foreground">
+        {label}
+      </Text>
+      <Icon
+        icon={open ? ChevronDown : ChevronRight}
+        size={14}
+        color="muted-foreground"
+      />
+    </CollapsibleTrigger>
+  )
+}
+
 /**
  * The change against the comparison: an arrow, the percentage and the
  * difference itself, so it reads without the colour too.
@@ -235,7 +259,8 @@ function DeltaLabel({ tile }: { readonly tile: Tile }) {
     )
   }
   const good = ratio === 0 ? null : ratio > 0 === tile.upIsGood
-  const arrow = ratio > 0 ? "▲" : ratio < 0 ? "▼" : ""
+  const color =
+    good === null ? "muted-foreground" : good ? "success" : "destructive"
   const percent = new Intl.NumberFormat(locale, {
     style: "percent",
     maximumFractionDigits: 0,
@@ -243,13 +268,17 @@ function DeltaLabel({ tile }: { readonly tile: Tile }) {
   }).format(ratio)
 
   return (
-    <Text
-      fontSize={12}
-      color={
-        good === null ? "muted-foreground" : good ? "success" : "destructive"
-      }
-    >
-      {`${arrow} ${percent}${difference === 0 ? "" : ` · ${tile.formatDifference(difference)}`}`.trim()}
-    </Text>
+    <XStack items="center" flexWrap="wrap" gap="1">
+      {ratio > 0 ? <Icon icon={ArrowUp} size={12} color={color} /> : null}
+      {ratio < 0 ? <Icon icon={ArrowDown} size={12} color={color} /> : null}
+      <Text fontSize={12} fontWeight="500" color={color}>
+        {percent}
+      </Text>
+      {difference === 0 ? null : (
+        <Text fontSize={12} color={color} opacity={0.8}>
+          {`· ${tile.formatDifference(difference)}`}
+        </Text>
+      )}
+    </XStack>
   )
 }

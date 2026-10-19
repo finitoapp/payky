@@ -1379,62 +1379,93 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   {
     native: "src/features/stats/device-breakdown.tsx",
     web: ["apps/web-app/src/features/stats/device-breakdown.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/stats/kpi-tiles.tsx",
     web: ["apps/web-app/src/features/stats/kpi-tiles.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/stats/method-breakdown.tsx",
     web: ["apps/web-app/src/features/stats/method-breakdown.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      ChartContainer:
+        "native draws the donut with react-native-svg and selects a segment on tap",
+      ChartTooltip:
+        "native shows selected segment details on tap instead of a hover tooltip",
+    },
   },
   {
     native: "src/features/stats/open-bills-summary.tsx",
     web: ["apps/web-app/src/features/stats/open-bills-summary.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/stats/period-selector.tsx",
     web: ["apps/web-app/src/features/stats/period-selector.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      Input:
+        "native uses an editable yyyy-mm-dd text field instead of the browser date picker",
+    },
   },
   {
     native: "src/features/stats/revenue-chart.tsx",
     web: ["apps/web-app/src/features/stats/revenue-chart.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      ChartContainer:
+        "native draws bars and axes with react-native-svg to support touch layout",
+      ChartTooltip:
+        "native shows selected bar details on tap instead of a hover tooltip",
+    },
   },
   {
     native: "src/features/stats/sales-heatmap.tsx",
     web: ["apps/web-app/src/features/stats/sales-heatmap.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      HeatmapCellSize:
+        "native cells are 22px tall as tap targets; web cells are 16px",
+    },
   },
   {
     native: "src/features/stats/signals.tsx",
     web: ["apps/web-app/src/features/stats/signals.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/stats/stats-page.tsx",
     web: ["apps/web-app/src/features/stats/stats-page.tsx"],
-    status: "pending",
+    status: "matched",
+    allowedDifferences: {
+      StickyPeriodToolbar:
+        "native Screen scrolls the period controls with content and has no sticky-header facility",
+      OpenBillsLoading:
+        "native keeps open bills in the existing PeriodStats loading branch; web loads it under a separate Suspense fallback",
+      LiveIndicator: "native keeps a static success dot; web animates a ping",
+    },
   },
   {
     native: "src/features/stats/stats-section.tsx",
     web: ["apps/web-app/src/features/stats/stats-section.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/stats/top-sales.tsx",
-    web: ["apps/web-app/src/features/stats/top-sales.tsx"],
-    status: "pending",
+    web: [
+      "apps/web-app/src/features/stats/top-sales.tsx",
+      "apps/web-app/src/features/stats/top-items.tsx",
+      "apps/web-app/src/features/stats/top-categories.tsx",
+    ],
+    status: "matched",
   },
   {
     native: "src/features/stats/vat-recap.tsx",
     web: ["apps/web-app/src/features/stats/vat-recap.tsx"],
-    status: "pending",
+    status: "matched",
   },
   {
     native: "src/features/terminal-home/amount-keypad.tsx",

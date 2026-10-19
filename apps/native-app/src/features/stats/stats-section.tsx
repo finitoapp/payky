@@ -16,17 +16,19 @@ export function StatsSection({
 }) {
   return (
     <YStack gap="2">
-      <YStack
-        gap="3"
-        p="3"
-        rounded="lg"
-        borderWidth={1}
-        borderColor="border-color"
-      >
-        <Text fontWeight="700" accessibilityRole="header">
+      <YStack bg="card" rounded="md" overflow="hidden">
+        <Text
+          p="4"
+          fontSize={12}
+          fontWeight="700"
+          color="muted-foreground"
+          accessibilityRole="header"
+        >
           {title}
         </Text>
-        {children}
+        <YStack px="4" pb="4">
+          {children}
+        </YStack>
       </YStack>
       {note === undefined ? null : (
         <Text fontSize={12} color="muted-foreground">
@@ -99,17 +101,17 @@ export function StatsBar({
   readonly tipsShare?: number
 }) {
   return (
-    <YStack height={10} rounded={5} overflow="hidden" bg="border-color">
+    <YStack height={10} rounded={5} overflow="hidden" bg="muted">
       <XStack
         height={10}
         rounded={5}
         overflow="hidden"
         width={`${(share * 100).toFixed(1)}%`}
       >
-        <YStack flex={1} bg="primary" />
+        <YStack flex={1} bg="chart-1" />
         {tipsShare > 0 ? (
           <YStack
-            bg="primary"
+            bg="chart-1"
             opacity={0.45}
             width={`${(tipsShare * 100).toFixed(1)}%`}
           />

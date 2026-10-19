@@ -51,30 +51,35 @@ export function SalesHeatmap({
     addDays(aMonday, index).toLocaleDateString(locale, { weekday: style })
   const hourLabel = (hour: number) =>
     setHours(aMonday, hour).toLocaleTimeString(locale, { hour: "numeric" })
-  const color = theme.primary?.val ?? "#e36b2c"
+  const cellDescription = (
+    cell: (typeof matrix)[number][number],
+    day: number,
+    hour: number
+  ) => {
+    const params = {
+      weekday: weekday(day, "long"),
+      hour: setHours(aMonday, hour).toLocaleTimeString(locale, {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      amount: money(takings(cell), currency),
+      count: cell.count.toLocaleString(locale),
+    }
+    return cell.tips === 0
+      ? t("stats.heatmap.cell", params)
+      : t("stats.heatmap.cellTips", {
+          ...params,
+          tips: money(cell.tips, currency),
+        })
+  }
+  const color = theme["chart-1"]?.val ?? "#e36b2c"
 
   const selectedCell =
     selected === null ? undefined : matrix[selected.day]?.[selected.hour]
   const description =
     selected === null || selectedCell === undefined
       ? null
-      : (() => {
-          const params = {
-            weekday: weekday(selected.day, "long"),
-            hour: setHours(aMonday, selected.hour).toLocaleTimeString(locale, {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            amount: money(takings(selectedCell), currency),
-            count: selectedCell.count.toLocaleString(locale),
-          }
-          return selectedCell.tips === 0
-            ? t("stats.heatmap.cell", params)
-            : t("stats.heatmap.cellTips", {
-                ...params,
-                tips: money(selectedCell.tips, currency),
-              })
-        })()
+      : cellDescription(selectedCell, selected.day, selected.hour)
 
   return (
     <StatsSection title={t("stats.heatmap.title")}>
@@ -92,8 +97,9 @@ export function SalesHeatmap({
                 height={22}
                 rounded={2}
                 overflow="hidden"
-                bg="border-color"
+                bg="muted"
                 accessibilityRole="button"
+                accessibilityLabel={cellDescription(cell, dayIndex, hour)}
                 onPress={() => setSelected({ day: dayIndex, hour })}
               >
                 <YStack

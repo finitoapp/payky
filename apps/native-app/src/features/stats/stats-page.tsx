@@ -8,11 +8,14 @@ import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-u
 import type { StatsPeriod } from "@payky/core/modules/sales-stats/sales-stats-types"
 import { statsPeriodRanges } from "@payky/core/modules/sales-stats/sales-stats-utils"
 import { router, useLocalSearchParams } from "expo-router"
+import ChartColumn from "lucide-react-native/icons/chart-column"
 import { Suspense } from "react"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
+import { ListSkeleton } from "../../components/list-skeleton.tsx"
 import { Screen } from "../../components/screen.tsx"
-import { LoadingView } from "../../components/state-views.tsx"
+import { Icon } from "../../components/ui/icon.tsx"
+import { Skeleton } from "../../components/ui/skeleton.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { DeviceBreakdown } from "./device-breakdown.tsx"
@@ -61,7 +64,7 @@ export function StatsPage() {
         }}
       />
       <PeriodSummary period={period} now={now} />
-      <Suspense fallback={<LoadingView />}>
+      <Suspense fallback={<StatsSkeleton />}>
         <PeriodStats period={period} now={now} />
       </Suspense>
     </Screen>
@@ -86,19 +89,26 @@ function PeriodSummary({
   const loadedAt = useStatsLoadedAt(range)
 
   return (
-    <YStack gap="1">
-      <Text fontWeight="600">{formatStatsRange(range, locale)}</Text>
-      <Text fontSize={12} color="muted-foreground">
-        {t("stats.comparison", {
-          range: formatStatsRange(comparison, locale),
-        })}
-      </Text>
-      {live ? (
-        <Text fontSize={12} color="success">
-          {`● ${t("stats.live")}`}
+    <XStack items="flex-start" justify="space-between" gap="3" px="1">
+      <YStack flex={1} minW={0}>
+        <Text fontSize={12} fontWeight="500">
+          {formatStatsRange(range, locale)}
         </Text>
-      ) : loadedAt === undefined ? null : (
         <Text fontSize={12} color="muted-foreground">
+          {t("stats.comparison", {
+            range: formatStatsRange(comparison, locale),
+          })}
+        </Text>
+      </YStack>
+      {live ? (
+        <XStack items="center" gap="1.5">
+          <YStack width={8} height={8} rounded={4} bg="success" opacity={0.6} />
+          <Text fontSize={12} color="success">
+            {t("stats.live")}
+          </Text>
+        </XStack>
+      ) : loadedAt === undefined ? null : (
+        <Text fontSize={12} color="muted-foreground" shrink={0}>
           {t("stats.loadedAt", {
             time: new Date(loadedAt).toLocaleTimeString(locale, {
               hour: "2-digit",
@@ -107,7 +117,7 @@ function PeriodSummary({
           })}
         </Text>
       )}
-    </YStack>
+    </XStack>
   )
 }
 
@@ -127,12 +137,13 @@ function PeriodStats({
     <OpenBillsSummary accountCurrency={getFiatCurrency(settings)} />
   )
 
-  if (stats === null) return <LoadingView />
+  if (stats === null) return <StatsSkeleton />
   if (stats.kpis.length === 0) {
     return (
       <>
-        <YStack items="center" gap="2" py="8">
-          <Text fontWeight="600">{t("stats.empty.title")}</Text>
+        <YStack items="center" gap="2" py="12">
+          <Icon icon={ChartColumn} size={40} color="muted-foreground" />
+          <Text fontWeight="500">{t("stats.empty.title")}</Text>
           <Text color="muted-foreground" text="center">
             {t("stats.empty.description")}
           </Text>
@@ -166,6 +177,36 @@ function PeriodStats({
       )}
       <Signals stats={stats} />
       <VatRecap stats={stats} />
+    </>
+  )
+}
+
+function StatsSkeleton() {
+  return (
+    <>
+      <XStack flexWrap="wrap" gap="2">
+        {Array.from({ length: 5 }, (_, index) => (
+          <YStack
+            // biome-ignore lint/suspicious/noArrayIndexKey: static loading tiles
+            key={index}
+            width={index === 0 ? "100%" : "47%"}
+            flexGrow={index === 0 ? 0 : 1}
+            gap="2"
+            p="3"
+            rounded="md"
+            bg="card"
+          >
+            <Skeleton w={64} h={12} />
+            <Skeleton w={index === 0 ? 128 : 80} h={index === 0 ? 28 : 20} />
+            <Skeleton w={32} h={12} />
+          </YStack>
+        ))}
+      </XStack>
+      <ListSkeleton rows={1} />
+      <YStack gap="4" p="4" rounded="md" bg="card">
+        <Skeleton w={96} h={12} />
+        <Skeleton w="100%" h={160} />
+      </YStack>
     </>
   )
 }

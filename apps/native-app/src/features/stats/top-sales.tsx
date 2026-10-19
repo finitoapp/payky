@@ -15,6 +15,16 @@ import type { Currency } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
 import { XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import {
   CurrencyGroup,
@@ -84,26 +94,18 @@ export function TopSales({ stats }: { readonly stats: SalesStats }) {
       note={t("stats.categories.note")}
     >
       {both ? (
-        <XStack gap="2">
-          <YStack flex={1}>
-            <Button
-              size="lg"
-              label={t("stats.top.items")}
-              variant={tab === "items" ? "default" : "outline"}
-              onPress={() => setTab("items")}
-            />
-          </YStack>
-          <YStack flex={1}>
-            <Button
-              size="lg"
-              label={t("stats.top.categories")}
-              variant={tab === "categories" ? "default" : "outline"}
-              onPress={() => setTab("categories")}
-            />
-          </YStack>
-        </XStack>
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList>
+            <TabsTrigger value="items">{t("stats.top.items")}</TabsTrigger>
+            <TabsTrigger value="categories">
+              {t("stats.top.categories")}
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="items">{items}</TabsContent>
+          <TabsContent value="categories">{categories}</TabsContent>
+        </Tabs>
       ) : null}
-      {both ? (tab === "items" ? items : categories) : (items ?? categories)}
+      {both ? null : (items ?? categories)}
     </StatsSection>
   )
 }
@@ -125,17 +127,21 @@ function TopItems({
 
   return (
     <YStack gap="4">
-      <XStack gap="2" accessibilityLabel={t("stats.items.metric")}>
-        {(["amount", "quantity"] as const).map((value) => (
-          <YStack key={value} flex={1}>
-            <Button
-              size="lg"
-              label={t(metricLabelKeys[value])}
-              variant={metric === value ? "default" : "outline"}
-              onPress={() => setMetric(value)}
-            />
-          </YStack>
-        ))}
+      <XStack accessibilityLabel={t("stats.items.metric")}>
+        <ToggleGroup
+          value={metric}
+          variant="outline"
+          size="sm"
+          spacing={1}
+          columns={2}
+          onValueChange={setMetric}
+        >
+          {(["amount", "quantity"] as const).map((value) => (
+            <ToggleGroupItem key={value} value={value}>
+              {t(metricLabelKeys[value])}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </XStack>
       {groups.map((group) => (
         <CurrencyGroup
@@ -154,12 +160,16 @@ function TopItems({
         </CurrencyGroup>
       ))}
       {hasMore ? (
-        <Button
-          size="lg"
-          label={showAll ? t("stats.items.showTop") : t("stats.items.showAll")}
-          variant="outline"
-          onPress={() => setShowAll((value) => !value)}
-        />
+        <XStack justify="center">
+          <Button
+            size="sm"
+            label={
+              showAll ? t("stats.items.showTop") : t("stats.items.showAll")
+            }
+            variant="ghost"
+            onPress={() => setShowAll((value) => !value)}
+          />
+        </XStack>
       ) : null}
     </YStack>
   )

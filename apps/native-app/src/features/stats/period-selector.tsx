@@ -7,7 +7,11 @@ import type { StatsPeriod } from "@payky/core/modules/sales-stats/sales-stats-ty
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { z } from "zod"
-import { Field } from "../../components/field.tsx"
+import { Input } from "../../components/ui/input.tsx"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../../components/ui/toggle-group.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 const periodLabelKeys = {
@@ -34,36 +38,22 @@ export function PeriodSelector({
 
   return (
     <YStack gap="3" accessibilityLabel={t("stats.period.label")}>
-      <XStack gap="1">
+      <ToggleGroup
+        value={period.kind}
+        variant="outline"
+        size="sm"
+        spacing={1}
+        columns={5}
+        onValueChange={(kind) => {
+          if (period.kind !== kind) onChange({ period: kind })
+        }}
+      >
         {statsPeriodKinds.map((kind) => (
-          <YStack
-            key={kind}
-            flex={1}
-            minH={44}
-            px="1"
-            justify="center"
-            items="center"
-            rounded="lg"
-            borderWidth={1}
-            borderColor={period.kind === kind ? "primary" : "border-color"}
-            bg={period.kind === kind ? "primary" : "background"}
-            accessibilityRole="button"
-            accessibilityState={{ selected: period.kind === kind }}
-            onPress={() => {
-              if (period.kind !== kind) onChange({ period: kind })
-            }}
-          >
-            <Text
-              fontSize={13}
-              fontWeight="600"
-              numberOfLines={1}
-              color={period.kind === kind ? "primary-foreground" : "color"}
-            >
-              {t(periodLabelKeys[kind])}
-            </Text>
-          </YStack>
+          <ToggleGroupItem key={kind} value={kind}>
+            {t(periodLabelKeys[kind])}
+          </ToggleGroupItem>
         ))}
-      </XStack>
+      </ToggleGroup>
       {period.kind === "custom" ? (
         <XStack gap="3">
           <YStack flex={1}>
@@ -102,16 +92,21 @@ function DayField({
   const [draft, setDraft] = useState(value)
 
   return (
-    <Field
-      label={label}
-      value={draft}
-      placeholder="yyyy-mm-dd"
-      keyboardType="numbers-and-punctuation"
-      maxLength={10}
-      onChangeText={(next) => {
-        setDraft(next)
-        if (z.iso.date().safeParse(next).success) onDay(next)
-      }}
-    />
+    <YStack gap="1">
+      <Text fontSize={12} color="muted-foreground">
+        {label}
+      </Text>
+      <Input
+        accessibilityLabel={label}
+        value={draft}
+        placeholder="yyyy-mm-dd"
+        keyboardType="numbers-and-punctuation"
+        maxLength={10}
+        onChangeText={(next) => {
+          setDraft(next)
+          if (z.iso.date().safeParse(next).success) onDay(next)
+        }}
+      />
+    </YStack>
   )
 }

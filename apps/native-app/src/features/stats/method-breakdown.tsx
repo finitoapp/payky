@@ -7,10 +7,13 @@ import type {
   SalesKpis,
 } from "@payky/core/modules/sales-stats/sales-stats-utils"
 import type { Currency } from "@payky/core/modules/shared/schema"
+import CircleQuestionMark from "lucide-react-native/icons/circle-question-mark"
 import { useState } from "react"
 import Svg, { Circle } from "react-native-svg"
 import { Text, useTheme, XStack, YStack } from "tamagui"
+import { Icon } from "../../components/ui/icon.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { paymentMethodIcon } from "../shared/payment-method-display.ts"
 import { BreakdownLine } from "./kpi-tiles.tsx"
 import {
   CurrencyGroup,
@@ -24,16 +27,6 @@ import {
  * One colour per method, the same in every period so a method is
  * recognisable at a glance.
  */
-const methodColors = {
-  cashRegister: "#e36b2c",
-  cardSwitchio: "#2a9d8f",
-  iban: "#4f7cac",
-  spark: "#e9c46a",
-  onchain: "#9b5de5",
-  cashu: "#43aa8b",
-  unknown: "#888888",
-} satisfies Record<MethodShare["method"], string>
-
 const methodLabelKey = (method: MethodShare["method"]): TranslationKey =>
   method === "unknown" ? "stats.methods.unknown" : paymentMethodLabelKey[method]
 
@@ -53,6 +46,16 @@ export function MethodBreakdown({
 }) {
   const { t } = useTranslation()
   const money = useStatsMoney()
+  const theme = useTheme()
+  const methodColors = {
+    cashRegister: theme["chart-1"]?.val ?? "#e36b2c",
+    cardSwitchio: theme["chart-2"]?.val ?? "#27ae60",
+    iban: theme["chart-3"]?.val ?? "#3daee9",
+    spark: theme["chart-4"]?.val ?? "#da4453",
+    onchain: theme["chart-5"]?.val ?? "#2980b9",
+    cashu: theme["chart-6"]?.val ?? "#ad80dd",
+    unknown: theme["muted-foreground"]?.val ?? "#888",
+  } satisfies Record<MethodShare["method"], string>
   const excess = methods.filter((row) => row.excess > 0)
 
   return (
@@ -76,12 +79,13 @@ export function MethodBreakdown({
           currency={row.currency}
           showCurrency={methods.length > 1}
         >
-          <MethodDonut row={row} />
+          <MethodDonut row={row} methodColors={methodColors} />
           {row.methods.map((method) => (
             <MethodRow
               key={method.method}
               method={method}
               currency={row.currency}
+              methodColors={methodColors}
             />
           ))}
           <ReceivedBreakdown
@@ -137,17 +141,23 @@ function ReceivedBreakdown({
   )
 }
 
-const donutSize = 200
-const donutStroke = 28
+const donutSize = 224
+const donutStroke = 31
 
 /** The shares as arcs of one ring with the total inside; tap an arc for its figures. */
-function MethodDonut({ row }: { readonly row: MethodBreakdownRow }) {
+function MethodDonut({
+  row,
+  methodColors,
+}: {
+  readonly row: MethodBreakdownRow
+  readonly methodColors: Readonly<Record<MethodShare["method"], string>>
+}) {
   const { t } = useTranslation()
   const locale = useLocale()
   const theme = useTheme()
   const money = useStatsMoney()
   const [selected, setSelected] = useState<MethodShare["method"] | null>(null)
-  const radius = (donutSize - donutStroke) / 2
+  const radius = donutSize * 0.41
   const circumference = 2 * Math.PI * radius
   const gap = row.methods.length > 1 ? 4 : 0
   const track = theme["border-color"]?.val ?? "#ddd"
@@ -222,6 +232,16 @@ function MethodDonut({ row }: { readonly row: MethodBreakdownRow }) {
               maximumFractionDigits: 0,
             }).format(chosen.share)} · ${money(chosen.amount, row.currency)}`}
           </Text>
+          {chosen.tips === 0 ? null : (
+            <XStack justify="space-between" gap="3" pl="2">
+              <Text fontSize={12} color="muted-foreground">
+                {t("stats.tips.ofWhich")}
+              </Text>
+              <Text fontSize={12} color="muted-foreground">
+                {money(chosen.tips, row.currency)}
+              </Text>
+            </XStack>
+          )}
         </YStack>
       )}
     </YStack>
@@ -231,13 +251,19 @@ function MethodDonut({ row }: { readonly row: MethodBreakdownRow }) {
 function MethodRow({
   method,
   currency,
+  methodColors,
 }: {
   readonly method: MethodShare
   readonly currency: Currency
+  readonly methodColors: Readonly<Record<MethodShare["method"], string>>
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const money = useStatsMoney()
+  const methodIcon =
+    method.method === "unknown"
+      ? CircleQuestionMark
+      : paymentMethodIcon[method.method]
 
   return (
     <YStack gap="1.5">
@@ -248,6 +274,7 @@ function MethodRow({
           rounded={2}
           style={{ backgroundColor: methodColors[method.method] }}
         />
+        <Icon icon={methodIcon} color="muted-foreground" />
         <Text flex={1} numberOfLines={1}>
           {t(methodLabelKey(method.method))}
         </Text>

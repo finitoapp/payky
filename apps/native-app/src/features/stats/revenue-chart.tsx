@@ -17,7 +17,7 @@ import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { formatStatsRange } from "./kpi-tiles.tsx"
 import { StatsSection } from "./stats-section.tsx"
 
-const chartHeight = 180
+const chartHeight = 192
 const axisWidth = 40
 const axisHeight = 20
 
@@ -79,7 +79,7 @@ export function RevenueChart({
     ]
   )
 
-  const sales = theme.primary?.val ?? "#e36b2c"
+  const sales = theme["chart-1"]?.val ?? "#e36b2c"
   const muted = theme["muted-foreground"]?.val ?? "#888"
   const max = Math.max(
     1,

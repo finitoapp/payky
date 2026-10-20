@@ -5,7 +5,7 @@ import {
 } from "@payky/core/migrations/migrations"
 import { atom } from "jotai"
 import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
-import { noLegacyLocalStorage } from "../platform/no-legacy-local-storage.ts"
+import { legacyLocalStorage } from "../platform/legacy-local-storage"
 import { deviceEvoluAtom } from "./device-evolu.ts"
 
 export interface DeviceMigrationReport {
@@ -25,7 +25,7 @@ export const deviceMigrationsAtom = atom(
     try {
       await using run = nativeRun.create({
         deviceEvolu,
-        localStorage: noLegacyLocalStorage,
+        localStorage: legacyLocalStorage,
       })
       const pending = await run.ok(loadPendingMigrations(deviceMigrations))
       if (pending.length === 0) return { migrated: 0, failed: false }

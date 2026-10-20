@@ -92,6 +92,7 @@ export function FadeHeader({
         <Text
           text="center"
           fontSize={fontSize.xl}
+          lineHeight={fontSize.xl}
           fontWeight={fontWeight.bold}
           numberOfLines={1}
           accessibilityRole="header"
@@ -101,6 +102,7 @@ export function FadeHeader({
         {subtitle === undefined ? null : (
           <Text
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             color="muted-foreground"
             numberOfLines={1}
           >

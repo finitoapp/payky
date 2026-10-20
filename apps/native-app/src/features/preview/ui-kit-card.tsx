@@ -305,7 +305,7 @@ export function UiKitCard() {
       </Select>
       <Collapsible>
         <CollapsibleTrigger flexDirection="row" justify="space-between">
-          <Text fontSize={14} fontWeight="500">
+          <Text fontSize="sm" lineHeight="sm" fontWeight="500">
             Advanced
           </Text>
           <Icon icon={ChevronRight} />

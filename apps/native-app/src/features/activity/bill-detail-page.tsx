@@ -155,7 +155,8 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
         <CardContent gap={12}>
           <YStack gap={4}>
             <Text
-              fontSize={36}
+              fontSize="4xl"
+              lineHeight="4xl"
               fontWeight={fontWeight.semibold}
               fontVariant={["tabular-nums"]}
             >
@@ -165,7 +166,11 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
               )}
             </Text>
             {closedOrCanceled === null ? null : (
-              <Text fontSize={fontSize.sm} color="muted-foreground">
+              <Text
+                fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
+                color="muted-foreground"
+              >
                 {closedOrCanceled}
               </Text>
             )}
@@ -175,6 +180,7 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
           <DetailRow label={t("billDetail.table")}>
             <Text
               fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
               fontWeight={fontWeight.medium}
               color={bill.tableId === null ? "muted-foreground" : "color"}
             >
@@ -225,7 +231,11 @@ function BillDetail({ billId }: { readonly billId: BillId }) {
         </CardHeader>
         <CardContent gap={12}>
           {payments.length === 0 ? (
-            <Text fontSize={fontSize.sm} color="muted-foreground">
+            <Text
+              fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
+              color="muted-foreground"
+            >
               {t("billDetail.payments.empty")}
             </Text>
           ) : (
@@ -310,11 +320,19 @@ function BillPaymentRowView({
           hasCancellationCollision={hasCancellationCollision}
         />
         <YStack flex={1} gap={2}>
-          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+          >
             {amount}
           </Text>
           <XStack items="center" gap={8}>
-            <Text fontSize={fontSize.xs} color="muted-foreground">
+            <Text
+              fontSize={fontSize.xs}
+              lineHeight={fontSize.xs}
+              color="muted-foreground"
+            >
               {formatDateTime(new Date(payment.createdAt), locale)}
             </Text>
             <PaymentMethodIcons

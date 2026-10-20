@@ -406,11 +406,12 @@ function StoredCertificateDetails({
         borderWidth={1}
         borderColor="border-color"
       >
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {t("settings.eet.certificate.eic")}
         </Text>
         <Text
           fontSize="sm"
+          lineHeight="sm"
           fontWeight="600"
           style={{ fontFamily: "monospace" }}
           testID="eet-certificate-eic"
@@ -418,11 +419,11 @@ function StoredCertificateDetails({
           {eic}
         </Text>
         {description === null ? null : (
-          <Text fontSize="xs" color="muted-foreground">
+          <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
             {description}
           </Text>
         )}
-        <Text fontSize="xs" color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {t("settings.eet.certificate.validTo", {
             date: new Intl.DateTimeFormat(locale).format(new Date(validTo)),
           })}

@@ -298,6 +298,7 @@ function SlidingPillLabel({
         numberOfLines={1}
         color="background"
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
         fontWeight={fontWeight.medium}
       >
         {label}

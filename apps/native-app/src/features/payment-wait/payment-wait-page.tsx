@@ -645,13 +645,15 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         <YStack items="center" gap={8}>
           <Text
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             fontWeight={fontWeight.medium}
             color="muted-foreground"
           >
             {t("paymentWait.pay")}
           </Text>
           <Text
-            fontSize={36}
+            fontSize="4xl"
+            lineHeight="4xl"
             fontWeight={fontWeight.semibold}
             fontVariant={["tabular-nums"]}
             accessibilityRole="header"
@@ -673,6 +675,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           <Text
             maxW={288}
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             color="muted-foreground"
             text="center"
           >
@@ -717,6 +720,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             <Text
               maxW={288}
               fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
               fontWeight={fontWeight.medium}
               color="destructive"
               text="center"
@@ -736,7 +740,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             ) : (
               <XStack items="center" gap={8}>
                 <ActivityIndicator />
-                <Text fontSize={fontSize.sm} color="muted-foreground">
+                <Text
+                  fontSize={fontSize.sm}
+                  lineHeight={fontSize.sm}
+                  color="muted-foreground"
+                >
                   {t("paymentWait.preparing.spark")}
                 </Text>
               </XStack>
@@ -792,7 +800,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             {preparing ? (
               <XStack items="center" gap={8}>
                 <ActivityIndicator />
-                <Text fontSize={fontSize.sm} color="muted-foreground">
+                <Text
+                  fontSize={fontSize.sm}
+                  lineHeight={fontSize.sm}
+                  color="muted-foreground"
+                >
                   {t("paymentWait.preparing.cash")}
                 </Text>
               </XStack>
@@ -803,6 +815,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                 h={48}
                 text="center"
                 fontSize={fontSize.lg}
+                lineHeight={fontSize.lg}
                 fontWeight={fontWeight.semibold}
                 value={text}
                 keyboardType="decimal-pad"
@@ -842,6 +855,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             {errorKey === null ? null : (
               <Text
                 fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
                 fontWeight={fontWeight.medium}
                 color="destructive"
                 accessibilityRole="alert"
@@ -853,6 +867,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               <Text
                 maxW={288}
                 fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
                 color="muted-foreground"
                 text="center"
               >
@@ -865,6 +880,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         <YStack items="center" gap={16}>
           <Text
             fontSize={fontSize.lg}
+            lineHeight={fontSize.lg}
             fontWeight={fontWeight.semibold}
             text="center"
           >

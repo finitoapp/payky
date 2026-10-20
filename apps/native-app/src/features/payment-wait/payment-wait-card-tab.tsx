@@ -47,6 +47,7 @@ export function CardPaymentTab({
         <Text
           maxW={288}
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.medium}
           color="destructive"
           text="center"
@@ -59,6 +60,7 @@ export function CardPaymentTab({
       ) : errorKey !== null ? (
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.medium}
           color="destructive"
           text="center"
@@ -71,6 +73,7 @@ export function CardPaymentTab({
         <Text
           maxW={288}
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           color="muted-foreground"
           text="center"
         >

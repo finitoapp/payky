@@ -81,9 +81,9 @@ const ItemText = styled(Text, {
 
   variants: {
     size: {
-      default: { fontSize: fontSize.sm },
+      default: { fontSize: fontSize.sm, lineHeight: fontSize.sm },
       sm: { fontSize: 12.8 },
-      lg: { fontSize: fontSize.sm },
+      lg: { fontSize: fontSize.sm, lineHeight: fontSize.sm },
     },
   } as const,
 })

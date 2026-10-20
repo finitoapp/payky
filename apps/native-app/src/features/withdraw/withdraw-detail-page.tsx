@@ -360,7 +360,7 @@ function OnchainTxid({
             }
           >
             <Icon icon={ExternalLink} size={12} />
-            <Text fontSize={12} textDecorationLine="underline">
+            <Text fontSize="xs" lineHeight="xs" textDecorationLine="underline">
               {t("withdraw.detail.viewOnExplorer")}
             </Text>
           </XStack>

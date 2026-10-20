@@ -91,10 +91,10 @@ function PeriodSummary({
   return (
     <XStack items="flex-start" justify="space-between" gap="3" px="1">
       <YStack flex={1} minW={0}>
-        <Text fontSize={12} fontWeight="500">
+        <Text fontSize="xs" lineHeight="xs" fontWeight="500">
           {formatStatsRange(range, locale)}
         </Text>
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {t("stats.comparison", {
             range: formatStatsRange(comparison, locale),
           })}
@@ -103,12 +103,12 @@ function PeriodSummary({
       {live ? (
         <XStack items="center" gap="1.5">
           <YStack width={8} height={8} rounded={4} bg="success" opacity={0.6} />
-          <Text fontSize={12} color="success">
+          <Text fontSize="xs" lineHeight="xs" color="success">
             {t("stats.live")}
           </Text>
         </XStack>
       ) : loadedAt === undefined ? null : (
-        <Text fontSize={12} color="muted-foreground" shrink={0}>
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground" shrink={0}>
           {t("stats.loadedAt", {
             time: new Date(loadedAt).toLocaleTimeString(locale, {
               hour: "2-digit",

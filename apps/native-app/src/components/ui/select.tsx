@@ -153,6 +153,7 @@ export function SelectValue({
       shrink={1}
       numberOfLines={1}
       fontSize={fontSize.sm}
+      lineHeight={fontSize.sm}
       color={label === undefined ? "muted-foreground" : "color"}
     >
       {label ?? placeholder ?? ""}
@@ -194,6 +195,7 @@ export const SelectLabel = styled(Text, {
   px: 6,
   py: 4,
   fontSize: fontSize.xs,
+  lineHeight: fontSize.xs,
   color: "muted-foreground",
 })
 
@@ -235,7 +237,9 @@ export function SelectItem({
     >
       <View flex={1}>
         {typeof children === "string" ? (
-          <Text fontSize={fontSize.sm}>{children}</Text>
+          <Text fontSize={fontSize.sm} lineHeight={fontSize.sm}>
+            {children}
+          </Text>
         ) : (
           children
         )}

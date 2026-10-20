@@ -91,6 +91,7 @@ export function ActivityAmount({
     <YStack items="flex-end" gap={4}>
       <Text
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
         fontWeight={fontWeight.semibold}
         fontVariant={["tabular-nums"]}
         color={isVoid ? "muted-foreground" : "color"}
@@ -100,6 +101,7 @@ export function ActivityAmount({
       </Text>
       <Text
         fontSize={fontSize.xs}
+        lineHeight={fontSize.xs}
         fontWeight={fontWeight.medium}
         color="muted-foreground"
       >
@@ -151,7 +153,11 @@ function ActivityDay({ group }: { readonly group: ActivityGroup }) {
               {row.title}
             </Text>
             <XStack flexWrap="wrap" items="center" gap={8}>
-              <Text fontSize={fontSize.xs} color="muted-foreground">
+              <Text
+                fontSize={fontSize.xs}
+                lineHeight={fontSize.xs}
+                color="muted-foreground"
+              >
                 {row.details.join(" · ")}
               </Text>
               <PaymentMethodIcons kinds={row.methodKinds} />
@@ -232,9 +238,12 @@ export function ActivityList({
           empty={
             <YStack items="center" gap={32} py={40} w="100%">
               <Icon icon={Receipt} size={40} color="muted-foreground" />
-              <Text fontSize={fontSize.lg}>{emptyTitle}</Text>
+              <Text fontSize={fontSize.lg} lineHeight={fontSize.lg}>
+                {emptyTitle}
+              </Text>
               <Text
                 fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
                 color="muted-foreground"
                 text="center"
               >

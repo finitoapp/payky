@@ -22,7 +22,7 @@ export function TermsPage() {
           <CardDescription>{t("settings.about.terms.summary")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Text color="muted-foreground" fontSize="sm">
+          <Text color="muted-foreground" fontSize="sm" lineHeight="sm">
             {t("settings.about.terms.body")}
           </Text>
         </CardContent>

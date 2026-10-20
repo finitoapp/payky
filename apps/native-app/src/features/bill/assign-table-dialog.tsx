@@ -136,7 +136,11 @@ function NoTableTile({
         borderColor={selected ? "primary" : "card-ring"}
       >
         <Icon icon={Ban} size={20} color="muted-foreground" />
-        <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+        <Text
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          fontWeight={fontWeight.medium}
+        >
           {t("bill.table.dialog.none")}
         </Text>
       </Card>
@@ -173,14 +177,22 @@ function TableAssignmentTile({
         selected={selected}
       >
         {onlyBill === undefined ? (
-          <Text fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {t("tables.tile.free")}
           </Text>
         ) : bills.length === 1 ? (
           // Derived from the row's embedded lines/items: no query of its own.
           <OccupiedSummary bill={onlyBill} locale={locale} />
         ) : (
-          <Text fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {t("tables.tile.multipleBills", { value: bills.length })}
           </Text>
         )}
@@ -206,10 +218,18 @@ function OccupiedSummary({
   )
   return (
     <YStack gap={2}>
-      <Text fontSize={fontSize.sm} color="muted-foreground">
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        color="muted-foreground"
+      >
         {t("bill.itemsCount", { value: itemCount })}
       </Text>
-      <Text fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        fontWeight={fontWeight.semibold}
+      >
         {formatMoney({ value: totalAmount, currency: bill.currency }, locale)}
       </Text>
     </YStack>

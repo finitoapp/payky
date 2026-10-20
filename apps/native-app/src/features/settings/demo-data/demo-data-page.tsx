@@ -91,6 +91,7 @@ export function DemoDataPage() {
                 <Text
                   key={item}
                   fontSize={fontSize.sm}
+                  lineHeight={fontSize.sm}
                   color="muted-foreground"
                   // Web's <strong> around the relays item.
                   fontWeight={index === 2 ? fontWeight.bold : fontWeight.normal}

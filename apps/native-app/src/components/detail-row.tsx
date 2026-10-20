@@ -39,7 +39,11 @@ export function DetailRow({
   if (mono && value !== undefined) {
     return (
       <XStack justify="space-between" items="center" gap={16}>
-        <Text fontSize={fontSize.sm} color="muted-foreground">
+        <Text
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          color="muted-foreground"
+        >
           {label}
         </Text>
         <RNText
@@ -48,7 +52,8 @@ export function DetailRow({
           style={{
             flex: 1,
             textAlign: "right",
-            fontSize: fontSize.xs,
+            fontSize: 12,
+            lineHeight: 16,
             color: theme.color.val,
           }}
         >
@@ -69,6 +74,7 @@ export function DetailRow({
     (value === undefined ? null : (
       <Text
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
         fontWeight={weight}
         text={stacked ? undefined : "right"}
       >
@@ -77,14 +83,22 @@ export function DetailRow({
     ))
   return stacked ? (
     <View gap={4}>
-      <Text fontSize={fontSize.sm} color="muted-foreground">
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        color="muted-foreground"
+      >
         {label}
       </Text>
       {content}
     </View>
   ) : (
     <XStack justify="space-between" items="flex-start" gap={16}>
-      <Text fontSize={fontSize.sm} color="muted-foreground">
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        color="muted-foreground"
+      >
         {label}
       </Text>
       <View maxW={224} shrink={1} items="flex-end">

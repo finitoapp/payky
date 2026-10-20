@@ -741,6 +741,7 @@ function BillCart({
                   px={4}
                   pt={index === 0 ? 0 : 8}
                   fontSize={fontSize.sm}
+                  lineHeight={fontSize.sm}
                   fontWeight={fontWeight.semibold}
                   color="muted-foreground"
                 >
@@ -850,13 +851,18 @@ function BillCart({
                 <XStack items="center" justify="space-between" gap={8}>
                   <XStack items="center" gap={8}>
                     <Icon icon={ShoppingBag} color="muted-foreground" />
-                    <Text fontSize={fontSize.base} color="muted-foreground">
+                    <Text
+                      fontSize={fontSize.base}
+                      lineHeight={fontSize.base}
+                      color="muted-foreground"
+                    >
                       {t("bill.itemsCount", { value: itemCount })}
                     </Text>
                   </XStack>
                   <XStack items="center" gap={8}>
                     <Text
                       fontSize={fontSize.base}
+                      lineHeight={fontSize.base}
                       fontWeight={fontWeight.semibold}
                       fontVariant={["tabular-nums"]}
                     >
@@ -983,6 +989,7 @@ function BillCart({
               >
                 <Text
                   fontSize={fontSize.sm}
+                  lineHeight={fontSize.sm}
                   fontWeight={fontWeight.bold}
                   color="primary-foreground"
                 >
@@ -1033,6 +1040,7 @@ function SummaryRow({
       <YStack flex={1} minW={0}>
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.medium}
           numberOfLines={1}
         >
@@ -1042,6 +1050,7 @@ function SummaryRow({
         {summary.quantity === 1 ? null : (
           <Text
             fontSize={fontSize.xs}
+            lineHeight={fontSize.xs}
             color="muted-foreground"
             fontVariant={["tabular-nums"]}
           >
@@ -1072,6 +1081,7 @@ function SummaryRow({
           minW={24}
           text="center"
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.semibold}
           fontVariant={["tabular-nums"]}
         >
@@ -1095,6 +1105,7 @@ function SummaryRow({
         minW={80}
         text="right"
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
         fontWeight={fontWeight.semibold}
         fontVariant={["tabular-nums"]}
       >
@@ -1121,6 +1132,7 @@ function CatalogEmpty() {
     <YStack items="center" gap={12}>
       <Text
         fontSize={fontSize.lg}
+        lineHeight={fontSize.lg}
         fontWeight={fontWeight.semibold}
         text="center"
       >
@@ -1129,6 +1141,7 @@ function CatalogEmpty() {
       <Text
         maxW={288}
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
         color="muted-foreground"
         text="center"
       >

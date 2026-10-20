@@ -70,7 +70,7 @@ export function EetOfficialTestCertificates() {
         borderColor="border-color"
         borderStyle="dashed"
       >
-        <Text fontSize="sm" color="muted-foreground">
+        <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
           {t("settings.eet.officialTest.description")}
         </Text>
         <Button
@@ -98,7 +98,7 @@ export function EetOfficialTestCertificates() {
 
   if (certificatesQuery.data === undefined) {
     return (
-      <Text color="muted-foreground" fontSize="sm">
+      <Text color="muted-foreground" fontSize="sm" lineHeight="sm">
         {t("settings.eet.officialTest.loading")}
       </Text>
     )
@@ -106,7 +106,7 @@ export function EetOfficialTestCertificates() {
 
   return (
     <YStack gap="2">
-      <Text fontSize="sm" fontWeight="600">
+      <Text fontSize="sm" lineHeight="sm" fontWeight="600">
         {t("settings.eet.officialTest.title")}
       </Text>
       {certificatesQuery.data.map((certificate) => (
@@ -122,13 +122,14 @@ export function EetOfficialTestCertificates() {
           <YStack flex={1}>
             <Text
               fontSize="sm"
+              lineHeight="sm"
               fontWeight="600"
               style={{ fontFamily: "monospace" }}
             >
               {certificate.eic}
             </Text>
             {certificate.description === null ? null : (
-              <Text fontSize="xs" color="muted-foreground">
+              <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                 {certificate.description}
               </Text>
             )}

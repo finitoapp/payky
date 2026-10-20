@@ -148,13 +148,15 @@ function PaymentTipForm({
       <YStack items="center" gap={8}>
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.medium}
           color="muted-foreground"
         >
           {t("paymentTip.orderTotal")}
         </Text>
         <Text
-          fontSize={36}
+          fontSize="4xl"
+          lineHeight="4xl"
           fontWeight={fontWeight.semibold}
           fontVariant={["tabular-nums"]}
           accessibilityRole="header"
@@ -265,10 +267,18 @@ function TipOption({
       gap={4}
       py={12}
     >
-      <Text fontSize={fontSize.lg} fontWeight={fontWeight.semibold}>
+      <Text
+        fontSize={fontSize.lg}
+        lineHeight={fontSize.lg}
+        fontWeight={fontWeight.semibold}
+      >
         {label}
       </Text>
-      <Text fontSize={fontSize.sm} color="muted-foreground">
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        color="muted-foreground"
+      >
         {detail}
       </Text>
     </ToggleGroupItem>

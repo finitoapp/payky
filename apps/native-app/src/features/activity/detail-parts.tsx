@@ -84,6 +84,7 @@ function TechnicalTriggerLabel({ label }: { readonly label: string }) {
     <XStack items="center" gap={4}>
       <Text
         fontSize={fontSize.xs}
+        lineHeight={fontSize.xs}
         fontWeight={fontWeight.medium}
         color="muted-foreground"
       >
@@ -107,7 +108,11 @@ export function BillLines({
 
   if (summaries.length === 0)
     return (
-      <Text fontSize={fontSize.sm} color="muted-foreground">
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        color="muted-foreground"
+      >
         {emptyMessage}
       </Text>
     )
@@ -128,11 +133,16 @@ export function BillLines({
             <Text
               numberOfLines={1}
               fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
               fontWeight={fontWeight.medium}
             >
               {summary.name}
             </Text>
-            <Text fontSize={fontSize.xs} color="muted-foreground">
+            <Text
+              fontSize={fontSize.xs}
+              lineHeight={fontSize.xs}
+              color="muted-foreground"
+            >
               {`${summary.quantity} × ${formatMoney(
                 {
                   value: getBillLineSummaryUnitAmount(summary),
@@ -142,7 +152,11 @@ export function BillLines({
               )}`}
             </Text>
           </YStack>
-          <Text fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.semibold}
+          >
             {formatMoney(
               { value: summary.totalAmount, currency: summary.currency },
               locale
@@ -185,7 +199,7 @@ export function BillCoverageWarning({
         )}
       </AlertTitle>
       <AlertDescription>
-        <Text fontSize={14} fontWeight="600">
+        <Text fontSize="sm" lineHeight="sm" fontWeight="600">
           {t(
             isUnderpaid
               ? "paymentDetail.bill.coverage.delta.underpaid"

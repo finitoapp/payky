@@ -60,8 +60,8 @@ export const CardTitle = styled(Text, {
 
   variants: {
     size: {
-      default: { fontSize: fontSize.base },
-      sm: { fontSize: fontSize.sm },
+      default: { fontSize: fontSize.base, lineHeight: fontSize.base },
+      sm: { fontSize: fontSize.sm, lineHeight: fontSize.sm },
     },
   } as const,
 })
@@ -70,6 +70,7 @@ export const CardDescription = styled(Text, {
   name: "CardDescription",
   color: "muted-foreground",
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
 })
 
 export const CardAction = styled(View, {

@@ -61,7 +61,7 @@ export function OptionToggleGroup<Value extends string>({
             <View flex={1} gap={4}>
               <Text fontWeight="600">{option.title}</Text>
               {option.description === undefined ? null : (
-                <Text fontSize={12} color="muted-foreground">
+                <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                   {option.description}
                 </Text>
               )}

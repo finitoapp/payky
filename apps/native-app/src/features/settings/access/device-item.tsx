@@ -96,7 +96,7 @@ export function DeviceItem({
       borderColor="border-color"
     >
       <DeviceHeading device={device} thisDevice={thisDevice} />
-      <Text fontSize="sm" color="muted-foreground">
+      <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
         {preset === null
           ? permissions
               .filter((permission) => granted.has(permission))
@@ -249,7 +249,7 @@ function PermissionsEditor({
           <YStack pt={2}>
             <Icon icon={TriangleAlert} color="destructive" />
           </YStack>
-          <Text flex={1} fontSize={14}>
+          <Text flex={1} fontSize="sm" lineHeight="sm">
             {t("access.device.adminWarning")}
           </Text>
         </XStack>

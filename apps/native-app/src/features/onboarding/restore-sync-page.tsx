@@ -232,10 +232,15 @@ export function RestoreSyncPage() {
           ) : (
             <ActivityIndicator size="large" />
           )}
-          <Text fontSize={24} fontWeight="600" accessibilityRole="header">
+          <Text
+            fontSize="2xl"
+            lineHeight="2xl"
+            fontWeight="600"
+            accessibilityRole="header"
+          >
             {t(title)}
           </Text>
-          <Text fontSize="sm" color="muted-foreground">
+          <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
             {t(
               outcome === "failed" && !online
                 ? "accountRestore.failed.offline"
@@ -251,7 +256,7 @@ export function RestoreSyncPage() {
           <CardContent>
             <YStack gap="4">
               {(relays ?? []).map((relay) => (
-                <Text key={relay.transport.label} fontSize="sm">
+                <Text key={relay.transport.label} fontSize="sm" lineHeight="sm">
                   {relay.transport.label}:{" "}
                   {t(statusKeys[relaySyncStateToStatus(relay).type])}
                 </Text>

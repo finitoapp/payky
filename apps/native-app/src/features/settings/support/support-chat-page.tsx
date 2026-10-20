@@ -246,6 +246,7 @@ function MessageBubble({
         >
           <Text
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             color={own ? "primary-foreground" : "card-foreground"}
           >
             <MessageText
@@ -255,7 +256,11 @@ function MessageBubble({
             />
           </Text>
           <XStack self="flex-end" items="center" gap={4} mt={4} ml={12}>
-            <Text fontSize={fontSize.xs} color={timeColor}>
+            <Text
+              fontSize={fontSize.xs}
+              lineHeight={fontSize.xs}
+              color={timeColor}
+            >
               {new Date(entry.sentAt * 1000).toLocaleTimeString(locale, {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -291,7 +296,9 @@ function MessageBubble({
             borderWidth={1}
             borderColor="card-ring"
           >
-            <Text fontSize={fontSize.sm}>{entry.reactions.join(" ")}</Text>
+            <Text fontSize={fontSize.sm} lineHeight={fontSize.sm}>
+              {entry.reactions.join(" ")}
+            </Text>
           </YStack>
         ) : null}
         {entry.status === "failed" ? (
@@ -353,6 +360,7 @@ function SupportAuthor({
     <Text
       px={4}
       fontSize={fontSize.xs}
+      lineHeight={fontSize.xs}
       fontWeight={fontWeight.medium}
       color="muted-foreground"
     >

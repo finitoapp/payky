@@ -77,7 +77,12 @@ export function Toast({
           hitSlop={12}
           onPress={action.onPress}
         >
-          <Text fontSize={12} fontWeight={fontWeight.medium} color="popover">
+          <Text
+            fontSize="xs"
+            lineHeight="xs"
+            fontWeight={fontWeight.medium}
+            color="popover"
+          >
             {action.label}
           </Text>
         </View>

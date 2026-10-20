@@ -185,6 +185,7 @@ export function InputOTPSlot({
         <Text
           color="color"
           fontSize={size === "lg" ? fontSize["2xl"] : fontSize.sm}
+          lineHeight={size === "lg" ? fontSize["2xl"] : fontSize.sm}
         >
           {char}
         </Text>

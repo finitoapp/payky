@@ -92,7 +92,13 @@ export function DebugConsolePage() {
         </CardHeader>
         <CardContent>
           {entries.length === 0 ? (
-            <Text py="8" color="muted-foreground" text="center" fontSize="sm">
+            <Text
+              py="8"
+              color="muted-foreground"
+              text="center"
+              fontSize="sm"
+              lineHeight="sm"
+            >
               {t("settings.debugConsole.empty")}
             </Text>
           ) : (

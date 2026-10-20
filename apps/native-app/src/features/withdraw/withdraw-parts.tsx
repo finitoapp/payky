@@ -29,7 +29,12 @@ export function Mono({ value }: { readonly value: string }) {
     <XStack gap="3" items="center" justify="space-between">
       <RNText
         selectable
-        style={{ flex: 1, fontSize: 12, color: theme.color.val }}
+        style={{
+          flex: 1,
+          fontSize: 12,
+          lineHeight: 16,
+          color: theme.color.val,
+        }}
       >
         {value}
       </RNText>
@@ -60,7 +65,7 @@ export function SatsWithFiat({
         {t("withdraw.sats", { amount: formatSatsAmount(sats, locale) })}
       </Text>
       {approx === null ? null : (
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {approx}
         </Text>
       )}

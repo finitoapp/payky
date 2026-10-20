@@ -273,7 +273,12 @@ function EmptyConversation({
   return (
     // At the bottom, next to the composer and the thumb, as in messengers.
     <YStack mt="auto" self="center" maxW={320} gap={12} items="center">
-      <Text fontSize={fontSize.sm} color="muted-foreground" text="center">
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        color="muted-foreground"
+        text="center"
+      >
         {t(emptyKeys[access])}
       </Text>
       {suggestions[access].map((key) => (
@@ -316,6 +321,7 @@ function Turn({
           px={12}
           self="flex-start"
           fontSize={fontSize.xs}
+          lineHeight={fontSize.xs}
           color="muted-foreground"
         >
           {t("settings.assistant.stopped")}
@@ -362,7 +368,11 @@ function AnsweringBubble({
     >
       <TypingDots />
       {lookingUp === null ? null : (
-        <Text fontSize={fontSize.xs} color="muted-foreground">
+        <Text
+          fontSize={fontSize.xs}
+          lineHeight={fontSize.xs}
+          color="muted-foreground"
+        >
           {t(lookingUpKeys[lookingUp])}
         </Text>
       )}
@@ -430,6 +440,7 @@ function Bubble({
       {typeof children === "string" ? (
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           color={own ? "primary-foreground" : "card-foreground"}
         >
           {children}

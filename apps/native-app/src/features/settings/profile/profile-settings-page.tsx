@@ -78,7 +78,7 @@ export function ProfileSettingsPage() {
               </YStack>
             )}
             <YStack gap="1.5">
-              <Text fontSize="sm" fontWeight="600">
+              <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                 {t("settings.profile.npub.label")}
               </Text>
               {/* The key can be copied by hand as well as with the button. */}
@@ -88,6 +88,7 @@ export function ProfileSettingsPage() {
                   style={{
                     flex: 1,
                     fontSize: 12,
+                    lineHeight: 16,
                     // Web's text-muted-foreground; RN Text has no theme color.
                     color: theme["muted-foreground"]?.val,
                     fontFamily: "monospace",
@@ -157,7 +158,7 @@ function ProfileEditor({ profile }: { readonly profile: NostrProfile }) {
   return (
     <YStack gap="3">
       <YStack gap="2">
-        <Text fontSize="sm" fontWeight="600">
+        <Text fontSize="sm" lineHeight="sm" fontWeight="600">
           {t("settings.profile.picture.label")}
         </Text>
         <XStack gap="3" alignItems="center">

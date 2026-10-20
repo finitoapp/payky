@@ -228,7 +228,8 @@ export function AccountTransferTarget({
         <YStack gap="3" accessibilityLiveRegion="polite">
           <Text>{t("accountTransfer.target.code.instructions")}</Text>
           <Text
-            fontSize={48}
+            fontSize="5xl"
+            lineHeight="5xl"
             fontWeight="600"
             letterSpacing={4.8}
             text="center"

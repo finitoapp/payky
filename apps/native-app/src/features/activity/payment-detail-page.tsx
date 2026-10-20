@@ -184,7 +184,12 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
             }
           />
           {payment.expiresAt === null ? null : (
-            <Text fontSize={12} color="muted-foreground" text="center">
+            <Text
+              fontSize="xs"
+              lineHeight="xs"
+              color="muted-foreground"
+              text="center"
+            >
               {t("paymentDetail.expiresAt", {
                 time: formatTime(new Date(payment.expiresAt), locale),
               })}
@@ -215,7 +220,8 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
         <CardContent gap={12}>
           <YStack gap={4}>
             <Text
-              fontSize={36}
+              fontSize="4xl"
+              lineHeight="4xl"
               fontWeight={fontWeight.semibold}
               fontVariant={["tabular-nums"]}
             >
@@ -226,7 +232,11 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
             </Text>
             {payment.cashReceivedAmount === null ||
             payment.cashReceivedAmount === payment.amount ? null : (
-              <Text fontSize={fontSize.sm} color="muted-foreground">
+              <Text
+                fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
+                color="muted-foreground"
+              >
                 {t("paymentDetail.cashReceived", {
                   amount: formatMoney(
                     {
@@ -239,7 +249,11 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
               </Text>
             )}
             {receivedTipAmount > 0 ? (
-              <Text fontSize={fontSize.sm} color="muted-foreground">
+              <Text
+                fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
+                color="muted-foreground"
+              >
                 {t("paymentDetail.tipIncluded", {
                   amount: formatMoney(
                     { value: receivedTipAmount, currency: payment.currency },
@@ -253,7 +267,11 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
                 {paymentMethodKinds.map((kind) => (
                   <XStack key={kind} items="center" gap={4}>
                     <Icon icon={paymentMethodIcon[kind]} />
-                    <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+                    <Text
+                      fontSize={fontSize.sm}
+                      lineHeight={fontSize.sm}
+                      fontWeight={fontWeight.medium}
+                    >
                       {t(paymentMethodLabelKey[kind])}
                     </Text>
                   </XStack>
@@ -261,7 +279,11 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
               </XStack>
             ) : null}
             {payment.canceledAt === null ? null : (
-              <Text fontSize={fontSize.sm} color="muted-foreground">
+              <Text
+                fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
+                color="muted-foreground"
+              >
                 {t("paymentDetail.canceledAtValue", {
                   date: formatDateTime(new Date(payment.canceledAt), locale),
                 })}
@@ -546,6 +568,7 @@ function PaymentBillCard({
           <YStack gap={4}>
             <Text
               fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
               fontWeight={fontWeight.medium}
               color="muted-foreground"
             >
@@ -554,6 +577,7 @@ function PaymentBillCard({
             {/* Spelled out: a counter sale with no table is a fact staff should read. */}
             <Text
               fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
               fontWeight={fontWeight.medium}
               color={bill.tableId === null ? "muted-foreground" : "color"}
             >
@@ -780,27 +804,43 @@ function PaymentEetSaleCard({ sale }: { readonly sale: PaymentEetSale }) {
       </CardHeader>
       <CardContent gap={12}>
         {isExtraMoney ? (
-          <Text fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {t("paymentDetail.eet.extra.description")}
           </Text>
         ) : null}
         {status === "testConfirmed" || sale.environment === "playground" ? (
-          <Text fontSize={fontSize.xs} color="info">
+          <Text fontSize={fontSize.xs} lineHeight={fontSize.xs} color="info">
             {t("paymentDetail.eet.test")}
           </Text>
         ) : null}
         {isOverdue ? (
-          <Text fontSize={fontSize.sm} color="destructive">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="destructive"
+          >
             {t("paymentDetail.eet.overdue")}
           </Text>
         ) : null}
         {status === "unsupported" ? (
-          <Text fontSize={fontSize.sm} color="destructive">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="destructive"
+          >
             {t("paymentDetail.eet.unsupported")}
           </Text>
         ) : null}
         {waitEndsAt === null ? null : (
-          <Text fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {t("paymentDetail.eet.waitingForDevice", {
               time: formatTime(new Date(waitEndsAt), locale),
             })}

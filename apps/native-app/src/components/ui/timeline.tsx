@@ -82,6 +82,7 @@ export const TimelineDate = styled(Text, {
   name: "TimelineDate",
   mb: 4,
   fontSize: fontSize.xs,
+  lineHeight: fontSize.xs,
   fontWeight: fontWeight.medium,
   color: "muted-foreground",
 })
@@ -92,7 +93,11 @@ export function TimelineTitle({ children }: { readonly children?: ReactNode }) {
     <View flexDirection="row" flexWrap="wrap" items="center" gap={8}>
       {Children.map(children, (child) =>
         typeof child === "string" ? (
-          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+          >
             {child}
           </Text>
         ) : (

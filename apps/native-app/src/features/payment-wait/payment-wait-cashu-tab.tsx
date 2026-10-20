@@ -40,6 +40,7 @@ export function CashuPaymentTab({
       <Text
         maxW={288}
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
         color="muted-foreground"
         text="center"
         accessibilityRole="alert"
@@ -55,6 +56,7 @@ export function CashuPaymentTab({
         <Text
           maxW={288}
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           color="muted-foreground"
           text="center"
         >
@@ -73,7 +75,11 @@ export function CashuPaymentTab({
   return qrPayload === null ? (
     <XStack items="center" gap={8}>
       <ActivityIndicator />
-      <Text fontSize={fontSize.sm} color="muted-foreground">
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        color="muted-foreground"
+      >
         {t("paymentWait.preparing.cashu")}
       </Text>
     </XStack>

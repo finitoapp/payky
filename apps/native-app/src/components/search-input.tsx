@@ -53,6 +53,7 @@ export function SearchInput({
         borderWidth={0}
         bg="transparent"
         fontSize={fontSize.base}
+        lineHeight={fontSize.base}
         value={value}
         placeholder={placeholder}
         accessibilityLabel={placeholder}

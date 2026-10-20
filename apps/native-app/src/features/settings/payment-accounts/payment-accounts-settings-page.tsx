@@ -221,7 +221,12 @@ export function PaymentAccountsSettingsPage() {
     <Screen>
       <FadeHeader title={t("settings.paymentAccounts.title")} />
       <YStack gap={12}>
-        <Text px={4} fontSize={fontSize.sm} color="muted-foreground">
+        <Text
+          px={4}
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          color="muted-foreground"
+        >
           {t("settings.paymentAccounts.order.description")}
         </Text>
         <VerticalNavShell>
@@ -304,6 +309,7 @@ function PaymentMethodRow({
             <XStack items="center" gap={8}>
               <Text
                 fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
                 fontWeight={fontWeight.medium}
                 flexShrink={1}
                 color={row.enabled ? undefined : "muted-foreground"}
@@ -325,7 +331,11 @@ function PaymentMethodRow({
               ) : null}
             </XStack>
             {row.status === null ? null : (
-              <Text fontSize={fontSize.xs} color="muted-foreground">
+              <Text
+                fontSize={fontSize.xs}
+                lineHeight={fontSize.xs}
+                color="muted-foreground"
+              >
                 {row.status}
               </Text>
             )}

@@ -48,7 +48,7 @@ export function FioTokenList() {
       </CardHeader>
       <CardContent>
         {tokens.length === 0 ? (
-          <Text fontSize={14} color="muted-foreground">
+          <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
             {t("settings.fioPlugin.tokens.empty")}
           </Text>
         ) : (

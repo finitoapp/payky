@@ -103,6 +103,7 @@ const ButtonText = styled(Text, {
   context: ButtonContext,
   fontWeight: fontWeight.medium,
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
 
   variants: {
     variant: {
@@ -115,7 +116,7 @@ const ButtonText = styled(Text, {
     },
     size: {
       default: {},
-      xs: { fontSize: fontSize.xs },
+      xs: { fontSize: fontSize.xs, lineHeight: fontSize.xs },
       sm: { fontSize: 12.8 },
       lg: {},
       icon: {},

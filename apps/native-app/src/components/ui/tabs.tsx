@@ -100,6 +100,7 @@ const TriggerFrame = styled(View, {
 const TriggerText = styled(Text, {
   name: "TabsTriggerText",
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
   fontWeight: fontWeight.medium,
   color: "tabs-trigger",
 

@@ -35,8 +35,8 @@ export const FieldLegend = styled(Text, {
 
   variants: {
     variant: {
-      legend: { fontSize: fontSize.base },
-      label: { fontSize: fontSize.sm },
+      legend: { fontSize: fontSize.base, lineHeight: fontSize.base },
+      label: { fontSize: fontSize.sm, lineHeight: fontSize.sm },
     },
   } as const,
 
@@ -80,6 +80,7 @@ export const FieldContent = styled(View, {
 const FieldLabelText = styled(Text, {
   name: "FieldLabel",
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
   fontWeight: fontWeight.medium,
 })
 
@@ -90,18 +91,21 @@ export function FieldLabel(props: GetProps<typeof FieldLabelText>) {
 export const FieldTitle = styled(Text, {
   name: "FieldTitle",
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
   fontWeight: fontWeight.medium,
 })
 
 export const FieldDescription = styled(Text, {
   name: "FieldDescription",
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
   color: "muted-foreground",
 })
 
 const FieldErrorText = styled(Text, {
   name: "FieldError",
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
   color: "destructive",
 })
 
@@ -153,6 +157,7 @@ export function FieldSeparator({ children }: { readonly children?: string }) {
           px={8}
           bg="background"
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           color="muted-foreground"
         >
           {children}

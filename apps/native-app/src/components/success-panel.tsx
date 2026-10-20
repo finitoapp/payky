@@ -44,6 +44,7 @@ export function SuccessPanel({
       <View items="center" gap={8}>
         <Text
           fontSize={fontSize["3xl"]}
+          lineHeight={fontSize["3xl"]}
           fontWeight={fontWeight.semibold}
           text="center"
           accessibilityRole="header"

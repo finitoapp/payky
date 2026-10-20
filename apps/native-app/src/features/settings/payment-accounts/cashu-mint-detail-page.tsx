@@ -140,7 +140,11 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
         </CardHeader>
         {isDefault ? null : (
           <CardContent gap={12}>
-            <Text fontSize={fontSize.sm} color="muted-foreground">
+            <Text
+              fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
+              color="muted-foreground"
+            >
               {t("settings.cashuMints.defaultWarning")}
             </Text>
             <Button

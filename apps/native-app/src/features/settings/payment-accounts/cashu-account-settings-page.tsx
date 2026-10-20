@@ -120,7 +120,7 @@ function CashuAccountSettingsContent() {
                 icon: <Icon icon={Landmark} color="muted-foreground" />,
                 label: (
                   <YStack gap="1">
-                    <Text fontSize={14} fontWeight="600">
+                    <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                       {t("settings.cashuAccount.mints")}
                     </Text>
                     <Text fontSize={13} color="muted-foreground">
@@ -135,7 +135,7 @@ function CashuAccountSettingsContent() {
                 icon: <Icon icon={ArrowUpFromLine} color="muted-foreground" />,
                 label: (
                   <YStack gap="1">
-                    <Text fontSize={14} fontWeight="600">
+                    <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                       {t("settings.cashuAccount.withdraw")}
                     </Text>
                     <Text fontSize={13} color="muted-foreground">

@@ -90,7 +90,7 @@ export function TaxRatesSettingsPage() {
         {archivedTaxRates.length > 0 && (
           <Card>
             <CardHeader>
-              <Text fontSize={14} fontWeight="500">
+              <Text fontSize="sm" lineHeight="sm" fontWeight="500">
                 {t("settings.taxRates.archived.title")}
               </Text>
             </CardHeader>
@@ -217,10 +217,10 @@ function TaxRateRowItem({
       {...(!last ? { borderBottomWidth: 1, borderColor: "border-color" } : {})}
     >
       <YStack flex={1}>
-        <Text fontSize={14} fontWeight="500" numberOfLines={1}>
+        <Text fontSize="sm" lineHeight="sm" fontWeight="500" numberOfLines={1}>
           {taxRate.name}
         </Text>
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {taxRatePercentageToDecimalString(taxRate.rate)}%
         </Text>
       </YStack>

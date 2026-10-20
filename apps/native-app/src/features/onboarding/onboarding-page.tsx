@@ -190,10 +190,15 @@ export function OnboardingPage() {
 
         <YStack gap="8" py="6">
           <YStack gap="2">
-            <Text fontSize={24} fontWeight="600" accessibilityRole="header">
+            <Text
+              fontSize="2xl"
+              lineHeight="2xl"
+              fontWeight="600"
+              accessibilityRole="header"
+            >
               {t(headingKeys[step])}
             </Text>
-            <Text fontSize="sm" color="muted-foreground">
+            <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
               {t(descriptionKeys[step])}
             </Text>
           </YStack>

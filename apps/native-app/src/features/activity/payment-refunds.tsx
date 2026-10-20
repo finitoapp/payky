@@ -191,10 +191,18 @@ export function PaymentRefunds({
                   borderTopWidth={index === 0 ? 0 : 1}
                   borderColor="border-color"
                 >
-                  <Text fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
+                  <Text
+                    fontSize={fontSize.sm}
+                    lineHeight={fontSize.sm}
+                    fontWeight={fontWeight.semibold}
+                  >
                     {money(refund.amount)}
                   </Text>
-                  <Text fontSize={fontSize.xs} color="muted-foreground">
+                  <Text
+                    fontSize={fontSize.xs}
+                    lineHeight={fontSize.xs}
+                    color="muted-foreground"
+                  >
                     {isTipRefund(refund)
                       ? `${t("paymentDetail.refunds.tip")} · `
                       : ""}
@@ -207,6 +215,7 @@ export function PaymentRefunds({
                       <Text
                         key={line.id}
                         fontSize={fontSize.xs}
+                        lineHeight={fontSize.xs}
                         color="muted-foreground"
                       >
                         {line.quantity} × {line.name}
@@ -393,7 +402,11 @@ function RefundSheet({
       }
     >
       {tipAmount > 0 ? (
-        <Text fontSize={fontSize.sm} color="muted-foreground">
+        <Text
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          color="muted-foreground"
+        >
           {t("refund.dialog.tipHint", { amount: money(tipAmount) })}
         </Text>
       ) : null}
@@ -560,12 +573,17 @@ function RefundItemRow({
       <YStack flex={1} minW={0}>
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.medium}
           numberOfLines={1}
         >
           {name}
         </Text>
-        <Text fontSize={fontSize.xs} color="muted-foreground">
+        <Text
+          fontSize={fontSize.xs}
+          lineHeight={fontSize.xs}
+          color="muted-foreground"
+        >
           {t("refund.dialog.items.available", {
             quantity: String(refundable.remainingQuantity),
           })}
@@ -584,6 +602,7 @@ function RefundItemRow({
           w={32}
           text="center"
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.semibold}
           fontVariant={["tabular-nums"]}
         >

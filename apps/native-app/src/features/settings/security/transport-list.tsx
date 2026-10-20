@@ -75,7 +75,11 @@ export function TransportList({
                       borderWidth={1}
                       borderColor="muted-foreground"
                     />
-                    <Text fontSize="xs" color="muted-foreground">
+                    <Text
+                      fontSize="xs"
+                      lineHeight="xs"
+                      color="muted-foreground"
+                    >
                       {t("settings.security.transports.inactive")}
                     </Text>
                   </XStack>
@@ -130,6 +134,7 @@ function TransportUrl({
   return (
     <Text
       fontSize="sm"
+      lineHeight="sm"
       fontWeight="500"
       color={muted ? "muted-foreground" : "color"}
       style={{ fontFamily: "monospace" }}
@@ -142,6 +147,7 @@ function TransportUrl({
             <Text
               fontFamily="body"
               fontSize="xs"
+              lineHeight="xs"
               color="muted-foreground"
               bg="muted"
               rounded="sm"

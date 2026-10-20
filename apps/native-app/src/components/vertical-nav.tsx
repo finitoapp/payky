@@ -39,6 +39,7 @@ export const VerticalNavTitle = styled(Text, {
   name: "VerticalNavTitle",
   p: 16,
   fontSize: fontSize.xs,
+  lineHeight: fontSize.xs,
   fontWeight: fontWeight.bold,
   color: "muted-foreground",
 })
@@ -174,7 +175,11 @@ export function VerticalNavRow({
       {item.icon}
       <View flex={1} minW={0}>
         {typeof item.label === "string" ? (
-          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+          >
             {item.label}
           </Text>
         ) : (

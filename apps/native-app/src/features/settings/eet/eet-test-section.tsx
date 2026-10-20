@@ -130,7 +130,7 @@ function EetTestResult({ submission }: { readonly submission: EetSubmission }) {
         {t(outcomeTitleKeys[outcome.type])}
       </Text>
       {outcome.type === "accepted" ? (
-        <Text fontSize={12} testID="eet-test-pok">
+        <Text fontSize="xs" lineHeight="xs" testID="eet-test-pok">
           {t("settings.eet.test.pok", { pok: outcome.pok })}
         </Text>
       ) : null}
@@ -169,7 +169,12 @@ function RawMessage({
   return (
     <Collapsible>
       <CollapsibleTrigger flexDirection="row" items="center" gap="1">
-        <Text fontSize="xs" fontWeight="600" color="muted-foreground">
+        <Text
+          fontSize="xs"
+          lineHeight="xs"
+          fontWeight="600"
+          color="muted-foreground"
+        >
           {label}
         </Text>
         <RawMessageChevron />

@@ -63,7 +63,12 @@ export function CashuMintsPage() {
     mints.data
   )
   const balanceAction = (mint: (typeof known)[number]) => (
-    <Text fontSize={12} color="muted-foreground" fontVariant={["tabular-nums"]}>
+    <Text
+      fontSize="xs"
+      lineHeight="xs"
+      color="muted-foreground"
+      fontVariant={["tabular-nums"]}
+    >
       {t("withdraw.sats", {
         amount: formatSatsAmount(snapshot.balances.get(mint) ?? 0, locale),
       })}

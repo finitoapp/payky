@@ -62,13 +62,18 @@ export function TableTileShell({
         <View shrink={1} minW={0}>
           <Text
             fontSize={fontSize.base}
+            lineHeight={fontSize.base}
             fontWeight={fontWeight.semibold}
             numberOfLines={1}
           >
             {name}
           </Text>
           {subtitle === undefined ? null : (
-            <Text fontSize={fontSize.sm} color="muted-foreground">
+            <Text
+              fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
+              color="muted-foreground"
+            >
               {subtitle}
             </Text>
           )}

@@ -63,6 +63,7 @@ export function DonationHistory() {
               color="muted-foreground"
               text="center"
               fontSize="sm"
+              lineHeight="sm"
               accessibilityRole="alert"
             >
               {t("settings.donations.history.error")}
@@ -87,10 +88,15 @@ export function DonationHistory() {
         empty={
           <YStack items="center" justify="center" gap="8" py="10">
             <Icon icon={HeartHandshake} size={40} color="muted-foreground" />
-            <Text fontSize="lg">
+            <Text fontSize="lg" lineHeight="lg">
               {t("settings.donations.history.empty.title")}
             </Text>
-            <Text color="muted-foreground" text="center" fontSize="sm">
+            <Text
+              color="muted-foreground"
+              text="center"
+              fontSize="sm"
+              lineHeight="sm"
+            >
               {t("settings.donations.history.empty.description")}
             </Text>
           </YStack>
@@ -119,7 +125,7 @@ export function DonationHistory() {
                   amount: formatSatsAmount(item.amountSats, locale),
                 })}
               </Text>
-              <Text fontSize="xs" color="muted-foreground">
+              <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                 {formatDateTime(new Date(item.occurredAt), locale)}
               </Text>
             </YStack>

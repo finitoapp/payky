@@ -99,6 +99,7 @@ export const AlertTitle = styled(Text, {
   context: AlertContext,
   numberOfLines: 1,
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
   fontWeight: fontWeight.medium,
 
   variants: {
@@ -117,6 +118,7 @@ const AlertDescriptionText = styled(Text, {
   name: "AlertDescription",
   context: AlertContext,
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
 
   variants: {
     variant: {

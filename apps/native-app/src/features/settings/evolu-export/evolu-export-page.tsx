@@ -108,7 +108,12 @@ export function EvoluExportPage() {
           <CardContent>
             <YStack gap="1" pl="5">
               {warningKeys.map((key) => (
-                <Text key={key} color="muted-foreground" fontSize="sm">
+                <Text
+                  key={key}
+                  color="muted-foreground"
+                  fontSize="sm"
+                  lineHeight="sm"
+                >
                   {`• ${t(key)}`}
                 </Text>
               ))}
@@ -134,7 +139,7 @@ export function EvoluExportPage() {
                     variant="secondary"
                     label={t("settings.evoluExport.format.sqlite")}
                   />
-                  <Text color="muted-foreground" fontSize="sm">
+                  <Text color="muted-foreground" fontSize="sm" lineHeight="sm">
                     {t("settings.evoluExport.format.description")}
                   </Text>
                 </XStack>

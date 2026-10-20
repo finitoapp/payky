@@ -214,7 +214,7 @@ export function AccountTransferSourcePage() {
                     <Text fontWeight="600">{index + 1}</Text>
                   </YStack>
                   <Icon icon={icon} color="muted-foreground" />
-                  <Text flex={1} fontSize="sm">
+                  <Text flex={1} fontSize="sm" lineHeight="sm">
                     {t(label)}
                   </Text>
                 </XStack>
@@ -228,7 +228,7 @@ export function AccountTransferSourcePage() {
                 </AlertDescription>
               </Alert>
               {accessControlOn ? (
-                <Text fontSize="sm" color="muted-foreground">
+                <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
                   {t("accountTransfer.source.permissions")}
                 </Text>
               ) : null}
@@ -239,7 +239,7 @@ export function AccountTransferSourcePage() {
             <YStack gap="3" accessibilityLiveRegion="polite">
               {qr(state.uri, 260)}
               <Text>{t("accountTransfer.source.qr.instructions")}</Text>
-              <Text fontSize="sm" color="muted-foreground">
+              <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
                 {t("accountTransfer.source.qr.reassurance")}
               </Text>
               <Text color="muted-foreground">

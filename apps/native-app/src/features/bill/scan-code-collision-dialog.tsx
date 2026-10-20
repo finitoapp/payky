@@ -64,7 +64,11 @@ export function ScanCodeCollisionDialog({
                 <Text flex={1} fontWeight={fontWeight.medium}>
                   {getStaffDisplayName(candidate)}
                 </Text>
-                <Text fontSize={fontSize.sm} color="muted-foreground">
+                <Text
+                  fontSize={fontSize.sm}
+                  lineHeight={fontSize.sm}
+                  color="muted-foreground"
+                >
                   {formatMoney(
                     {
                       value: candidate.unitAmount,

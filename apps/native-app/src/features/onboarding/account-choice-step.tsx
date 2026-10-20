@@ -52,10 +52,10 @@ export function AccountChoiceStep({
         icon: <Icon icon={option.icon} color="muted-foreground" />,
         label: (
           <YStack gap="1">
-            <Text fontSize="sm" fontWeight="600">
+            <Text fontSize="sm" lineHeight="sm" fontWeight="600">
               {t(option.title)}
             </Text>
-            <Text fontSize="xs" color="muted-foreground">
+            <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
               {t(option.description)}
             </Text>
           </YStack>

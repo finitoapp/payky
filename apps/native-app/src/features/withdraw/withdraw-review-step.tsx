@@ -121,17 +121,17 @@ function OnchainReview({
             >
               <YStack flex={1} items="flex-start" gap="1">
                 <Text>{t(option.label)}</Text>
-                <Text fontSize={12} color="muted-foreground">
+                <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                   {t(option.hint)}
                 </Text>
               </YStack>
               <YStack items="flex-end">
-                <Text fontSize={12} color="muted-foreground">
+                <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                   {t("withdraw.sats", {
                     amount: formatSatsAmount(optionFee, locale),
                   })}
                 </Text>
-                <Text fontSize={12} color="muted-foreground">
+                <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                   {fiat.approx(optionFee)}
                 </Text>
               </YStack>

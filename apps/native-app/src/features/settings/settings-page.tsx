@@ -84,11 +84,11 @@ function createSettingsNavItems(
               zero basis never wraps and squeezes it instead) and a value that
               does not fit beside it drops below, right-aligned. */}
           <YStack flexShrink={1} minW={0} gap={4}>
-            <Text fontSize={14} fontWeight="600">
+            <Text fontSize="sm" lineHeight="sm" fontWeight="600">
               {label}
             </Text>
             {item.description === undefined ? null : (
-              <Text fontSize={12} color="muted-foreground">
+              <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                 {t(item.description)}
               </Text>
             )}
@@ -96,7 +96,8 @@ function createSettingsNavItems(
           {item.value === undefined ? null : (
             <Text
               color="muted-foreground"
-              fontSize={14}
+              fontSize="sm"
+              lineHeight="sm"
               numberOfLines={1}
               ml="auto"
               maxW="100%"

@@ -72,7 +72,8 @@ function AmountDisplay({
     <YStack items="center">
       <Text
         accessibilityRole="header"
-        fontSize={60}
+        fontSize="6xl"
+        lineHeight="6xl"
         fontWeight={fontWeight.semibold}
         fontVariant={["tabular-nums"]}
         adjustsFontSizeToFit
@@ -168,7 +169,9 @@ function KeypadKey({
         if (at === null || Date.now() - at > PRESS_IN_EXPIRES_MS) onKey()
       }}
     >
-      <Text fontSize={fontSize["3xl"]}>{children}</Text>
+      <Text fontSize={fontSize["3xl"]} lineHeight={fontSize["3xl"]}>
+        {children}
+      </Text>
     </Button>
   )
 }
@@ -229,7 +232,11 @@ function ChargeButton({
         void charge(amount)
       }}
     >
-      <Text fontSize={fontSize.base} fontWeight={fontWeight.bold}>
+      <Text
+        fontSize={fontSize.base}
+        lineHeight={fontSize.base}
+        fontWeight={fontWeight.bold}
+      >
         {t("home.pay")}
       </Text>
     </Button>

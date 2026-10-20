@@ -363,7 +363,7 @@ function LegendItem({
         opacity={opacity}
         style={{ backgroundColor: color }}
       />
-      <Text fontSize={12} color="muted-foreground">
+      <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
         {label}
       </Text>
     </XStack>

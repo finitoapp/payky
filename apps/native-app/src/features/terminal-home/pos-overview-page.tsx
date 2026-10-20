@@ -166,10 +166,16 @@ export function PosOverviewPage() {
       }
       ListEmptyComponent={
         tables.length === 0 ? (
-          <Text px={4} fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            px={4}
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {`${t("home.pos.noTables")} `}
             <Text
               fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
               fontWeight={fontWeight.medium}
               textDecorationLine="underline"
               accessibilityRole="link"
@@ -183,6 +189,7 @@ export function PosOverviewPage() {
             px={4}
             py={24}
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             color="muted-foreground"
             text="center"
           >
@@ -212,11 +219,16 @@ function FloorStat({
 }) {
   return (
     <YStack>
-      <Text fontSize={fontSize.xs} color="muted-foreground">
+      <Text
+        fontSize={fontSize.xs}
+        lineHeight={fontSize.xs}
+        color="muted-foreground"
+      >
         {label}
       </Text>
       <Text
         fontSize={fontSize.lg}
+        lineHeight={fontSize.lg}
         fontWeight={fontWeight.semibold}
         fontVariant={["tabular-nums"]}
       >
@@ -248,7 +260,12 @@ function NoTableStrip({
       borderColor="card-ring"
       bg="card"
     >
-      <Text shrink={0} fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
+      <Text
+        shrink={0}
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        fontWeight={fontWeight.semibold}
+      >
         {t("bill.table.dialog.none")}
       </Text>
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -264,6 +281,7 @@ function NoTableStrip({
           <Text
             numberOfLines={1}
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             color="muted-foreground"
           >
             {t("home.pos.noTable.empty")}
@@ -355,6 +373,7 @@ function TableTile({
         {total !== undefined && (
           <Text
             fontSize={fontSize.xl}
+            lineHeight={fontSize.xl}
             fontWeight={fontWeight.bold}
             fontVariant={["tabular-nums"]}
             numberOfLines={1}
@@ -366,11 +385,16 @@ function TableTile({
           <XStack gap={6} flexWrap="wrap" items="center">
             <Text
               fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
               color={elapsedColors[elapsedSeverity(elapsedMs)]}
             >
               {formatElapsed(elapsedMs, locale)}
             </Text>
-            <Text fontSize={fontSize.sm} color="muted-foreground">
+            <Text
+              fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
+              color="muted-foreground"
+            >
               {t("tables.tile.itemCount", { value: itemCount })}
             </Text>
             {paymentState !== undefined && (
@@ -379,6 +403,7 @@ function TableTile({
                 bg="info-15"
                 px={4}
                 fontSize={fontSize.xs}
+                lineHeight={fontSize.xs}
                 fontWeight={fontWeight.semibold}
                 color="info"
               >
@@ -388,7 +413,11 @@ function TableTile({
           </XStack>
         ) : (
           <XStack gap={6} items="center">
-            <Text fontSize={fontSize.sm} color="muted-foreground">
+            <Text
+              fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
+              color="muted-foreground"
+            >
               {t("tables.tile.free")}
             </Text>
             <XStack
@@ -400,7 +429,11 @@ function TableTile({
               })}
             >
               <Icon icon={Users} size={14} color="muted-foreground" />
-              <Text fontSize={fontSize.sm} color="muted-foreground">
+              <Text
+                fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
+                color="muted-foreground"
+              >
                 {table.seatCount}
               </Text>
             </XStack>
@@ -480,6 +513,7 @@ function BillChip({
         {bill.label !== null && (
           <Text
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             color="muted-foreground"
             numberOfLines={1}
             maxW={96}
@@ -489,6 +523,7 @@ function BillChip({
         )}
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.semibold}
           fontVariant={["tabular-nums"]}
         >
@@ -501,6 +536,7 @@ function BillChip({
           <Text
             color={elapsedColors[elapsedSeverity(elapsedMs)]}
             fontSize={fontSize.xs}
+            lineHeight={fontSize.xs}
             fontVariant={["tabular-nums"]}
           >
             {formatElapsed(elapsedMs, locale)}

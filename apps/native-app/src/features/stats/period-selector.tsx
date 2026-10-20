@@ -93,7 +93,7 @@ function DayField({
 
   return (
     <YStack gap="1">
-      <Text fontSize={12} color="muted-foreground">
+      <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
         {label}
       </Text>
       <Input

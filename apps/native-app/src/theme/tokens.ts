@@ -16,15 +16,21 @@ export const radius = {
   full: 9999,
 } as const
 
-/** `text-xs` … `text-3xl`. Never pair these with a numeric `lineHeight`. */
+/**
+ * `text-xs` … `text-3xl`: the body font's tokens, whose size and line height
+ * are Tailwind's (`sm` 14/20, `xs` 12/16). Tamagui takes a line height from
+ * the font only when asked, so set both, as web's `text-*` does:
+ * `fontSize={fontSize.sm} lineHeight={fontSize.sm}`. Never a numeric
+ * `lineHeight` (Tamagui reads it as a size token).
+ */
 export const fontSize = {
-  xs: 12,
-  sm: 14,
-  base: 16,
-  lg: 18,
-  xl: 20,
-  "2xl": 24,
-  "3xl": 30,
+  xs: "xs",
+  sm: "sm",
+  base: "base",
+  lg: "lg",
+  xl: "xl",
+  "2xl": "2xl",
+  "3xl": "3xl",
 } as const
 
 /** `font-normal`/`medium`/`semibold`/`bold`; each weight is a loaded Inter face. */

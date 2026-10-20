@@ -131,7 +131,7 @@ function ReceivedBreakdown({
         {money(kpis.gross + kpis.tipsReceived + row.excess, row.currency)}
       </BreakdownLine>
       {kpis.tipRefundAmount === 0 ? null : (
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {t("stats.kpi.breakdown.tipRefunds", {
             amount: money(kpis.tipRefundAmount, row.currency),
           })}
@@ -215,10 +215,10 @@ function MethodDonut({
           justify="center"
           pointerEvents="none"
         >
-          <Text fontSize="sm" color="muted-foreground">
+          <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
             {t("stats.kpi.breakdown.received")}
           </Text>
-          <Text fontSize={18} fontWeight="700">
+          <Text fontSize="lg" lineHeight="lg" fontWeight="700">
             {money(row.total, row.currency)}
           </Text>
         </YStack>
@@ -234,10 +234,10 @@ function MethodDonut({
           </Text>
           {chosen.tips === 0 ? null : (
             <XStack justify="space-between" gap="3" pl="2">
-              <Text fontSize={12} color="muted-foreground">
+              <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                 {t("stats.tips.ofWhich")}
               </Text>
-              <Text fontSize={12} color="muted-foreground">
+              <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                 {money(chosen.tips, row.currency)}
               </Text>
             </XStack>
@@ -278,7 +278,7 @@ function MethodRow({
         <Text flex={1} numberOfLines={1}>
           {t(methodLabelKey(method.method))}
         </Text>
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {new Intl.NumberFormat(locale, {
             style: "percent",
             maximumFractionDigits: 0,
@@ -318,10 +318,10 @@ export function ExpectedCashSummary({
         >
           {/* The figure the drawer is counted against, then where it comes from. */}
           <YStack gap="0.5">
-            <Text fontSize={12} color="muted-foreground">
+            <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
               {t("stats.cash.expected")}
             </Text>
-            <Text fontSize={30} fontWeight="700">
+            <Text fontSize="3xl" lineHeight="3xl" fontWeight="700">
               {money(row.expected, row.currency)}
             </Text>
           </YStack>
@@ -360,12 +360,17 @@ function CashLine({
     <XStack justify="space-between" gap="2" pl={sub ? 16 : 0}>
       <Text
         flex={1}
-        fontSize={sub ? 12 : 14}
+        fontSize={sub ? "xs" : "sm"}
+        lineHeight={sub ? "xs" : "sm"}
         color={sub ? "muted-foreground" : "color"}
       >
         {label}
       </Text>
-      <Text fontSize={sub ? 12 : 14} color={sub ? "muted-foreground" : "color"}>
+      <Text
+        fontSize={sub ? "xs" : "sm"}
+        lineHeight={sub ? "xs" : "sm"}
+        color={sub ? "muted-foreground" : "color"}
+      >
         {children}
       </Text>
     </XStack>

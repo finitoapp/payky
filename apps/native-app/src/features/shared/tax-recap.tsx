@@ -26,7 +26,12 @@ export function TaxRecap({
 
   return (
     <YStack gap="2">
-      <Text fontSize="sm" fontWeight="500" color="muted-foreground">
+      <Text
+        fontSize="sm"
+        lineHeight="sm"
+        fontWeight="500"
+        color="muted-foreground"
+      >
         {t("taxRecap.title")}
       </Text>
       <YStack>
@@ -35,7 +40,12 @@ export function TaxRecap({
             {index > 0 ? <Separator /> : null}
             <XStack items="center" justify="space-between" gap="2" py="2">
               <YStack flex={1} minW={0}>
-                <Text numberOfLines={1} fontSize="sm" fontWeight="500">
+                <Text
+                  numberOfLines={1}
+                  fontSize="sm"
+                  lineHeight="sm"
+                  fontWeight="500"
+                >
                   {row.name === null || row.ratePercentage === null
                     ? t("taxRecap.noTax")
                     : t("taxRecap.rateLabel", {
@@ -45,11 +55,11 @@ export function TaxRecap({
                         ),
                       })}
                 </Text>
-                <Text fontSize="xs" color="muted-foreground">
+                <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                   {`${t("taxRecap.base")}: ${money(row.baseAmount)} · ${t("taxRecap.tax")}: ${money(row.taxAmount)}`}
                 </Text>
               </YStack>
-              <Text fontSize="sm" fontWeight="600">
+              <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                 {money(row.grossAmount)}
               </Text>
             </XStack>

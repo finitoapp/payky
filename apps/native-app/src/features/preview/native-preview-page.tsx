@@ -26,7 +26,12 @@ export function NativePreviewPage() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View flex={1} justify="center" p="6" gap="6">
-          <Text fontFamily="heading" fontSize={30} fontWeight="700">
+          <Text
+            fontFamily="heading"
+            fontSize="3xl"
+            lineHeight="3xl"
+            fontWeight="700"
+          >
             Payky Native
           </Text>
           <Text color="muted-foreground">

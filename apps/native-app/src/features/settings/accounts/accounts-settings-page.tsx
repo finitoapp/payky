@@ -124,10 +124,15 @@ export function AccountsSettingsPage() {
       ),
       label: (
         <YStack gap="1">
-          <Text fontSize="sm" fontWeight="500" numberOfLines={1}>
+          <Text
+            fontSize="sm"
+            lineHeight="sm"
+            fontWeight="500"
+            numberOfLines={1}
+          >
             {account.name}
           </Text>
-          <Text fontSize="xs" color="muted-foreground">
+          <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
             {`${t("settings.accounts.list.createdAt")} ${formatDateTime(new Date(account.createdAt), language)}`}
           </Text>
         </YStack>
@@ -184,7 +189,7 @@ export function AccountsSettingsPage() {
               label: (
                 <YStack gap="1">
                   <Text fontWeight="600">{t("accountChoice.new.title")}</Text>
-                  <Text fontSize="xs" color="muted-foreground">
+                  <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                     {t("accountChoice.new.description")}
                   </Text>
                 </YStack>
@@ -203,7 +208,7 @@ export function AccountsSettingsPage() {
                   <Text fontWeight="600">
                     {t("accountChoice.restore.title")}
                   </Text>
-                  <Text fontSize="xs" color="muted-foreground">
+                  <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                     {t("accountChoice.restore.description")}
                   </Text>
                 </YStack>
@@ -220,7 +225,7 @@ export function AccountsSettingsPage() {
                   <Text fontWeight="600">
                     {t("accountChoice.transfer.title")}
                   </Text>
-                  <Text fontSize="xs" color="muted-foreground">
+                  <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                     {t("accountChoice.transfer.description")}
                   </Text>
                 </YStack>
@@ -254,7 +259,7 @@ export function AccountsSettingsPage() {
                   <Text fontWeight="600">
                     {t("accountTransfer.settings.source.title")}
                   </Text>
-                  <Text fontSize="xs" color="muted-foreground">
+                  <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                     {t("accountTransfer.settings.source.description")}
                   </Text>
                 </YStack>

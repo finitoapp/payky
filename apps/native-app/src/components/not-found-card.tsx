@@ -27,6 +27,7 @@ export function NotFoundCard({
         <Icon icon={Receipt} size={40} color="muted-foreground" />
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           color="muted-foreground"
           text="center"
           accessibilityRole="alert"

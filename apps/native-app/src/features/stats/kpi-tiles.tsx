@@ -153,15 +153,20 @@ function CurrencyKpis({
   return (
     <YStack gap="2">
       {showCurrency ? (
-        <Text fontSize={12} fontWeight="700" color="muted-foreground">
+        <Text
+          fontSize="xs"
+          lineHeight="xs"
+          fontWeight="700"
+          color="muted-foreground"
+        >
           {current.currency}
         </Text>
       ) : null}
       <YStack {...tileProps}>
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {netRevenue.label}
         </Text>
-        <Text fontSize={30} fontWeight="600">
+        <Text fontSize="3xl" lineHeight="3xl" fontWeight="600">
           {netRevenue.value}
         </Text>
         <DeltaLabel tile={netRevenue} />
@@ -189,10 +194,10 @@ function CurrencyKpis({
       <XStack flexWrap="wrap" gap="2">
         {tiles.map((tile) => (
           <YStack key={tile.label} {...tileProps} flexBasis="47%" flexGrow={1}>
-            <Text fontSize={12} color="muted-foreground">
+            <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
               {tile.label}
             </Text>
-            <Text fontSize={20} fontWeight="600">
+            <Text fontSize="xl" lineHeight="xl" fontWeight="600">
               {tile.value}
             </Text>
             <DeltaLabel tile={tile} />
@@ -231,7 +236,12 @@ function CalculationTrigger({ label }: { readonly label: string }) {
   const { open } = useCollapsible()
   return (
     <CollapsibleTrigger mt="1" flexDirection="row" items="center" gap="1">
-      <Text fontSize={12} fontWeight="500" color="muted-foreground">
+      <Text
+        fontSize="xs"
+        lineHeight="xs"
+        fontWeight="500"
+        color="muted-foreground"
+      >
         {label}
       </Text>
       <Icon
@@ -253,7 +263,7 @@ function DeltaLabel({ tile }: { readonly tile: Tile }) {
   const { ratio, difference } = statsDelta(tile.current, tile.previous)
   if (ratio === null) {
     return (
-      <Text fontSize={12} color="muted-foreground">
+      <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
         {t("stats.delta.none")}
       </Text>
     )
@@ -271,11 +281,11 @@ function DeltaLabel({ tile }: { readonly tile: Tile }) {
     <XStack items="center" flexWrap="wrap" gap="1">
       {ratio > 0 ? <Icon icon={ArrowUp} size={12} color={color} /> : null}
       {ratio < 0 ? <Icon icon={ArrowDown} size={12} color={color} /> : null}
-      <Text fontSize={12} fontWeight="500" color={color}>
+      <Text fontSize="xs" lineHeight="xs" fontWeight="500" color={color}>
         {percent}
       </Text>
       {difference === 0 ? null : (
-        <Text fontSize={12} color={color} opacity={0.8}>
+        <Text fontSize="xs" lineHeight="xs" color={color} opacity={0.8}>
           {`· ${tile.formatDifference(difference)}`}
         </Text>
       )}

@@ -37,7 +37,7 @@ export function SecuritySettingsPage() {
           <CardContent>
             <YStack gap="5">
               {isDemo ? (
-                <Text fontSize="sm" color="muted-foreground">
+                <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
                   {t("settings.security.transports.demo")}
                 </Text>
               ) : null}
@@ -50,7 +50,7 @@ export function SecuritySettingsPage() {
             </YStack>
           </CardContent>
           <CardFooter>
-            <Text fontSize="xs" color="muted-foreground">
+            <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
               {t("settings.security.transports.footer")}
             </Text>
           </CardFooter>

@@ -19,7 +19,8 @@ export function StatsSection({
       <YStack bg="card" rounded="md" overflow="hidden">
         <Text
           p="4"
-          fontSize={12}
+          fontSize="xs"
+          lineHeight="xs"
           fontWeight="700"
           color="muted-foreground"
           accessibilityRole="header"
@@ -31,7 +32,7 @@ export function StatsSection({
         </YStack>
       </YStack>
       {note === undefined ? null : (
-        <Text fontSize={12} color="muted-foreground">
+        <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
           {note}
         </Text>
       )}
@@ -58,7 +59,12 @@ export function CurrencyGroup({
   return (
     <YStack gap="3">
       {showCurrency ? (
-        <Text fontSize={12} fontWeight="700" color="muted-foreground">
+        <Text
+          fontSize="xs"
+          lineHeight="xs"
+          fontWeight="700"
+          color="muted-foreground"
+        >
           {currency}
         </Text>
       ) : null}
@@ -76,10 +82,10 @@ export function TipsLine({ children }: { readonly children: string }) {
 
   return (
     <XStack justify="space-between" gap="2" pl={24}>
-      <Text fontSize={12} color="muted-foreground">
+      <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
         {t("stats.tips.ofWhich")}
       </Text>
-      <Text fontSize={12} color="muted-foreground">
+      <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
         {children}
       </Text>
     </XStack>
@@ -146,7 +152,7 @@ export function StatsBarRow({
           {label}
         </Text>
         {detail === undefined ? null : (
-          <Text fontSize={12} color="muted-foreground">
+          <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
             {detail}
           </Text>
         )}

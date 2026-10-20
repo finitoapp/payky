@@ -172,7 +172,12 @@ function SplitBillBody({
             borderColor="border-color"
           >
             {otherOpenBills.length === 0 ? (
-              <Text p={8} fontSize={fontSize.sm} color="muted-foreground">
+              <Text
+                p={8}
+                fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
+                color="muted-foreground"
+              >
                 {t("bill.split.destination.existing.empty")}
               </Text>
             ) : (
@@ -226,10 +231,18 @@ function SplitBillBody({
 
       <DialogFooter flexDirection="column">
         <XStack justify="space-between">
-          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+          >
             {`${t("bill.split.selectedCount")} ${itemCount}`}
           </Text>
-          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+          >
             {formatMoney({ value: totalAmount, currency }, locale)}
           </Text>
         </XStack>
@@ -295,6 +308,7 @@ function ExistingBillOption({
         <YStack flex={1} minW={0}>
           <Text
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             fontWeight={fontWeight.medium}
             numberOfLines={1}
           >
@@ -303,6 +317,7 @@ function ExistingBillOption({
           {tableName === null ? null : (
             <Text
               fontSize={fontSize.xs}
+              lineHeight={fontSize.xs}
               color="muted-foreground"
               numberOfLines={1}
             >
@@ -311,10 +326,18 @@ function ExistingBillOption({
           )}
         </YStack>
         <YStack shrink={0} items="flex-end" gap={2}>
-          <Text fontSize={fontSize.xs} color="muted-foreground">
+          <Text
+            fontSize={fontSize.xs}
+            lineHeight={fontSize.xs}
+            color="muted-foreground"
+          >
             {t("bill.itemsCount", { value: itemCount })}
           </Text>
-          <Text fontSize={fontSize.sm} fontWeight={fontWeight.semibold}>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.semibold}
+          >
             {formatMoney(
               { value: totalAmount, currency: bill.currency },
               locale
@@ -350,12 +373,17 @@ function SplitBillRow({
       <YStack flex={1} minW={0}>
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.medium}
           numberOfLines={1}
         >
           {summary.name}
         </Text>
-        <Text fontSize={fontSize.xs} color="muted-foreground">
+        <Text
+          fontSize={fontSize.xs}
+          lineHeight={fontSize.xs}
+          color="muted-foreground"
+        >
           {t("bill.split.availableCount", { value: summary.quantity })}
         </Text>
       </YStack>
@@ -378,6 +406,7 @@ function SplitBillRow({
           minW={24}
           text="center"
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.semibold}
           fontVariant={["tabular-nums"]}
         >

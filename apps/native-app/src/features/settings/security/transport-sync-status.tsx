@@ -92,6 +92,7 @@ export function TransportSyncStatus({ url }: { readonly url: string }) {
       <YStack w={8} h={8} shrink={0} rounded="full" bg={kindDotColors[kind]} />
       <Text
         fontSize="xs"
+        lineHeight="xs"
         color={kind === "error" ? "destructive" : "muted-foreground"}
       >
         {t(transportSyncKindLabels[kind])}

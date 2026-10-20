@@ -138,6 +138,7 @@ export const DialogTitle = styled(Text, {
   name: "DialogTitle",
   role: "heading",
   fontSize: fontSize.base,
+  lineHeight: fontSize.base,
   fontWeight: fontWeight.medium,
   color: "popover-foreground",
 })
@@ -145,6 +146,7 @@ export const DialogTitle = styled(Text, {
 export const DialogDescription = styled(Text, {
   name: "DialogDescription",
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
   color: "muted-foreground",
 })
 

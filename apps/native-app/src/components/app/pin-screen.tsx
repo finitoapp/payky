@@ -151,6 +151,7 @@ export function PinScreen({
         )}
         <Text
           fontSize={fontSize.xl}
+          lineHeight={fontSize.xl}
           fontWeight={fontWeight.semibold}
           text="center"
           accessibilityRole="header"
@@ -161,6 +162,7 @@ export function PinScreen({
           <Text
             maxW={384}
             fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
             text="center"
             color="muted-foreground"
           >
@@ -209,7 +211,12 @@ export function PinScreen({
           >
             {t("access.pin.blocked.title")}
           </Text>
-          <Text fontSize={fontSize.sm} text="center" color="muted-foreground">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            text="center"
+            color="muted-foreground"
+          >
             {t("access.pin.blocked.description")}
           </Text>
           <Button
@@ -279,7 +286,11 @@ function PinPad({
         disabled={pending}
         onPress={() => press(digit)}
       >
-        <Text fontSize={fontSize.xl} fontWeight={fontWeight.medium}>
+        <Text
+          fontSize={fontSize.xl}
+          lineHeight={fontSize.xl}
+          fontWeight={fontWeight.medium}
+        >
           {digit}
         </Text>
       </Button>
@@ -314,6 +325,7 @@ function PinPad({
       <Text
         minH={20}
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
         color="destructive"
         text="center"
         accessibilityRole="alert"
@@ -387,6 +399,7 @@ function PhraseForm({
         bg="destructive-5"
         p={12}
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
       >
         {t("access.phrase.warning")}
       </Text>
@@ -450,7 +463,11 @@ function FailedAttempts({
     <YStack gap={16} width="100%" maxW={384}>
       {attempts.length > 0 ? (
         <>
-          <Text fontSize={fontSize.sm} fontWeight={fontWeight.medium}>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+          >
             {t("access.attempts.title", { count: attempts.length })}
           </Text>
           {attempts.map((attempt) => (
@@ -464,12 +481,22 @@ function FailedAttempts({
               px={12}
               py={8}
             >
-              <Text flexShrink={1} numberOfLines={1} fontSize={fontSize.sm}>
+              <Text
+                flexShrink={1}
+                numberOfLines={1}
+                fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
+              >
                 {Object.hasOwn(resources[language], attempt.target)
                   ? resources[language][attempt.target as TranslationKey]
                   : attempt.target}
               </Text>
-              <Text shrink={0} fontSize={fontSize.sm} color="muted-foreground">
+              <Text
+                shrink={0}
+                fontSize={fontSize.sm}
+                lineHeight={fontSize.sm}
+                color="muted-foreground"
+              >
                 {new Date(attempt.attemptedAt).toLocaleString(language)}
               </Text>
             </XStack>

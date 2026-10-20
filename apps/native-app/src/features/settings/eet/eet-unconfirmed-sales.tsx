@@ -59,7 +59,7 @@ export function EetUnconfirmedSales() {
       </CardHeader>
       <CardContent>
         {rows.length === 0 ? (
-          <Text color="muted-foreground" fontSize="sm">
+          <Text color="muted-foreground" fontSize="sm" lineHeight="sm">
             {t("settings.eet.unconfirmed.empty")}
           </Text>
         ) : (
@@ -79,10 +79,10 @@ export function EetUnconfirmedSales() {
                 onPress={() => router.push(`/activity/${sale.paymentId}`)}
               >
                 <YStack flex={1}>
-                  <Text fontSize="sm" fontWeight="500">
+                  <Text fontSize="sm" lineHeight="sm" fontWeight="500">
                     {title}
                   </Text>
-                  <Text fontSize="xs" color="muted-foreground">
+                  <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                     {formatDateTime(parseISO(sale.saleAt), locale)}
                   </Text>
                 </YStack>

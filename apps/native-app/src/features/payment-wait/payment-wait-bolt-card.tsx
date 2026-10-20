@@ -161,7 +161,12 @@ export function BoltCardReader({
       <YStack gap={8} items="center">
         <XStack maxW={288} items="center" gap={8}>
           <Icon icon={Nfc} color="muted-foreground" />
-          <Text shrink={1} fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            shrink={1}
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {t("paymentWait.boltCard.disabled")}
           </Text>
         </XStack>
@@ -193,6 +198,7 @@ export function BoltCardReader({
       <Text
         shrink={1}
         fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
         fontWeight={state.step === "failed" ? fontWeight.medium : undefined}
         color={state.step === "failed" ? "destructive" : "muted-foreground"}
       >

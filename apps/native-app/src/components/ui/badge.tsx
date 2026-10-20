@@ -70,6 +70,7 @@ const BadgeText = styled(Text, {
   name: "BadgeText",
   context: BadgeContext,
   fontSize: fontSize.xs,
+  lineHeight: fontSize.xs,
   fontWeight: fontWeight.medium,
 
   variants: {

@@ -63,13 +63,19 @@ export function ProfileCard() {
       <YStack flex={1} minW={0}>
         <Text
           fontSize={fontSize.base}
+          lineHeight={fontSize.base}
           fontWeight={fontWeight.semibold}
           color={name === null ? "muted-foreground" : "color"}
           numberOfLines={1}
         >
           {pending ? " " : (name ?? t("settings.profile.setName"))}
         </Text>
-        <Text fontSize={fontSize.xs} color="muted-foreground" numberOfLines={1}>
+        <Text
+          fontSize={fontSize.xs}
+          lineHeight={fontSize.xs}
+          color="muted-foreground"
+          numberOfLines={1}
+        >
           {shortenNpub(identity.npub)}
         </Text>
       </YStack>

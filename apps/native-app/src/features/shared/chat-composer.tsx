@@ -39,6 +39,7 @@ export function ChatComposer({
             minH={36}
             maxH={128}
             fontSize="sm"
+            lineHeight="sm"
             accessibilityLabel={label}
             placeholder={placeholder}
             value={text}

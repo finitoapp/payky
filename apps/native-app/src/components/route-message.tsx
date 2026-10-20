@@ -20,6 +20,7 @@ export function RouteMessage({ children }: { readonly children: string }) {
       <View flex={1} items="center" justify="center" px={32}>
         <Text
           fontSize={fontSize.lg}
+          lineHeight={fontSize.lg}
           color="muted-foreground"
           text="center"
           accessibilityRole="alert"

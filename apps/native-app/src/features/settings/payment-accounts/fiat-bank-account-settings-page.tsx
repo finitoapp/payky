@@ -160,7 +160,7 @@ export function FiatBankAccountSettingsPage() {
               <CollapsibleContent pt="4">
                 <FieldGroup>
                   <YStack gap="2">
-                    <Text fontSize={14} fontWeight="600">
+                    <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                       {t("settings.fiatBankAccount.currency.label")}
                     </Text>
                     <Select
@@ -198,7 +198,7 @@ export function FiatBankAccountSettingsPage() {
                     </FieldDescription>
                   </YStack>
                   <YStack gap="2">
-                    <Text fontSize={14} fontWeight="600">
+                    <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                       {t("settings.fiatBankAccount.qrFormat.label")}
                     </Text>
                     <Select
@@ -249,7 +249,7 @@ export function FiatBankAccountSettingsPage() {
             icon: <Icon icon={Plug} color="muted-foreground" />,
             label: (
               <YStack gap="1">
-                <Text fontSize={14} fontWeight="600">
+                <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                   {t("settings.fioPlugin.title")}
                 </Text>
                 <Text fontSize={13} color="muted-foreground">
@@ -276,7 +276,7 @@ function AdvancedSettingsLabel({ label }: { readonly label: string }) {
   const { open } = useCollapsible()
   return (
     <XStack items="center" justify="space-between" w="100%">
-      <Text fontSize={14} fontWeight="600">
+      <Text fontSize="sm" lineHeight="sm" fontWeight="600">
         {label}
       </Text>
       <Icon icon={open ? ChevronUp : ChevronDown} color="muted-foreground" />

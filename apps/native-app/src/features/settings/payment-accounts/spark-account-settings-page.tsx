@@ -196,7 +196,7 @@ function SparkAccountSettingsContent({
               icon: <Icon icon={ArrowUpFromLine} color="muted-foreground" />,
               label: (
                 <YStack gap="1">
-                  <Text fontSize={14} fontWeight="600">
+                  <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                     {t("settings.withdrawals.title")}
                   </Text>
                   <Text fontSize={13} color="muted-foreground">
@@ -420,7 +420,7 @@ function ChangeSparkWalletModal({
 function AdvancedSettingsLabel({ label }: { readonly label: string }) {
   return (
     <XStack items="center" justify="space-between" w="100%">
-      <Text fontSize={14} fontWeight="600">
+      <Text fontSize="sm" lineHeight="sm" fontWeight="600">
         {label}
       </Text>
       <Icon icon={ChevronDown} color="muted-foreground" />

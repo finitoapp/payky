@@ -136,7 +136,7 @@ export function DemoDataSeed() {
                 width={`${(state.done / state.total) * 100}%`}
               />
             </YStack>
-            <Text fontSize="sm" color="muted-foreground">
+            <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
               {t(
                 stopping
                   ? "demoData.running.stopping"

@@ -165,7 +165,12 @@ export function SettingsEntityList<R extends Row>({
             </Text>
           ) : (
             <YStack items="center" gap="2" py="6">
-              <Text fontSize={18} fontWeight="700" text="center">
+              <Text
+                fontSize="lg"
+                lineHeight="lg"
+                fontWeight="700"
+                text="center"
+              >
                 {emptyTitle}
               </Text>
               <Text color="muted-foreground" text="center">

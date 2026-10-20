@@ -68,6 +68,7 @@ export const AlertDialogTitle = styled(Text, {
   role: "heading",
   text: "center",
   fontSize: fontSize.lg,
+  lineHeight: fontSize.lg,
   fontWeight: fontWeight.semibold,
 })
 
@@ -75,6 +76,7 @@ export const AlertDialogDescription = styled(Text, {
   name: "AlertDialogDescription",
   text: "center",
   fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
   color: "muted-foreground",
 })
 

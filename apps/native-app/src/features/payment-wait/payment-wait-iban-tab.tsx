@@ -68,7 +68,11 @@ export function IbanPaymentTab({
       ) : preparing ? (
         <XStack items="center" gap={8}>
           <ActivityIndicator />
-          <Text fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {t("paymentWait.preparing.iban")}
           </Text>
         </XStack>
@@ -104,6 +108,7 @@ export function IbanPaymentTab({
                 >
                   <Text
                     fontSize={fontSize.xs}
+                    lineHeight={fontSize.xs}
                     fontWeight={fontWeight.medium}
                     color={selected ? "background" : "muted-foreground"}
                   >
@@ -167,6 +172,7 @@ export function IbanPaymentTab({
       {errorKey === null ? null : (
         <Text
           fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
           fontWeight={fontWeight.medium}
           color="destructive"
           accessibilityRole="alert"
@@ -206,10 +212,14 @@ function DetailCopyRow({
       py={8}
     >
       <YStack shrink={1} minW={0}>
-        <Text fontSize={fontSize.xs} color="muted-foreground">
+        <Text
+          fontSize={fontSize.xs}
+          lineHeight={fontSize.xs}
+          color="muted-foreground"
+        >
           {label}
         </Text>
-        <Text fontSize={fontSize.sm} numberOfLines={1}>
+        <Text fontSize={fontSize.sm} lineHeight={fontSize.sm} numberOfLines={1}>
           {display}
         </Text>
       </YStack>

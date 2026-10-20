@@ -129,7 +129,7 @@ function BalanceSummary({ balance }: { readonly balance: number | null }) {
           amount: formatSatsAmount(balance, locale),
         })}
       </Text>
-      <Text fontSize={12} color="muted-foreground">
+      <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
         {fiat.approx(balance)}
       </Text>
     </YStack>
@@ -191,7 +191,12 @@ function WithdrawHistory({
           <VerticalNav
             items={[]}
             empty={
-              <Text p="4" fontSize={14} color="muted-foreground">
+              <Text
+                p="4"
+                fontSize="sm"
+                lineHeight="sm"
+                color="muted-foreground"
+              >
                 {t("withdraw.history.empty")}
               </Text>
             }
@@ -238,20 +243,25 @@ function WithdrawalDay({ group }: { readonly group: WithdrawalGroup }) {
           label: (
             <YStack w="100%" gap="1" items="flex-start">
               <XStack w="100%" justify="space-between" items="center" gap="2">
-                <Text fontSize={14} fontWeight="600">
+                <Text fontSize="sm" lineHeight="sm" fontWeight="600">
                   {amount}
                 </Text>
                 <WithdrawalStatusBadge view={view} />
               </XStack>
-              <Text fontSize={12} numberOfLines={1}>
+              <Text fontSize="xs" lineHeight="xs" numberOfLines={1}>
                 {shortWithdrawalDestination(view.target)}
               </Text>
               {view.comment === null ? null : (
-                <Text fontSize={12} color="muted-foreground" numberOfLines={1}>
+                <Text
+                  fontSize="xs"
+                  lineHeight="xs"
+                  color="muted-foreground"
+                  numberOfLines={1}
+                >
                   {view.comment}
                 </Text>
               )}
-              <Text fontSize={12} color="muted-foreground">
+              <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
                 {[
                   t(withdrawalKindKeys[view.target.kind]),
                   formatTime(new Date(view.createdAt), locale),

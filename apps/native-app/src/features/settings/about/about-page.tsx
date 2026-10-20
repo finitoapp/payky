@@ -22,10 +22,10 @@ export function AboutPage() {
 
   const label = (title: string, description: string) => (
     <YStack gap="1">
-      <Text fontSize="sm" fontWeight="600">
+      <Text fontSize="sm" lineHeight="sm" fontWeight="600">
         {title}
       </Text>
-      <Text fontSize="xs" color="muted-foreground">
+      <Text fontSize="xs" lineHeight="xs" color="muted-foreground">
         {description}
       </Text>
     </YStack>
@@ -44,12 +44,20 @@ export function AboutPage() {
           accessibilityIgnoresInvertColors
         />
         {version === undefined ? null : (
-          <Text fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {t("settings.appVersion")} <Text fontWeight="700">{version}</Text>
           </Text>
         )}
         {Platform.OS === "android" && versionCode !== undefined ? (
-          <Text fontSize={fontSize.sm} color="muted-foreground">
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
             {t("settings.appVersionCode")}{" "}
             <Text fontWeight="700">{versionCode}</Text>
           </Text>

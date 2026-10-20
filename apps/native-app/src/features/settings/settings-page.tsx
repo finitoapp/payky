@@ -77,9 +77,13 @@ function createSettingsNavItems(
           flexWrap="wrap"
           items="center"
           justify="space-between"
-          gap={8}
+          columnGap={12}
+          rowGap={4}
         >
-          <YStack flex={1} minW={0} gap={4}>
+          {/* Web's wrap: the title keeps its own width (no flex={1}, whose
+              zero basis never wraps and squeezes it instead) and a value that
+              does not fit beside it drops below, right-aligned. */}
+          <YStack flexShrink={1} minW={0} gap={4}>
             <Text fontSize={14} fontWeight="600">
               {label}
             </Text>
@@ -94,7 +98,8 @@ function createSettingsNavItems(
               color="muted-foreground"
               fontSize={14}
               numberOfLines={1}
-              self="flex-end"
+              ml="auto"
+              maxW="100%"
               flexShrink={1}
             >
               {item.value}

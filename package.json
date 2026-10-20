@@ -75,7 +75,8 @@
     "protobufjs"
   ],
   "patchedDependencies": {
-    "@evolu/common@8.23.0": "patches/@evolu%2Fcommon@8.23.0.patch"
+    "@evolu/common@8.23.0": "patches/@evolu%2Fcommon@8.23.0.patch",
+    "expo-sqlite@58.0.13": "patches/expo-sqlite@58.0.13.patch"
   },
   "workspaces": [
     "apps/*",

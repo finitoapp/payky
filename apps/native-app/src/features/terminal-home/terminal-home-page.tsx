@@ -48,16 +48,20 @@ const homeModeItems = [
 ] as const
 
 /**
+ * On a wide window web's keypad page is the `max-w-xl` column itself, with
+ * the screen's sides outside it.
+ */
+const keypadColumn = {
+  width: "100%",
+  maxWidth: maxWidth.xl + 2 * screenPaddingX,
+  alignSelf: "center",
+} as const
+
+/**
  * The root screen, like web's `_terminal/` index: an account without its
  * appSettings row is not onboarded and goes to onboarding (a restore runs
  * its own sync screen first, so no initial-sync wait is needed here).
  */
-const keypadColumn = {
-  width: "100%",
-  maxWidth: maxWidth.xl,
-  alignSelf: "center",
-} as const
-
 export function TerminalHomePage() {
   const theme = useTheme()
   const { t } = useTranslation()

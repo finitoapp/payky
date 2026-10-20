@@ -22,7 +22,7 @@ import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import { useEffect, useRef, useState } from "react"
 import { BackHandler, Platform } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
-import { Screen } from "../../components/screen.tsx"
+import { Screen, screenPaddingX } from "../../components/screen.tsx"
 import {
   Alert,
   AlertDescription,
@@ -60,6 +60,9 @@ const descriptionKeys = {
   restore: "onboarding.restore.description",
   transfer: "accountTransfer.target.description",
 } satisfies Record<OnboardingStep, TranslationKey>
+
+/** Web's onboarding `px-6`, wider than other screens' sides. */
+const ONBOARDING_PADDING_X = 24
 
 export function OnboardingPage() {
   const { language, t } = useTranslation()
@@ -157,12 +160,18 @@ export function OnboardingPage() {
 
   return (
     <Screen>
-      {/* Web's onboarding column, `max-w-md`, narrower than other screens. */}
+      {/*
+       * Web's onboarding column, `max-w-md px-6`: 448 px with its 24 px
+       * sides, of which `Screen` pads the first `screenPaddingX`.
+       */}
       <YStack
         gap="6"
         w="100%"
         self="center"
-        maxW={Platform.OS === "web" ? maxWidth.md : undefined}
+        px={ONBOARDING_PADDING_X - screenPaddingX}
+        maxW={
+          Platform.OS === "web" ? maxWidth.md - 2 * screenPaddingX : undefined
+        }
       >
         <XStack items="center" minH={32}>
           {stepIndex > 0 ? (

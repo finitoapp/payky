@@ -69,8 +69,10 @@ assertions.
    web (Maestro's web driver reads `aria-label` as an id, not as text), so
    branch on the platform. A missing label is an app bug — fix the app.
 3. `id:` = `testID`, only where web uses `data-testid` (same string), or where
-   there is no stable text. Works on both platforms when the element has no
-   label.
+   there is no stable text. Every web `data-testid` whose screen native has
+   is already mirrored (native-e2e.md, 3.3). On web `id:` reads an element's
+   aria-label before its testID, so a testID only works there on an element
+   without a label (`table-tile` sits on the unlabeled wrapper, as on web).
 
 4. Inputs: `tap-input`/`fill-input`. A kit input's field label is also its
    aria-label and testID, so `id: <label>` finds it on both platforms (a text

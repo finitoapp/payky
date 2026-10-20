@@ -19,7 +19,7 @@ import { Input } from "../../../components/ui/input.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { eetNativeCrypto } from "../../../platform/eet-crypto.ts"
+import { eetNativeCrypto } from "../../../platform/eet-crypto"
 import {
   type PickedCertificate,
   pickCertificateFile,

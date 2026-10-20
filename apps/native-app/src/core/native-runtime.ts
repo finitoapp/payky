@@ -3,9 +3,12 @@ import {
   createMultiOutput,
   createNativeConsoleOutput,
 } from "@evolu/common"
-import { createRun, lockManager } from "@evolu/react-native"
-import { createEvoluDeps } from "@evolu/react-native/expo-sqlite"
 import { createConsoleOutputHistory } from "@payky/app-shared/console-history"
+import {
+  createEvoluDeps,
+  createRun,
+  lockManager,
+} from "../platform/evolu-runtime"
 
 /**
  * The native composition root's app-lifetime run and its one lock authority.

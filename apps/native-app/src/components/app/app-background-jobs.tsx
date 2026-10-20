@@ -1,4 +1,3 @@
-import { lockManager } from "@evolu/react-native"
 import {
   cashuBackgroundJobs,
   getBackgroundJobsForRuntime,
@@ -26,7 +25,8 @@ import { evoluAtom } from "../../atoms/evolu.ts"
 import { captureReportedError } from "../../core/error-reporting.ts"
 import { nativeEnv } from "../../core/native-env.ts"
 import { nativeConsole, nativeRun } from "../../core/native-runtime.ts"
-import { eetNativeCrypto } from "../../platform/eet-crypto.ts"
+import { eetNativeCrypto } from "../../platform/eet-crypto"
+import { lockManager } from "../../platform/evolu-runtime"
 import {
   createConnectivityDep,
   createFetchDep,

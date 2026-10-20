@@ -12,7 +12,7 @@ export default {
   slug: "payky-native-app",
   scheme: "payky-native-preview",
   version,
-  platforms: ["android", "ios"],
+  platforms: ["android", "ios", "web"],
   userInterfaceStyle: "automatic",
   // The PWA icon; launchers without adaptive icons use it as is.
   icon: "./assets/payky-icon.png",

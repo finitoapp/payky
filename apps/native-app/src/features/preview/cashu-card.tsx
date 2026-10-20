@@ -1,5 +1,4 @@
 import { ok } from "@evolu/common"
-import { lockManager } from "@evolu/react-native"
 import {
   counterScopeOf,
   withCashuCounter,
@@ -34,6 +33,7 @@ import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import { Button } from "../../components/ui/button.tsx"
 import { nativeRun } from "../../core/native-runtime.ts"
+import { lockManager } from "../../platform/evolu-runtime"
 
 /*
  * Vectors below are COPIED from packages/core/src/modules/cashu/

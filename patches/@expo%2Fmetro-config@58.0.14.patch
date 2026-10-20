@@ -1,0 +1,14 @@
+diff --git a/build/transform-worker/collect-dependencies.js b/build/transform-worker/collect-dependencies.js
+index c64b79c8673e8e76aea59a9593bb588ea1f265fa..10cc269901da8e2385ff62c16a645874019dce24 100644
+--- a/build/transform-worker/collect-dependencies.js
++++ b/build/transform-worker/collect-dependencies.js
+@@ -152,7 +152,8 @@ function collectDependencies(ast, options) {
+                     // Replace `new Worker` invocation with `asyncRequire.unstable_createWorker` helper call,
+                     // creating an Object URL with a shim script that remaps `importScripts` and `fetch`, while calling the entrypoint with `importScripts`.
+                     // This works around COEP/CORP issues, since worker entrypoint scripts aren't necessarily expected to match these headers
+-                    path.get('callee').replaceWith(makeCreateWorkerTemplate({
++                    // A SharedWorker stays one: the helper always makes a dedicated Worker.
++                    if (path.node.callee.name === 'Worker') path.get('callee').replaceWith(makeCreateWorkerTemplate({
+                         ASYNC_REQUIRE_MODULE_PATH: nullthrows(state.asyncRequireModulePathStringLiteral)
+                     }));
+                 }

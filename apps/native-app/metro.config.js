@@ -7,7 +7,36 @@ const config = getDefaultConfig(__dirname)
 // them their own copy; a second React or Jotai in the bundle breaks hooks and
 // the store. Resolve both from this app for every importer.
 const appOrigin = path.join(__dirname, "package.json")
+config.resolver.assetExts.push("wasm")
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // @evolu/sqlite-wasm finds its binary at `new URL("../wasm/sqlite3.wasm",
+  // import.meta.url)`, which Metro neither emits nor can resolve in a worker.
+  // On web its WasmUrl.js is swapped for one that requires the binary as an
+  // asset, which Metro emits and returns the URL of.
+  if (
+    platform === "web" &&
+    moduleName === "./WasmUrl.js" &&
+    context.originModulePath.includes(
+      `${path.sep}@evolu${path.sep}sqlite-wasm${path.sep}`
+    )
+  )
+    return {
+      type: "sourceFile",
+      filePath: path.join(__dirname, "src/platform/sqlite-wasm-url.web.ts"),
+    }
+  if (moduleName === "@evolu/sqlite-wasm/sqlite3.wasm") {
+    const entry = context.resolveRequest(
+      context,
+      "@evolu/sqlite-wasm",
+      platform
+    )
+    return {
+      type: "assetFiles",
+      filePaths: [
+        path.join(path.dirname(entry.filePath), "../wasm/sqlite3.wasm"),
+      ],
+    }
+  }
   const fromApp =
     moduleName === "react" ||
     moduleName.startsWith("react/") ||
@@ -15,7 +44,18 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     moduleName.startsWith("jotai/")
       ? { ...context, originModulePath: appOrigin }
       : context
-  return fromApp.resolveRequest(fromApp, moduleName, platform)
+  // @evolu/web names its workers `new URL("Db.worker.js", import.meta.url)`,
+  // which a browser and Vite read as relative and Metro as a package name.
+  const evoluWorker =
+    /^(Db|Shared)\.worker\.js$/.test(moduleName) &&
+    context.originModulePath.includes(
+      `${path.sep}@evolu${path.sep}web${path.sep}`
+    )
+  return fromApp.resolveRequest(
+    fromApp,
+    evoluWorker ? `./${moduleName}` : moduleName,
+    platform
+  )
 }
 
 // Evaluates a module where it is first used rather than when the bundle

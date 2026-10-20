@@ -16,7 +16,7 @@ import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { eetNativeCrypto } from "../../../platform/eet-crypto.ts"
+import { eetNativeCrypto } from "../../../platform/eet-crypto"
 
 /**
  * The sandbox's official test certificates, fetched only on request: the

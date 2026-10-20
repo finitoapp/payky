@@ -1,4 +1,4 @@
-import "./src/platform/polyfills.ts"
-import "./src/platform/evolu-polyfills.ts"
-import "./src/platform/native-crypto.ts"
+import "./src/platform/polyfills"
+import "./src/platform/evolu-polyfills"
+import "./src/platform/native-crypto"
 import "expo-router/entry"

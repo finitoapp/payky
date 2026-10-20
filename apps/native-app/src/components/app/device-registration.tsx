@@ -1,4 +1,3 @@
-import { lockManager } from "@evolu/react-native"
 import { createDateDep } from "@payky/core/deps"
 import { applyPinUnblock } from "@payky/core/modules/access/access-actions"
 import { registerDevice } from "@payky/core/modules/device/device-actions"
@@ -10,6 +9,7 @@ import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
 import { nativeConsole, nativeRun } from "../../core/native-runtime.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { lockManager } from "../../platform/evolu-runtime"
 
 /**
  * Keeps this device's row in the active account's app database

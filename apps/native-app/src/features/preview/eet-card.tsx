@@ -18,7 +18,7 @@ import { z } from "zod"
 import { Button } from "../../components/ui/button.tsx"
 import { apiUrl } from "../../core/native-env.ts"
 import { nativeRun } from "../../core/native-runtime.ts"
-import { eetNativeCrypto } from "../../platform/eet-crypto.ts"
+import { eetNativeCrypto } from "../../platform/eet-crypto"
 import { createFetchDep } from "../../platform/native-deps.ts"
 
 const bytes = (text: string) => new TextEncoder().encode(text)

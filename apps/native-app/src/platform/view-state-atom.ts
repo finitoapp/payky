@@ -1,7 +1,7 @@
 import { jsonCodec } from "@payky/core/zod-utils"
-import Storage from "expo-sqlite/kv-store"
 import { atomWithStorage } from "jotai/utils"
 import { z } from "zod"
+import { kvStore } from "./kv-store"
 
 /**
  * Per-device view state that must not sync and is harmless to lose, as web's
@@ -23,7 +23,7 @@ export function viewStateAtom<T>(
     {
       getItem: (itemKey, fallback) => {
         try {
-          const raw = Storage.getItemSync(itemKey)
+          const raw = kvStore.getItemSync(itemKey)
           if (raw === null) return fallback
           const parsed = z.safeDecode(codec, raw)
           return parsed.success ? parsed.data : fallback
@@ -33,12 +33,12 @@ export function viewStateAtom<T>(
       },
       setItem: (itemKey, value) => {
         try {
-          Storage.setItemSync(itemKey, z.encode(codec, value))
+          kvStore.setItemSync(itemKey, z.encode(codec, value))
         } catch {}
       },
       removeItem: (itemKey) => {
         try {
-          Storage.removeItemSync(itemKey)
+          kvStore.removeItemSync(itemKey)
         } catch {}
       },
     },

@@ -786,7 +786,9 @@ function PaymentEetSaleCard({ sale }: { readonly sale: PaymentEetSale }) {
   }
 
   return (
-    <Card>
+    <Card
+      testID={isExtraMoney ? "payment-detail-eet-extra" : "payment-detail-eet"}
+    >
       <CardHeader>
         <CardTitle>
           {isExtraMoney

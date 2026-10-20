@@ -19,6 +19,7 @@ export function RefundBadge({
       bg="warning-10"
       labelColor="warning"
       label={label}
+      testID="refund-badge"
     />
   )
 }

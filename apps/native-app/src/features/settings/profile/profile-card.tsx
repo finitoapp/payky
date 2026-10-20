@@ -45,6 +45,7 @@ export function ProfileCard() {
       onPress={() => router.push("/settings/profile")}
       role="link"
       aria-label={name ?? t("settings.profile.setName")}
+      testID="profile-card"
     >
       <YStack
         w={56}

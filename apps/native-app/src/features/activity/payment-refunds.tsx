@@ -167,7 +167,7 @@ export function PaymentRefunds({
       {refunds.length === 0 ? (
         refundButtons
       ) : (
-        <Card>
+        <Card testID="payment-detail-refunds">
           <CardHeader>
             <CardTitle>{t("paymentDetail.refunds.title")}</CardTitle>
             <CardAction>
@@ -185,6 +185,7 @@ export function PaymentRefunds({
               {refunds.map((refund, index) => (
                 <YStack
                   key={refund.id}
+                  testID="payment-detail-refund"
                   gap={4}
                   py={8}
                   pt={index === 0 ? 0 : 8}

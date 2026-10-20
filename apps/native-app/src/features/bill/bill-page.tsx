@@ -822,6 +822,7 @@ function BillCart({
         // than the screen padding, as the panel is.
         <Pressable
           accessible={false}
+          testID="bill-summary-backdrop"
           onPress={() => setSummaryOpen(false)}
           style={{
             position: "absolute",
@@ -846,6 +847,7 @@ function BillCart({
           <CardContent pb={16}>
             <Collapsible open={summaryExpanded} onOpenChange={setSummaryOpen}>
               <CollapsibleTrigger
+                testID="bill-summary-trigger"
                 pt={16}
                 disabled={summaries.length === 0 && !cart.canUndo}
               >
@@ -875,7 +877,7 @@ function BillCart({
                   </XStack>
                 </XStack>
               </CollapsibleTrigger>
-              <CollapsibleContent pt={16}>
+              <CollapsibleContent pt={16} testID="bill-summary-panel">
                 <ScrollView style={{ maxHeight: 192 }}>
                   {summaries.map((summary, index) => (
                     <SummaryRow

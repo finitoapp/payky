@@ -78,6 +78,7 @@ export function VerticalNav({
   title,
   children,
   shrink = false,
+  testID,
 }: {
   readonly items: ReadonlyArray<VerticalNavItem>
   readonly empty?: ReactNode
@@ -89,9 +90,11 @@ export function VerticalNav({
    * so a long list scrolls inside the card and a short one ends with it.
    */
   readonly shrink?: boolean
+  /** Web's `data-testid` on the list, for e2e flows. */
+  readonly testID?: string
 }) {
   return (
-    <VerticalNavShell shrink={shrink ? 1 : undefined}>
+    <VerticalNavShell shrink={shrink ? 1 : undefined} testID={testID}>
       {title === undefined || title === "" ? null : (
         <VerticalNavTitle role="heading">{title}</VerticalNavTitle>
       )}

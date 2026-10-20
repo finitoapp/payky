@@ -86,7 +86,7 @@ function PinPrompt({
   return (
     <YStack gap="3">
       {request.detail === undefined ? null : (
-        <Text fontWeight="600" text="center">
+        <Text fontWeight="600" text="center" testID="pin-prompt-detail">
           {request.detail}
         </Text>
       )}

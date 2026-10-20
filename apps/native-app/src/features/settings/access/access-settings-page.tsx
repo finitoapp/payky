@@ -142,7 +142,7 @@ function DevicesCard() {
         <CardTitle>{t("access.devices.title")}</CardTitle>
         <CardDescription>{t("access.devices.description")}</CardDescription>
       </CardHeader>
-      <CardContent gap={12}>
+      <CardContent gap={12} testID="access-devices">
         {devices.map((device) => (
           <DeviceItem
             key={device.id}

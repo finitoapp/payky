@@ -177,6 +177,7 @@ export function AccountsSettingsPage() {
           title={t("settings.accounts.list.title")}
           items={accountItems}
           empty={t("settings.accounts.list.empty")}
+          testID="account-list"
         />
 
         <VerticalNav

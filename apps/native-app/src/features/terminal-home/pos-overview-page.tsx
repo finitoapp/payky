@@ -452,7 +452,7 @@ function TableTile({
       : () => openBill(onlyBill.id)
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }} testID="table-tile">
       {onPress === undefined ? (
         tile
       ) : (

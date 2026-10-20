@@ -471,37 +471,39 @@ function FailedAttempts({
           >
             {t("access.attempts.title", { count: attempts.length })}
           </Text>
-          {attempts.map((attempt) => (
-            <XStack
-              key={attempt.id}
-              justify="space-between"
-              gap={12}
-              borderWidth={1}
-              borderColor="border-color"
-              rounded={radius.md}
-              px={12}
-              py={8}
-            >
-              <Text
-                flexShrink={1}
-                numberOfLines={1}
-                fontSize={fontSize.sm}
-                lineHeight={fontSize.sm}
+          <YStack gap={8} testID="failed-pin-attempts">
+            {attempts.map((attempt) => (
+              <XStack
+                key={attempt.id}
+                justify="space-between"
+                gap={12}
+                borderWidth={1}
+                borderColor="border-color"
+                rounded={radius.md}
+                px={12}
+                py={8}
               >
-                {Object.hasOwn(resources[language], attempt.target)
-                  ? resources[language][attempt.target as TranslationKey]
-                  : attempt.target}
-              </Text>
-              <Text
-                shrink={0}
-                fontSize={fontSize.sm}
-                lineHeight={fontSize.sm}
-                color="muted-foreground"
-              >
-                {new Date(attempt.attemptedAt).toLocaleString(language)}
-              </Text>
-            </XStack>
-          ))}
+                <Text
+                  flexShrink={1}
+                  numberOfLines={1}
+                  fontSize={fontSize.sm}
+                  lineHeight={fontSize.sm}
+                >
+                  {Object.hasOwn(resources[language], attempt.target)
+                    ? resources[language][attempt.target as TranslationKey]
+                    : attempt.target}
+                </Text>
+                <Text
+                  shrink={0}
+                  fontSize={fontSize.sm}
+                  lineHeight={fontSize.sm}
+                  color="muted-foreground"
+                >
+                  {new Date(attempt.attemptedAt).toLocaleString(language)}
+                </Text>
+              </XStack>
+            ))}
+          </YStack>
         </>
       ) : null}
       <XStack justify="flex-end" flexWrap="wrap" gap={8}>

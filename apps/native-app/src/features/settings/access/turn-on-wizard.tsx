@@ -149,7 +149,7 @@ export function TurnOnWizard({
           {t("access.wizard.devices.description")}
         </CardDescription>
       </CardHeader>
-      <CardContent gap={12}>
+      <CardContent gap={12} testID="wizard-devices">
         {devices.map((device) => (
           <YStack
             key={device.id}

@@ -915,7 +915,12 @@ function Paid({ paymentId }: { readonly paymentId: PaymentId }) {
   const { t } = useTranslation()
   return (
     <Screen>
-      <YStack flex={1} items="center" justify="center">
+      <YStack
+        flex={1}
+        items="center"
+        justify="center"
+        testID="payment-paid-panel"
+      >
         <SuccessPanel
           title={t("paymentWait.paid")}
           actions={

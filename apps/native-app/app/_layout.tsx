@@ -16,6 +16,7 @@ import { AppLoader } from "../src/components/app/app-loader.tsx"
 import { ConfirmHost } from "../src/components/app/confirm-host.tsx"
 import { DemoDataSeed } from "../src/components/app/demo-data-seed.tsx"
 import { DeviceRegistration } from "../src/components/app/device-registration.tsx"
+import { EvoluStartupError } from "../src/components/app/evolu-startup-error.tsx"
 import { PinPromptHost } from "../src/components/app/pin-prompt-host.tsx"
 import { SentryController } from "../src/components/app/sentry-controller.tsx"
 import { SwitchioRestoredResult } from "../src/components/app/switchio-restored-result.tsx"
@@ -82,6 +83,7 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
+      <EvoluStartupError />
       <Suspense fallback={<AppLoader />}>
         <ThemedApp />
       </Suspense>

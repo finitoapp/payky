@@ -19,6 +19,13 @@ import { useEffect, useState, useSyncExternalStore } from "react"
 /** A first screen that never settles still gets the splash out of the way. */
 const SAFETY_TIMEOUT_MS = 10_000
 
+/**
+ * The same from the moment the app loads, for a start that never reaches the
+ * gate at all (a database that does not open): the splash must not stay up
+ * for good whatever hangs before it.
+ */
+const STARTUP_SAFETY_TIMEOUT_MS = 20_000
+
 let gateResolved = false
 let routesWaiting = 0
 let ready = false
@@ -58,6 +65,8 @@ export const markFirstScreenReady = (): void => {
   routesWaiting = 0
   settle()
 }
+
+setTimeout(markFirstScreenReady, STARTUP_SAFETY_TIMEOUT_MS)
 
 const subscribe = (listener: () => void) => {
   listeners.add(listener)

@@ -202,3 +202,4 @@
 
 - Playwright end-to-end tests live in `e2e/`. Their conventions — how the dev server, seeding, fixtures, locators and steps work — are in `apps/web-app/e2e/AGENTS.md`. Read it before touching anything under `e2e/`.
 - `bun run test:e2e` (headless, dev server), `test:e2e:ui` (interactive), `test:e2e:preview` (against a one-off production build). E2E is not part of `bun run check`.
+- The native app's Maestro flows live in `apps/native-app/e2e/` (`bun run test:e2e:native:web`, `test:e2e:native:android`); read `apps/native-app/e2e/AGENTS.md` before touching them.

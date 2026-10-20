@@ -1,4 +1,12 @@
-import { type ComponentRef, type ReactNode, useRef, useState } from "react"
+import {
+  type ComponentRef,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import {
   AccessibilityInfo,
   Animated,
@@ -6,6 +14,7 @@ import {
   View as NativeView,
 } from "react-native"
 import { Text, useTheme, View } from "tamagui"
+import type { ThemeColor } from "../theme/themes.ts"
 import { fontSize, fontWeight, radius } from "../theme/tokens.ts"
 
 /**
@@ -13,40 +22,168 @@ import { fontSize, fontWeight, radius } from "../theme/tokens.ts"
  * segment of a control whose active segment carries a foreground pill and a
  * label, while inactive segments show only their icon — the home mode
  * switch and the payment method tabs. The control primitive (ToggleGroup,
- * Tabs) stays the caller's, as on web; the caller colors the icon
- * (`background` when active, `muted-foreground` otherwise, as web's
- * `aria-pressed:text-background`).
+ * Tabs) stays the caller's, as on web; the caller draws the icon in the
+ * color it is given and wraps the control in a `SlidingPillTrack`, which
+ * draws its border.
  *
  * Tailwind mirrored: the pill `absolute inset-0 rounded-full bg-foreground`
  * behind the content, the label `whitespace-nowrap pl-1.5` in
- * `text-background`.
+ * `text-background`, the icon `text-muted-foreground
+ * aria-pressed:text-background transition-colors duration-300` (a
+ * cross-fade of the two colors, so it runs on the native driver).
  *
- * Motion, as web's: switching slides the pill from the segment that had it
- * to the new one (web's spring, bounce 0, 0.35 s, as an ease-out), and the
+ * Motion, on web's principle (motion's layout animation, FLIP): a switch
+ * lays everything out at its new size at once, and each visible box is then
+ * drawn from where it was to where it is with transforms, all on one curve
+ * (web's spring, bounce 0, 0.35 s, as an ease-out): the track stretches to
+ * the control's new width, the pill slides and stretches from the segment
+ * that had it to the new one, and every icon slides to its new spot. The
  * label fades in once the pill has mostly arrived (0.2 s delay, 0.15 s).
- * All of it runs on the native driver (the pill moves by translateX and
- * stretches by scaleX), so a busy JS thread does not make it stutter; while
- * it slides, its round ends stretch with the scale, where web's motion
- * corrects the radius.
- * Segments sharing a `pillId` are what the pill slides between: the new
- * active segment starts its pill at the window rect the previous one was
- * last drawn at. Reduced motion switches at once. Segments must not clip,
- * or the arriving pill is cut off.
+ * The segments themselves are transparent, so their sizes may jump.
  *
- * ponytail: the segments themselves jump to their new widths (web animates
- * them in the same layout pass); a `LayoutAnimation.configureNext` in the
- * callers' change handlers would add that.
+ * The boxes are read synchronously in `useLayoutEffect`, which the New
+ * Architecture commits before painting, so the jump is never drawn; the
+ * transforms run on the native driver, so a busy JS thread does not make
+ * them stutter. Boxes are measured on views that are never transformed. The
+ * pill's and track's round ends stretch with the scale while they move,
+ * where web's motion corrects the radius. Reduced motion switches at once.
+ * Segments must not clip, or the arriving pill is cut off.
  */
 
-interface PillRect {
+interface Box {
   readonly x: number
   readonly width: number
 }
 
 /** Where each control's pill was last drawn, in window coordinates. */
-const pillRects = new Map<string, PillRect>()
+const pillBoxes = new Map<string, Box>()
 
 const slide = { duration: 350, easing: Easing.out(Easing.cubic) }
+
+/** Read synchronously in a layout effect. */
+let reduceMotion = false
+void AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
+  reduceMotion = reduced
+})
+AccessibilityInfo.addEventListener("reduceMotionChanged", (reduced) => {
+  reduceMotion = reduced
+})
+
+interface FlipValues {
+  readonly translateX: Animated.Value
+  readonly scaleX: Animated.Value
+}
+
+/**
+ * Measures `ref` after every render and, when `from` names an earlier box,
+ * returns the transform that draws the element from there to its new box.
+ * `from` receives the new box, so it can also remember it.
+ */
+function useFlip(
+  ref: RefObject<ComponentRef<typeof NativeView> | null>,
+  from: (to: Box) => Box | undefined
+) {
+  const [values, setValues] = useState<FlipValues | null>(null)
+
+  useLayoutEffect(() => {
+    if (ref.current === null) return
+    const rect = ref.current.getBoundingClientRect()
+    const to = { x: rect.x, width: rect.width }
+    const start = from(to)
+    if (
+      start === undefined ||
+      reduceMotion ||
+      to.width === 0 ||
+      (start.x === to.x && start.width === to.width)
+    )
+      return
+    // Fresh values carry the start into the committed props, so the first
+    // painted frame is already the old box.
+    setValues({
+      translateX: new Animated.Value(
+        start.x + start.width / 2 - (to.x + to.width / 2)
+      ),
+      scaleX: new Animated.Value(start.width / to.width),
+    })
+  })
+
+  useEffect(() => {
+    if (values === null) return
+    const animation = Animated.parallel([
+      Animated.timing(values.translateX, {
+        toValue: 0,
+        ...slide,
+        useNativeDriver: true,
+      }),
+      Animated.timing(values.scaleX, {
+        toValue: 1,
+        ...slide,
+        useNativeDriver: true,
+      }),
+    ])
+    animation.start()
+    return () => animation.stop()
+  }, [values])
+
+  return values === null
+    ? []
+    : [{ translateX: values.translateX }, { scaleX: values.scaleX }]
+}
+
+/** `from` for an element that moves with layout: its own previous box. */
+function usePreviousBox() {
+  const previous = useRef<Box | undefined>(undefined)
+  return (to: Box) => {
+    const start = previous.current
+    previous.current = to
+    return start
+  }
+}
+
+const fill = {
+  position: "absolute",
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+} as const
+
+/**
+ * The control's rounded border (and fill), drawn behind it so it can
+ * stretch with the switch: web gives the group itself the layout animation.
+ */
+export function SlidingPillTrack({
+  /** Inside the 1 px border, as a `border p-N` wrapper's. */
+  padding,
+  borderColor,
+  bg,
+  children,
+}: {
+  readonly padding: number
+  readonly borderColor: ThemeColor
+  readonly bg?: ThemeColor
+  readonly children: ReactNode
+}) {
+  const theme = useTheme()
+  const ref = useRef<ComponentRef<typeof NativeView>>(null)
+  const transform = useFlip(ref, usePreviousBox())
+  return (
+    <NativeView ref={ref} style={{ padding: padding + 1 }}>
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          ...fill,
+          transform,
+          borderRadius: radius.full,
+          borderWidth: 1,
+          borderColor: theme[borderColor]?.val,
+          backgroundColor: bg === undefined ? undefined : theme[bg]?.val,
+        }}
+      />
+      {children}
+    </NativeView>
+  )
+}
 
 export function SlidingPillSegmentContent({
   active,
@@ -57,17 +194,16 @@ export function SlidingPillSegmentContent({
   readonly active: boolean
   /** Unique per control: segments sharing it are what the pill slides between. */
   readonly pillId: string
-  readonly icon: ReactNode
+  /** Called with each color the icon cross-fades between. */
+  readonly icon: (color: ThemeColor) => ReactNode
   /** Already translated; shown only on the active segment. */
   readonly label: string
 }) {
   const theme = useTheme()
-  const pillRef = useRef<ComponentRef<typeof NativeView>>(null)
-  const [translateX] = useState(() => new Animated.Value(0))
-  const [scaleX] = useState(() => new Animated.Value(1))
-  const [labelOpacity] = useState(() => new Animated.Value(1))
-  // Set when this segment has just become the active one, so its pill waits
-  // hidden for its own rect and slides in from the previous one.
+  const segmentRef = useRef<ComponentRef<typeof NativeView>>(null)
+  const iconRef = useRef<ComponentRef<typeof NativeView>>(null)
+  // Set when this segment has just become the active one, so its pill
+  // starts at the box the previous one was drawn at.
   const [arriving, setArriving] = useState(false)
   const [wasActive, setWasActive] = useState(active)
   if (active !== wasActive) {
@@ -75,95 +211,94 @@ export function SlidingPillSegmentContent({
     setArriving(active)
   }
 
-  const onPillLayout = () => {
-    pillRef.current?.measureInWindow((x, _y, width) => {
-      const from = pillRects.get(pillId)
-      pillRects.set(pillId, { x, width })
-      if (!arriving) return
-      void AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
-        setArriving(false)
-        if (reduced || from === undefined || width === 0) {
-          translateX.setValue(0)
-          scaleX.setValue(1)
-          labelOpacity.setValue(1)
-          return
-        }
-        // Centre to centre, width as a scale: transforms run on the native
-        // thread, so the slide stays smooth while JS renders the new tab.
-        translateX.setValue(from.x + from.width / 2 - (x + width / 2))
-        scaleX.setValue(from.width / width)
-        labelOpacity.setValue(0)
-        Animated.parallel([
-          Animated.timing(translateX, {
-            toValue: 0,
-            ...slide,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleX, {
-            toValue: 1,
-            ...slide,
-            useNativeDriver: true,
-          }),
-          Animated.timing(labelOpacity, {
-            toValue: 1,
-            delay: 200,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]).start()
-      })
+  const pillTransform = useFlip(segmentRef, (to) => {
+    if (!active) return undefined
+    const start = pillBoxes.get(pillId)
+    pillBoxes.set(pillId, to)
+    if (!arriving) return undefined
+    setArriving(false)
+    return start
+  })
+  const iconTransform = useFlip(iconRef, usePreviousBox())
+  const [activeIconOpacity] = useState(() => new Animated.Value(active ? 1 : 0))
+  useEffect(() => {
+    const toValue = active ? 1 : 0
+    if (reduceMotion) {
+      activeIconOpacity.setValue(toValue)
+      return
+    }
+    const animation = Animated.timing(activeIconOpacity, {
+      toValue,
+      duration: 300,
+      easing: Easing.bezier(0.4, 0, 0.2, 1),
+      useNativeDriver: true,
     })
-  }
+    animation.start()
+    return () => animation.stop()
+  }, [active, activeIconOpacity])
 
   return (
     <>
+      {/* The segment's box, where its pill rests; draws nothing. */}
+      <NativeView ref={segmentRef} pointerEvents="none" style={fill} />
       {active ? (
-        <>
-          {/* Measures the segment's resting pill rect; draws nothing. */}
-          <NativeView
-            ref={pillRef}
-            onLayout={onPillLayout}
-            pointerEvents="none"
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              bottom: 0,
-              left: 0,
-            }}
-          />
-          <Animated.View
-            pointerEvents="none"
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              bottom: 0,
-              left: 0,
-              transform: [{ translateX }, { scaleX }],
-              borderRadius: radius.full,
-              backgroundColor: theme.color?.val,
-              opacity: arriving ? 0 : 1,
-            }}
-          />
-        </>
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            ...fill,
+            transform: pillTransform,
+            borderRadius: radius.full,
+            backgroundColor: theme.color?.val,
+          }}
+        />
       ) : null}
       <View flexDirection="row" items="center">
-        {icon}
-        {active ? (
-          <Animated.View style={{ opacity: arriving ? 0 : labelOpacity }}>
-            <Text
-              pl={6}
-              numberOfLines={1}
-              color="background"
-              fontSize={fontSize.sm}
-              fontWeight={fontWeight.medium}
-            >
-              {label}
-            </Text>
+        <NativeView ref={iconRef}>
+          <Animated.View style={{ transform: iconTransform }}>
+            {icon("muted-foreground")}
+            <Animated.View style={{ ...fill, opacity: activeIconOpacity }}>
+              {icon("background")}
+            </Animated.View>
           </Animated.View>
-        ) : null}
+        </NativeView>
+        {active ? <SlidingPillLabel label={label} fadeIn={arriving} /> : null}
       </View>
     </>
+  )
+}
+
+/** Mounts with its segment's activation; fades in only when switched to. */
+function SlidingPillLabel({
+  label,
+  fadeIn,
+}: {
+  readonly label: string
+  readonly fadeIn: boolean
+}) {
+  const [opacity] = useState(
+    () => new Animated.Value(fadeIn && !reduceMotion ? 0 : 1)
+  )
+  useEffect(() => {
+    const animation = Animated.timing(opacity, {
+      toValue: 1,
+      delay: 200,
+      duration: 150,
+      useNativeDriver: true,
+    })
+    animation.start()
+    return () => animation.stop()
+  }, [opacity])
+  return (
+    <Animated.View style={{ opacity }}>
+      <Text
+        pl={6}
+        numberOfLines={1}
+        color="background"
+        fontSize={fontSize.sm}
+        fontWeight={fontWeight.medium}
+      >
+        {label}
+      </Text>
+    </Animated.View>
   )
 }

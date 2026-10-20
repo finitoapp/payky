@@ -12,7 +12,10 @@ import { NotFoundCard } from "../../components/not-found-card.tsx"
 import { OptionToggleGroup } from "../../components/option-toggle-group.tsx"
 import { PasswordTextarea } from "../../components/password-textarea.tsx"
 import { SearchInput } from "../../components/search-input.tsx"
-import { SlidingPillSegmentContent } from "../../components/sliding-pill.tsx"
+import {
+  SlidingPillSegmentContent,
+  SlidingPillTrack,
+} from "../../components/sliding-pill.tsx"
 import { SuccessPanel } from "../../components/success-panel.tsx"
 import {
   Alert,
@@ -379,29 +382,21 @@ export function UiKitCard() {
         <Button size="lg" variant="outline" label="Refund" />
       </CollisionAlert>
       <SuccessPanel title="Paid" description="Success panel description" />
-      <View
-        flexDirection="row"
-        self="center"
-        p={4}
-        rounded={9999}
-        borderWidth={1}
-        borderColor="input"
-      >
-        {(["Pos", "Numpad"] as const).map((label, index) => (
-          <View key={label} px={16} h={36} justify="center">
-            <SlidingPillSegmentContent
-              active={index === 0}
-              pillId="preview-pill"
-              icon={
-                <Icon
-                  icon={Plus}
-                  color={index === 0 ? "background" : "muted-foreground"}
+      <View self="center">
+        <SlidingPillTrack padding={4} borderColor="input">
+          <View flexDirection="row">
+            {(["Pos", "Numpad"] as const).map((label, index) => (
+              <View key={label} px={16} h={36} justify="center">
+                <SlidingPillSegmentContent
+                  active={index === 0}
+                  pillId="preview-pill"
+                  icon={(color) => <Icon icon={Plus} color={color} />}
+                  label={label}
                 />
-              }
-              label={label}
-            />
+              </View>
+            ))}
           </View>
-        ))}
+        </SlidingPillTrack>
       </View>
       <Stepper value={2}>
         <StepperNav>

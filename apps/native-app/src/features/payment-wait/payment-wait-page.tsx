@@ -61,7 +61,10 @@ import { CopyableQrCode } from "../../components/copyable-qr-code.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
 import { Screen } from "../../components/screen.tsx"
-import { SlidingPillSegmentContent } from "../../components/sliding-pill.tsx"
+import {
+  SlidingPillSegmentContent,
+  SlidingPillTrack,
+} from "../../components/sliding-pill.tsx"
 import { SuccessPanel } from "../../components/success-panel.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import {
@@ -677,44 +680,35 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           </Text>
         ) : (
           <Tabs value={active.id} onValueChange={setSelected}>
-            <TabsList
-              h={64}
-              gap={2}
-              p={8}
-              rounded={radius.full}
-              borderWidth={1}
-              borderColor="input"
-              bg="background"
-            >
-              {methods.map(({ id }) => {
-                const isActive = id === active.id
-                return (
-                  <TabsTrigger
-                    key={id}
-                    value={id}
-                    accessibilityLabel={t(methodLabelKeys[id])}
-                    flex={0}
-                    minW={48}
-                    px={24}
-                    rounded={radius.full}
-                    bg="transparent"
-                    borderColor="transparent"
-                  >
-                    <SlidingPillSegmentContent
-                      active={isActive}
-                      pillId="payment-method-pill"
-                      icon={
-                        <Icon
-                          icon={methodIcons[id]}
-                          color={isActive ? "background" : "muted-foreground"}
-                        />
-                      }
-                      label={t(methodLabelKeys[id])}
-                    />
-                  </TabsTrigger>
-                )
-              })}
-            </TabsList>
+            <SlidingPillTrack padding={8} borderColor="input" bg="background">
+              <TabsList h={46} gap={2} p={0} bg="transparent">
+                {methods.map(({ id }) => {
+                  const isActive = id === active.id
+                  return (
+                    <TabsTrigger
+                      key={id}
+                      value={id}
+                      accessibilityLabel={t(methodLabelKeys[id])}
+                      flex={0}
+                      minW={48}
+                      px={24}
+                      rounded={radius.full}
+                      bg="transparent"
+                      borderColor="transparent"
+                    >
+                      <SlidingPillSegmentContent
+                        active={isActive}
+                        pillId="payment-method-pill"
+                        icon={(color) => (
+                          <Icon icon={methodIcons[id]} color={color} />
+                        )}
+                        label={t(methodLabelKeys[id])}
+                      />
+                    </TabsTrigger>
+                  )
+                })}
+              </TabsList>
+            </SlidingPillTrack>
           </Tabs>
         )}
 

@@ -509,6 +509,8 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     allowedDifferences: {
       TabsContent:
         "web renders a TabsContent per method only as a screen-reader line; native draws the active method's content directly and states it in the prompt",
+      SlidingPillTrack:
+        "web gives the control's own border motion's layout animation; RN cannot scale a parent without its children, so the border is drawn behind the control by sliding-pill.tsx",
     },
   },
   {
@@ -1660,6 +1662,10 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/terminal-home/terminal-home-page.tsx",
     web: ["apps/web-app/src/features/terminal-home/terminal-home-page.tsx"],
     status: "matched",
+    allowedDifferences: {
+      SlidingPillTrack:
+        "web gives the control's own border motion's layout animation; RN cannot scale a parent without its children, so the border is drawn behind the control by sliding-pill.tsx",
+    },
   },
   {
     native: "src/features/withdraw/cashu-withdraw-form-step.tsx",

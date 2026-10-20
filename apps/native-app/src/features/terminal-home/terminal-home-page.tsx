@@ -20,7 +20,10 @@ import { useTheme, View, XStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
 import { LoadingView } from "../../components/loading-view.tsx"
-import { SlidingPillSegmentContent } from "../../components/sliding-pill.tsx"
+import {
+  SlidingPillSegmentContent,
+  SlidingPillTrack,
+} from "../../components/sliding-pill.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import {
@@ -79,7 +82,7 @@ export function TerminalHomePage() {
          * nothing to switch to (settings/0001), so the control goes away.
          */}
         {enabledModes.length > 1 ? (
-          <View rounded={radius.full} borderWidth={1} borderColor="input" p={4}>
+          <SlidingPillTrack padding={4} borderColor="input">
             <ToggleGroup
               value={mode}
               onValueChange={setMode}
@@ -100,20 +103,16 @@ export function TerminalHomePage() {
                     <SlidingPillSegmentContent
                       active={active}
                       pillId="home-mode-pill"
-                      icon={
-                        <Icon
-                          icon={icon}
-                          strokeWidth={2.5}
-                          color={active ? "background" : "muted-foreground"}
-                        />
-                      }
+                      icon={(color) => (
+                        <Icon icon={icon} strokeWidth={2.5} color={color} />
+                      )}
                       label={t(label)}
                     />
                   </ToggleGroupItem>
                 )
               })}
             </ToggleGroup>
-          </View>
+          </SlidingPillTrack>
         ) : null}
         {/* The ways into the history and the settings, as web's header links. */}
         <XStack ml="auto" items="center" gap={16}>

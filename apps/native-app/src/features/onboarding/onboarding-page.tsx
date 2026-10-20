@@ -20,7 +20,7 @@ import { router } from "expo-router"
 import { useAtom } from "jotai"
 import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import { useEffect, useRef, useState } from "react"
-import { BackHandler } from "react-native"
+import { BackHandler, Platform } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { Screen } from "../../components/screen.tsx"
 import {
@@ -40,6 +40,7 @@ import { Input } from "../../components/ui/input.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useSetLocale, useTranslation } from "../../hooks/use-translation.ts"
+import { maxWidth } from "../../theme/tokens.ts"
 import { AccountTransferTarget } from "../shared/account-transfer-target.tsx"
 import { RestoreAccountStep } from "../shared/restore-account-step.tsx"
 import { useRestoreAccount } from "../shared/use-restore-account.ts"
@@ -156,7 +157,13 @@ export function OnboardingPage() {
 
   return (
     <Screen>
-      <YStack gap="6">
+      {/* Web's onboarding column, `max-w-md`, narrower than other screens. */}
+      <YStack
+        gap="6"
+        w="100%"
+        self="center"
+        maxW={Platform.OS === "web" ? maxWidth.md : undefined}
+      >
         <XStack items="center" minH={32}>
           {stepIndex > 0 ? (
             <Button

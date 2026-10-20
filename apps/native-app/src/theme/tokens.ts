@@ -34,3 +34,9 @@ export const fontWeight = {
   semibold: "600",
   bold: "700",
 } as const
+
+/** `max-w-md`/`max-w-xl`: the column web lays its screens out in on a wide window. */
+export const maxWidth = {
+  md: 448,
+  xl: 576,
+} as const

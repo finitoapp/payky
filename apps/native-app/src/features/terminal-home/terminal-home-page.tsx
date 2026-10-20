@@ -14,7 +14,7 @@ import Clock3 from "lucide-react-native/icons/clock-3"
 import LayoutGrid from "lucide-react-native/icons/layout-grid"
 import Settings from "lucide-react-native/icons/settings"
 import { Suspense, useEffect, useState, useSyncExternalStore } from "react"
-import { ActivityIndicator } from "react-native"
+import { ActivityIndicator, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, View, XStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
@@ -36,7 +36,7 @@ import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
 import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
-import { radius } from "../../theme/tokens.ts"
+import { maxWidth, radius } from "../../theme/tokens.ts"
 import { AmountKeypad } from "./amount-keypad.tsx"
 import { PosOverviewPage } from "./pos-overview-page.tsx"
 import { useTerminalHomeMode } from "./use-terminal-home-mode.ts"
@@ -51,6 +51,12 @@ const homeModeItems = [
  * appSettings row is not onboarded and goes to onboarding (a restore runs
  * its own sync screen first, so no initial-sync wait is needed here).
  */
+const keypadColumn = {
+  width: "100%",
+  maxWidth: maxWidth.xl,
+  alignSelf: "center",
+} as const
+
 export function TerminalHomePage() {
   const theme = useTheme()
   const { t } = useTranslation()
@@ -73,7 +79,11 @@ export function TerminalHomePage() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, padding: 16, backgroundColor: theme.background.val }}
+      style={[
+        { flex: 1, padding: 16, backgroundColor: theme.background.val },
+        // Only the pos grid uses a wide window; the keypad keeps web's column.
+        Platform.OS === "web" && mode !== "pos" ? keypadColumn : null,
+      ]}
     >
       <XStack items="center" justify="space-between" mb={12}>
         {/*

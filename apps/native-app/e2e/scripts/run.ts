@@ -11,7 +11,6 @@ import { serveWeb } from "./serve-web.ts"
 const appDir = resolve(import.meta.dirname, "../..")
 const e2eDir = join(appDir, "e2e")
 const generated = join(e2eDir, ".generated")
-const reportDir = join(generated, "report")
 const webPort = 8790
 const appId = "me.payky.nativepreview"
 const maestro =
@@ -30,6 +29,8 @@ if (platform !== "web" && platform !== "android") {
   console.error("--platform web|android is required")
   process.exit(2)
 }
+
+const reportDir = join(generated, "report", platform)
 
 process.env.EXPO_PUBLIC_PAYKY_E2E = "1"
 process.env.MAESTRO_CLI_NO_ANALYTICS = "1"

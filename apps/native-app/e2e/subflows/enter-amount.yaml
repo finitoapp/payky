@@ -1,0 +1,13 @@
+# web's enterAmount: taps AMOUNT ("5.9") on the terminal keypad, one key per
+# character; "<" is the backspace key.
+appId: ${APP_ID}
+---
+- evalScript: ${output.amountIndex = 0}
+- repeat:
+    times: ${AMOUNT.length}
+    commands:
+      - runFlow:
+          file: tap-label.yaml
+          env:
+            LABEL: '${({ ".": output.t["home.keypad.decimal"], "<": output.t["home.keypad.backspace"] })[AMOUNT[output.amountIndex]] || AMOUNT[output.amountIndex]}'
+      - evalScript: ${output.amountIndex = output.amountIndex + 1}

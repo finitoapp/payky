@@ -46,7 +46,9 @@ assertions.
   `completeOnboarding` through the real UI; `tap-label` (`LABEL`) taps a
   kit Button or icon button by its label; `tap-input`, `clear-input`,
   `fill-input` (`LABEL`, `VALUE`) work an input by its field label;
-  `fill-inline` is `fillInlineField` (type, Save, wait for "Saved");
+  `fill-inline` is `fillInlineField` (type, Save, wait for "Saved"); `tap-id`
+  taps a control by testID; `relaunch` (`TEXT`) is `reloadPage`;
+  `enter-amount` (`AMOUNT`, `<` = backspace) is `enterAmount`;
   `assert-checked` (`LABEL`, `CHECKED`) checks a switch, on Android only.
 
 ## The bridge
@@ -95,6 +97,16 @@ Never coordinates, index-only selectors, or sleeps; wait with
   checked state; such checks run on Android only (`when: platform: Android`),
   next to a web-visible assertion where there is one.
 - `checked:` and `point:` take no `${}` values; branch with `when: true:`.
+- A subflow's own header `env:` overrides what the caller passes, so optional
+  env gets no header default: read it as `${typeof X === "undefined" ? ... : X}`.
+  Quote a value holding `: ` (YAML), and run a changed flow once: a parse
+  error fails the whole Maestro run before any flow starts.
+- Text and ids match screens mounted under the current one too (Android
+  keeps them): kit inputs, switches and checkboxes take their name as
+  testID, so `tap-id`/`tap-input` hit only them.
+- `seed-onboarding` relaunches after seeding: the bridge opened over
+  onboarding leaves onboarding mounted underneath, and it sends the app home
+  on every later settings write.
 - RN maps `aria-label` only on View-based components: RN's `Switch` needs
   `accessibilityLabel` (`ui/switch.tsx`).
 - Tamagui 3 on web drops `accessibilityLabel`/`accessibilityRole` into the DOM

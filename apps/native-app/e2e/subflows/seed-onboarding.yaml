@@ -2,19 +2,19 @@
 # English), on the terminal home. Optional env QUERY: "spark=true",
 # "fiatCurrency=CZK".
 appId: ${APP_ID}
-env:
-  QUERY: ""
 ---
 - runFlow: start.yaml
-- openLink: ${BASE_URL}e2e/seedOnboarding?${QUERY}
+- openLink: '${BASE_URL}e2e/seedOnboarding?${typeof QUERY === "undefined" ? "" : QUERY}'
 # On Android the onboarding screen under the bridge leaves for home as soon as
 # the account is onboarded (web's seed waits for the same redirect); on web
 # the bridge page stays.
 - extendedWaitUntil:
     visible: E2E OK seedOnboarding|${output.t["home.pay"]}
     timeout: 30000
+# Then a fresh start: on Android that redirect replaced the bridge, leaving
+# onboarding mounted under home, and it sends the app home again on every
+# later settings write.
 - runFlow:
-    file: goto.yaml
+    file: relaunch.yaml
     env:
-      ROUTE: ""
       TEXT: ${output.t["home.pay"]}

@@ -1,0 +1,10 @@
+# web's reloadPage: restarts the app with its data (a page reload on web, a
+# cold start on Android) and waits until TEXT is visible. It opens on the
+# app's start route, the terminal home.
+appId: ${APP_ID}
+---
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: ${TEXT}
+    timeout: 30000

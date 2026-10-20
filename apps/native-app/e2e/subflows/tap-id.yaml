@@ -1,0 +1,8 @@
+# Taps the control whose testID is LABEL — kit inputs, switches and
+# checkboxes take their name as testID. On web `id:` reads the aria-label,
+# on Android the testID: either way only that control, never a same-named
+# one on a screen mounted under it, as a text selector on Android can.
+appId: ${APP_ID}
+---
+- tapOn:
+    id: ${output.re(LABEL)}

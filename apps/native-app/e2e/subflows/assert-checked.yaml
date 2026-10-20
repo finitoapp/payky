@@ -1,23 +1,24 @@
-# Asserts the switch/checkbox named LABEL is on (CHECKED: "true") or off
-# ("false"). Android only: Maestro's web driver reports no checked state, so
-# on web this checks nothing — keep another web-visible assertion beside it.
+# Asserts the switch/checkbox named LABEL (its aria-label, also its testID)
+# is on (CHECKED: "true") or off ("false"). Android only: Maestro's web
+# driver reports no checked state, so on web this checks nothing — keep
+# another web-visible assertion beside it. (`checked:` takes no ${} values.)
+# Optional env has no header default: a subflow's own `env:` overrides what
+# the caller passes.
 appId: ${APP_ID}
-env:
-  CHECKED: "true"
 ---
 - runFlow:
     when:
       platform: Android
-      true: ${CHECKED === "true"}
+      true: ${typeof CHECKED === "undefined" || CHECKED === "true"}
     commands:
       - assertVisible:
-          text: ${output.re(LABEL)}
+          id: ${output.re(LABEL)}
           checked: true
 - runFlow:
     when:
       platform: Android
-      true: ${CHECKED !== "true"}
+      true: ${typeof CHECKED !== "undefined" && CHECKED !== "true"}
     commands:
       - assertVisible:
-          text: ${output.re(LABEL)}
+          id: ${output.re(LABEL)}
           checked: false

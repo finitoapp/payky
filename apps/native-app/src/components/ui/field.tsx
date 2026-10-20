@@ -14,14 +14,16 @@ import { fontSize, fontWeight } from "../../theme/tokens.ts"
  * with `role="alert"`; `FieldSeparator` `h-5` with a centered rule.
  *
  * Native differences: web ties a label to its input with `htmlFor`; here
- * `Field` gives `FieldLabel` a `nativeID` and `ui/input` names itself after
- * it with `accessibilityLabelledBy`, which TalkBack reads. `orientation`
+ * `Field` gives `FieldLabel` an `id` and `ui/input` names itself after it
+ * with `aria-labelledby`, which TalkBack and a browser both read (React
+ * Native's `nativeID`/`accessibilityLabelledBy` reach the DOM untranslated
+ * through Tamagui). `orientation`
  * has no `responsive` value: a phone is always the narrow layout.
  */
 
 const FieldLabelIdContext = createContext<string | undefined>(undefined)
 
-/** The `nativeID` of the enclosing field's label, for `accessibilityLabelledBy`. */
+/** The `id` of the enclosing field's label, for `aria-labelledby`. */
 export const useFieldLabelId = () => useContext(FieldLabelIdContext)
 
 export const FieldSet = styled(View, { name: "FieldSet", gap: 16 })
@@ -82,7 +84,7 @@ const FieldLabelText = styled(Text, {
 })
 
 export function FieldLabel(props: GetProps<typeof FieldLabelText>) {
-  return <FieldLabelText nativeID={useFieldLabelId()} {...props} />
+  return <FieldLabelText id={useFieldLabelId()} {...props} />
 }
 
 export const FieldTitle = styled(Text, {

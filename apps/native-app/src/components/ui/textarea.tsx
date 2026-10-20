@@ -35,7 +35,5 @@ export type TextareaProps = GetProps<typeof TextareaFrame>
 
 /** Inside a `ui/field` `Field`, TalkBack names it after the `FieldLabel`. */
 export function Textarea(props: TextareaProps) {
-  return (
-    <TextareaFrame accessibilityLabelledBy={useFieldLabelId()} {...props} />
-  )
+  return <TextareaFrame aria-labelledby={useFieldLabelId()} {...props} />
 }

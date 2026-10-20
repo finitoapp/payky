@@ -52,7 +52,7 @@ export function Input(props: InputProps) {
       : {}
   return (
     <InputFrame
-      accessibilityLabelledBy={useFieldLabelId()}
+      aria-labelledby={useFieldLabelId()}
       {...disabledStyle}
       {...props}
     />

@@ -1,6 +1,6 @@
 import { type GetProps, styled, TextArea } from "tamagui"
 import { fontSize, radius } from "../../theme/tokens.ts"
-import { useFieldLabelId } from "./field.tsx"
+import { useFieldLabelId, useFieldLabelText } from "./field.tsx"
 
 /**
  * Web `apps/web-app/src/components/ui/textarea.tsx`, on Tamagui `TextArea`:
@@ -33,7 +33,21 @@ const TextareaFrame = styled(TextArea, {
 
 export type TextareaProps = GetProps<typeof TextareaFrame>
 
-/** Inside a `ui/field` `Field`, TalkBack names it after the `FieldLabel`. */
+/**
+ * Inside a `ui/field` `Field`, TalkBack names it after the `FieldLabel`. Its
+ * name is also its `testID`, so an e2e flow finds the input by its label with
+ * one `id:` on both platforms (on Android the label's own text matches a text
+ * selector too).
+ */
 export function Textarea(props: TextareaProps) {
-  return <TextareaFrame aria-labelledby={useFieldLabelId()} {...props} />
+  const fieldLabel = useFieldLabelText()
+  const name = props["aria-label"] ?? fieldLabel
+  return (
+    <TextareaFrame
+      aria-labelledby={useFieldLabelId()}
+      aria-label={name}
+      testID={name}
+      {...props}
+    />
+  )
 }

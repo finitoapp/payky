@@ -1,4 +1,11 @@
-import { createContext, type ReactNode, useContext, useId } from "react"
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useId,
+  useState,
+} from "react"
 import { type GetProps, styled, Text, View } from "tamagui"
 import { fontSize, fontWeight } from "../../theme/tokens.ts"
 
@@ -17,14 +24,28 @@ import { fontSize, fontWeight } from "../../theme/tokens.ts"
  * `Field` gives `FieldLabel` an `id` and `ui/input` names itself after it
  * with `aria-labelledby`, which TalkBack and a browser both read (React
  * Native's `nativeID`/`accessibilityLabelledBy` reach the DOM untranslated
- * through Tamagui). `orientation`
+ * through Tamagui). The input also takes the label's text as its
+ * `aria-label`: a browser still names it by `aria-labelledby`, which wins,
+ * but Maestro reads neither, only a label (the e2e flows find inputs so).
+ * `orientation`
  * has no `responsive` value: a phone is always the narrow layout.
  */
 
-const FieldLabelIdContext = createContext<string | undefined>(undefined)
+interface FieldLabelContextValue {
+  readonly id: string
+  readonly text: string | undefined
+  readonly setText: (text: string | undefined) => void
+}
+
+const FieldLabelContext = createContext<FieldLabelContextValue | undefined>(
+  undefined
+)
 
 /** The `id` of the enclosing field's label, for `aria-labelledby`. */
-export const useFieldLabelId = () => useContext(FieldLabelIdContext)
+export const useFieldLabelId = () => useContext(FieldLabelContext)?.id
+
+/** The enclosing field's label text, when it is plain text, for `aria-label`. */
+export const useFieldLabelText = () => useContext(FieldLabelContext)?.text
 
 export const FieldSet = styled(View, { name: "FieldSet", gap: 16 })
 
@@ -63,11 +84,12 @@ export function Field({
   children,
   ...props
 }: GetProps<typeof FieldFrame> & { readonly children?: ReactNode }) {
-  const labelId = useId()
+  const id = useId()
+  const [text, setText] = useState<string>()
   return (
-    <FieldLabelIdContext value={labelId}>
+    <FieldLabelContext value={{ id, text, setText }}>
       <FieldFrame {...props}>{children}</FieldFrame>
-    </FieldLabelIdContext>
+    </FieldLabelContext>
   )
 }
 
@@ -85,7 +107,13 @@ const FieldLabelText = styled(Text, {
 })
 
 export function FieldLabel(props: GetProps<typeof FieldLabelText>) {
-  return <FieldLabelText id={useFieldLabelId()} {...props} />
+  const field = useContext(FieldLabelContext)
+  const text = typeof props.children === "string" ? props.children : undefined
+  const setText = field?.setText
+  useEffect(() => {
+    setText?.(text)
+  }, [setText, text])
+  return <FieldLabelText id={field?.id} {...props} />
 }
 
 export const FieldTitle = styled(Text, {

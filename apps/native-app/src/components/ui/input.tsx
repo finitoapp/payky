@@ -1,6 +1,6 @@
 import { type GetProps, styled, Input as TamaguiInput } from "tamagui"
 import { fontSize, radius } from "../../theme/tokens.ts"
-import { useFieldLabelId } from "./field.tsx"
+import { useFieldLabelId, useFieldLabelText } from "./field.tsx"
 
 /**
  * Web `apps/web-app/src/components/ui/input.tsx`, on Tamagui `Input`.
@@ -42,8 +42,15 @@ const InputFrame = styled(TamaguiInput, {
 
 export type InputProps = GetProps<typeof InputFrame>
 
-/** Inside a `ui/field` `Field`, TalkBack names it after the `FieldLabel`. */
+/**
+ * Inside a `ui/field` `Field`, TalkBack names it after the `FieldLabel`. Its
+ * name is also its `testID`, so an e2e flow finds the input by its label with
+ * one `id:` on both platforms (on Android the label's own text matches a text
+ * selector too).
+ */
 export function Input(props: InputProps) {
+  const fieldLabel = useFieldLabelText()
+  const name = props["aria-label"] ?? fieldLabel
   // The disabled look is applied here, not as a variant, so `disabled`
   // still reaches Tamagui's input and makes it read-only.
   const disabledStyle =
@@ -53,6 +60,8 @@ export function Input(props: InputProps) {
   return (
     <InputFrame
       aria-labelledby={useFieldLabelId()}
+      aria-label={name}
+      testID={name}
       {...disabledStyle}
       {...props}
     />

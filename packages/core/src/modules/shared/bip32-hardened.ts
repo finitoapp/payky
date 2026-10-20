@@ -1,6 +1,6 @@
-import { hmac } from "@noble/hashes/hmac.js"
-import { sha512 } from "@noble/hashes/sha2.js"
 import { bytesToHex, hexToBytes } from "@noble/hashes/utils.js"
+
+import { hmacSha512 } from "./hmac-sha512.ts"
 
 /**
  * BIP32 private-key derivation for paths whose every level is hardened,
@@ -44,7 +44,7 @@ export const deriveHardenedPrivateKey = (
   seed: Uint8Array,
   indexes: ReadonlyArray<number>
 ): Uint8Array => {
-  const master = hmac(sha512, MASTER_HMAC_KEY, seed)
+  const master = hmacSha512(MASTER_HMAC_KEY, seed)
   let key = toBigInt(master.slice(0, 32))
   let chainCode = master.slice(32)
   if (key === 0n || key >= CURVE_ORDER) {
@@ -55,7 +55,7 @@ export const deriveHardenedPrivateKey = (
     const data = new Uint8Array(37)
     data.set(toBytes32(key), 1)
     new DataView(data.buffer).setUint32(33, index)
-    const child = hmac(sha512, chainCode, data)
+    const child = hmacSha512(chainCode, data)
     const tweak = toBigInt(child.slice(0, 32))
     const childKey = (tweak + key) % CURVE_ORDER
     // HDKey refuses these too; at 2^-127 odds, a derivation that hits one fails.

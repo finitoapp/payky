@@ -2,7 +2,10 @@ import {
   createRandomBytes,
   Mnemonic,
   mnemonicToOwnerSecret,
+  type OwnerId,
+  type OwnerIdBytes,
   type OwnerSecret,
+  ownerIdBytesToOwnerId,
 } from "@evolu/common"
 import { hmac } from "@noble/hashes/hmac.js"
 import { sha512 } from "@noble/hashes/sha2.js"
@@ -22,6 +25,7 @@ import {
   parseHardenedPath,
 } from "./bip32-hardened.ts"
 import { mnemonicToBip39Seed } from "./bip39-seed.ts"
+import { hmacSha512 } from "./hmac-sha512.ts"
 
 const Hex16Schema = z.string().regex(/^[0-9a-f]{32}$/u)
 
@@ -126,7 +130,7 @@ const deriveEntropy = (
     throw new Error("A private BIP32 derivation path is required.")
   }
 
-  return hmac(sha512, bipEntropyHmacKey, privateKey).slice(0, 32)
+  return hmacSha512(bipEntropyHmacKey, privateKey).slice(0, 32)
 }
 
 export const deriveNostrSecretKey = (masterKey: MasterKey): NostrSecretKey => {
@@ -236,6 +240,30 @@ export const mnemonicToMasterKey = async (
 
 export const deriveEvoluOwnerSecret = (masterKey: MasterKey): OwnerSecret =>
   deriveEntropy(masterKey, evoluOwnerDerivationPath) as OwnerSecret
+
+const slip21Encoder = new TextEncoder()
+
+/**
+ * The id of `createAppOwner(deriveEvoluOwnerSecret(masterKey))`, and only
+ * that: Evolu's SLIP-21 node ["Evolu", "OwnerIdBytes"], its first 16 bytes.
+ * `createAppOwner` also derives the encryption and write keys and the
+ * mnemonic, which an id lookup run over every account at each start (the
+ * device account migration's check) does not need. The test compares it
+ * with `createAppOwner`.
+ */
+export const deriveEvoluOwnerId = (masterKey: MasterKey): OwnerId => {
+  let node = hmacSha512(
+    slip21Encoder.encode("Symmetric key seed"),
+    deriveEvoluOwnerSecret(masterKey)
+  )
+  for (const label of ["Evolu", "OwnerIdBytes"]) {
+    const labelBytes = slip21Encoder.encode(label)
+    const message = new Uint8Array(labelBytes.length + 1)
+    message.set(labelBytes, 1)
+    node = hmacSha512(node.slice(0, 32), message)
+  }
+  return ownerIdBytesToOwnerId(node.slice(32, 48) as OwnerIdBytes)
+}
 
 export const deriveDefaultSparkWalletSecret = (
   masterKey: MasterKey

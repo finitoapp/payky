@@ -1,5 +1,4 @@
 import {
-  createAppOwner,
   createIdFromString,
   evoluJsonArrayFrom,
   evoluJsonObjectFrom,
@@ -11,7 +10,7 @@ import {
 import type { DeviceId } from "../modules/device/device-types.ts"
 import {
   createMasterKey,
-  deriveEvoluOwnerSecret,
+  deriveEvoluOwnerId,
   type MasterKey,
 } from "../modules/shared/key-derivation.ts"
 import { NonEmptyString255, WssUrl } from "../modules/shared/schema.ts"
@@ -286,7 +285,7 @@ export interface NewAccountOptions {
  */
 export const deriveDeviceAccountId = (masterKey: MasterKey): DeviceAccountId =>
   createIdFromString<"DeviceAccountId">(
-    `payky-device-account:${createAppOwner(deriveEvoluOwnerSecret(masterKey)).id}`
+    `payky-device-account:${deriveEvoluOwnerId(masterKey)}`
   )
 
 export const insertAccount = (

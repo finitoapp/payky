@@ -5,6 +5,9 @@ import {
 } from "@payky/app-shared/atom-lifetime"
 import { createAppEvolu } from "@payky/core/evolu/client"
 import { resolveTransportUrl } from "@payky/core/evolu/device-account"
+import { accessControlQuery } from "@payky/core/modules/access/access-queries"
+import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
+import { deviceByIdQuery } from "@payky/core/modules/device/device-queries"
 import { atom } from "jotai"
 import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
 import { accountAtom } from "./account.ts"
@@ -17,6 +20,17 @@ export const evoluAtom = atom(async (get, options) => {
   const account = await get(accountAtom)
   const evolu = await nativeRun.ok(
     createAppEvolu({ masterKey: account.masterKey, transports: [] })
+  )
+  // The access gate's queries and the home screen's settings, loaded as one
+  // batch before anything asks: each would otherwise suspend its component
+  // for a round trip of its own, one after the other. Evolu keeps the rows
+  // for the components that subscribe next.
+  void Promise.allSettled(
+    evolu.loadQueries([
+      accessControlQuery,
+      deviceByIdQuery(account.device.id),
+      settingsQuery,
+    ])
   )
 
   // Stored URLs may carry `${appOwnerId}`; a demo account never syncs.

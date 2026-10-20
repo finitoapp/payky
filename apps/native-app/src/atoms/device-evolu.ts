@@ -8,10 +8,16 @@ import { getPreferredDeviceLanguage } from "@payky/core/modules/device/device-ut
 import { atom } from "jotai"
 import { nativeRun } from "../core/native-runtime.ts"
 
-const deviceSettingsQuery = createDeviceQuery((db) =>
+/**
+ * The device settings the first screen reads (language, locale, theme, error
+ * reporting), as one query: this atom loads it before anything renders, so
+ * every hook below finds it cached instead of loading its own column in a
+ * round trip of its own.
+ */
+export const deviceSettingsQuery = createDeviceQuery((db) =>
   db
     .selectFrom("deviceSettings")
-    .select(["id", "language"])
+    .select(["id", "language", "locale", "theme", "errorReportingEnabled"])
     .where("id", "=", deviceSettingsId)
 )
 

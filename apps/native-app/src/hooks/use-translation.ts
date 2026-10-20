@@ -2,39 +2,24 @@ import type { Language } from "@payky/app-shared/i18n/resources"
 import { createTranslate } from "@payky/app-shared/i18n/translate"
 import { updateDeviceSettings } from "@payky/core/evolu/device-account"
 import {
-  createDeviceQuery,
   type DeviceLocale,
-  deviceSettingsId,
   getDeviceLocaleForLanguage,
 } from "@payky/core/evolu/device-client"
 import { useAtomValue } from "jotai"
 import { useCallback, useMemo } from "react"
-import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
+import { deviceEvoluAtom, deviceSettingsQuery } from "../atoms/device-evolu.ts"
 import { useDeviceEvoluQuery } from "./use-evolu-query.ts"
-
-const languageQuery = createDeviceQuery((db) =>
-  db
-    .selectFrom("deviceSettings")
-    .select(["id", "language"])
-    .where("id", "=", deviceSettingsId)
-)
-
-const localeQuery = createDeviceQuery((db) =>
-  db
-    .selectFrom("deviceSettings")
-    .select(["id", "language", "locale"])
-    .where("id", "=", deviceSettingsId)
-)
 
 /** Number and money formatting locale; falls back to the language's, as web's `useLocale`. */
 export function useLocale(): DeviceLocale {
-  const row = useDeviceEvoluQuery(localeQuery).data[0]
+  const row = useDeviceEvoluQuery(deviceSettingsQuery).data[0]
   return row?.locale ?? getDeviceLocaleForLanguage(row?.language ?? "en")
 }
 
 /** The device language comes from the bootstrapped device settings row. */
 export function useTranslation() {
-  const language = useDeviceEvoluQuery(languageQuery).data[0]?.language ?? "en"
+  const language =
+    useDeviceEvoluQuery(deviceSettingsQuery).data[0]?.language ?? "en"
 
   return useMemo(() => ({ language, t: createTranslate(language) }), [language])
 }

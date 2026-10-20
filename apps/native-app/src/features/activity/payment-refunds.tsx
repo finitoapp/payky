@@ -412,6 +412,7 @@ function RefundSheet({
       ) : null}
       {refundableLines.length > 0 ? (
         <ToggleGroup
+          aria-label={t("refund.dialog.mode.label")}
           value={mode}
           onValueChange={setMode}
           variant="outline"
@@ -638,6 +639,7 @@ function MethodChoice({
         {t("refund.dialog.method.label")}
       </FieldLegend>
       <ToggleGroup
+        aria-label={t("refund.dialog.method.label")}
         value={method}
         onValueChange={onChange}
         variant="outline"

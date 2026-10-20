@@ -175,6 +175,11 @@ function PaymentTipForm({
           group.length === 0 ? null : (
             <ToggleGroup
               key={group === percentageOptions ? "percentages" : "fixed"}
+              aria-label={t(
+                group === percentageOptions
+                  ? "paymentTip.percentages"
+                  : "paymentTip.fixedAmounts"
+              )}
               value={null}
               onValueChange={(value) => {
                 const option = group.find(
@@ -199,6 +204,7 @@ function PaymentTipForm({
           )
         )}
         <ToggleGroup
+          aria-label={t("paymentTip.title")}
           value={customOpen ? "custom" : null}
           onValueChange={(value) => {
             if (value === "custom") setCustomOpen(true)

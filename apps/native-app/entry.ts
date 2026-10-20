@@ -1,4 +1,5 @@
 import "./src/platform/polyfills"
 import "./src/platform/evolu-polyfills"
 import "./src/platform/native-crypto"
+import "./src/platform/web-styles"
 import "expo-router/entry"

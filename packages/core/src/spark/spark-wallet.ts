@@ -8,6 +8,7 @@ import type {
   SparkCoopExitRequestStatus,
   WalletTransfer,
 } from "@buildonspark/spark-sdk/types"
+import { mnemonicToBip39Seed } from "../modules/shared/bip39-seed.ts"
 import {
   type SparkSecret,
   sparkSecretToMnemonic,
@@ -226,7 +227,10 @@ const sparkWalletPool = createRefCountedResourcePool<
   create: async ({ mnemonic, network }) => {
     const { SparkWallet } = await import("@buildonspark/spark-sdk")
     const { wallet } = await SparkWallet.initialize({
-      mnemonicOrSeed: mnemonic,
+      // The seed, not the mnemonic: the SDK would derive the same seed in
+      // pure JS (~1.6 s of blocked JS on Hermes), where this one can come
+      // from the platform's native PBKDF2 (`installBip39Pbkdf2`).
+      mnemonicOrSeed: mnemonicToBip39Seed(mnemonic),
       options: {
         network,
       },

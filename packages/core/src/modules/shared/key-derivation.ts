@@ -11,7 +11,6 @@ import { HDKey } from "@scure/bip32"
 import {
   entropyToMnemonic,
   mnemonicToEntropy,
-  mnemonicToSeedSync,
   validateMnemonic,
 } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
@@ -22,6 +21,7 @@ import {
   deriveHardenedPrivateKey,
   parseHardenedPath,
 } from "./bip32-hardened.ts"
+import { mnemonicToBip39Seed } from "./bip39-seed.ts"
 
 const Hex16Schema = z.string().regex(/^[0-9a-f]{32}$/u)
 
@@ -157,7 +157,7 @@ export const CashuWalletSeed = CashuWalletSeedSchema.decode
  */
 export const deriveCashuWalletSeed = (masterKey: MasterKey): CashuWalletSeed =>
   CashuWalletSeed(
-    mnemonicToSeedSync(
+    mnemonicToBip39Seed(
       entropyToMnemonic(
         deriveEntropy(masterKey, cashuWalletSeedDerivationPath),
         wordlist

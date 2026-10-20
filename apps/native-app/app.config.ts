@@ -33,7 +33,29 @@ export default {
   },
   plugins: [
     "expo-router",
-    "expo-font",
+    [
+      "expo-font",
+      {
+        // Built into the APK under the family names tamagui.config.ts uses,
+        // so the first render needs no font loading (useFonts took ~45 ms).
+        android: {
+          fonts: [
+            ["Inter", "Inter-Regular", 400],
+            ["InterMedium", "Inter-Medium", 500],
+            ["InterSemiBold", "Inter-SemiBold", 600],
+            ["InterBold", "Inter-Bold", 700],
+          ].map(([fontFamily, file, weight]) => ({
+            fontFamily: String(fontFamily),
+            fontDefinitions: [
+              {
+                path: `./node_modules/@tamagui/font-inter/otf/${file}.otf`,
+                weight: Number(weight),
+              },
+            ],
+          })),
+        },
+      },
+    ],
     [
       "expo-camera",
       {

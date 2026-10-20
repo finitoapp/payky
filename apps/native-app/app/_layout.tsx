@@ -1,9 +1,4 @@
-import InterBold from "@tamagui/font-inter/otf/Inter-Bold.otf"
-import InterMedium from "@tamagui/font-inter/otf/Inter-Medium.otf"
-import Inter from "@tamagui/font-inter/otf/Inter-Regular.otf"
-import InterSemiBold from "@tamagui/font-inter/otf/Inter-SemiBold.otf"
 import { QueryClientProvider } from "@tanstack/react-query"
-import { useFonts } from "expo-font"
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
@@ -72,12 +67,6 @@ export function ErrorBoundary({
 
 export default function RootLayout() {
   const [store] = useState(createStore)
-  const [fontsLoaded, fontError] = useFonts({
-    Inter,
-    InterMedium,
-    InterSemiBold,
-    InterBold,
-  })
   // Once per process: clear Evolu export files an earlier run left in the cache.
   useEffect(() => {
     try {
@@ -86,8 +75,6 @@ export default function RootLayout() {
       // Best effort; the next export clears them too.
     }
   }, [])
-  if (fontError) throw fontError
-  if (!fontsLoaded) return <AppLoader />
 
   return (
     <Provider store={store}>

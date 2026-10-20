@@ -7,6 +7,7 @@ export type NativeRoutePath =
   | "/"
   | "/diagnostics"
   | "/error"
+  | "/e2e/:action"
   | "/pair"
   | "/onboarding"
   | "/restore-account"
@@ -188,6 +189,8 @@ export const routeAccess = {
   "/settings/payment-accounts/card-switchio": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
+  // The e2e bridge (src/e2e); it only redirects home outside an e2e build.
+  "/e2e/:action": "free",
 } satisfies Record<NativeRoutePath, RouteAccess>
 
 const table: Readonly<Record<string, RouteAccess>> = routeAccess

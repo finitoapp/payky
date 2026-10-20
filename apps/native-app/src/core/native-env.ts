@@ -32,6 +32,8 @@ export const nativeEnv = createEnv({
       .pipe(z.array(z.url({ protocol: /^wss$/u })).min(1))
       .default(["wss://evolu.eu.freedomrelay.dev", "wss://evolu.linky.fit"]),
     EXPO_PUBLIC_SENTRY_DSN: z.string().optional(),
+    // Set only by the e2e builds (e2e/scripts); turns on the e2e bridge route.
+    EXPO_PUBLIC_PAYKY_E2E: z.stringbool().default(false),
   },
   runtimeEnv: {
     EXPO_PUBLIC_PAYKY_API_BASE_URL: process.env.EXPO_PUBLIC_PAYKY_API_BASE_URL,
@@ -43,6 +45,7 @@ export const nativeEnv = createEnv({
     EXPO_PUBLIC_LINKY_RELAYS_URL: process.env.EXPO_PUBLIC_LINKY_RELAYS_URL,
     EXPO_PUBLIC_LINKY_EVOLU_RELAYS: process.env.EXPO_PUBLIC_LINKY_EVOLU_RELAYS,
     EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    EXPO_PUBLIC_PAYKY_E2E: process.env.EXPO_PUBLIC_PAYKY_E2E,
   },
   emptyStringAsUndefined: true,
 })

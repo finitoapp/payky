@@ -227,7 +227,13 @@ export function RestoreSyncPage() {
           ) : (
             <ActivityIndicator size="large" />
           )}
-          <Text fontSize="2xl" lineHeight="2xl" fontWeight="600" role="heading">
+          <Text
+            fontSize="2xl"
+            lineHeight="2xl"
+            fontWeight="600"
+            role="heading"
+            aria-level={1}
+          >
             {t(title)}
           </Text>
           <Text fontSize="sm" lineHeight="sm" color="muted-foreground">

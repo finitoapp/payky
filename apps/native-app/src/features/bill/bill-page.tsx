@@ -738,6 +738,7 @@ function BillCart({
                 // text-muted-foreground first:pt-0`; the list gap is 8 of it.
                 <Text
                   role="heading"
+                  aria-level={3}
                   px={4}
                   pt={index === 0 ? 0 : 8}
                   fontSize={fontSize.sm}

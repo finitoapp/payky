@@ -24,6 +24,7 @@ export function StatsSection({
           fontWeight="700"
           color="muted-foreground"
           role="heading"
+          aria-level={2}
         >
           {title}
         </Text>

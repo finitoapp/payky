@@ -160,6 +160,7 @@ function PaymentTipForm({
           fontWeight={fontWeight.semibold}
           fontVariant={["tabular-nums"]}
           role="heading"
+          aria-level={1}
         >
           {formatMinor(amount)}
         </Text>

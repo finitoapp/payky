@@ -96,6 +96,7 @@ export function FadeHeader({
           fontWeight={fontWeight.bold}
           numberOfLines={1}
           role="heading"
+          aria-level={2}
         >
           {title}
         </Text>

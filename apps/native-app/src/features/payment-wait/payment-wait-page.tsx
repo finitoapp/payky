@@ -657,6 +657,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             fontWeight={fontWeight.semibold}
             fontVariant={["tabular-nums"]}
             role="heading"
+            aria-level={1}
           >
             {formatMinor(payment.amount)}
           </Text>

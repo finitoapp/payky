@@ -155,6 +155,7 @@ export function PinScreen({
           fontWeight={fontWeight.semibold}
           text="center"
           role="heading"
+          aria-level={1}
         >
           {why}
         </Text>

@@ -195,6 +195,7 @@ export function OnboardingPage() {
               lineHeight="2xl"
               fontWeight="600"
               role="heading"
+              aria-level={1}
             >
               {t(headingKeys[step])}
             </Text>

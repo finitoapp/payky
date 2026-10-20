@@ -102,9 +102,7 @@ export function InlineEditField<T extends string | number | null>({
           <View
             opacity={draft === null ? 1 : 0}
             pointerEvents={draft === null ? "auto" : "none"}
-            importantForAccessibility={
-              draft === null ? "auto" : "no-hide-descendants"
-            }
+            aria-hidden={draft !== null}
           >
             {labelAction}
           </View>

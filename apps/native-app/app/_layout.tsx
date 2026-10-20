@@ -35,6 +35,10 @@ import { tamaguiConfig } from "../tamagui.config.ts"
 // of Expo Router hiding it as soon as this layout renders, so the start
 // shows the splash's logo throughout rather than loaders in turn.
 void SplashScreen.preventAutoHideAsync()
+// Android fades it out with an accelerating curve, by default over 400 ms:
+// most of the fade comes at the end, so the ready screen sat behind a
+// lingering logo. 150 ms still reads as a fade.
+SplashScreen.setOptions({ duration: 150 })
 
 /**
  * Expo Router's fallback for a route that suspends, empty on the navigator's

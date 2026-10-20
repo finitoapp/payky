@@ -17,8 +17,6 @@ const SkeletonFrame = styled(View, {
   name: "Skeleton",
   rounded: radius.md,
   overflow: "hidden",
-  // Native's default, not web's: the pulse fills this frame, not the page.
-  position: "relative",
 })
 
 export function Skeleton(props: GetProps<typeof SkeletonFrame>) {

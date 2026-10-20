@@ -25,6 +25,12 @@ export const tamaguiConfig = createTamagui({
     heading: { ...defaultConfig.fonts.heading, ...inter },
   },
   themes: nativeThemes,
+  settings: {
+    ...defaultConfig.settings,
+    // React Native's default, which the kit's absolute fills (a skeleton's
+    // pulse, a sliding pill) rely on; web's `static` let them cover the page.
+    defaultPosition: "relative",
+  },
   tokens: {
     ...defaultConfig.tokens,
     radius: { ...defaultConfig.tokens.radius, ...radius },

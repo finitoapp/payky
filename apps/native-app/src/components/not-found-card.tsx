@@ -30,7 +30,7 @@ export function NotFoundCard({
           lineHeight={fontSize.sm}
           color="muted-foreground"
           text="center"
-          accessibilityRole="alert"
+          role="alert"
         >
           {t(messageKey)}
         </Text>

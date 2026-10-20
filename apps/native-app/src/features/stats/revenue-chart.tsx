@@ -117,7 +117,7 @@ export function RevenueChart({
     <StatsSection title={t("stats.chart.title")}>
       <YStack
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
-        accessibilityLabel={t("stats.chart.title")}
+        aria-label={t("stats.chart.title")}
       >
         {width === 0 ? null : (
           <Svg width={width} height={chartHeight}>
@@ -283,7 +283,7 @@ function RevenueDetail({
           })
 
   return (
-    <YStack gap="1" accessibilityLiveRegion="polite">
+    <YStack gap="1" aria-live="polite">
       <Text fontWeight="600">{title}</Text>
       {total === undefined ? null : (
         <>

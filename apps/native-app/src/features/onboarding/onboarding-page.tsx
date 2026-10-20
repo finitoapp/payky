@@ -194,7 +194,7 @@ export function OnboardingPage() {
               fontSize="2xl"
               lineHeight="2xl"
               fontWeight="600"
-              accessibilityRole="header"
+              role="heading"
             >
               {t(headingKeys[step])}
             </Text>
@@ -287,7 +287,7 @@ export function OnboardingPage() {
                   minH={44}
                   py={10}
                   disabled={pending}
-                  accessibilityLabel={t(
+                  aria-label={t(
                     "onboarding.businessName.continueWithoutPublishing"
                   )}
                   onPress={() => {

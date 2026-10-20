@@ -98,7 +98,7 @@ export function IbanPaymentTab({
                 <ToggleGroupItem
                   key={format}
                   value={format}
-                  accessibilityLabel={t(qrFormatShortKeys[format])}
+                  aria-label={t(qrFormatShortKeys[format])}
                   h={34}
                   minW={48}
                   px={12}
@@ -147,12 +147,12 @@ export function IbanPaymentTab({
           variant="outline"
           size="icon"
           iconStart={detailsVisible ? EyeOff : Eye}
-          accessibilityLabel={
+          aria-label={
             detailsVisible
               ? t("paymentWait.ibanDetails.hide")
               : t("paymentWait.ibanDetails.show")
           }
-          accessibilityState={{ selected: detailsVisible }}
+          aria-selected={detailsVisible}
           onPress={() => setDetailsVisible((visible) => !visible)}
         />
         <Button
@@ -175,7 +175,7 @@ export function IbanPaymentTab({
           lineHeight={fontSize.sm}
           fontWeight={fontWeight.medium}
           color="destructive"
-          accessibilityRole="alert"
+          role="alert"
         >
           {t(errorKey)}
         </Text>
@@ -226,7 +226,7 @@ function DetailCopyRow({
       <CopyLink
         value={value}
         size="icon"
-        accessibilityLabel={copyLabel}
+        aria-label={copyLabel}
         copied={copied}
         failed={failed}
       />

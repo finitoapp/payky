@@ -60,11 +60,7 @@ export function PaymentMethodIcons({
   return (
     <XStack items="center" gap={4}>
       {Array.from(new Set(kinds), (kind) => (
-        <View
-          key={kind}
-          accessible
-          accessibilityLabel={t(paymentMethodLabelKey[kind])}
-        >
+        <View key={kind} accessible aria-label={t(paymentMethodLabelKey[kind])}>
           <Icon
             icon={paymentMethodIcon[kind]}
             size={14}

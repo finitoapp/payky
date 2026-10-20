@@ -674,8 +674,8 @@ function BillCart({
           h={48}
           shrink={0}
           iconStart={ScanLine}
-          accessibilityLabel={t("bill.scan.toggle.aria")}
-          accessibilityState={{ selected: scanMode }}
+          aria-label={t("bill.scan.toggle.aria")}
+          aria-selected={scanMode}
           onPress={() => setScanMode((on) => !on)}
         />
       </XStack>
@@ -950,7 +950,7 @@ function BillCart({
                 mr={12}
                 iconStart={Trash2}
                 labelColor="destructive"
-                accessibilityLabel={t("bill.discard")}
+                aria-label={t("bill.discard")}
                 disabled={!billExists}
                 onPress={() => void handleDiscard()}
               />
@@ -961,7 +961,7 @@ function BillCart({
                 h={48}
                 shrink={0}
                 iconStart={Split}
-                accessibilityLabel={t("bill.split.button.aria")}
+                aria-label={t("bill.split.button.aria")}
                 disabled={
                   summaries.length === 0 || cart.pending || split.pending
                 }
@@ -972,14 +972,14 @@ function BillCart({
                 flex={1}
                 h={48}
                 iconStart={Table2}
-                accessibilityLabel={t("bill.table.aria")}
+                aria-label={t("bill.table.aria")}
                 label={tableName ?? t("bill.table.assign")}
                 onPress={() => setTablePickerOpen(true)}
               />
               <Button
                 flex={1}
                 h={48}
-                accessibilityLabel={t("home.pay")}
+                aria-label={t("home.pay")}
                 pending={chargePending}
                 disabled={summaries.length === 0}
                 onPress={() => {
@@ -1072,7 +1072,7 @@ function SummaryRow({
           size="icon-sm"
           rounded={radius.full}
           iconStart={Minus}
-          accessibilityLabel={t("bill.summary.decrement.aria", {
+          aria-label={t("bill.summary.decrement.aria", {
             name: summary.name,
           })}
           onPress={onRemoveOne}
@@ -1092,7 +1092,7 @@ function SummaryRow({
           size="icon-sm"
           rounded={radius.full}
           iconStart={Plus}
-          accessibilityLabel={t("bill.summary.increment.aria", {
+          aria-label={t("bill.summary.increment.aria", {
             name: summary.name,
           })}
           disabled={catalogItem === undefined}
@@ -1115,7 +1115,7 @@ function SummaryRow({
         variant="ghost"
         size="icon-sm"
         iconStart={X}
-        accessibilityLabel={t("bill.summary.removeLine.aria", {
+        aria-label={t("bill.summary.removeLine.aria", {
           name: summary.name,
         })}
         disabled={disabled}
@@ -1201,8 +1201,8 @@ function ItemBrick({
         b={0}
         l={0}
         bg="transparent press:card-ring"
-        accessibilityRole="button"
-        accessibilityLabel={t("bill.brick.add.aria", { name })}
+        role="button"
+        aria-label={t("bill.brick.add.aria", { name })}
         onPress={() => {
           hapticButtonPress()
           onAdd()
@@ -1231,8 +1231,8 @@ function ItemBrick({
           rounded={radius.full}
           opacity={inCart ? 1 : 0}
           disabled={!inCart}
-          accessibilityElementsHidden={!inCart}
-          accessibilityLabel={t("bill.brick.quantity.trigger.aria", { name })}
+          aria-hidden={!inCart}
+          aria-label={t("bill.brick.quantity.trigger.aria", { name })}
           onPress={() => setQuantityDialogOpen(true)}
         >
           <Text
@@ -1271,7 +1271,7 @@ function ItemBrick({
           shrink={0}
           rounded={radius.full}
           iconStart={Minus}
-          accessibilityLabel={t("bill.brick.remove.aria", { name })}
+          aria-label={t("bill.brick.remove.aria", { name })}
           opacity={inCart ? 1 : 0}
           disabled={!inCart}
           onPress={() => {

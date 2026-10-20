@@ -122,8 +122,8 @@ function NoTableTile({
   const { t } = useTranslation()
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
+      role="button"
+      aria-selected={selected}
       onPress={onSelect}
       style={{ flex: 1 }}
     >
@@ -165,8 +165,8 @@ function TableAssignmentTile({
 
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
+      role="button"
+      aria-selected={selected}
       onPress={onSelect}
       style={{ flex: 1 }}
     >

@@ -98,8 +98,8 @@ export function SalesHeatmap({
                 rounded={2}
                 overflow="hidden"
                 bg="muted"
-                accessibilityRole="button"
-                accessibilityLabel={cellDescription(cell, dayIndex, hour)}
+                role="button"
+                aria-label={cellDescription(cell, dayIndex, hour)}
                 onPress={() => setSelected({ day: dayIndex, hour })}
               >
                 <YStack
@@ -126,7 +126,7 @@ export function SalesHeatmap({
         </XStack>
       </YStack>
       {description === null ? null : (
-        <Text accessibilityLiveRegion="polite">{description}</Text>
+        <Text aria-live="polite">{description}</Text>
       )}
     </StatsSection>
   )

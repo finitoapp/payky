@@ -112,7 +112,7 @@ function OnchainReview({
               key={option.value}
               value={option.value}
               disabled={unavailable || confirming}
-              accessibilityLabel={`${t(option.label)}. ${t(option.hint)}. ${t("withdraw.sats", { amount: formatSatsAmount(optionFee, locale) })}. ${fiat.approx(optionFee) ?? ""}`}
+              aria-label={`${t(option.label)}. ${t(option.hint)}. ${t("withdraw.sats", { amount: formatSatsAmount(optionFee, locale) })}. ${fiat.approx(optionFee) ?? ""}`}
               h="auto"
               w="100%"
               justify="space-between"

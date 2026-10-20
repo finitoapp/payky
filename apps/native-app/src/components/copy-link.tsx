@@ -9,13 +9,13 @@ import { Button } from "./ui/button.tsx"
  */
 export function CopyLink({
   value,
-  accessibilityLabel,
+  "aria-label": ariaLabel,
   copied,
   failed,
   size = "icon-xs",
 }: {
   readonly value: string
-  readonly accessibilityLabel: string
+  readonly "aria-label": string
   readonly copied: string
   readonly failed: string
   /** Web's `icon-xs` in detail rows, `icon` in the IBAN fields. */
@@ -27,7 +27,7 @@ export function CopyLink({
       variant="ghost"
       size={size}
       iconStart={Copy}
-      accessibilityLabel={accessibilityLabel}
+      aria-label={ariaLabel}
       onPress={() => void copy(value, { copied, failed })}
     />
   )

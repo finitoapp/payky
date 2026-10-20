@@ -18,7 +18,7 @@ export function ScanCodeButton({
       variant="ghost"
       rounded={radius.full}
       iconStart={ScanLine}
-      accessibilityLabel={t("settings.items.form.scanCode.scan.aria")}
+      aria-label={t("settings.items.form.scanCode.scan.aria")}
       disabled={disabled}
       onPress={onPress}
     />

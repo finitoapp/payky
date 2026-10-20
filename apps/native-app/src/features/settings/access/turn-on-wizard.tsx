@@ -169,7 +169,7 @@ export function TurnOnWizard({
               <Button
                 size="icon-sm"
                 variant="ghost"
-                accessibilityLabel={t("access.device.rename")}
+                aria-label={t("access.device.rename")}
                 iconStart={Pencil}
                 onPress={() => setRenaming(device)}
               />

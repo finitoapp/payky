@@ -47,7 +47,7 @@ export function OptionToggleGroup<Value extends string>({
           <ToggleGroupItem
             key={option.value}
             value={option.value}
-            accessibilityLabel={option.title}
+            aria-label={option.title}
             h="auto"
             justify="flex-start"
             gap={24}

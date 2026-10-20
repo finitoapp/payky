@@ -17,14 +17,14 @@ export interface SwitchProps {
   readonly onCheckedChange: (checked: boolean) => void
   readonly disabled?: boolean
   /** Already translated; a switch has no visible text of its own. */
-  readonly accessibilityLabel: string
+  readonly "aria-label": string
 }
 
 export function Switch({
   checked,
   onCheckedChange,
   disabled = false,
-  accessibilityLabel,
+  "aria-label": ariaLabel,
 }: SwitchProps) {
   const theme = useTheme()
   return (
@@ -32,7 +32,7 @@ export function Switch({
       value={checked}
       onValueChange={onCheckedChange}
       disabled={disabled}
-      accessibilityLabel={accessibilityLabel}
+      aria-label={ariaLabel}
       trackColor={{
         false: theme["switch-track-off"]?.val,
         true: theme.primary?.val,

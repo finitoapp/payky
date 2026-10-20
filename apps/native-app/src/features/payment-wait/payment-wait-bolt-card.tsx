@@ -185,8 +185,8 @@ export function BoltCardReader({
       maxW={288}
       items="center"
       gap={8}
-      accessibilityLiveRegion="polite"
-      accessibilityRole={state.step === "failed" ? "alert" : undefined}
+      aria-live="polite"
+      role={state.step === "failed" ? "alert" : undefined}
     >
       {state.step === "ready" ? (
         <Icon icon={Nfc} />

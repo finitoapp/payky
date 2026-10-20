@@ -158,9 +158,7 @@ export function CashSaleCard() {
       {minimum === null ? null : (
         <Text>Least received: {money(minimum, latest?.currency ?? "")}</Text>
       )}
-      <Text accessibilityLiveRegion="polite">
-        Last action: {message || "-"}
-      </Text>
+      <Text aria-live="polite">Last action: {message || "-"}</Text>
       <Button variant="outline" disabled={busy} onPress={create}>
         Create payment 123.45 CZK
       </Button>

@@ -135,7 +135,7 @@ function FioPluginForm() {
           <FieldGroup>
             <Field orientation="horizontal">
               <Switch
-                accessibilityLabel={t("settings.fioPlugin.active.label")}
+                aria-label={t("settings.fioPlugin.active.label")}
                 checked={activeChoice.value}
                 disabled={activeChoice.saving}
                 onCheckedChange={(next) => {

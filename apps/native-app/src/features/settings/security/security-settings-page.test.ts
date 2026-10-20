@@ -30,7 +30,7 @@ it("shows the recovery phrase only on request, behind the owner permission, neve
     /await require\("admin", "access\.action\.revealRecoveryPhrase"\)/
   )
   expect(card).toMatch(/state !== "active"\) setRevealed\(false\)/)
-  expect(card).not.toMatch(/accessibilityLabel/)
+  expect(card).not.toMatch(/accessibilityLabel|aria-label/)
   const revealed = card.slice(card.indexOf("function RevealedPhrase"))
   expect(revealed).toMatch(/usePreventScreenCapture\(\)/)
   expect(card).toMatch(/gcTime: 0/)

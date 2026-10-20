@@ -122,7 +122,7 @@ export function LegalEntitySettingsPage() {
               >
                 <SelectTrigger
                   fullWidth
-                  accessibilityLabel={t("settings.legalEntity.country.label")}
+                  aria-label={t("settings.legalEntity.country.label")}
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -161,7 +161,7 @@ export function LegalEntitySettingsPage() {
               >
                 <SelectTrigger
                   fullWidth
-                  accessibilityLabel={t("settings.legalEntity.currency.label")}
+                  aria-label={t("settings.legalEntity.currency.label")}
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -181,7 +181,7 @@ export function LegalEntitySettingsPage() {
             <Field orientation="horizontal">
               <Checkbox
                 checked={vat.value}
-                accessibilityLabel={t("settings.legalEntity.vatPayer.label")}
+                aria-label={t("settings.legalEntity.vatPayer.label")}
                 // The country comes first: saving this while none is chosen
                 // would write "other" on the user's behalf.
                 disabled={legalEntity === undefined || vat.saving}

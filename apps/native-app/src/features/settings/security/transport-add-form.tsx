@@ -94,7 +94,7 @@ export function TransportAddForm({
       </FieldGroup>
       <XStack items="center" justify="space-between" gap="3">
         {saved ? (
-          <Text accessibilityLiveRegion="polite">
+          <Text aria-live="polite">
             {t("settings.security.transports.saved")}
           </Text>
         ) : null}

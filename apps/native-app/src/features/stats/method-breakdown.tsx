@@ -224,7 +224,7 @@ function MethodDonut({
         </YStack>
       </YStack>
       {chosen === undefined ? null : (
-        <YStack gap="1" accessibilityLiveRegion="polite" width="100%">
+        <YStack gap="1" aria-live="polite" width="100%">
           <Text fontWeight="600">{t(methodLabelKey(chosen.method))}</Text>
           <Text fontSize={13}>
             {`${new Intl.NumberFormat(locale, {

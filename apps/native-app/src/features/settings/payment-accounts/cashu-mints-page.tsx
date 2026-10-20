@@ -32,9 +32,7 @@ export function CashuMintsPage() {
       <YStack flex={1} items="center" justify="center">
         <Alert variant="destructive" icon={TriangleAlert}>
           <AlertDescription>
-            <Text accessibilityLiveRegion="polite">
-              {t("appError.description")}
-            </Text>
+            <Text aria-live="polite">{t("appError.description")}</Text>
           </AlertDescription>
           <AlertAction>
             <Button

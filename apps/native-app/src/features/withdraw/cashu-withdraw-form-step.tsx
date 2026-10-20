@@ -70,7 +70,7 @@ export function CashuWithdrawFormStep({
                   key={candidate}
                   size="default"
                   variant={candidate === mint ? "default" : "outline"}
-                  accessibilityState={{ selected: candidate === mint }}
+                  aria-selected={candidate === mint}
                   onPress={() => onMintChange(candidate)}
                 >
                   <XStack

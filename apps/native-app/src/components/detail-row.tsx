@@ -61,7 +61,7 @@ export function DetailRow({
         </RNText>
         <CopyLink
           value={value}
-          accessibilityLabel={t("paymentDetail.copy", { label })}
+          aria-label={t("paymentDetail.copy", { label })}
           copied={t("paymentDetail.copied")}
           failed={t("paymentDetail.copyError")}
         />

@@ -93,7 +93,7 @@ export function VerticalNav({
   return (
     <VerticalNavShell shrink={shrink ? 1 : undefined}>
       {title === undefined || title === "" ? null : (
-        <VerticalNavTitle accessibilityRole="header">{title}</VerticalNavTitle>
+        <VerticalNavTitle role="heading">{title}</VerticalNavTitle>
       )}
       {children !== undefined ? (
         children
@@ -159,18 +159,18 @@ export function VerticalNavRow({
       onPress={onPress}
       opacity={disabled ? 0.5 : undefined}
       accessible={interactive ? true : undefined}
-      accessibilityRole={
+      role={
         item.kind === "link" || item.kind === "href"
           ? "link"
           : item.kind === "button"
             ? "button"
             : undefined
       }
-      accessibilityLabel={
+      aria-label={
         item.accessibilityLabel ??
         (typeof item.label === "string" ? item.label : undefined)
       }
-      accessibilityState={disabled ? { disabled: true } : undefined}
+      aria-disabled={disabled || undefined}
     >
       {item.icon}
       <View flex={1} minW={0}>

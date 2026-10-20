@@ -58,8 +58,9 @@ export function CollapsibleTrigger({
   const { open, setOpen } = useCollapsible()
   return (
     <View
-      accessibilityRole="button"
-      accessibilityState={{ expanded: open, disabled }}
+      role="button"
+      aria-expanded={open}
+      aria-disabled={disabled}
       hitSlop={8}
       onPress={disabled ? undefined : () => setOpen(!open)}
       {...viewProps}

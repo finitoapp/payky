@@ -305,8 +305,8 @@ function BillPaymentRowView({
 
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${amount}, ${t(paymentStatusLabelKey[status])}`}
+      role="button"
+      aria-label={`${amount}, ${t(paymentStatusLabelKey[status])}`}
       onPress={() =>
         router.push({
           pathname: "/activity/[paymentId]",

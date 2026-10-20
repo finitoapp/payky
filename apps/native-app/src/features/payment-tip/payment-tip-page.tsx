@@ -159,7 +159,7 @@ function PaymentTipForm({
           lineHeight="4xl"
           fontWeight={fontWeight.semibold}
           fontVariant={["tabular-nums"]}
-          accessibilityRole="header"
+          role="heading"
         >
           {formatMinor(amount)}
         </Text>
@@ -261,7 +261,7 @@ function TipOption({
   return (
     <ToggleGroupItem
       value={value}
-      accessibilityLabel={`${label} ${detail}`}
+      aria-label={`${label} ${detail}`}
       flexDirection="column"
       h={80}
       gap={4}

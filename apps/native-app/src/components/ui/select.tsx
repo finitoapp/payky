@@ -108,13 +108,13 @@ const TriggerFrame = styled(View, {
 
 export function SelectTrigger({
   size,
-  accessibilityLabel,
+  "aria-label": ariaLabel,
   fullWidth = false,
   children,
 }: {
   readonly size?: "default" | "sm"
   /** Already translated; the field's label. */
-  readonly accessibilityLabel?: string
+  readonly "aria-label"?: string
   /** Web's `w-full` on the trigger. */
   readonly fullWidth?: boolean
   readonly children: ReactNode
@@ -126,9 +126,10 @@ export function SelectTrigger({
       disabled={select.disabled}
       hitSlop={size === "sm" ? 10 : 8}
       onPress={select.disabled ? undefined : () => select.setOpen(true)}
-      accessibilityRole="combobox"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ expanded: select.open, disabled: select.disabled }}
+      role="combobox"
+      aria-label={ariaLabel}
+      aria-expanded={select.open}
+      aria-disabled={select.disabled}
       {...(fullWidth ? { self: "stretch" } : {})}
     >
       {children}
@@ -232,8 +233,9 @@ export function SelectItem({
     <ItemFrame
       disabled={disabled}
       onPress={disabled ? undefined : () => select.select(value)}
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected, disabled }}
+      role="radio"
+      aria-checked={selected}
+      aria-disabled={disabled}
     >
       <View flex={1}>
         {typeof children === "string" ? (

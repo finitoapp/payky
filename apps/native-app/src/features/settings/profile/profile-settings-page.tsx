@@ -61,7 +61,7 @@ export function ProfileSettingsPage() {
             {profile.data !== null ? (
               <ProfileEditor profile={profile.data} />
             ) : profile.failed && !profile.loading ? (
-              <YStack gap="2" accessibilityRole="alert">
+              <YStack gap="2" role="alert">
                 <Text color="destructive">
                   {t("settings.profile.loadFailed")}
                 </Text>
@@ -72,7 +72,7 @@ export function ProfileSettingsPage() {
                 />
               </YStack>
             ) : (
-              <YStack gap="3" accessibilityLabel={t("settings.profile.title")}>
+              <YStack gap="3" aria-label={t("settings.profile.title")}>
                 <Skeleton w={80} h={80} rounded={radius.full} />
                 <Skeleton h={40} />
               </YStack>
@@ -100,7 +100,7 @@ export function ProfileSettingsPage() {
                   size="icon-sm"
                   variant="ghost"
                   labelColor="muted-foreground"
-                  accessibilityLabel={t("settings.profile.npub.copy")}
+                  aria-label={t("settings.profile.npub.copy")}
                   iconStart={Copy}
                   onPress={() =>
                     void copy(identity.npub, {
@@ -202,7 +202,7 @@ function ProfileEditor({ profile }: { readonly profile: NostrProfile }) {
           </YStack>
         </XStack>
         {pictureInvalid ? (
-          <Text color="destructive" accessibilityRole="alert">
+          <Text color="destructive" role="alert">
             {t("settings.profile.picture.invalid")}
           </Text>
         ) : null}

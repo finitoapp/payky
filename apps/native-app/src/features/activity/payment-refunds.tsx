@@ -594,7 +594,7 @@ function RefundItemRow({
           variant="outline"
           size="icon-lg"
           iconStart={Minus}
-          accessibilityLabel={t("refund.dialog.items.decrease", { name })}
+          aria-label={t("refund.dialog.items.decrease", { name })}
           disabled={disabled || quantity === 0}
           onPress={() => onStep(-1)}
         />
@@ -612,7 +612,7 @@ function RefundItemRow({
           variant="outline"
           size="icon-lg"
           iconStart={Plus}
-          accessibilityLabel={t("refund.dialog.items.increase", { name })}
+          aria-label={t("refund.dialog.items.increase", { name })}
           disabled={disabled || quantity >= refundable.remainingQuantity}
           onPress={() => onStep(1)}
         />

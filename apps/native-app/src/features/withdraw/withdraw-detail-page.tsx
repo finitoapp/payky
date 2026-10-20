@@ -353,8 +353,8 @@ function OnchainTxid({
           <XStack
             items="center"
             gap="1"
-            accessibilityRole="link"
-            accessibilityLabel={t("withdraw.detail.viewOnExplorer")}
+            role="link"
+            aria-label={t("withdraw.detail.viewOnExplorer")}
             onPress={() =>
               void Linking.openURL(`https://mempool.space/tx/${shown}`)
             }

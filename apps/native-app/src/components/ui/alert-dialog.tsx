@@ -47,7 +47,7 @@ export function AlertDialog({
 export const AlertDialogContent = styled(View, {
   name: "AlertDialogContent",
   role: "alertdialog",
-  accessibilityViewIsModal: true,
+  "aria-modal": true,
   w: "100%",
   maxW: 512,
   gap: 16,

@@ -178,7 +178,7 @@ export function PosOverviewPage() {
               lineHeight={fontSize.sm}
               fontWeight={fontWeight.medium}
               textDecorationLine="underline"
-              accessibilityRole="link"
+              role="link"
               onPress={() => router.push("/settings/tables")}
             >
               {t("home.pos.addTables")}
@@ -347,7 +347,7 @@ function TableTile({
             rounded={radius.full}
             bg="background-60 press:background"
             iconStart={Plus}
-            accessibilityLabel={t("tables.tile.newBill")}
+            aria-label={t("tables.tile.newBill")}
             onPress={newBill}
           />
         ) : (
@@ -424,7 +424,7 @@ function TableTile({
               gap={2}
               items="center"
               accessible
-              accessibilityLabel={t("tables.seatCount", {
+              aria-label={t("tables.seatCount", {
                 value: table.seatCount,
               })}
             >
@@ -456,8 +456,8 @@ function TableTile({
         tile
       ) : (
         <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
+          role="button"
+          aria-label={
             onlyBill === undefined
               ? t("tables.tile.newBill")
               : billLabel(onlyBill, t)
@@ -492,8 +492,8 @@ function BillChip({
 
   return (
     <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={billLabel(bill, t)}
+      role="button"
+      aria-label={billLabel(bill, t)}
       onPress={() => openBill(bill.id)}
       style={{ minHeight: 44, justifyContent: "center" }}
     >

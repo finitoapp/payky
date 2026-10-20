@@ -81,7 +81,7 @@ export function Alert({
   readonly children?: ReactNode
 }) {
   return (
-    <AlertFrame variant={variant} accessibilityRole="alert">
+    <AlertFrame variant={variant} role="alert">
       {icon === undefined ? null : (
         <View pt={2}>
           <Icon icon={icon} color={iconColors[variant]} />

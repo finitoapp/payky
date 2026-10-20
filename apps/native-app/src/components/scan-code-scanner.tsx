@@ -87,9 +87,7 @@ export function ScanCodeScanner({
   if (view !== "granted") {
     return (
       <YStack gap="3" p="4">
-        <Text accessibilityRole="alert">
-          {t("scanner.error.permissionDenied")}
-        </Text>
+        <Text role="alert">{t("scanner.error.permissionDenied")}</Text>
         <Button
           size="lg"
           label={t(

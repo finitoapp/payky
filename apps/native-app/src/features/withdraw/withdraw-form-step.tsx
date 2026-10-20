@@ -268,7 +268,7 @@ export function WithdrawFormFields({
               </Text>
             ) : null}
             {state.addressUnavailable ? (
-              <Text fontSize={13} color="destructive" accessibilityRole="alert">
+              <Text fontSize={13} color="destructive" role="alert">
                 {t("withdraw.error.lightningAddressUnavailable")}
               </Text>
             ) : null}
@@ -284,7 +284,7 @@ export function WithdrawFormFields({
                     onValueChange={(unit) => update({ unit, amount: "" })}
                     variant="outline"
                     size="sm"
-                    accessibilityLabel={t("withdraw.amount.unit")}
+                    aria-label={t("withdraw.amount.unit")}
                     disabled={effectiveWithdrawAll}
                   >
                     <ToggleGroupItem value="sats">
@@ -297,7 +297,7 @@ export function WithdrawFormFields({
                 ) : null}
               </XStack>
               <Input
-                accessibilityLabel={t("withdraw.amount.label")}
+                aria-label={t("withdraw.amount.label")}
                 value={
                   invoiceAmountSats !== null
                     ? String(invoiceAmountSats)
@@ -360,7 +360,7 @@ export function WithdrawFormFields({
           <KitField orientation="horizontal">
             <Checkbox
               checked={effectiveWithdrawAll}
-              accessibilityLabel={t("withdraw.all.label")}
+              aria-label={t("withdraw.all.label")}
               disabled={withdrawAllUnavailable !== null}
               onCheckedChange={(withdrawAll) => update({ withdrawAll })}
             />

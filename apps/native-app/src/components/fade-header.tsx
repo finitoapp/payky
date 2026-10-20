@@ -79,7 +79,7 @@ export function FadeHeader({
           <Button
             variant="ghost"
             size="icon"
-            accessibilityLabel={t("nav.back")}
+            aria-label={t("nav.back")}
             onPress={customStartAddonOnClick ?? goBack}
           >
             <Icon icon={ArrowLeft} size={20} color="primary" strokeWidth={3} />
@@ -95,7 +95,7 @@ export function FadeHeader({
           lineHeight={fontSize.xl}
           fontWeight={fontWeight.bold}
           numberOfLines={1}
-          accessibilityRole="header"
+          role="heading"
         >
           {title}
         </Text>

@@ -57,7 +57,7 @@ export function AppErrorScreen({
       style={{ backgroundColor: dark ? "#0a0a0a" : "#ffffff" }}
       contentContainerStyle={styles.content}
     >
-      <Text accessibilityRole="header" style={[styles.title, { color: fg }]}>
+      <Text role="heading" style={[styles.title, { color: fg }]}>
         {t("appError.title")}
       </Text>
       <Text style={{ color: fg }}>{t("appError.description")}</Text>
@@ -71,7 +71,7 @@ export function AppErrorScreen({
         {t("appError.version")}: {Constants.expoConfig?.version}
       </Text>
       <Pressable
-        accessibilityRole="button"
+        role="button"
         onPress={retry}
         style={[styles.button, { backgroundColor: fg }]}
       >

@@ -221,23 +221,13 @@ export function RestoreSyncPage() {
   return (
     <Screen>
       <YStack gap="5">
-        <YStack
-          gap="3"
-          items="center"
-          text="center"
-          accessibilityLiveRegion="polite"
-        >
+        <YStack gap="3" items="center" text="center" aria-live="polite">
           {settled ? (
             <Icon icon={TriangleAlert} size={32} color="destructive" />
           ) : (
             <ActivityIndicator size="large" />
           )}
-          <Text
-            fontSize="2xl"
-            lineHeight="2xl"
-            fontWeight="600"
-            accessibilityRole="header"
-          >
+          <Text fontSize="2xl" lineHeight="2xl" fontWeight="600" role="heading">
             {t(title)}
           </Text>
           <Text fontSize="sm" lineHeight="sm" color="muted-foreground">

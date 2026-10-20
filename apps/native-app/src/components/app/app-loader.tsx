@@ -20,8 +20,8 @@ export function AppLoader() {
   return (
     <View
       accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel="Loading Payky"
+      role="progressbar"
+      aria-label="Loading Payky"
       style={{
         flex: 1,
         alignItems: "center",

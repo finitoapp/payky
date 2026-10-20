@@ -116,7 +116,7 @@ export function TerminalHomePage() {
                   <ToggleGroupItem
                     key={itemMode}
                     value={itemMode}
-                    accessibilityLabel={t(label)}
+                    aria-label={t(label)}
                     px={16}
                     rounded={radius.full}
                     bg="transparent"
@@ -139,14 +139,14 @@ export function TerminalHomePage() {
         <XStack ml="auto" items="center" gap={16}>
           <Button
             variant="ghost"
-            accessibilityLabel={t("nav.activity")}
+            aria-label={t("nav.activity")}
             onPress={() => router.push("/activity")}
           >
             <Icon icon={Clock3} size={24} strokeWidth={3} />
           </Button>
           <Button
             variant="ghost"
-            accessibilityLabel={t("nav.settings")}
+            aria-label={t("nav.settings")}
             onPress={() => router.push("/settings")}
           >
             <Icon icon={Settings} size={24} strokeWidth={3} />
@@ -203,7 +203,7 @@ function NotOnboarded() {
       <ActivityIndicator
         size="large"
         color={theme["muted-foreground"]?.val}
-        accessibilityLabel={t("accountRestore.syncing")}
+        aria-label={t("accountRestore.syncing")}
       />
     </View>
   )

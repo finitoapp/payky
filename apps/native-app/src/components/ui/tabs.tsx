@@ -139,8 +139,9 @@ export function TabsTrigger({
               onPress?.()
             }
       }
-      accessibilityRole="tab"
-      accessibilityState={{ selected: active, disabled }}
+      role="tab"
+      aria-selected={active}
+      aria-disabled={disabled}
       {...frameProps}
     >
       {typeof children === "string" ? (

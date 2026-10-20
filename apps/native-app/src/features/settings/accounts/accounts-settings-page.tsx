@@ -156,7 +156,7 @@ export function AccountsSettingsPage() {
           />
           <Button
             size="icon-sm"
-            accessibilityLabel={t("settings.accounts.list.remove")}
+            aria-label={t("settings.accounts.list.remove")}
             variant="ghost"
             iconStart={Trash}
             disabled={busy}
@@ -314,7 +314,7 @@ function AccountAvatar({
       items="center"
       justify="center"
       bg={active ? "primary" : "muted"}
-      accessibilityElementsHidden
+      aria-hidden
     >
       <Text
         fontWeight="600"

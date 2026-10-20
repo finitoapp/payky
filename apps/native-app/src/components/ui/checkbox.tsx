@@ -37,23 +37,24 @@ export interface CheckboxProps {
   readonly onCheckedChange: (checked: boolean) => void
   readonly disabled?: boolean
   /** Already translated, unless a label beside it is pressable too. */
-  readonly accessibilityLabel?: string
+  readonly "aria-label"?: string
 }
 
 export function Checkbox({
   checked,
   onCheckedChange,
   disabled = false,
-  accessibilityLabel,
+  "aria-label": ariaLabel,
 }: CheckboxProps) {
   return (
     <CheckboxFrame
       checked={checked}
       disabled={disabled}
       onPress={disabled ? undefined : () => onCheckedChange(!checked)}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked, disabled }}
-      accessibilityLabel={accessibilityLabel}
+      role="checkbox"
+      aria-checked={checked}
+      aria-disabled={disabled}
+      aria-label={ariaLabel}
     >
       {checked ? (
         <Icon

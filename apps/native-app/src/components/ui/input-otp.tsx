@@ -40,7 +40,7 @@ interface InputOTPProps {
   readonly onChange: (value: string) => void
   readonly maxLength: number
   /** Already translated; TalkBack reads it for the whole code. */
-  readonly accessibilityLabel: string
+  readonly "aria-label": string
   readonly autoFocus?: boolean
   readonly disabled?: boolean
   readonly children: ReactNode
@@ -50,7 +50,7 @@ export function InputOTP({
   value,
   onChange,
   maxLength,
-  accessibilityLabel,
+  "aria-label": ariaLabel,
   autoFocus = false,
   disabled = false,
   children,
@@ -92,7 +92,7 @@ export function InputOTP({
           spellCheck={false}
           contextMenuHidden
           caretHidden
-          accessibilityLabel={accessibilityLabel}
+          aria-label={ariaLabel}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={{

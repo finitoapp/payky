@@ -37,7 +37,7 @@ export function PeriodSelector({
   const { t } = useTranslation()
 
   return (
-    <YStack gap="3" accessibilityLabel={t("stats.period.label")}>
+    <YStack gap="3" aria-label={t("stats.period.label")}>
       <ToggleGroup
         value={period.kind}
         variant="outline"
@@ -97,7 +97,7 @@ function DayField({
         {label}
       </Text>
       <Input
-        accessibilityLabel={label}
+        aria-label={label}
         value={draft}
         placeholder="yyyy-mm-dd"
         keyboardType="numbers-and-punctuation"

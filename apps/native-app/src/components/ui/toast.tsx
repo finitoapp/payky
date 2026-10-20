@@ -57,11 +57,7 @@ export function Toast({
 }) {
   const icon = icons[variant]
   return (
-    <ToastFrame
-      onPress={onPress}
-      accessibilityRole="alert"
-      accessibilityLiveRegion="assertive"
-    >
+    <ToastFrame onPress={onPress} role="alert" aria-live="assertive">
       {icon === null ? null : <Icon icon={icon} color="popover-foreground" />}
       <Text flex={1} fontSize={13} color="popover-foreground">
         {message}
@@ -73,7 +69,7 @@ export function Toast({
           rounded={4}
           justify="center"
           bg="popover-foreground"
-          accessibilityRole="button"
+          role="button"
           hitSlop={12}
           onPress={action.onPress}
         >

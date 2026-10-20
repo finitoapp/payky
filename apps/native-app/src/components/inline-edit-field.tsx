@@ -118,7 +118,7 @@ export function InlineEditField<T extends string | number | null>({
           disabled={saving}
           autoCorrect={false}
           invalid={invalid}
-          accessibilityLabel={label}
+          aria-label={label}
           pr={draft === null ? (trailing === undefined ? 10 : 48) : 80}
           onChangeText={(text) => {
             setDraft(text)
@@ -138,7 +138,7 @@ export function InlineEditField<T extends string | number | null>({
             <Button
               size="icon"
               iconStart={Check}
-              accessibilityLabel={t("inlineEdit.save")}
+              aria-label={t("inlineEdit.save")}
               pending={saving}
               onPress={() => {
                 void commit()
@@ -148,7 +148,7 @@ export function InlineEditField<T extends string | number | null>({
               variant="outline"
               size="icon"
               iconStart={X}
-              accessibilityLabel={t("inlineEdit.discard")}
+              aria-label={t("inlineEdit.discard")}
               disabled={saving}
               onPress={discard}
             />

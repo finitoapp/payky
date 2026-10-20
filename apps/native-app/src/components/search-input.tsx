@@ -56,7 +56,7 @@ export function SearchInput({
         lineHeight={fontSize.base}
         value={value}
         placeholder={placeholder}
-        accessibilityLabel={placeholder}
+        aria-label={placeholder}
         autoComplete="off"
         autoCorrect={false}
         autoCapitalize="none"
@@ -70,7 +70,7 @@ export function SearchInput({
           variant="ghost"
           size="icon-sm"
           rounded={radius.full}
-          accessibilityLabel={clearAriaLabel}
+          aria-label={clearAriaLabel}
           iconStart={X}
           onPress={() => onChange("")}
         />

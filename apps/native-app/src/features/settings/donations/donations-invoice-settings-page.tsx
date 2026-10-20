@@ -128,7 +128,7 @@ function DonationsInvoiceSettingsPage({
                   borderColor="card-ring"
                   p="4"
                   style={{ backgroundColor: "#fff" }}
-                  accessibilityLabel={invoice}
+                  aria-label={invoice}
                 >
                   <QrCode value={invoice} />
                 </YStack>
@@ -137,7 +137,7 @@ function DonationsInvoiceSettingsPage({
                     color={
                       verification.failed ? "destructive" : "muted-foreground"
                     }
-                    accessibilityLiveRegion="polite"
+                    aria-live="polite"
                   >
                     {t(
                       verification.failed

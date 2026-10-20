@@ -138,7 +138,7 @@ export function EetOfficialTestCertificates() {
             size="sm"
             variant="default"
             label={t("settings.eet.officialTest.useShort")}
-            accessibilityLabel={t("settings.eet.officialTest.use", {
+            aria-label={t("settings.eet.officialTest.use", {
               name: certificate.eic,
             })}
             disabled={storingEic !== null}

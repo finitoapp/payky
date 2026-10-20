@@ -73,7 +73,7 @@ function ItemQuantityDialogBody({
         </DialogDescription>
       </DialogHeader>
       <Input
-        accessibilityLabel={t("bill.brick.quantity.input.aria")}
+        aria-label={t("bill.brick.quantity.input.aria")}
         keyboardType="number-pad"
         autoComplete="off"
         autoFocus

@@ -1,7 +1,7 @@
 import { FieldError, FieldLabel, Field as UiField } from "./ui/field.tsx"
 import { Input, type InputProps } from "./ui/input.tsx"
 
-interface FieldProps extends Omit<InputProps, "accessibilityLabel"> {
+interface FieldProps extends Omit<InputProps, "aria-label"> {
   /** Already translated. */
   readonly label: string
   /** Already translated; shown in place of nothing when set. */
@@ -13,11 +13,7 @@ export function Field({ label, error, ...input }: FieldProps) {
   return (
     <UiField>
       <FieldLabel>{label}</FieldLabel>
-      <Input
-        accessibilityLabel={label}
-        invalid={error !== undefined}
-        {...input}
-      />
+      <Input aria-label={label} invalid={error !== undefined} {...input} />
       <FieldError>{error}</FieldError>
     </UiField>
   )

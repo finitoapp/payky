@@ -132,7 +132,7 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
         </Alert>
       )}
       {loading ? (
-        <YStack gap="2" mt="auto" accessibilityElementsHidden>
+        <YStack gap="2" mt="auto" aria-hidden>
           <Skeleton h={40} w="67%" rounded={radius["2xl"]} />
           <Skeleton h={56} w="50%" self="flex-end" rounded={radius["2xl"]} />
           <Skeleton h={40} w="60%" rounded={radius["2xl"]} />
@@ -142,7 +142,7 @@ function SupportChat({ pubkey }: { readonly pubkey: string }) {
           {t("settings.supportChat.empty")}
         </Text>
       ) : (
-        <YStack accessibilityLiveRegion="polite">
+        <YStack aria-live="polite">
           {timeline.map((item) => (
             <TimelineRow
               key={item.key}
@@ -267,19 +267,13 @@ function MessageBubble({
               })}
             </Text>
             {own && entry.status === "sending" ? (
-              <YStack
-                accessible
-                accessibilityLabel={t("settings.supportChat.sending")}
-              >
+              <YStack accessible aria-label={t("settings.supportChat.sending")}>
                 <Icon icon={Clock} size={12} color={timeColor} />
               </YStack>
             ) : null}
             {/* A relay accepted it for support; NIP-17 cannot tell more. */}
             {own && entry.status === "sent" ? (
-              <YStack
-                accessible
-                accessibilityLabel={t("settings.supportChat.sent")}
-              >
+              <YStack accessible aria-label={t("settings.supportChat.sent")}>
                 <Icon icon={Check} size={12} color={timeColor} />
               </YStack>
             ) : null}

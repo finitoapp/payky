@@ -52,7 +52,7 @@ export function SettingsListShell({
             <Button
               variant="ghost"
               size="default"
-              accessibilityLabel={addLabel}
+              aria-label={addLabel}
               onPress={() => router.push(addHref)}
             >
               <Icon icon={Plus} size={20} color="primary" strokeWidth={3} />

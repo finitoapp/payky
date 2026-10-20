@@ -71,7 +71,7 @@ function AmountDisplay({
   return (
     <YStack items="center">
       <Text
-        accessibilityRole="header"
+        role="heading"
         fontSize="6xl"
         lineHeight="6xl"
         fontWeight={fontWeight.semibold}
@@ -158,7 +158,7 @@ function KeypadKey({
       flex={1}
       h={72}
       rounded={radius.full}
-      accessibilityLabel={label}
+      aria-label={label}
       onPressIn={() => {
         typedOnPressInAt.current = Date.now()
         onKey()
@@ -223,7 +223,7 @@ function ChargeButton({
       variant="outline"
       h={56}
       rounded={radius.full}
-      accessibilityLabel={t("home.pay")}
+      aria-label={t("home.pay")}
       pending={pending}
       disabled={amount === null}
       onPress={() => {

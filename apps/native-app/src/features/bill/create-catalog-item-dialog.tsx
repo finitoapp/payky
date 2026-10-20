@@ -254,7 +254,7 @@ function CreateForm({
           >
             <SelectTrigger
               fullWidth
-              accessibilityLabel={t("settings.items.form.category.label")}
+              aria-label={t("settings.items.form.category.label")}
             >
               <SelectValue />
             </SelectTrigger>
@@ -280,7 +280,7 @@ function CreateForm({
           >
             <SelectTrigger
               fullWidth
-              accessibilityLabel={t("settings.items.form.taxRate.label")}
+              aria-label={t("settings.items.form.taxRate.label")}
             >
               <SelectValue />
             </SelectTrigger>

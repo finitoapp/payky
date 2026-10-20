@@ -127,7 +127,7 @@ function TopItems({
 
   return (
     <YStack gap="4">
-      <XStack accessibilityLabel={t("stats.items.metric")}>
+      <XStack aria-label={t("stats.items.metric")}>
         <ToggleGroup
           value={metric}
           variant="outline"

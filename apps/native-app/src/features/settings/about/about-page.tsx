@@ -40,7 +40,7 @@ export function AboutPage() {
         <Image
           source={paykyIcon}
           style={{ width: 160, height: 160, borderRadius: 24 }}
-          accessibilityLabel={t("settings.about.app.title")}
+          aria-label={t("settings.about.app.title")}
           accessibilityIgnoresInvertColors
         />
         {version === undefined ? null : (

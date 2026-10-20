@@ -50,7 +50,7 @@ export function ScanCodeCollisionDialog({
           {candidates.map((candidate) => (
             <Pressable
               key={candidate.id}
-              accessibilityRole="button"
+              role="button"
               onPress={() => onSelect(candidate)}
             >
               <Card

@@ -75,7 +75,7 @@ export function EetUnconfirmedSales() {
                 rounded="lg"
                 borderWidth={1}
                 borderColor="border-color"
-                accessibilityRole="button"
+                role="button"
                 onPress={() => router.push(`/activity/${sale.paymentId}`)}
               >
                 <YStack flex={1}>

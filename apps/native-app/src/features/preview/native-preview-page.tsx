@@ -53,9 +53,7 @@ export function NativePreviewPage() {
                 maximumFractionDigits: 2,
               })}
             </Text>
-            <Text accessibilityLiveRegion="polite">
-              Checks passed: {checks}
-            </Text>
+            <Text aria-live="polite">Checks passed: {checks}</Text>
             <Text>Lock authority: {lockStatus}</Text>
             <BootstrapDiagnostics />
           </View>

@@ -47,13 +47,7 @@ export function PinPromptHost() {
     >
       <YStack flex={1} justify="center" p="4" bg="rgba(0,0,0,0.5)">
         {head === undefined ? null : (
-          <YStack
-            bg="card"
-            rounded="6"
-            p="4"
-            maxH="100%"
-            accessibilityViewIsModal
-          >
+          <YStack bg="card" rounded="6" p="4" maxH="100%" aria-modal>
             <ScrollView keyboardShouldPersistTaps="handled">
               <Suspense fallback={null}>
                 <PinPrompt
@@ -92,7 +86,7 @@ function PinPrompt({
   return (
     <YStack gap="3">
       {request.detail === undefined ? null : (
-        <Text fontWeight="600" text="center" accessibilityRole="summary">
+        <Text fontWeight="600" text="center">
           {request.detail}
         </Text>
       )}

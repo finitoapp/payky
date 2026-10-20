@@ -23,7 +23,7 @@ export function RouteMessage({ children }: { readonly children: string }) {
           lineHeight={fontSize.lg}
           color="muted-foreground"
           text="center"
-          accessibilityRole="alert"
+          role="alert"
         >
           {children}
         </Text>

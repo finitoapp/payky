@@ -167,10 +167,7 @@ export function AccountTransferSourcePage() {
   }
 
   const qr = (uri: string, size: number) => (
-    <YStack
-      items="center"
-      accessibilityLabel={t("accountTransfer.source.qr.label")}
-    >
+    <YStack items="center" aria-label={t("accountTransfer.source.qr.label")}>
       <QrCode value={uri} size={size} />
     </YStack>
   )
@@ -236,7 +233,7 @@ export function AccountTransferSourcePage() {
           ) : null}
 
           {state?.phase === "waiting" ? (
-            <YStack gap="3" accessibilityLiveRegion="polite">
+            <YStack gap="3" aria-live="polite">
               {qr(state.uri, 260)}
               <Text>{t("accountTransfer.source.qr.instructions")}</Text>
               <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
@@ -252,7 +249,7 @@ export function AccountTransferSourcePage() {
           ) : null}
 
           {state?.phase === "locked" ? (
-            <YStack gap="3" accessibilityLiveRegion="polite">
+            <YStack gap="3" aria-live="polite">
               {state.uri !== null ? qr(state.uri, 160) : null}
               <Text fontWeight="600">
                 {t("accountTransfer.source.code.connected")}
@@ -267,7 +264,7 @@ export function AccountTransferSourcePage() {
                   value={code}
                   maxLength={TRANSFER_CODE_LENGTH}
                   autoFocus
-                  accessibilityLabel={t("accountTransfer.source.code.label")}
+                  aria-label={t("accountTransfer.source.code.label")}
                   onChange={(next) => setCode(next.replace(/\D/gu, ""))}
                 >
                   {codeGroups.map((group, index) => (
@@ -313,13 +310,13 @@ export function AccountTransferSourcePage() {
           ) : null}
 
           {state?.phase === "expired" ? (
-            <Text accessibilityLiveRegion="polite">
+            <Text aria-live="polite">
               {t("accountTransfer.source.qr.expired")}
             </Text>
           ) : null}
 
           {state?.phase === "sending" ? (
-            <Text accessibilityLiveRegion="polite">
+            <Text aria-live="polite">
               {t("accountTransfer.source.sending")}
             </Text>
           ) : null}

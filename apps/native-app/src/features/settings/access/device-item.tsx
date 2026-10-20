@@ -218,7 +218,7 @@ function PermissionsEditor({
         {permissions.map((permission) => (
           <Field key={permission} orientation="horizontal">
             <Checkbox
-              accessibilityLabel={t(permissionLabelKeys[permission])}
+              aria-label={t(permissionLabelKeys[permission])}
               checked={granted.has(permission)}
               disabled={pending}
               onCheckedChange={(checked) =>
@@ -244,7 +244,7 @@ function PermissionsEditor({
           borderColor="destructive-40"
           bg="destructive-5"
           p={12}
-          accessibilityRole="alert"
+          role="alert"
         >
           <YStack pt={2}>
             <Icon icon={TriangleAlert} color="destructive" />

@@ -153,7 +153,7 @@ function TipsSettingsForm({
             <Checkbox
               checked={enabled}
               disabled={pending}
-              accessibilityLabel={t("settings.tips.enabled.label")}
+              aria-label={t("settings.tips.enabled.label")}
               onCheckedChange={setEnabled}
             />
             <FieldContent>
@@ -299,7 +299,7 @@ function TipPresetField({
               <Button
                 size="icon-sm"
                 variant="ghost"
-                accessibilityLabel={t("settings.tips.preset.remove", {
+                aria-label={t("settings.tips.preset.remove", {
                   value: text,
                 })}
                 disabled={disabled}

@@ -118,7 +118,7 @@ function AssistantChat({ access }: { readonly access: Access }) {
           turns.length === 0 ? undefined : (
             <Button
               size="icon"
-              accessibilityLabel={t("settings.assistant.newConversation")}
+              aria-label={t("settings.assistant.newConversation")}
               variant="ghost"
               onPress={startOver}
             >
@@ -131,7 +131,7 @@ function AssistantChat({ access }: { readonly access: Access }) {
         <EmptyConversation access={access} onAsk={ask} />
       ) : (
         // At the bottom, next to the composer, as web's `mt-auto` list.
-        <YStack mt="auto" gap={8} accessibilityLiveRegion="polite">
+        <YStack mt="auto" gap={8} aria-live="polite">
           {turns.map((turn, index) => (
             <Turn
               key={turn.id}
@@ -360,7 +360,7 @@ function AnsweringBubble({
       items="center"
       gap={8}
       accessible
-      accessibilityLabel={
+      aria-label={
         lookingUp === null
           ? t("settings.assistant.thinking")
           : t(lookingUpKeys[lookingUp])

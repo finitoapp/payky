@@ -110,7 +110,7 @@ export function DialogContent({
 }) {
   const { onOpenChange } = useDialog()
   return (
-    <ContentFrame accessibilityViewIsModal>
+    <ContentFrame aria-modal>
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16 }}
         keyboardShouldPersistTaps="handled"
@@ -123,7 +123,7 @@ export function DialogContent({
             variant="ghost"
             size="icon-sm"
             iconStart={X}
-            accessibilityLabel={closeLabel}
+            aria-label={closeLabel}
             onPress={() => onOpenChange(false)}
           />
         </View>

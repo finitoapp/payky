@@ -220,12 +220,12 @@ export function DonationsSettingsPage() {
               </FieldError>
             </Field>
             {loadErrorKey === null ? null : (
-              <Text color="destructive" accessibilityRole="alert">
+              <Text color="destructive" role="alert">
                 {t(loadErrorKey)}
               </Text>
             )}
             {invoiceFailed ? (
-              <Text color="destructive" accessibilityRole="alert">
+              <Text color="destructive" role="alert">
                 {t("settings.donations.invoice.error")}
               </Text>
             ) : null}

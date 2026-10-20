@@ -91,7 +91,7 @@ export function PresetPicker({
         options.map((option) => [option.value, option.title])
       )}
     >
-      <SelectTrigger fullWidth accessibilityLabel={label}>
+      <SelectTrigger fullWidth aria-label={label}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent title={label}>

@@ -10,12 +10,7 @@ export function PairTargetPage() {
   return (
     <Screen>
       <YStack gap="2">
-        <Text
-          fontSize="2xl"
-          lineHeight="2xl"
-          fontWeight="700"
-          accessibilityRole="header"
-        >
+        <Text fontSize="2xl" lineHeight="2xl" fontWeight="700" role="heading">
           {t("accountTransfer.target.title")}
         </Text>
         <Text color="muted-foreground">

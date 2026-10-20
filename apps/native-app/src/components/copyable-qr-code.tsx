@@ -33,8 +33,8 @@ export const CopyableQrCode = memo(function CopyableQrCode({
       p={16}
       scale="1 press:0.98"
       style={{ backgroundColor: "#fff" }}
-      accessibilityRole="button"
-      accessibilityLabel={t("paymentWait.copyQr")}
+      role="button"
+      aria-label={t("paymentWait.copyQr")}
       onPress={() =>
         void copy(value, {
           copied: t("paymentWait.qrCopied"),

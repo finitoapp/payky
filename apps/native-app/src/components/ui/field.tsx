@@ -130,11 +130,7 @@ export function FieldError({
       : [children]
   if (messages.length === 0) return null
   return (
-    <FieldErrorText
-      accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
-      {...props}
-    >
+    <FieldErrorText role="alert" aria-live="polite" {...props}>
       {messages.join("\n")}
     </FieldErrorText>
   )

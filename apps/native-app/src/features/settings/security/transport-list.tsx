@@ -86,7 +86,7 @@ export function TransportList({
                 )}
               </YStack>
               <Switch
-                accessibilityLabel={t("settings.security.transports.toggle", {
+                aria-label={t("settings.security.transports.toggle", {
                   url: transport.url,
                 })}
                 checked={active}

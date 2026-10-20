@@ -146,7 +146,7 @@ export function UiKitCard() {
             variant={variant}
             size="icon"
             iconStart={Plus}
-            accessibilityLabel={`${variant} icon`}
+            aria-label={`${variant} icon`}
           />
         </View>
       ))}
@@ -191,26 +191,18 @@ export function UiKitCard() {
         <Text>Vertical</Text>
       </View>
       <View flexDirection="row" gap="4" items="center">
-        <Switch
-          checked={on}
-          onCheckedChange={setOn}
-          accessibilityLabel="Switch"
-        />
+        <Switch checked={on} onCheckedChange={setOn} aria-label="Switch" />
         <Switch
           checked={!on}
           onCheckedChange={(next) => setOn(!next)}
-          accessibilityLabel="Inverse switch"
+          aria-label="Inverse switch"
         />
-        <Checkbox
-          checked={on}
-          onCheckedChange={setOn}
-          accessibilityLabel="Checkbox"
-        />
+        <Checkbox checked={on} onCheckedChange={setOn} aria-label="Checkbox" />
         <Checkbox
           checked={false}
           onCheckedChange={() => {}}
           disabled
-          accessibilityLabel="Disabled checkbox"
+          aria-label="Disabled checkbox"
         />
       </View>
       <ToggleGroup value={choice} onValueChange={setChoice} variant="outline">
@@ -291,7 +283,7 @@ export function UiKitCard() {
         onValueChange={setChoice}
         items={{ a: "Apple", b: "Banana", c: "Cherry" }}
       >
-        <SelectTrigger accessibilityLabel="Fruit" fullWidth>
+        <SelectTrigger aria-label="Fruit" fullWidth>
           <SelectValue placeholder="Pick a fruit" />
         </SelectTrigger>
         <SelectContent title="Fruit">
@@ -435,7 +427,7 @@ export function UiKitCard() {
       <InputOTP
         value={otp}
         maxLength={4}
-        accessibilityLabel="Code"
+        aria-label="Code"
         onChange={(next) => setOtp(next.replace(/\D/gu, ""))}
       >
         <InputOTPGroup>

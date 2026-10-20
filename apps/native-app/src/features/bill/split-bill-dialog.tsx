@@ -290,11 +290,7 @@ function ExistingBillOption({
   )
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onSelect}
-    >
+    <Pressable role="button" aria-selected={selected} onPress={onSelect}>
       <XStack
         gap={8}
         p={8}
@@ -393,7 +389,7 @@ function SplitBillRow({
           size="icon"
           rounded={radius.full}
           iconStart={Minus}
-          accessibilityLabel={t("bill.split.decrease.aria", {
+          aria-label={t("bill.split.decrease.aria", {
             name: summary.name,
           })}
           disabled={quantity === 0}
@@ -417,7 +413,7 @@ function SplitBillRow({
           size="icon"
           rounded={radius.full}
           iconStart={Plus}
-          accessibilityLabel={t("bill.split.increase.aria", {
+          aria-label={t("bill.split.increase.aria", {
             name: summary.name,
           })}
           disabled={quantity >= summary.quantity}

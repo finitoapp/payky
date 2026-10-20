@@ -176,8 +176,8 @@ interface ButtonBaseProps extends FrameProps {
 /** An icon-only button has no text TalkBack could read, so it must be named. */
 export type ButtonProps = ButtonBaseProps &
   (
-    | { readonly size?: TextSize; readonly accessibilityLabel?: string }
-    | { readonly size: IconSize; readonly accessibilityLabel: string }
+    | { readonly size?: TextSize; readonly "aria-label"?: string }
+    | { readonly size: IconSize; readonly "aria-label": string }
   )
 
 export function Button({
@@ -190,7 +190,7 @@ export function Button({
   pending = false,
   disabled = false,
   onPress,
-  accessibilityLabel,
+  "aria-label": ariaLabel,
   labelColor,
   ...frameProps
 }: ButtonProps) {
@@ -206,9 +206,10 @@ export function Button({
       disabled={inactive}
       onPress={inactive ? undefined : onPress}
       hitSlop={hitSlops[size]}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: inactive, busy: pending }}
+      role="button"
+      aria-label={ariaLabel ?? label}
+      aria-disabled={inactive}
+      aria-busy={pending}
       {...frameProps}
     >
       {pending ? (

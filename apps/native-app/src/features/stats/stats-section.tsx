@@ -23,7 +23,7 @@ export function StatsSection({
           lineHeight="xs"
           fontWeight="700"
           color="muted-foreground"
-          accessibilityRole="header"
+          role="heading"
         >
           {title}
         </Text>

@@ -75,7 +75,7 @@ export function HomeScreenSettingsPage() {
             {terminalHomeModes.map((mode) => (
               <Field key={mode} orientation="horizontal">
                 <Switch
-                  accessibilityLabel={t(homeModeLabelKeys[mode])}
+                  aria-label={t(homeModeLabelKeys[mode])}
                   checked={enabledModes.includes(mode)}
                   onCheckedChange={(checked) => {
                     void toggle(mode, checked)

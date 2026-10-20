@@ -51,7 +51,7 @@ export function CardPaymentTab({
           fontWeight={fontWeight.medium}
           color="destructive"
           text="center"
-          accessibilityRole="alert"
+          role="alert"
         >
           {t("paymentWait.cardPaid.unresolved", {
             transactionId: unresolvedTransactionId,
@@ -64,7 +64,7 @@ export function CardPaymentTab({
           fontWeight={fontWeight.medium}
           color="destructive"
           text="center"
-          accessibilityRole="alert"
+          role="alert"
         >
           {t(errorKey)}
         </Text>

@@ -121,7 +121,7 @@ export interface ToggleGroupItemProps
   readonly value: string
   /** Already translated text, or custom content. */
   readonly children: ReactNode
-  readonly accessibilityLabel?: string
+  readonly "aria-label"?: string
   /** Disables this item alone, as web's item `disabled`. */
   readonly disabled?: boolean
 }
@@ -129,7 +129,7 @@ export interface ToggleGroupItemProps
 export function ToggleGroupItem({
   value,
   children,
-  accessibilityLabel,
+  "aria-label": ariaLabel,
   disabled = false,
   ...frameProps
 }: ToggleGroupItemProps) {
@@ -147,11 +147,11 @@ export function ToggleGroupItem({
       disabled={inactive}
       hitSlop={hitSlops[group.size]}
       onPress={inactive ? undefined : () => group.onValueChange(value)}
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected, disabled: inactive }}
-      accessibilityLabel={
-        accessibilityLabel ??
-        (typeof children === "string" ? children : undefined)
+      role="radio"
+      aria-checked={selected}
+      aria-disabled={inactive}
+      aria-label={
+        ariaLabel ?? (typeof children === "string" ? children : undefined)
       }
       {...(group.joined ? joinedStyle(group.vertical, position) : {})}
       {...frameProps}
@@ -171,7 +171,7 @@ export interface ToggleGroupProps<Value extends string> {
   readonly value: Value | null
   readonly onValueChange: (value: Value) => void
   /** Translated group name announced by screen readers. */
-  readonly accessibilityLabel?: string
+  readonly "aria-label"?: string
   readonly variant?: ToggleVariant
   readonly size?: ToggleSize
   /** Tailwind spacing steps between items (× 4 px); 0 joins them. */
@@ -186,7 +186,7 @@ export interface ToggleGroupProps<Value extends string> {
 export function ToggleGroup<Value extends string>({
   value,
   onValueChange,
-  accessibilityLabel,
+  "aria-label": ariaLabel,
   variant = "default",
   size = "default",
   spacing = 2,
@@ -224,8 +224,8 @@ export function ToggleGroup<Value extends string>({
   return (
     <GroupContext value={context}>
       <View
-        accessibilityRole="radiogroup"
-        accessibilityLabel={accessibilityLabel}
+        role="radiogroup"
+        aria-label={ariaLabel}
         flexDirection={vertical ? "column" : "row"}
         items={vertical ? "stretch" : "center"}
         gap={columns === undefined ? gap : undefined}

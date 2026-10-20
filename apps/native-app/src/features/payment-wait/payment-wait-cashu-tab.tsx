@@ -43,7 +43,7 @@ export function CashuPaymentTab({
         lineHeight={fontSize.sm}
         color="muted-foreground"
         text="center"
-        accessibilityRole="alert"
+        role="alert"
       >
         {t(key, params)}
       </Text>

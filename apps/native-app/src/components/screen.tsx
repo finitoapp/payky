@@ -138,7 +138,7 @@ export function Screen({
                   size="icon"
                   rounded={radius.full}
                   iconStart={ArrowDown}
-                  accessibilityLabel={t("settings.chat.scrollToLatest")}
+                  aria-label={t("settings.chat.scrollToLatest")}
                   onPress={() => scrollRef.current?.scrollToEnd()}
                 />
               </View>

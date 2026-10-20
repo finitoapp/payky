@@ -40,7 +40,7 @@ export function ChatComposer({
             maxH={128}
             fontSize="sm"
             lineHeight="sm"
-            accessibilityLabel={label}
+            aria-label={label}
             placeholder={placeholder}
             value={text}
             disabled={disabled}
@@ -49,7 +49,7 @@ export function ChatComposer({
           {stop === undefined ? (
             <Button
               size="icon-lg"
-              accessibilityLabel={sendLabel}
+              aria-label={sendLabel}
               variant={
                 disabled || trimmed.length === 0 ? "secondary" : "default"
               }
@@ -65,7 +65,7 @@ export function ChatComposer({
           ) : (
             <Button
               size="icon-lg"
-              accessibilityLabel={stop.label}
+              aria-label={stop.label}
               variant="secondary"
               onPress={stop.onStop}
             >

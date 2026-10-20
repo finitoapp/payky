@@ -26,10 +26,7 @@ export function LanguageSelect({ disabled }: { readonly disabled?: boolean }) {
           setLanguage(nextLanguage)
         }}
       >
-        <SelectTrigger
-          accessibilityLabel={t("onboarding.language.title")}
-          size="sm"
-        >
+        <SelectTrigger aria-label={t("onboarding.language.title")} size="sm">
           <Icon icon={Languages} size={14} color="muted-foreground" />
           <SelectValue>
             {languageOptions.find((option) => option.value === language)

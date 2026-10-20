@@ -46,9 +46,7 @@ function CashuAccountSettingsContent() {
       {isError ? (
         <Alert variant="destructive" icon={TriangleAlert}>
           <AlertDescription>
-            <Text accessibilityLiveRegion="polite">
-              {t("appError.description")}
-            </Text>
+            <Text aria-live="polite">{t("appError.description")}</Text>
           </AlertDescription>
           <AlertAction>
             <Button

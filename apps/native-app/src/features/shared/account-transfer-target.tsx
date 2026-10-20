@@ -195,7 +195,7 @@ export function AccountTransferTarget({
           </Text>
           <ScanCodeScanner types={QR_SCAN_TYPES} onScan={onScan} />
           {view.error !== null ? (
-            <Text color="destructive" accessibilityRole="alert">
+            <Text color="destructive" role="alert">
               {t(view.error)}
             </Text>
           ) : null}
@@ -218,14 +218,14 @@ export function AccountTransferTarget({
       ) : null}
 
       {view.phase === "connecting" || view.phase === "adding" ? (
-        <XStack items="center" gap="2" accessibilityLiveRegion="polite">
+        <XStack items="center" gap="2" aria-live="polite">
           <ActivityIndicator size="small" color={theme.primary.val} />
           <Text>{t("accountTransfer.target.connecting")}</Text>
         </XStack>
       ) : null}
 
       {view.phase === "code" ? (
-        <YStack gap="3" accessibilityLiveRegion="polite">
+        <YStack gap="3" aria-live="polite">
           <Text>{t("accountTransfer.target.code.instructions")}</Text>
           <Text
             fontSize="5xl"
@@ -234,7 +234,7 @@ export function AccountTransferTarget({
             letterSpacing={4.8}
             text="center"
             // Read digit by digit, not as one number.
-            accessibilityLabel={view.code.split("").join(" ")}
+            aria-label={view.code.split("").join(" ")}
           >
             {formatTransferCode(view.code)}
           </Text>

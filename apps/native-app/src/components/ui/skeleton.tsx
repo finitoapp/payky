@@ -42,7 +42,7 @@ export function Skeleton(props: GetProps<typeof SkeletonFrame>) {
   }, [opacity])
   return (
     <SkeletonFrame
-      accessibilityElementsHidden
+      aria-hidden
       importantForAccessibility="no-hide-descendants"
       {...props}
     >

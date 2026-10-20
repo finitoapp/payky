@@ -64,7 +64,7 @@ export function DonationHistory() {
               text="center"
               fontSize="sm"
               lineHeight="sm"
-              accessibilityRole="alert"
+              role="alert"
             >
               {t("settings.donations.history.error")}
             </Text>
@@ -134,7 +134,7 @@ export function DonationHistory() {
       />
       {isFetchingNextPage ? <ListSkeleton rows={2} /> : null}
       {isFetchNextPageError ? (
-        <Text color="destructive" accessibilityRole="alert">
+        <Text color="destructive" role="alert">
           {t("settings.donations.history.error")}
         </Text>
       ) : null}

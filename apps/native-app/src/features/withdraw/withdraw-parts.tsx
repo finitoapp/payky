@@ -40,7 +40,7 @@ export function Mono({ value }: { readonly value: string }) {
       </RNText>
       <CopyLink
         value={value}
-        accessibilityLabel={t("withdraw.detail.copy")}
+        aria-label={t("withdraw.detail.copy")}
         copied={t("withdraw.detail.copied")}
         failed={t("withdraw.detail.copyError")}
       />

@@ -154,7 +154,7 @@ export function PinScreen({
           lineHeight={fontSize.xl}
           fontWeight={fontWeight.semibold}
           text="center"
-          accessibilityRole="header"
+          role="heading"
         >
           {why}
         </Text>
@@ -207,7 +207,7 @@ export function PinScreen({
             fontWeight={fontWeight.medium}
             color="destructive"
             text="center"
-            accessibilityRole="alert"
+            role="alert"
           >
             {t("access.pin.blocked.title")}
           </Text>
@@ -282,7 +282,7 @@ function PinPad({
         variant="outline"
         size="lg"
         h={56}
-        accessibilityLabel={digit}
+        aria-label={digit}
         disabled={pending}
         onPress={() => press(digit)}
       >
@@ -303,8 +303,8 @@ function PinPad({
         gap={8}
         items="center"
         h={24}
-        accessibilityRole="text"
-        accessibilityLabel={t("access.pin.entered", { count: pin.length })}
+        role="status"
+        aria-label={t("access.pin.entered", { count: pin.length })}
       >
         {Array.from(
           { length: Math.max(minPinLength, pin.length) },
@@ -328,8 +328,8 @@ function PinPad({
         lineHeight={fontSize.sm}
         color="destructive"
         text="center"
-        accessibilityRole="alert"
-        accessibilityLiveRegion="assertive"
+        role="alert"
+        aria-live="assertive"
       >
         {attemptsLeft === null
           ? null
@@ -348,7 +348,7 @@ function PinPad({
               size="lg"
               h={56}
               iconStart={Delete}
-              accessibilityLabel={t("access.pin.erase")}
+              aria-label={t("access.pin.erase")}
               disabled={pending}
               onPress={() => setPin((current) => current.slice(0, -1))}
             />

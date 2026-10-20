@@ -200,7 +200,7 @@ function ReportingSection({
         />
         <Field orientation="horizontal">
           <Switch
-            accessibilityLabel={t("settings.eet.enabled.label")}
+            aria-label={t("settings.eet.enabled.label")}
             checked={enabled.value}
             disabled={cannotEnable || enabled.saving}
             onCheckedChange={(checked) => {

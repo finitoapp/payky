@@ -177,7 +177,7 @@ export function FiatBankAccountSettingsPage() {
                     >
                       <SelectTrigger
                         fullWidth
-                        accessibilityLabel={t(
+                        aria-label={t(
                           "settings.fiatBankAccount.currency.label"
                         )}
                       >
@@ -215,7 +215,7 @@ export function FiatBankAccountSettingsPage() {
                     >
                       <SelectTrigger
                         fullWidth
-                        accessibilityLabel={t(
+                        aria-label={t(
                           "settings.fiatBankAccount.qrFormat.label"
                         )}
                       >

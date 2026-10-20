@@ -47,7 +47,7 @@ export function SuccessPanel({
           lineHeight={fontSize["3xl"]}
           fontWeight={fontWeight.semibold}
           text="center"
-          accessibilityRole="header"
+          role="heading"
         >
           {title}
         </Text>

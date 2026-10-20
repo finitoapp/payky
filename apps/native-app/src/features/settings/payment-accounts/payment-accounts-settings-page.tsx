@@ -295,8 +295,8 @@ function PaymentMethodRow({
         />
       </YStack>
       <Pressable
-        accessibilityRole={href === null ? undefined : "button"}
-        accessibilityLabel={name}
+        role={href === null ? undefined : "button"}
+        aria-label={name}
         disabled={href === null}
         style={{ flex: 1, minHeight: 48, justifyContent: "center" }}
         onPress={() => {
@@ -345,7 +345,7 @@ function PaymentMethodRow({
       </Pressable>
       {row.saveEnabled === null ? null : (
         <Switch
-          accessibilityLabel={t(row.switchLabel)}
+          aria-label={t(row.switchLabel)}
           checked={choice.value}
           disabled={!row.canEnable || choice.saving}
           onCheckedChange={(next) => {
@@ -372,7 +372,7 @@ function MoveButton({
     <Button
       variant="ghost"
       size="icon-lg"
-      accessibilityLabel={label}
+      aria-label={label}
       disabled={disabled}
       onPress={onPress}
     >

@@ -57,7 +57,7 @@ export function OpenBillsSummary({
       </Text>
       <Text
         fontWeight="700"
-        accessibilityLabel={`${t("stats.openBills.count")}: ${openBills.length}`}
+        aria-label={`${t("stats.openBills.count")}: ${openBills.length}`}
       >
         {openBills.length.toLocaleString(locale)}
       </Text>
@@ -65,7 +65,7 @@ export function OpenBillsSummary({
         <Text
           key={currency}
           color="muted-foreground"
-          accessibilityLabel={t("stats.openBills.total")}
+          aria-label={t("stats.openBills.total")}
         >
           {`· ${formatMoney({ value: Integer(total), currency }, locale)}`}
         </Text>

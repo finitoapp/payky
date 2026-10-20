@@ -43,8 +43,8 @@ export function ProfileCard() {
       py={12}
       bg="card press:accent"
       onPress={() => router.push("/settings/profile")}
-      accessibilityRole="link"
-      accessibilityLabel={name ?? t("settings.profile.setName")}
+      role="link"
+      aria-label={name ?? t("settings.profile.setName")}
     >
       <YStack
         w={56}

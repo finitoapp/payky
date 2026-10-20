@@ -59,7 +59,7 @@ export function ActivityShell({
         endAddon={
           <Button
             variant="ghost"
-            accessibilityLabel={t("nav.stats")}
+            aria-label={t("nav.stats")}
             onPress={() => router.push("/stats")}
           >
             <Icon

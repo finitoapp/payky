@@ -480,7 +480,7 @@ function SparkPrivacyMode({
     <YStack gap="2">
       <XStack gap="3" items="center">
         <Switch
-          accessibilityLabel={t("settings.sparkAccount.privacyMode.label")}
+          aria-label={t("settings.sparkAccount.privacyMode.label")}
           checked={choice.value}
           disabled={query.isPending || query.isError || mutation.isPending}
           onCheckedChange={(next) => {

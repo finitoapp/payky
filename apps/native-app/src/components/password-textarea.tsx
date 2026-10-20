@@ -58,7 +58,7 @@ export function PasswordTextarea({
         <Button
           variant="ghost"
           size="icon"
-          accessibilityLabel={shown ? hideLabel : showLabel}
+          aria-label={shown ? hideLabel : showLabel}
           onPress={toggleShown}
         >
           <Icon icon={shown ? EyeOff : Eye} color="muted-foreground" />

@@ -135,7 +135,7 @@ function RowAction({
     <Button
       size="icon-sm"
       variant={variant}
-      accessibilityLabel={label}
+      aria-label={label}
       disabled={disabled}
       iconStart={iconStart}
       onPress={onPress}

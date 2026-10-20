@@ -149,7 +149,7 @@ export function EvoluExportPage() {
                 <Checkbox
                   checked={acceptedWarning}
                   disabled={pending}
-                  accessibilityLabel={t("settings.evoluExport.confirm.label")}
+                  aria-label={t("settings.evoluExport.confirm.label")}
                   onCheckedChange={setAcceptedWarning}
                 />
                 <FieldContent>
@@ -164,7 +164,7 @@ export function EvoluExportPage() {
             </FieldGroup>
           </CardContent>
           <CardFooter flexDirection="column" items="stretch" gap="3">
-            <Text color="muted-foreground" accessibilityLiveRegion="polite">
+            <Text color="muted-foreground" aria-live="polite">
               {t(
                 Platform.OS === "web"
                   ? "settings.evoluExport.destination.web"
@@ -193,7 +193,7 @@ export function EvoluExportPage() {
             </CardHeader>
             <CardContent>
               {failed ? (
-                <Text color="destructive" accessibilityRole="alert">
+                <Text color="destructive" role="alert">
                   {t("settings.evoluExport.status.error")}
                 </Text>
               ) : (

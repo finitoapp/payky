@@ -226,9 +226,7 @@ export function NewCatalogItemPage() {
                   >
                     <SelectTrigger
                       fullWidth
-                      accessibilityLabel={t(
-                        "settings.items.form.currency.label"
-                      )}
+                      aria-label={t("settings.items.form.currency.label")}
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -296,7 +294,7 @@ export function NewCatalogItemPage() {
               >
                 <SelectTrigger
                   fullWidth
-                  accessibilityLabel={t("settings.items.form.category.label")}
+                  aria-label={t("settings.items.form.category.label")}
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -322,7 +320,7 @@ export function NewCatalogItemPage() {
               >
                 <SelectTrigger
                   fullWidth
-                  accessibilityLabel={t("settings.items.form.taxRate.label")}
+                  aria-label={t("settings.items.form.taxRate.label")}
                 >
                   <SelectValue />
                 </SelectTrigger>

@@ -656,7 +656,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             lineHeight="4xl"
             fontWeight={fontWeight.semibold}
             fontVariant={["tabular-nums"]}
-            accessibilityRole="header"
+            role="heading"
           >
             {formatMinor(payment.amount)}
           </Text>
@@ -691,7 +691,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                     <TabsTrigger
                       key={id}
                       value={id}
-                      accessibilityLabel={t(methodLabelKeys[id])}
+                      aria-label={t(methodLabelKeys[id])}
                       flex={0}
                       minW={48}
                       px={24}
@@ -858,7 +858,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                 lineHeight={fontSize.sm}
                 fontWeight={fontWeight.medium}
                 color="destructive"
-                accessibilityRole="alert"
+                role="alert"
               >
                 {t(errorKey)}
               </Text>

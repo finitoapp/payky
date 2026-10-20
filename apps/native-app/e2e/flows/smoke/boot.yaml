@@ -1,0 +1,6 @@
+# A fresh install opens on onboarding's account choice.
+appId: ${APP_ID}
+tags: [smoke]
+---
+- runFlow: ../../subflows/start.yaml
+- assertVisible: ${output.t["accountChoice.new.title"]}.*

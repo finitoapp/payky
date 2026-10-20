@@ -1,0 +1,13 @@
+# The seed lands on the terminal home in English with the seeded currency,
+# and the bridge runs an action on a running app.
+appId: ${APP_ID}
+tags: [smoke]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- assertVisible: $0
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: ping
+- assertVisible:
+    id: e2e-result

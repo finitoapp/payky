@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "bundle": "expo export --platform android --platform ios",
     "check:ts": "tsc -b",
-    "ui-parity": "bun scripts/ui-parity.ts"
+    "ui-parity": "bun scripts/ui-parity.ts",
+    "test:e2e": "bun e2e/scripts/run.ts"
   },
   "dependencies": {
     "@evolu/common": "8.23.0",

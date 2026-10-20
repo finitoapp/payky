@@ -1,0 +1,10 @@
+# Runs one bridge action (src/e2e/e2e-actions.ts) and waits for its OK:
+# runFlow with env ACTION and, optionally, QUERY ("spark=true&...").
+appId: ${APP_ID}
+env:
+  QUERY: ""
+---
+- openLink: ${BASE_URL}e2e/${ACTION}?${QUERY}
+- extendedWaitUntil:
+    visible: E2E OK ${ACTION}.*
+    timeout: 30000

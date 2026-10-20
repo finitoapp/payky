@@ -39,6 +39,8 @@
     "test:e2e": "bun run --cwd apps/web-app test:e2e",
     "test:e2e:ui": "bun run --cwd apps/web-app test:e2e:ui",
     "test:e2e:preview": "bun run --cwd apps/web-app test:e2e:preview",
+    "test:e2e:native:web": "bun run --cwd apps/native-app test:e2e -- --platform web",
+    "test:e2e:native:android": "bun run --cwd apps/native-app test:e2e -- --platform android",
     "preview": "bun run --cwd apps/web-app preview",
     "cli": "bun run apps/cli/src/cli.ts",
     "build:core": "bun run --cwd packages/core build",

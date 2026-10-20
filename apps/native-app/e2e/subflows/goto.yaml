@@ -1,0 +1,8 @@
+# web's gotoPage: opens ${BASE_URL}${ROUTE} and waits until TEXT (usually the
+# page title's translation) is visible.
+appId: ${APP_ID}
+---
+- openLink: ${BASE_URL}${ROUTE}
+- extendedWaitUntil:
+    visible: ${TEXT}
+    timeout: 15000

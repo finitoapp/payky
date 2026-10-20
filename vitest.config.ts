@@ -54,6 +54,7 @@ export default defineConfig({
             "apps/native-app/src/components/**/*.test.ts",
             "apps/native-app/src/theme/**/*.test.ts",
             "apps/native-app/src/ui-parity/**/*.test.ts",
+            "apps/native-app/src/e2e/**/*.test.ts",
           ],
         },
       },

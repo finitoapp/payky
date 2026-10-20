@@ -1,0 +1,11 @@
+# A fresh app with the strings loaded: the first step of every flow. Waits for
+# onboarding, which a fresh app opens on: a link opened before the app is up
+# is lost on Android.
+appId: ${APP_ID}
+---
+- runScript: ../.generated/strings.js
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: ${output.t["onboarding.title"]}
+    timeout: 30000

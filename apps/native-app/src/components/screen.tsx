@@ -27,6 +27,12 @@ export const screenPadding = 16
 /** A screen's side padding, web's `px-3` (`_terminal.tsx`'s viewport). */
 export const screenPaddingX = 12
 
+/** The space between a `Screen`'s children, web's PhoneViewport `gap-6`. */
+const screenGap = 24
+
+/** `Screen`'s gap, for `FadeHeader`; `null` outside a `Screen`. */
+export const ScreenGapContext = createContext<number | null>(null)
+
 /**
  * The scroll offset `FadeHeader` follows. `Screen` provides it; a screen that
  * scrolls a list of its own (activity) provides its list's instead.
@@ -101,7 +107,7 @@ export function Screen({
                 flexGrow: 1,
                 padding: screenPadding,
                 paddingHorizontal: screenPaddingX + column.padding,
-                gap: 16,
+                gap: screenGap,
               }}
               scrollEventThrottle={16}
               onScroll={Animated.event(
@@ -123,7 +129,7 @@ export function Screen({
               onContentSizeChange={follow}
               onLayout={follow}
             >
-              {children}
+              <ScreenGapContext value={screenGap}>{children}</ScreenGapContext>
             </Animated.ScrollView>
             {chat && awayFromBottom ? (
               <View position="absolute" b={12} l={0} r={0} items="center">

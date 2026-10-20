@@ -1,11 +1,11 @@
 import { router } from "expo-router"
 import ArrowLeft from "lucide-react-native/icons/arrow-left"
-import { type ReactNode, useEffect, useState } from "react"
+import { type ReactNode, useContext, useEffect, useState } from "react"
 import { Animated } from "react-native"
 import { Text, View, XStack } from "tamagui"
 import { useTranslation } from "../hooks/use-translation.ts"
 import { fontSize, fontWeight } from "../theme/tokens.ts"
-import { screenPadding, useScreenScroll } from "./screen.tsx"
+import { ScreenGapContext, screenPadding, useScreenScroll } from "./screen.tsx"
 import { Button } from "./ui/button.tsx"
 import { Icon } from "./ui/icon.tsx"
 
@@ -34,6 +34,14 @@ const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"))
 
 const fadeDistance = 75
 const driftRatio = 1 / 2.5
+/**
+ * Web's content starts 16 px below its fixed header (`py-6`, an `h-6`
+ * spacer and `gap-6` under the bar); this bar sits in the flow, so inside a
+ * `Screen`, whose gap between its other children is wider, it takes back
+ * the difference.
+ */
+const headerGap = 16
+
 export function FadeHeader({
   title,
   subtitle,
@@ -53,6 +61,7 @@ export function FadeHeader({
 }) {
   const { t } = useTranslation()
   const scrollY = useScreenScroll()
+  const screenGap = useContext(ScreenGapContext)
   const [faded, setFaded] = useState(false)
 
   useEffect(() => {
@@ -110,6 +119,7 @@ export function FadeHeader({
       pointerEvents={faded ? "none" : "auto"}
       style={{
         marginTop: -screenPadding,
+        marginBottom: headerGap - (screenGap ?? headerGap),
         zIndex: 10,
         opacity: scrollY.interpolate({
           inputRange: [0, fadeDistance],

@@ -16,8 +16,12 @@ import { Icon } from "./ui/icon.tsx"
  * `gap-3 px-3 py-2 text-sm font-medium` with `p-1`/`p-0.5` inside, the
  * chevron `size-4`, the action `shrink-0 pl-2`.
  *
+ * The row's padding is the sum of web's: 18 px across (`px-3 p-1 p-0.5`),
+ * 14 px down (`py-2 p-1 p-0.5`), so a one-line row is 48 high, Android's
+ * minimum touch target, as on web.
+ *
  * Native differences: the shell has no `shadow` (Tamagui 3 `styled()` takes
- * no elevation); a row is at least 56 high, for touch; a pressed row takes
+ * no elevation); a pressed row takes
  * `bg-accent` (web hovers `bg-accent/50`); a `link` row pushes an
  * expo-router `href`, an `href` row opens the URL outside the app.
  */
@@ -138,9 +142,8 @@ export function VerticalNavRow({
       flexDirection="row"
       items="center"
       gap={12}
-      minH={56}
-      px={16}
-      py={10}
+      px={18}
+      py={14}
       borderTopWidth={first ? 0 : 1}
       borderColor="border-color"
       borderLeftWidth={item.stripeColor === undefined ? 0 : 3}

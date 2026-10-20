@@ -1269,6 +1269,8 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     allowedDifferences: {
       Switch:
         "native renders each method's enable toggle with ui/switch directly; web routes the same immediate save through InlineEditSwitch, which wraps ui/switch",
+      VerticalNavShell:
+        "web styles its list with verticalNavShellClassName; native renders the exported shell component itself",
     },
   },
   {

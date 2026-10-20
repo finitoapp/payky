@@ -39,6 +39,7 @@ import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
 import { Icon } from "../../../components/ui/icon.tsx"
 import { Switch } from "../../../components/ui/switch.tsx"
+import { VerticalNavShell } from "../../../components/vertical-nav.tsx"
 import { useEvoluQuery } from "../../../hooks/use-evolu-query.ts"
 import { useInlineChoice } from "../../../hooks/use-inline-choice.ts"
 import { useCashuRunToast, useRunToast } from "../../../hooks/use-run-toast.ts"
@@ -47,6 +48,7 @@ import {
   isSwitchioInstalled,
   isSwitchioSupported,
 } from "../../../platform/switchio.ts"
+import { fontSize, fontWeight } from "../../../theme/tokens.ts"
 
 interface PaymentMethodRowState {
   readonly icon: LucideIcon
@@ -218,21 +220,23 @@ export function PaymentAccountsSettingsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.paymentAccounts.title")} />
-      <Text color="muted-foreground">
-        {t("settings.paymentAccounts.order.description")}
-      </Text>
-      <YStack rounded="md" borderWidth={1} borderColor="border-color">
-        {order.map((method, index) => (
-          <PaymentMethodRow
-            key={method}
-            row={rows[method]}
-            isDefault={method === firstAvailable}
-            isFirst={index === 0}
-            canMoveUp={index > 0}
-            canMoveDown={index < order.length - 1}
-            onMove={(offset) => move(index, offset)}
-          />
-        ))}
+      <YStack gap={12}>
+        <Text px={4} fontSize={fontSize.sm} color="muted-foreground">
+          {t("settings.paymentAccounts.order.description")}
+        </Text>
+        <VerticalNavShell>
+          {order.map((method, index) => (
+            <PaymentMethodRow
+              key={method}
+              row={rows[method]}
+              isDefault={method === firstAvailable}
+              isFirst={index === 0}
+              canMoveUp={index > 0}
+              canMoveDown={index < order.length - 1}
+              onMove={(offset) => move(index, offset)}
+            />
+          ))}
+        </VerticalNavShell>
       </YStack>
     </Screen>
   )
@@ -264,9 +268,10 @@ function PaymentMethodRow({
   return (
     <XStack
       items="center"
-      gap="1"
-      px="1"
-      py="2"
+      gap={8}
+      py={4}
+      pl={4}
+      pr={12}
       borderTopWidth={isFirst ? 0 : 1}
       borderColor="border-color"
     >
@@ -293,12 +298,13 @@ function PaymentMethodRow({
           if (href !== null) router.push(href)
         }}
       >
-        <XStack items="center" gap="3" py="1">
+        <XStack items="center" gap={12} py={8}>
           <Icon icon={row.icon} color="muted-foreground" size={20} />
-          <YStack flex={1} gap="1">
-            <XStack items="center" gap="2">
+          <YStack flex={1} minW={0} gap={2}>
+            <XStack items="center" gap={8}>
               <Text
-                fontWeight="600"
+                fontSize={fontSize.sm}
+                fontWeight={fontWeight.medium}
                 flexShrink={1}
                 color={row.enabled ? undefined : "muted-foreground"}
               >
@@ -319,16 +325,14 @@ function PaymentMethodRow({
               ) : null}
             </XStack>
             {row.status === null ? null : (
-              <Text fontSize={13} color="muted-foreground">
+              <Text fontSize={fontSize.xs} color="muted-foreground">
                 {row.status}
               </Text>
             )}
           </YStack>
+          {href === null ? null : <Icon icon={ChevronRight} />}
         </XStack>
       </Pressable>
-      {href === null ? null : (
-        <Icon icon={ChevronRight} color="muted-foreground" />
-      )}
       {row.saveEnabled === null ? null : (
         <Switch
           accessibilityLabel={t(row.switchLabel)}

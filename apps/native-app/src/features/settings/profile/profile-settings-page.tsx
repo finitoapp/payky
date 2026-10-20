@@ -31,7 +31,7 @@ import {
 } from "../../../hooks/use-nostr-profile.ts"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { pickProfilePicture } from "../../../platform/pick-profile-picture.ts"
+import { pickProfilePicture } from "../../../platform/pick-profile-picture"
 import { radius } from "../../../theme/tokens.ts"
 
 /**

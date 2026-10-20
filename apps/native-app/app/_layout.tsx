@@ -28,7 +28,7 @@ import {
 } from "../src/core/first-screen.ts"
 import { queryClient } from "../src/core/query-client.ts"
 import { resolveTheme } from "../src/core/theme-preference.ts"
-import { removeStaleExportFolders } from "../src/features/settings/evolu-export/evolu-export-io.ts"
+import { removeStaleExportFolders } from "../src/features/settings/evolu-export/evolu-export-io"
 import { useThemePreference } from "../src/hooks/use-theme-preference.ts"
 import { tamaguiConfig } from "../tamagui.config.ts"
 

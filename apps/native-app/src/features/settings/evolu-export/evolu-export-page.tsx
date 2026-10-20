@@ -3,6 +3,7 @@ import { useAtomValue } from "jotai"
 import Download from "lucide-react-native/icons/download"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
+import { Platform } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
@@ -31,7 +32,7 @@ import { Icon } from "../../../components/ui/icon.tsx"
 import { useRequirePermission } from "../../../core/use-access.ts"
 import { useToast } from "../../../hooks/use-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { createExportFolder, evoluExportShareIo } from "./evolu-export-io.ts"
+import { createExportFolder, evoluExportShareIo } from "./evolu-export-io"
 import { shareEvoluExport } from "./evolu-export-share.ts"
 
 const warningKeys = [
@@ -159,7 +160,11 @@ export function EvoluExportPage() {
           </CardContent>
           <CardFooter flexDirection="column" items="stretch" gap="3">
             <Text color="muted-foreground" accessibilityLiveRegion="polite">
-              {t("settings.evoluExport.destination.capacitor")}
+              {t(
+                Platform.OS === "web"
+                  ? "settings.evoluExport.destination.web"
+                  : "settings.evoluExport.destination.capacitor"
+              )}
             </Text>
             <Button
               label={t(
@@ -175,7 +180,8 @@ export function EvoluExportPage() {
           </CardFooter>
         </Card>
 
-        {handedOff || failed ? (
+        {/* A browser shows its own download; the share-sheet note fits only native. */}
+        {(handedOff && Platform.OS !== "web") || failed ? (
           <Card>
             <CardHeader>
               <CardTitle>{t("settings.evoluExport.status.title")}</CardTitle>

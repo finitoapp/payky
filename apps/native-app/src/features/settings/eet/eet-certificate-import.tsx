@@ -23,7 +23,7 @@ import { eetNativeCrypto } from "../../../platform/eet-crypto"
 import {
   type PickedCertificate,
   pickCertificateFile,
-} from "../../../platform/pick-certificate-file.ts"
+} from "../../../platform/pick-certificate-file"
 
 const certificateErrorKeys = {
   EetCertificateUnreadableError: "settings.eet.certificate.error.unreadable",

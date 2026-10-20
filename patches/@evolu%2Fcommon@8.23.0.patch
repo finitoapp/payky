@@ -1,3 +1,77 @@
+diff --git a/dist/src/Worker.js b/dist/src/Worker.js
+index 09d00e0d089190e40d2ccbbe27c78b6fd58da24b..57c80c8198a5dc57c4dc2e29ebd48bdfce2c59e1 100644
+--- a/dist/src/Worker.js
++++ b/dist/src/Worker.js
+@@ -474,26 +474,61 @@ const createPort = ({ receive, peerReceive, native, }) => {
+ const pendingWorkerTaskIds = new Set();
+ const workerTaskIdleWaiters = new Set();
+ let workerTaskIdleCheckTimeoutId;
++/**
++ * Payky patch: how in-memory worker messages are delivered, one task each.
++ * React Native's `setTimeout(fn, 0)` waits for the next display frame
++ * (Android fires JS timers from Choreographer frame callbacks), so each of a
++ * query's ~4 hops cost 8-17 ms and a round trip 35-75 ms although SQLite took
++ * ~1 ms. React Native's runtime scheduler (`nativeRuntimeScheduler`, the new
++ * architecture's event loop, which React schedules its work on) runs a task
++ * as soon as the JS thread is free, still as its own task that input can come
++ * between. Its `setImmediate` is only a microtask shim there, so it is used
++ * only where it is a real task (Node); elsewhere `setTimeout` stays.
++ */
++const nativeRuntimeScheduler = globalThis.nativeRuntimeScheduler;
++const scheduleMacrotask = nativeRuntimeScheduler != null
++    ? (callback) => nativeRuntimeScheduler.unstable_scheduleCallback(nativeRuntimeScheduler.unstable_NormalPriority, () => {
++        callback();
++        // A returned function would be taken as a continuation.
++        return undefined;
++    })
++    : typeof globalThis.setImmediate === "function" &&
++        typeof globalThis.process?.versions?.node === "string"
++        ? (callback) => globalThis.setImmediate(callback)
++        : (callback) => setTimeout(callback, 0);
++const cancelMacrotask = nativeRuntimeScheduler != null
++    ? (task) => nativeRuntimeScheduler.unstable_cancelCallback(task)
++    : typeof globalThis.setImmediate === "function" &&
++        typeof globalThis.process?.versions?.node === "string"
++        ? (task) => globalThis.clearImmediate(task)
++        : (task) => clearTimeout(task);
++/** The scheduler task behind each id `scheduleWorkerTask` hands out. */
++const taskById = new WeakMap();
+ const scheduleWorkerTask = (callback) => {
+     if (workerTaskIdleCheckTimeoutId != null) {
+         clearTimeout(workerTaskIdleCheckTimeoutId);
+         workerTaskIdleCheckTimeoutId = undefined;
+     }
+-    const timeoutId = setTimeout(() => {
+-        pendingWorkerTaskIds.delete(timeoutId);
++    const taskId = {};
++    const task = scheduleMacrotask(() => {
++        pendingWorkerTaskIds.delete(taskId);
+         try {
+             callback();
+         }
+         finally {
+             queueMicrotask(notifyWorkerTaskIdle);
+         }
+-    }, 0);
+-    pendingWorkerTaskIds.add(timeoutId);
+-    return timeoutId;
++    });
++    taskById.set(taskId, task);
++    pendingWorkerTaskIds.add(taskId);
++    return taskId;
+ };
+-const cancelWorkerTask = (timeoutId) => {
+-    clearTimeout(timeoutId);
+-    pendingWorkerTaskIds.delete(timeoutId);
++const cancelWorkerTask = (taskId) => {
++    const task = taskById.get(taskId);
++    if (task !== undefined)
++        cancelMacrotask(task);
++    taskById.delete(taskId);
++    pendingWorkerTaskIds.delete(taskId);
+     queueMicrotask(notifyWorkerTaskIdle);
+ };
+ const notifyWorkerTaskIdle = () => {
 diff --git a/dist/src/local-first/Db.js b/dist/src/local-first/Db.js
 index d7127ea4e2e47ca504c27352ebff5ec0f4f2cc94..4d39f9330f31341fbfaad4b94496f40ca1588572 100644
 --- a/dist/src/local-first/Db.js

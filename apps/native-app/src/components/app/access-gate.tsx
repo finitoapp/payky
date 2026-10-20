@@ -3,7 +3,6 @@ import {
   accessSessionAtom,
 } from "@payky/app-shared/access-state"
 import { router, usePathname } from "expo-router"
-import * as SplashScreen from "expo-splash-screen"
 import { useAtom, useAtomValue, useSetAtom, useStore } from "jotai"
 import { type ReactNode, type SetStateAction, Suspense, useEffect } from "react"
 import { AppState, View } from "react-native"
@@ -13,6 +12,7 @@ import {
   isIdleExpired,
   sessionOutlivesAccount,
 } from "../../core/access-session.ts"
+import { markGateResolved } from "../../core/first-screen.ts"
 import { requiredPermission } from "../../core/route-access.ts"
 import { useAccess } from "../../core/use-access.ts"
 import { Screen } from "../screen.tsx"
@@ -130,7 +130,7 @@ export function AccessGate({ children }: { readonly children: ReactNode }) {
     >
       {/* Only an account switch shows it: the start keeps the splash on. */}
       <Suspense fallback={<AppLoader />}>
-        <HideSplashScreen />
+        <GateResolved />
         <Gate>{children}</Gate>
       </Suspense>
     </View>
@@ -138,14 +138,12 @@ export function AccessGate({ children }: { readonly children: ReactNode }) {
 }
 
 /**
- * Hides the native splash, which the root layout keeps on, once the gate
- * has what it needs (the account, its database, the access rules): it sits
- * in the same Suspense boundary, so it mounts together with the first
- * screen or the PIN screen.
+ * Tells `first-screen.ts` the gate has what it needs (the account, its
+ * database, the access rules): it sits in the same Suspense boundary, so it
+ * mounts together with the route or the PIN screen. The splash hides once
+ * that route has rendered too.
  */
-function HideSplashScreen() {
-  useEffect(() => {
-    SplashScreen.hide()
-  }, [])
+function GateResolved() {
+  useEffect(markGateResolved, [])
   return null
 }

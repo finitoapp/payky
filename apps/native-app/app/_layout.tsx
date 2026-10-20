@@ -25,16 +25,34 @@ import { PinPromptHost } from "../src/components/app/pin-prompt-host.tsx"
 import { SentryController } from "../src/components/app/sentry-controller.tsx"
 import { SwitchioRestoredResult } from "../src/components/app/switchio-restored-result.tsx"
 import { ToastHost } from "../src/components/app/toast-host.tsx"
+import {
+  routeFallbackMounted,
+  routeFallbackUnmounted,
+  useFirstScreenReady,
+} from "../src/core/first-screen.ts"
 import { queryClient } from "../src/core/query-client.ts"
 import { resolveTheme } from "../src/core/theme-preference.ts"
 import { removeStaleExportFolders } from "../src/features/settings/evolu-export/evolu-export-io.ts"
 import { useThemePreference } from "../src/hooks/use-theme-preference.ts"
 import { tamaguiConfig } from "../tamagui.config.ts"
 
-// Kept until the first screen is ready (`AccessGate` hides it) instead of
-// Expo Router hiding it as soon as this layout renders, so the start shows
-// the splash's logo throughout rather than loaders in turn.
+// Kept until the first screen is ready (src/core/first-screen.ts) instead
+// of Expo Router hiding it as soon as this layout renders, so the start
+// shows the splash's logo throughout rather than loaders in turn.
 void SplashScreen.preventAutoHideAsync()
+
+/**
+ * Expo Router's fallback for a route that suspends, empty on the navigator's
+ * background as its default is. It also tells `first-screen.ts` a route is
+ * still on its way, so the splash waits for it.
+ */
+export function SuspenseFallback() {
+  useEffect(() => {
+    routeFallbackMounted()
+    return routeFallbackUnmounted
+  }, [])
+  return null
+}
 
 /**
  * Expo Router's root error boundary. `retry` remounts this layout, whose
@@ -90,6 +108,7 @@ function ThemedApp() {
   const preference = useThemePreference()
   const systemScheme = useColorScheme()
   const theme = resolveTheme(preference, systemScheme)
+  const firstScreenReady = useFirstScreenReady()
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -99,8 +118,13 @@ function ThemedApp() {
           <AccessGate>
             <ThemedStack dark={theme === "dark"} />
           </AccessGate>
-          <AppEvoluConsumers />
-          <CashuEvoluConsumers />
+          {/* After the first screen: their start held it up (key derivations, Spark). */}
+          {firstScreenReady ? (
+            <>
+              <AppEvoluConsumers />
+              <CashuEvoluConsumers />
+            </>
+          ) : null}
           <ConfirmHost />
           <PinPromptHost />
           <ToastHost />

@@ -38,6 +38,7 @@ import { DetailRow } from "../../components/detail-row.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/loading-view.tsx"
 import { NotFoundCard } from "../../components/not-found-card.tsx"
+import { screenPaddingX } from "../../components/screen.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { Card, CardContent } from "../../components/ui/card.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
@@ -70,7 +71,7 @@ export function WithdrawDetailPage() {
     <SafeAreaView
       style={{
         flex: 1,
-        paddingHorizontal: 16,
+        paddingHorizontal: screenPaddingX,
         backgroundColor: theme.background.val,
       }}
     >

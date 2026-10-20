@@ -21,8 +21,11 @@ import { radius } from "../theme/tokens.ts"
 import { Button } from "./ui/button.tsx"
 import { useColumnScroll } from "./web-column.tsx"
 
-/** `Screen`'s content padding, web's `p-4`. */
+/** `Screen`'s vertical content padding. */
 export const screenPadding = 16
+
+/** A screen's side padding, web's `px-3` (`_terminal.tsx`'s viewport). */
+export const screenPaddingX = 12
 
 /**
  * The scroll offset `FadeHeader` follows. `Screen` provides it; a screen that
@@ -97,7 +100,7 @@ export function Screen({
               contentContainerStyle={{
                 flexGrow: 1,
                 padding: screenPadding,
-                paddingHorizontal: screenPadding + column.padding,
+                paddingHorizontal: screenPaddingX + column.padding,
                 gap: 16,
               }}
               scrollEventThrottle={16}

@@ -13,7 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useTheme, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { ListSkeleton } from "../../components/list-skeleton.tsx"
-import { ScreenScrollContext, screenPadding } from "../../components/screen.tsx"
+import {
+  ScreenScrollContext,
+  screenPadding,
+  screenPaddingX,
+} from "../../components/screen.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs.tsx"
@@ -94,7 +98,7 @@ export function ActivityShell({
         <ActivityHeaderContext value={header}>
           <Suspense
             fallback={
-              <YStack p={screenPadding} gap={16}>
+              <YStack py={screenPadding} px={screenPaddingX} gap={16}>
                 {header}
                 <ListSkeleton rows={5} />
               </YStack>

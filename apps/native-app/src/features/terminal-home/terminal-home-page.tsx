@@ -16,10 +16,11 @@ import Settings from "lucide-react-native/icons/settings"
 import { Suspense, useEffect, useState, useSyncExternalStore } from "react"
 import { ActivityIndicator, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useTheme, View, XStack } from "tamagui"
+import { useTheme, View, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
 import { LoadingView } from "../../components/loading-view.tsx"
+import { screenPaddingX } from "../../components/screen.tsx"
 import {
   SlidingPillSegmentContent,
   SlidingPillTrack,
@@ -80,12 +81,18 @@ export function TerminalHomePage() {
   return (
     <SafeAreaView
       style={[
-        { flex: 1, padding: 16, backgroundColor: theme.background.val },
+        {
+          flex: 1,
+          paddingVertical: 16,
+          paddingHorizontal: screenPaddingX,
+          backgroundColor: theme.background.val,
+        },
         // Only the pos grid uses a wide window; the keypad keeps web's column.
         Platform.OS === "web" && mode !== "pos" ? keypadColumn : null,
       ]}
     >
-      <XStack items="center" justify="space-between" mb={12}>
+      {/* Web's header and keypad add `px-4` to the screen's sides; the pos grid does not. */}
+      <XStack items="center" justify="space-between" mb={12} px={16}>
         {/*
          * Both modes stay on screen so the control reads as a switch; only
          * the active one spells out its label. With a single mode on there is
@@ -147,10 +154,12 @@ export function TerminalHomePage() {
           <PosOverviewPage />
         </Suspense>
       ) : (
-        <AmountKeypad
-          currency={getFiatCurrency(settings)}
-          tipsEnabled={settings.tipsEnabled === sqliteTrue}
-        />
+        <YStack flex={1} px={16}>
+          <AmountKeypad
+            currency={getFiatCurrency(settings)}
+            tipsEnabled={settings.tipsEnabled === sqliteTrue}
+          />
+        </YStack>
       )}
     </SafeAreaView>
   )

@@ -23,6 +23,7 @@ import { accountAtom } from "../../atoms/account.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/loading-view.tsx"
+import { screenPaddingX } from "../../components/screen.tsx"
 import { useAccess, useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -40,7 +41,7 @@ export function WithdrawPage() {
     <SafeAreaView
       style={{
         flex: 1,
-        paddingHorizontal: 16,
+        paddingHorizontal: screenPaddingX,
         backgroundColor: theme.background.val,
       }}
     >

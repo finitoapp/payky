@@ -7,7 +7,11 @@ import type { ReactNode } from "react"
 import { Animated } from "react-native"
 import { Text, View, XStack, YStack } from "tamagui"
 import { ListSkeleton } from "../../components/list-skeleton.tsx"
-import { screenPadding, useScreenScroll } from "../../components/screen.tsx"
+import {
+  screenPadding,
+  screenPaddingX,
+  useScreenScroll,
+} from "../../components/screen.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { VerticalNav } from "../../components/vertical-nav.tsx"
@@ -203,7 +207,7 @@ export function ActivityList({
         // Padded inside the scroll, so the list and its scrollbar span the
         // screen's full width.
         padding: screenPadding,
-        paddingHorizontal: screenPadding + column.padding,
+        paddingHorizontal: screenPaddingX + column.padding,
       }}
       scrollEventThrottle={16}
       onScroll={

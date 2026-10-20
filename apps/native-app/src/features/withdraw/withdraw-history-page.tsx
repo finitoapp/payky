@@ -23,6 +23,7 @@ import { Text, useTheme, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { ListSkeleton } from "../../components/list-skeleton.tsx"
 import { LoadingView } from "../../components/loading-view.tsx"
+import { screenPaddingX } from "../../components/screen.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { VerticalNav } from "../../components/vertical-nav.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
@@ -57,7 +58,7 @@ function WithdrawHistoryScreen({
     <SafeAreaView
       style={{
         flex: 1,
-        paddingHorizontal: 16,
+        paddingHorizontal: screenPaddingX,
         paddingBottom: 16,
         backgroundColor: theme.background.val,
       }}

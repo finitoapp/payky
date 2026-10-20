@@ -9,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, useTheme, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/loading-view.tsx"
+import { screenPaddingX } from "../../components/screen.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import {
@@ -39,7 +40,7 @@ export function SettingsListShell({
     <SafeAreaView
       style={{
         flex: 1,
-        paddingHorizontal: 16,
+        paddingHorizontal: screenPaddingX,
         paddingBottom: 16,
         backgroundColor: theme.background.val,
       }}

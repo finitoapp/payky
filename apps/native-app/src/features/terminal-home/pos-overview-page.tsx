@@ -26,6 +26,7 @@ import Users from "lucide-react-native/icons/users"
 import { useEffect, useMemo, useState } from "react"
 import { FlatList, Pressable, ScrollView, View } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import { screenPaddingX } from "../../components/screen.tsx"
 import { TableTileShell } from "../../components/table-tile-shell.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
@@ -85,8 +86,8 @@ function useNewBill(tableId: TableId | undefined) {
  * "no table" strip that starts a quick bill, and one tile per table.
  */
 export function PosOverviewPage() {
-  // The home screen's SafeAreaView pads 16 px on each side.
-  const column = useColumnScroll(16)
+  // The home screen's SafeAreaView pads the screen's sides.
+  const column = useColumnScroll(screenPaddingX)
   const { t } = useTranslation()
   const locale = useLocale()
   const tables = useEvoluQuery(tablesQuery).data

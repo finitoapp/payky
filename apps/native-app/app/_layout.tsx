@@ -28,7 +28,7 @@ import { ToastHost } from "../src/components/app/toast-host.tsx"
 import {
   routeFallbackMounted,
   routeFallbackUnmounted,
-  useFirstScreenReady,
+  useIdleAfterFirstScreen,
 } from "../src/core/first-screen.ts"
 import { queryClient } from "../src/core/query-client.ts"
 import { resolveTheme } from "../src/core/theme-preference.ts"
@@ -108,7 +108,9 @@ function ThemedApp() {
   const preference = useThemePreference()
   const systemScheme = useColorScheme()
   const theme = resolveTheme(preference, systemScheme)
-  const firstScreenReady = useFirstScreenReady()
+  // App jobs first, the Cashu one after, each once the screen is left alone.
+  const appJobsMayStart = useIdleAfterFirstScreen(1500)
+  const cashuJobsMayStart = useIdleAfterFirstScreen(3000)
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -118,13 +120,9 @@ function ThemedApp() {
           <AccessGate>
             <ThemedStack dark={theme === "dark"} />
           </AccessGate>
-          {/* After the first screen: their start held it up (key derivations, Spark). */}
-          {firstScreenReady ? (
-            <>
-              <AppEvoluConsumers />
-              <CashuEvoluConsumers />
-            </>
-          ) : null}
+          {/* After the first screen and a pause in tapping: their start blocks the JS thread. */}
+          {appJobsMayStart ? <AppEvoluConsumers /> : null}
+          {cashuJobsMayStart ? <CashuEvoluConsumers /> : null}
           <ConfirmHost />
           <PinPromptHost />
           <ToastHost />

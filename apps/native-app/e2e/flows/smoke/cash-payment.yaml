@@ -1,0 +1,34 @@
+# web smoke.spec.ts: "onboarding, cash payment, and marking paid" — the one
+# canary that goes through the real onboarding UI to a paid payment.
+appId: ${APP_ID}
+tags: [smoke]
+---
+- runFlow: ../../subflows/start.yaml
+- runFlow: ../../subflows/complete-onboarding.yaml
+# web's createPayment: 5.9, Pay, skip the tip step if it shows.
+- runFlow:
+    file: ../../subflows/enter-amount.yaml
+    env:
+      AMOUNT: "5.9"
+- tapOn: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentWait.method.iban"])}|${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ${output.re(output.t["paymentTip.none"])}
+    commands:
+      - tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cash"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.action"]}
+- extendedWaitUntil:
+    visible:
+      id: payment-paid-panel
+    timeout: 15000
+- assertVisible: ${output.t["paymentWait.paid"]}

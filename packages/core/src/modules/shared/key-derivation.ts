@@ -18,6 +18,11 @@ import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { Slip39 } from "slip39-ts"
 import { z } from "zod"
 
+import {
+  deriveHardenedPrivateKey,
+  parseHardenedPath,
+} from "./bip32-hardened.ts"
+
 const Hex16Schema = z.string().regex(/^[0-9a-f]{32}$/u)
 
 export const MasterKeySchema = Hex16Schema.brand<"MasterKey">()
@@ -109,9 +114,13 @@ const deriveEntropy = (
   masterKey: MasterKey,
   path: DerivationPath
 ): Uint8Array => {
-  const privateKey = HDKey.fromMasterSeed(hexToBytes(masterKey)).derive(
-    path
-  ).privateKey
+  const seed = hexToBytes(masterKey)
+  // Payky's BIP-85 paths are fully hardened: derived without secp256k1.
+  const hardened = parseHardenedPath(path)
+  const privateKey =
+    hardened === null
+      ? HDKey.fromMasterSeed(seed).derive(path).privateKey
+      : deriveHardenedPrivateKey(seed, hardened)
 
   if (privateKey === null) {
     throw new Error("A private BIP32 derivation path is required.")

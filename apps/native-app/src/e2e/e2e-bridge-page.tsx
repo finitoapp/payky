@@ -41,7 +41,8 @@ export function E2eBridgePage() {
       } catch (error) {
         if (!cancelled)
           setResult(
-            `E2E FAIL ${action}: ${error instanceof Error ? error.message : String(error)}`
+            // run.orThrow's Error carries the Result's error as its cause.
+            `E2E FAIL ${action}: ${error instanceof Error ? `${error.message} ${JSON.stringify(error.cause) ?? ""}` : String(error)}`
           )
       }
     }
@@ -53,7 +54,8 @@ export function E2eBridgePage() {
 
   if (!nativeEnv.EXPO_PUBLIC_PAYKY_E2E) return <Redirect href="/" />
   return (
-    <YStack flex={1} p="4" bg="background">
+    // Centered: under the status bar Maestro counts the text as hidden.
+    <YStack flex={1} p="4" bg="background" items="center" justify="center">
       <Text testID="e2e-result" color="foreground">
         {e2eActions[action] === undefined
           ? `E2E FAIL ${action}: unknown action`

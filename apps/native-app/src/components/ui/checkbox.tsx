@@ -55,6 +55,8 @@ export function Checkbox({
       aria-checked={checked}
       aria-disabled={disabled}
       aria-label={ariaLabel}
+      // As ui/switch: its name doubles as testID for e2e `id:` selectors.
+      testID={ariaLabel}
     >
       {checked ? (
         <Icon

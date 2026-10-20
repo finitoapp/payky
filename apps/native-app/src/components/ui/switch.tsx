@@ -35,6 +35,9 @@ export function Switch({
       // RN maps aria-label only on View-based components; Switch hands its
       // props to the native view, so TalkBack needs the old prop.
       accessibilityLabel={ariaLabel}
+      // Its name as testID too: an e2e flow's `id:` then hits this switch,
+      // not a same-named control on a screen mounted under it (Android).
+      testID={ariaLabel}
       trackColor={{
         false: theme["switch-track-off"]?.val,
         true: theme.primary?.val,

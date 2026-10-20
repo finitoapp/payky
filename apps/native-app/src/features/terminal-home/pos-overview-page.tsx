@@ -251,6 +251,7 @@ function NoTableStrip({
 
   return (
     <XStack
+      testID="no-table-tile"
       items="center"
       gap={12}
       p={8}

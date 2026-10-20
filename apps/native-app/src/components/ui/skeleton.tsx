@@ -1,24 +1,28 @@
 import { useEffect, useState } from "react"
-import { Animated } from "react-native"
-import { type GetProps, styled, View } from "tamagui"
+import { Animated, StyleSheet } from "react-native"
+import { type GetProps, styled, useTheme, View } from "tamagui"
 import { radius } from "../../theme/tokens.ts"
 
 /**
  * Web `apps/web-app/src/components/ui/skeleton.tsx`: `animate-pulse
  * rounded-md bg-muted`. The pulse (opacity 1 → 0.5 and back, 2 s, as
  * Tailwind's) runs on RN `Animated` with the native driver, because the
- * Tamagui config has no animation driver.
+ * Tamagui config has no animation driver. It animates a plain
+ * `Animated.View` filling the frame rather than an animated Tamagui view:
+ * Animated hands its component a style array, which Tamagui passes to the
+ * DOM as is on web, where it crashes the render.
  */
 
 const SkeletonFrame = styled(View, {
   name: "Skeleton",
-  bg: "muted",
   rounded: radius.md,
+  overflow: "hidden",
+  // Native's default, not web's: the pulse fills this frame, not the page.
+  position: "relative",
 })
 
-const AnimatedFrame = Animated.createAnimatedComponent(SkeletonFrame)
-
 export function Skeleton(props: GetProps<typeof SkeletonFrame>) {
+  const theme = useTheme()
   const [opacity] = useState(() => new Animated.Value(1))
   useEffect(() => {
     const pulse = Animated.loop(
@@ -39,11 +43,17 @@ export function Skeleton(props: GetProps<typeof SkeletonFrame>) {
     return () => pulse.stop()
   }, [opacity])
   return (
-    <AnimatedFrame
+    <SkeletonFrame
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={{ opacity }}
       {...props}
-    />
+    >
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: theme.muted?.val, opacity },
+        ]}
+      />
+    </SkeletonFrame>
   )
 }

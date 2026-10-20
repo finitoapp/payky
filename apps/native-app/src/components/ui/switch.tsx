@@ -32,7 +32,9 @@ export function Switch({
       value={checked}
       onValueChange={onCheckedChange}
       disabled={disabled}
-      aria-label={ariaLabel}
+      // RN maps aria-label only on View-based components; Switch hands its
+      // props to the native view, so TalkBack needs the old prop.
+      accessibilityLabel={ariaLabel}
       trackColor={{
         false: theme["switch-track-off"]?.val,
         true: theme.primary?.val,

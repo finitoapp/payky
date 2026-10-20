@@ -1,17 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query"
-import {
-  DarkTheme,
-  DefaultTheme,
-  Stack,
-  ThemeProvider,
-  usePathname,
-} from "expo-router"
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
 import { createStore, Provider } from "jotai"
-import { type ReactNode, Suspense, useEffect, useState } from "react"
-import { Platform, useColorScheme, useWindowDimensions } from "react-native"
-import { TamaguiProvider, Theme, useTheme, View } from "tamagui"
+import { Suspense, useEffect, useState } from "react"
+import { useColorScheme } from "react-native"
+import { TamaguiProvider, Theme, useTheme } from "tamagui"
 import { AccessGate } from "../src/components/app/access-gate.tsx"
 import {
   AppEvoluConsumers,
@@ -27,6 +21,7 @@ import { PinPromptHost } from "../src/components/app/pin-prompt-host.tsx"
 import { SentryController } from "../src/components/app/sentry-controller.tsx"
 import { SwitchioRestoredResult } from "../src/components/app/switchio-restored-result.tsx"
 import { ToastHost } from "../src/components/app/toast-host.tsx"
+import { WebColumn } from "../src/components/web-column.tsx"
 import {
   routeFallbackMounted,
   routeFallbackUnmounted,
@@ -36,7 +31,6 @@ import { queryClient } from "../src/core/query-client.ts"
 import { resolveTheme } from "../src/core/theme-preference.ts"
 import { removeStaleExportFolders } from "../src/features/settings/evolu-export/evolu-export-io"
 import { useThemePreference } from "../src/hooks/use-theme-preference.ts"
-import { maxWidth } from "../src/theme/tokens.ts"
 import { tamaguiConfig } from "../tamagui.config.ts"
 
 // Kept until the first screen is ready (src/core/first-screen.ts) instead
@@ -159,33 +153,5 @@ function ThemedStack({ dark }: { readonly dark: boolean }) {
         <Stack screenOptions={{ headerShown: false }} />
       </WebColumn>
     </ThemeProvider>
-  )
-}
-
-/** Web's `lg` breakpoint, from which home and the bill use the window's width. */
-const WIDE_WINDOW_PX = 1024
-
-/**
- * On web, the screens in a centered column as web-app's `PhoneViewport`
- * (`max-w-xl`), except home and the bill on a wide window, as the
- * `lg:max-w-none` of their routes there; home's keypad and onboarding narrow
- * themselves as on web. Native screens take the device's width.
- */
-function WebColumn({ children }: { readonly children: ReactNode }) {
-  const pathname = usePathname()
-  const wide = useWindowDimensions().width >= WIDE_WINDOW_PX
-  if (Platform.OS !== "web") return children
-  const fullWidth = wide && (pathname === "/" || pathname === "/bill")
-  return (
-    <View flex={1} bg="background">
-      <View
-        flex={1}
-        w="100%"
-        self="center"
-        maxW={fullWidth ? undefined : maxWidth.xl}
-      >
-        {children}
-      </View>
-    </View>
   )
 }

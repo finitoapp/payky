@@ -19,6 +19,7 @@ import { useTheme, View } from "tamagui"
 import { useTranslation } from "../hooks/use-translation.ts"
 import { radius } from "../theme/tokens.ts"
 import { Button } from "./ui/button.tsx"
+import { useColumnScroll } from "./web-column.tsx"
 
 /** `Screen`'s content padding, web's `p-4`. */
 export const screenPadding = 16
@@ -66,6 +67,7 @@ export function Screen({
 }) {
   const theme = useTheme()
   const { t } = useTranslation()
+  const column = useColumnScroll()
   const [scrollY] = useState(() => new Animated.Value(0))
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
   const chat = followKey !== undefined
@@ -90,10 +92,12 @@ export function Screen({
           <View flex={1}>
             <Animated.ScrollView
               ref={scrollRef}
+              style={column.style}
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{
                 flexGrow: 1,
                 padding: screenPadding,
+                paddingHorizontal: screenPadding + column.padding,
                 gap: 16,
               }}
               scrollEventThrottle={16}

@@ -11,6 +11,7 @@ import { screenPadding, useScreenScroll } from "../../components/screen.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { VerticalNav } from "../../components/vertical-nav.tsx"
+import { useColumnScroll } from "../../components/web-column.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight } from "../../theme/tokens.ts"
 import { paymentMethodIcon } from "../shared/payment-method-display.ts"
@@ -193,14 +194,16 @@ export function ActivityList({
 }) {
   const header = useActivityHeader()
   const scrollY = useScreenScroll()
+  const column = useColumnScroll()
   return (
     <Animated.FlatList
-      style={{ flex: 1 }}
+      style={[{ flex: 1 }, column.style]}
       contentContainerStyle={{
         gap: 16,
         // Padded inside the scroll, so the list and its scrollbar span the
         // screen's full width.
         padding: screenPadding,
+        paddingHorizontal: screenPadding + column.padding,
       }}
       scrollEventThrottle={16}
       onScroll={

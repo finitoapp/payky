@@ -33,6 +33,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "../../components/ui/toggle-group.tsx"
+import { useColumnScroll } from "../../components/web-column.tsx"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { viewStateAtom } from "../../platform/view-state-atom.ts"
@@ -84,6 +85,8 @@ function useNewBill(tableId: TableId | undefined) {
  * "no table" strip that starts a quick bill, and one tile per table.
  */
 export function PosOverviewPage() {
+  // The home screen's SafeAreaView pads 16 px on each side.
+  const column = useColumnScroll(16)
   const { t } = useTranslation()
   const locale = useLocale()
   const tables = useEvoluQuery(tablesQuery).data
@@ -111,7 +114,8 @@ export function PosOverviewPage() {
 
   return (
     <FlatList
-      style={{ flex: 1 }}
+      style={[{ flex: 1 }, column.style]}
+      contentContainerStyle={{ paddingHorizontal: column.padding }}
       numColumns={2}
       data={visibleTiles}
       keyExtractor={(tile) => tile.table.id}

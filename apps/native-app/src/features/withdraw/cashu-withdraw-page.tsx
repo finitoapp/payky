@@ -28,6 +28,7 @@ import { accountAtom } from "../../atoms/account.ts"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/loading-view.tsx"
+import { useColumnScroll } from "../../components/web-column.tsx"
 import { useAccess, useRequirePermission } from "../../core/use-access.ts"
 import { useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -91,6 +92,8 @@ function CashuWithdrawFlow({
   readonly accountId: AccountId
   readonly initialDestination: string
 }) {
+  // CashuWithdrawPage's SafeAreaView pads 16 px on each side.
+  const column = useColumnScroll(16)
   const cashuAppRun = useCashuAppRun()
   const access = useAccess()
   const { require, requirePin } = useRequirePermission()
@@ -247,8 +250,13 @@ function CashuWithdrawFlow({
 
   return (
     <ScrollView
+      style={column.style}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
+      contentContainerStyle={{
+        gap: 12,
+        paddingBottom: 24,
+        paddingHorizontal: column.padding,
+      }}
     >
       {review === null ? (
         <CashuWithdrawFormStep

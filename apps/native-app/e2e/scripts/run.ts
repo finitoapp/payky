@@ -39,13 +39,17 @@ await $`bun ${join(e2eDir, "scripts/generate-strings.ts")}`
 rmSync(reportDir, { recursive: true, force: true })
 mkdirSync(reportDir, { recursive: true })
 
-const flows = (
-  positionals.length > 0
-    ? positionals.map((flow) => resolve(flow))
-    : (readdirSync(join(e2eDir, "flows"), { recursive: true }) as string[])
+/** The .yaml files at `path`, a flow file or a folder of them. */
+const yamlFiles = (path: string): ReadonlyArray<string> =>
+  path.endsWith(".yaml")
+    ? [path]
+    : (readdirSync(path, { recursive: true }) as string[])
         .filter((file) => file.endsWith(".yaml"))
-        .map((file) => join(e2eDir, "flows", file))
-).sort()
+        .map((file) => join(path, file))
+
+const flows = (positionals.length > 0 ? positionals : [join(e2eDir, "flows")])
+  .flatMap((path) => yamlFiles(resolve(path)))
+  .sort()
 
 /** The flow's header `tags:` (the part before `---`), for platform filtering. */
 const flowTags = async (flow: string): Promise<ReadonlyArray<string>> => {

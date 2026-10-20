@@ -1,0 +1,14 @@
+# Empties the input named LABEL, focused by tap-input (which leaves the cursor
+# at the end; eraseText deletes backwards from it). Typing before React
+# Native's controlled value has caught up with the erase mangles the text on
+# Android, so this waits for the field to be empty. A text selector also
+# matches the input's label (content-desc, or aria-label on web), hence
+# "non-empty" is (?!label$).+
+appId: ${APP_ID}
+---
+- eraseText
+- extendedWaitUntil:
+    notVisible:
+      id: ${output.re(LABEL)}
+      text: (?!${output.re(LABEL)}$).+
+    timeout: 5000

@@ -1,0 +1,16 @@
+# web's fillInlineField: replaces the inline-edit field LABEL's text with
+# VALUE, saves with the Save button and waits for the "saved" toast.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: fill-input.yaml
+    env:
+      LABEL: ${LABEL}
+      VALUE: ${VALUE}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["inlineEdit.save"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["inlineEdit.saved"])}
+    timeout: 15000

@@ -1,0 +1,15 @@
+# web's completeOnboarding: the real onboarding UI from a fresh app (run
+# start.yaml first): a new account with the default Czech bank account, ending
+# on the terminal home.
+appId: ${APP_ID}
+---
+- tapOn: ${output.t["accountChoice.new.title"]}
+- runFlow:
+    file: fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.payments.iban.title"]}
+      VALUE: CZ6508000000192000145399
+- tapOn: ${output.t["onboarding.finish"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000

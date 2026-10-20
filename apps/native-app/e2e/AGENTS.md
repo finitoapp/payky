@@ -40,9 +40,14 @@ assertions.
   strings `'${output.tv("bill.itemsCount", { value: 3 })}'` (quote it for
   YAML). `src/e2e/e2e-strings.test.ts` fails on a key `en` does not have.
   Text selectors are regexes that also match literally.
-- `subflows/goto.yaml` (env `ROUTE`, `TEXT`) is web's `gotoPage`;
-  `subflows/e2e-action.yaml` (env `ACTION`, optional `QUERY`) runs a bridge
-  action and waits for `E2E OK <action>`.
+- Subflows (env in brackets) replace web's `support/` helpers:
+  `goto` (`ROUTE`, `TEXT`) is `gotoPage`; `e2e-action` (`ACTION`, `QUERY`)
+  runs a bridge action and waits for `E2E OK`; `complete-onboarding` is
+  `completeOnboarding` through the real UI; `tap-label` (`LABEL`) taps a
+  kit Button or icon button by its label; `tap-input`, `clear-input`,
+  `fill-input` (`LABEL`, `VALUE`) work an input by its field label;
+  `fill-inline` is `fillInlineField` (type, Save, wait for "Saved");
+  `assert-checked` (`LABEL`, `CHECKED`) checks a switch, on Android only.
 
 ## The bridge
 
@@ -65,11 +70,33 @@ assertions.
    there is no stable text. Works on both platforms when the element has no
    label.
 
+4. Inputs: `tap-input`/`fill-input`. A kit input's field label is also its
+   aria-label and testID, so `id: <label>` finds it on both platforms (a text
+   selector on Android also hits the FieldLabel above it).
+
+`id:` selectors are regexes with no literal fallback: wrap copy in
+`output.re(...)` ("Bank account (optional)"). Text selectors fall back to a
+literal match, but `output.re` does no harm there either. On Android a text
+selector matches `text`, the hint and the content-desc alike.
+
 Never coordinates, index-only selectors, or sleeps; wait with
 `extendedWaitUntil` on something visible.
 
 ## Gotchas
 
+- Typing into inputs: `eraseText` deletes backwards from the cursor on both
+  platforms, so `tap-input` taps near the input's right end; typing right
+  after an erase on Android races React Native's controlled value, so
+  `clear-input` waits for the field to be empty. Use `fill-input`, not a bare
+  `eraseText` + `inputText`.
+- After typing on Android the keyboard is up, and the next tap elsewhere may
+  only close it: put `hideKeyboard` (in an Android-only `runFlow`) first.
+- Maestro's web driver ignores opacity and `aria-hidden`, and reports no
+  checked state; such checks run on Android only (`when: platform: Android`),
+  next to a web-visible assertion where there is one.
+- `checked:` and `point:` take no `${}` values; branch with `when: true:`.
+- RN maps `aria-label` only on View-based components: RN's `Switch` needs
+  `accessibilityLabel` (`ui/switch.tsx`).
 - Tamagui 3 on web drops `accessibilityLabel`/`accessibilityRole` into the DOM
   as dead attributes; use `aria-label`/`role`/`aria-*` in app code so web gets
   them too.

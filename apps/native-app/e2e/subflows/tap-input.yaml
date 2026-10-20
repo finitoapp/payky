@@ -1,0 +1,11 @@
+# Taps the input named LABEL (its field label or aria-label), which is also
+# its testID: one `id:` on both platforms (on Android the label's own text
+# would match a text selector too). It taps near the right end, so the cursor
+# lands after the text, where eraseText (it deletes backwards) clears it all.
+# Mind an input with buttons drawn over its right end (an inline field mid
+# edit): this would tap those.
+appId: ${APP_ID}
+---
+- tapOn:
+    id: ${output.re(LABEL)}
+    point: 95%,50%

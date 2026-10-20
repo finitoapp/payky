@@ -1,0 +1,16 @@
+# Replaces the text of the input named LABEL with VALUE and checks it holds
+# exactly VALUE.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: tap-input.yaml
+    env:
+      LABEL: ${LABEL}
+- runFlow:
+    file: clear-input.yaml
+    env:
+      LABEL: ${LABEL}
+- inputText: ${VALUE}
+- assertVisible:
+    id: ${output.re(LABEL)}
+    text: ${output.re(VALUE)}

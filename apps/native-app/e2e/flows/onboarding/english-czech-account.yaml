@@ -1,0 +1,27 @@
+# web onboarding.spec.ts: "onboarding in English still starts a Czech account
+# in CZK".
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- runFlow: ../../subflows/complete-onboarding.yaml
+# The business is in the Czech Republic and uses CZK.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/legal-entity
+      TEXT: ${output.t["settings.legalEntity.title"]}
+- assertVisible: ${output.re(output.t["country.cz"])}
+- assertVisible: ${output.re(output.t["settings.fiat.czk.title"])}
+# The Czech preset tax rates were seeded.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+- assertVisible: Základní sazba
+- assertVisible: Snížená sazba
+- assertVisible: Osvobozeno od DPH
+- assertVisible: 21%
+- assertVisible: 12%
+- assertVisible: 0%

@@ -1,0 +1,96 @@
+# web onboarding.spec.ts: "bank account format switching is only offered for
+# a saved Czech account". Native has no Escape: Discard drops an edit. Not
+# ported: the input keeping its position (pixel layout).
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+# Finish onboarding without a bank account.
+- tapOn: ${output.t["accountChoice.new.title"]}
+- tapOn: ${output.t["onboarding.finishWithoutBankTransfer"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts/iban
+      TEXT: ${output.t["settings.paymentAccounts.method.iban"]}
+# A new account accepts either format without changing the draft or showing
+# a switch.
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.bban"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.fiatBankAccount.iban.label"]}
+      VALUE: "CZ6508000000192000145399"
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["inlineEdit.discard"]}
+- assertNotVisible: CZ6508000000192000145399
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.fiatBankAccount.iban.label"]}
+      VALUE: "19-2000145399/0800"
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["inlineEdit.discard"]}
+- runFlow:
+    file: ../../subflows/fill-inline.yaml
+    env:
+      LABEL: ${output.t["settings.fiatBankAccount.iban.label"]}
+      VALUE: 19-2000145399/0800
+# The saved Czech account shows its format switch only outside an edit.
+- assertVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- assertVisible: ${output.t["settings.fiatBankAccount.iban.format.bban"]}
+- tapOn: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- assertVisible: CZ6508000000192000145399
+- tapOn: ${output.t["settings.fiatBankAccount.iban.format.bban"]}
+- assertVisible: 19-2000145399/0800
+- runFlow:
+    file: ../../subflows/tap-input.yaml
+    env:
+      LABEL: ${output.t["settings.fiatBankAccount.iban.label"]}
+- assertVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- runFlow:
+    file: ../../subflows/clear-input.yaml
+    env:
+      LABEL: ${output.t["settings.fiatBankAccount.iban.label"]}
+# Hidden by opacity with its space kept (web: `invisible`); Maestro's web
+# driver still reports it, so only Android checks this.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+      - assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.bban"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["inlineEdit.discard"]}
+- assertVisible: 19-2000145399/0800
+- assertVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- assertVisible: ${output.t["settings.fiatBankAccount.iban.format.bban"]}
+# A saved foreign IBAN has no Czech account-number switch.
+- runFlow:
+    file: ../../subflows/fill-inline.yaml
+    env:
+      LABEL: ${output.t["settings.fiatBankAccount.iban.label"]}
+      VALUE: DE89370400440532013000
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.bban"]}
+- assertVisible: DE89370400440532013000
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts/iban
+      TEXT: ${output.t["settings.paymentAccounts.method.iban"]}
+- assertVisible: DE89370400440532013000
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.bban"]}

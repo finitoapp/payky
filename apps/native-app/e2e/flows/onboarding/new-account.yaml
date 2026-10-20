@@ -1,0 +1,17 @@
+# web onboarding.spec.ts: "complete onboarding as a new account, without
+# backing up the recovery phrase".
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- runFlow: ../../subflows/complete-onboarding.yaml
+# Security settings still hand out the recovery phrase.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/security
+      TEXT: ${output.t["settings.security.title"]}
+- scrollUntilVisible:
+    element: ${output.t["passwordTextarea.show"]}
+- tapOn: ${output.t["passwordTextarea.show"]}
+- assertVisible: "(\\S+ ){11,}\\S+"

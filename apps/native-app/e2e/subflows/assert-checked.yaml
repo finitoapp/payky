@@ -1,0 +1,23 @@
+# Asserts the switch/checkbox named LABEL is on (CHECKED: "true") or off
+# ("false"). Android only: Maestro's web driver reports no checked state, so
+# on web this checks nothing — keep another web-visible assertion beside it.
+appId: ${APP_ID}
+env:
+  CHECKED: "true"
+---
+- runFlow:
+    when:
+      platform: Android
+      true: ${CHECKED === "true"}
+    commands:
+      - assertVisible:
+          text: ${output.re(LABEL)}
+          checked: true
+- runFlow:
+    when:
+      platform: Android
+      true: ${CHECKED !== "true"}
+    commands:
+      - assertVisible:
+          text: ${output.re(LABEL)}
+          checked: false

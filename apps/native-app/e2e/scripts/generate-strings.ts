@@ -13,5 +13,9 @@ output.tv = function (key, params) {
     return name in params ? String(params[name]) : all
   })
 }
+// A literal for a regex-only selector (\`id:\`): "Bank account (optional)".
+output.re = function (text) {
+  return text.replace(/[.*+?^\${}()|[\\]\\\\]/g, "\\\\$&")
+}
 `
 )

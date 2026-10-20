@@ -1,0 +1,69 @@
+# web onboarding.spec.ts: "the payment methods step derives bank transfers
+# from the account input". Not ported: the heading/language-picker positions
+# staying put (pixel layout) and aria-invalid, which Maestro cannot read.
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- tapOn: ${output.t["accountChoice.new.title"]}
+- assertVisible: ${output.t["onboarding.payments.title"]}
+# An empty or whitespace-only account offers to start without bank transfers.
+- assertVisible: ${output.t["onboarding.finishWithoutBankTransfer"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.payments.iban.title"]}
+      VALUE: "   "
+- assertVisible: ${output.t["onboarding.finishWithoutBankTransfer"]}
+- assertNotVisible: ${output.t["onboarding.finish"]}
+# Entering an account changes the button and going back keeps the draft.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.payments.iban.title"]}
+      VALUE: "CZ6508000000192000145399"
+- assertVisible: ${output.t["onboarding.finish"]}
+- assertNotVisible: ${output.t["settings.fiatBankAccount.iban.format.iban"]}
+# Otherwise the tap only closes Android's keyboard.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.back"]}
+- tapOn: ${output.t["accountChoice.new.title"]}
+- assertVisible: CZ6508000000192000145399
+- assertVisible: ${output.t["onboarding.finish"]}
+# An invalid IBAN swaps the message and still holds the step.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.payments.iban.title"]}
+      VALUE: "12345"
+- tapOn: ${output.t["onboarding.finish"]}
+- assertVisible: ${output.re(output.t["settings.fiatBankAccount.iban.invalid"])}
+- assertVisible: ${output.t["onboarding.payments.title"]}
+# Fixing the IBAN lets onboarding complete.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.payments.iban.title"]}
+      VALUE: "19-2000145399/0800"
+- tapOn: ${output.t["onboarding.finish"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000
+# The entered account enables bank transfers.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts
+      TEXT: ${output.t["settings.paymentAccounts.title"]}
+- assertNotVisible: ${output.re(output.t["settings.paymentAccounts.status.missingIban"])}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.fiatBankAccount.enabled.label"]}

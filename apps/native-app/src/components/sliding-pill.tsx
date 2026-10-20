@@ -88,12 +88,15 @@ function useFlip(
   useLayoutEffect(() => {
     if (ref.current === null) return
     const rect = ref.current.getBoundingClientRect()
+    // A hidden screen (web hides one it navigated away from) lays the
+    // control out at zero width; remembering that box would grow it from
+    // nothing on the way back.
+    if (rect.width === 0) return
     const to = { x: rect.x, width: rect.width }
     const start = from(to)
     if (
       start === undefined ||
       reduceMotion ||
-      to.width === 0 ||
       (start.x === to.x && start.width === to.width)
     )
       return

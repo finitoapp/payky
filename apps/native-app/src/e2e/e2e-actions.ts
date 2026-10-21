@@ -66,6 +66,7 @@ import type { createStore } from "jotai"
 import type { SetStateAction } from "react"
 import { z } from "zod"
 import type { NativeAppRun } from "../hooks/use-app-run.ts"
+import { payE2eCashuQuotes, setE2eCashu } from "./e2e-cashu-mint.ts"
 import { e2eSparkPresetNames, setE2eSparkPreset } from "./e2e-spark-presets.ts"
 
 /**
@@ -91,7 +92,10 @@ const SeedOnboardingParams = z.object({
   fiatCurrency: z.enum(FiatCurrency).default(FiatCurrency.USD),
 })
 
-const FakeParams = z.object({ spark: z.enum(e2eSparkPresetNames) })
+const FakeParams = z.object({
+  spark: z.enum(e2eSparkPresetNames).optional(),
+  cashu: z.enum(["manual", "autopay", "off"]).optional(),
+})
 
 export const e2eActions: Readonly<Record<string, E2eAction>> = {
   ping: async () => undefined,
@@ -132,15 +136,25 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
   },
 
   /**
-   * Swaps in a named fake for an outside service (`spark=funded`), standing
-   * in for web's `page.addInitScript` that sets `window.__e2eSparkWallet`.
+   * Swaps in a named fake for an outside service (`spark=funded`,
+   * `cashu=manual|autopay`), standing in for web's `page.addInitScript` that sets
+   * `window.__e2eSparkWallet` / `__e2eCashuMint`. Do it before the Cashu
+   * wallet starts (enable Cashu afterwards).
    * It lasts until the app restarts, so on web pass `next=` to move on
    * in-app instead of opening another link.
    */
   fake: async (_run, params) => {
-    setE2eSparkPreset(FakeParams.parse(params).spark)
+    const { spark, cashu } = FakeParams.parse(params)
+    if (spark !== undefined) setE2eSparkPreset(spark)
+    if (cashu !== undefined) setE2eCashu(cashu === "off" ? null : cashu)
     return undefined
   },
+
+  /**
+   * `__e2eCashuPayQuotes`: the customer pays every open mint quote of the
+   * fake mint; prints how many it paid.
+   */
+  cashuPayQuotes: async () => String(payE2eCashuQuotes()),
 
   /**
    * One warning through the run's console (a release build keeps warnings and

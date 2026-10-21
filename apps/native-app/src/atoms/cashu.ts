@@ -10,6 +10,7 @@ import { deriveCashuWalletSeed } from "@payky/core/modules/shared/key-derivation
 import { atom } from "jotai"
 import { nativeEnv } from "../core/native-env.ts"
 import { nativeRun } from "../core/native-runtime.ts"
+import { createE2eCashuMintFetch, isE2eCashu } from "../e2e/e2e-cashu-mint.ts"
 import { createFetchDep } from "../platform/native-deps.ts"
 import { accountAtom } from "./account.ts"
 import { evoluAtom } from "./evolu.ts"
@@ -38,7 +39,8 @@ export const cashuShardStoreAtom = atom(async (get, options) => {
   return startCashuShardStore({
     fallbackRelays: [firstRelay, ...otherRelays],
     evolu,
-    account,
+    // An e2e run with the fake mint keeps the wallet local, as a demo does.
+    account: isE2eCashu() ? { ...account, demo: "seeded" } : account,
     ownerSync: createLinkyOwnerSync(nativeRun.deps.syncState, evolu.name),
     fetchRelays: async () => {
       await using fetchRun = nativeRun.create(createFetchDep())
@@ -61,8 +63,9 @@ export const cashuShardStoreAtom = atom(async (get, options) => {
  */
 export const cashuWalletDepAtom = atom(async (get) => {
   const account = await get(accountAtom)
-  const fetch =
-    account.demo === null
+  const fetch = isE2eCashu()
+    ? await createE2eCashuMintFetch()
+    : account.demo === null
       ? createFetchDep().fetch
       : await (async () => {
           const [{ createFakeCashuMint }, { MAIN_MINT_URL }] =

@@ -1,0 +1,89 @@
+# web access-gates.spec.ts: "Settings → Access edits, renames and removes devices". Devices are listed by name,
+# so Old tablet comes before this device's generated lower-case name.
+appId: ${APP_ID}
+tags: [access-gates]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: seedDevice
+      QUERY: name=Old%20tablet
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      KEEP: "true"
+# A preset is a starting point the owner can adjust.
+- tapOn:
+    text: ${output.re(output.t["access.device.permissions"])}
+    below: ${output.t["access.device.this"]}
+- extendedWaitUntil:
+    visible: '${output.re(output.tv("access.device.preset", { name: "" }))}.+'
+    timeout: 10000
+# The preset select, named after the device (on Android that name is also
+# the field label's text, so the select is the value under it).
+- runFlow:
+    when:
+      platform: Web
+    file: ../../subflows/tap-label.yaml
+    env:
+      PATTERN: '${output.re(output.tv("access.device.preset", { name: "" }))}.+'
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${output.re(output.t["access.preset.basic"])}
+          below: '${output.re(output.tv("access.device.preset", { name: "" }))}.+'
+- tapOn: ${output.re(output.t["access.preset.manager"])}
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["access.permission.admin"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["access.permission.settings"]}
+      CHECKED: "true"
+- runFlow:
+    file: ../../subflows/tap-id.yaml
+    env:
+      LABEL: ${output.t["access.permission.admin"]}
+- scrollUntilVisible:
+    element: ${output.t["access.device.adminWarning"]}
+- scrollUntilVisible:
+    element: ${output.t["access.save"]}
+- tapOn: ${output.t["access.save"]}
+- extendedWaitUntil:
+    visible:
+      text: ${output.re(output.t["access.preset.owner"])}
+      below: ${output.t["access.device.this"]}
+    timeout: 10000
+# Renaming a device shows its new name.
+- tapOn:
+    text: ${output.re(output.t["access.device.rename"])}
+    below: ${output.t["access.device.this"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["access.device.name"]}
+      VALUE: Front till
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- tapOn: ${output.t["access.save"]}
+- extendedWaitUntil:
+    visible: Front till
+    timeout: 10000
+# Removing another device takes it off the list.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.device.remove"]}
+- tapOn: ${output.t["access.device.remove.confirm"]}
+- extendedWaitUntil:
+    notVisible: Old tablet
+    timeout: 10000
+- assertVisible: Front till

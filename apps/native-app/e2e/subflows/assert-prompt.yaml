@@ -1,0 +1,7 @@
+# web's pinPrompt(...).toBeVisible(): waits for the one-shot PIN prompt raised
+# for ACTION (the access.action.* key's text).
+appId: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.why.action", { action: ACTION })}'
+    timeout: 15000

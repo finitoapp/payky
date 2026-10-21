@@ -1,22 +1,15 @@
-# web's typePin: PIN (4 digits) on the PIN pad on screen, then Submit.
+# web's typePin: PIN (any length) on the PIN pad on screen, then OK.
 appId: ${APP_ID}
 ---
-- runFlow:
-    file: tap-label.yaml
-    env:
-      LABEL: ${PIN.charAt(0)}
-- runFlow:
-    file: tap-label.yaml
-    env:
-      LABEL: ${PIN.charAt(1)}
-- runFlow:
-    file: tap-label.yaml
-    env:
-      LABEL: ${PIN.charAt(2)}
-- runFlow:
-    file: tap-label.yaml
-    env:
-      LABEL: ${PIN.charAt(3)}
+- evalScript: ${output.pinIndex = 0}
+- repeat:
+    times: ${PIN.length}
+    commands:
+      - runFlow:
+          file: tap-label.yaml
+          env:
+            LABEL: ${PIN[output.pinIndex]}
+      - evalScript: ${output.pinIndex = output.pinIndex + 1}
 - runFlow:
     file: tap-label.yaml
     env:

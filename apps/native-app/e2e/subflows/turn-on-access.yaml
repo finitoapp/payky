@@ -3,13 +3,24 @@
 # "None") for this device. Turning it on starts a PIN session on the Access
 # page, as web's helper leaves it: KEEP: "true" stays there with it; otherwise
 # the app restarts to end the session, which web's specs do with a reload.
+# IN_APP: "true" opens Access from the terminal home through Settings
+# (web's `navigate: false` after opening it in-app), so nothing reloads.
 appId: ${APP_ID}
 ---
 - runFlow:
+    when:
+      true: ${typeof IN_APP === "undefined" || IN_APP !== "true"}
     file: goto.yaml
     env:
       ROUTE: settings/access
       TEXT: ${output.t["access.title"]}
+- runFlow:
+    when:
+      true: ${typeof IN_APP !== "undefined" && IN_APP === "true"}
+    file: open-settings-entry.yaml
+    env:
+      FROM_HOME: "true"
+      TITLE: ${output.t["access.title"]}
 - runFlow:
     file: tap-label.yaml
     env:
@@ -40,7 +51,10 @@ appId: ${APP_ID}
     when:
       true: ${typeof PRESET !== "undefined"}
     commands:
-      - tapOn: ${output.re(output.t["access.preset.basic"])}
+      # This device's select: other devices have one too.
+      - tapOn:
+          text: ${output.re(output.t["access.preset.basic"])}
+          below: ${output.t["access.device.this"]}
       - tapOn: '${typeof PRESET === "undefined" ? "" : output.re(PRESET)}'
 - runFlow:
     file: tap-label.yaml

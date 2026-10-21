@@ -1,0 +1,110 @@
+# web access-gates.spec.ts: "every cart write that takes items off the bill asks a Basic device for the PIN".
+appId: ${APP_ID}
+tags: [access-gates]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow: ../../subflows/turn-on-access.yaml
+# Adding needs no PIN.
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 2 })}'
+    timeout: 10000
+# Removing one asks; cancelling leaves the bill as it was.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.remove.aria", { name: "Coffee" })}'
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.removeLines"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.pin.cancel"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["access.pin.cancel"]}
+    timeout: 10000
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 2 })}'
+    timeout: 10000
+# Undoing an added item writes a removal, so it asks too.
+- runFlow:
+    file: ../../subflows/tap-id.yaml
+    env:
+      LABEL: bill-summary-trigger
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.summary.undo"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.removeLines"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 10000
+# Clearing asks again: the prompt started no session.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.summary.clear"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.removeLines"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 0 })}'
+    timeout: 10000
+# Discarding the bill asks for the PIN (the open summary covers the items).
+- runFlow:
+    file: ../../subflows/tap-id.yaml
+    env:
+      LABEL: bill-summary-trigger
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.discard"]}
+- tapOn: ${output.t["bill.discard.confirm.confirm"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.discardBill"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible: ${output.t["home.pos.noTable.empty"]}
+    timeout: 15000

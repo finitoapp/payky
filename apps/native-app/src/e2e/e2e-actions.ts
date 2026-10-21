@@ -1,5 +1,8 @@
 import { accessLastActivityAtom } from "@payky/app-shared/access-state"
-import { updateDeviceSettings } from "@payky/core/evolu/device-account"
+import {
+  accountListQuery,
+  updateDeviceSettings,
+} from "@payky/core/evolu/device-account"
 import { getDeviceLocaleForLanguage } from "@payky/core/evolu/device-client"
 import {
   saveCashRegisterAccount,
@@ -372,6 +375,15 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
       deviceByIdQuery(DeviceId.parse(params.id))
     )
     return `token=${row?.pinUnblockToken ? "yes" : "no"}`
+  },
+
+  /**
+   * `__e2eDeviceAccountIds`: the device's account ids, oldest first, printed
+   * as `count=<n> first=<id>`.
+   */
+  deviceAccountIds: async (run) => {
+    const accounts = await run.deps.deviceEvolu.loadQuery(accountListQuery)
+    return `count=${accounts.length} first=${accounts[0]?.id ?? "-"}`
   },
 
   /** `__e2eUnblockThisDevice`: another device's unblock reaching this one. */

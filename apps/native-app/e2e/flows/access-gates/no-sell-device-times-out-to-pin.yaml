@@ -1,0 +1,29 @@
+# web access-gates.spec.ts: "a device without sell returns to its PIN screen when the session times out". Android
+# only: idleSession stands in for web's clock, and a web link reloads the page.
+appId: ${APP_ID}
+tags: [access-gates, android-only]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      IN_APP: "true"
+      KEEP: "true"
+      PRESET: ${output.t["access.preset.none"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+# Back on the settings list, still scrolled to Access.
+- extendedWaitUntil:
+    visible: ${output.re(output.t["access.title"])}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: idleSession
+- back
+# Five idle minutes send it home, locked.
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.sell"] })}'
+    timeout: 30000

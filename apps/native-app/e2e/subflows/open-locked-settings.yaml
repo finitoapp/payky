@@ -5,14 +5,10 @@
 appId: ${APP_ID}
 ---
 - runFlow:
-    file: tap-label.yaml
+    file: open-settings-entry.yaml
     env:
-      LABEL: ${output.t["nav.settings"]}
-- extendedWaitUntil:
-    visible: ${output.t["settings.title"]}
-    timeout: 15000
-# The list is open to every device; Items is the first locked screen.
-- tapOn: ${output.t["settings.items.title"]}
+      FROM_HOME: "true"
+      TITLE: ${output.t["settings.items.title"]}
 - extendedWaitUntil:
     visible: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.settings"] })}'
     timeout: 15000

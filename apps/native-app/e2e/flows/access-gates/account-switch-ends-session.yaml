@@ -1,0 +1,47 @@
+# web access-gates.spec.ts: "switching account ends the PIN session, also when switching back". Native opens the
+# terminal home after a switch (native-e2e.md, open questions), so the lock
+# shows once the accounts page is opened again.
+appId: ${APP_ID}
+tags: [access-gates]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      IN_APP: "true"
+      KEEP: "true"
+# Create a second account without access control.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- runFlow:
+    file: ../../subflows/open-settings-entry.yaml
+    env:
+      TITLE: ${output.t["settings.accounts.nav.title"]}
+- scrollUntilVisible:
+    element: ${output.t["accountChoice.new.title"]}
+- tapOn: ${output.t["accountChoice.new.title"]}
+- tapOn: ${output.t["settings.accounts.create.confirm.confirm"]}
+- extendedWaitUntil:
+    visible: ${output.t["onboarding.title"]}
+    timeout: 30000
+- runFlow: ../../subflows/complete-onboarding.yaml
+# Switching back to the locked account asks for the PIN.
+- runFlow:
+    file: ../../subflows/open-settings-entry.yaml
+    env:
+      FROM_HOME: "true"
+      TITLE: ${output.t["settings.accounts.nav.title"]}
+- tapOn: ${output.t["settings.accounts.list.switch"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/open-settings-entry.yaml
+    env:
+      FROM_HOME: "true"
+      TITLE: ${output.t["settings.accounts.nav.title"]}
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.admin"] })}'
+    timeout: 15000

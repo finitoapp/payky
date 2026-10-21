@@ -1,0 +1,139 @@
+# web access-gates.spec.ts: "an Owner device still needs the PIN to change it, to turn access control off and to unblock".
+appId: ${APP_ID}
+tags: [access-gates]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: seedDevice
+      QUERY: name=Kitchen%20tablet&blocked=true
+- copyTextFrom:
+    id: e2e-result
+- evalScript: '${output.kitchenId = maestro.copiedText.match(/id=(\S+)/)[1]}'
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      PRESET: ${output.t["access.preset.owner"]}
+# A fresh start: no session, the device's own admin opens Access.
+- runFlow:
+    file: ../../subflows/open-settings-entry.yaml
+    env:
+      FROM_HOME: "true"
+      TITLE: ${output.t["access.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["access.status.on"]}
+    timeout: 15000
+# Changing the PIN asks for the current one.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.changePin"]}
+- runFlow:
+    file: ../../subflows/tap-input.yaml
+    env:
+      LABEL: ${output.t["access.newPin.label"]}
+- inputText: "99887766"
+- runFlow:
+    file: ../../subflows/tap-input.yaml
+    env:
+      LABEL: ${output.t["access.newPin.repeat"]}
+- inputText: "99887766"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.save"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.changePin"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible: ${output.t["access.status.on"]}
+    timeout: 15000
+# Unblocking asks for it; cancelled, nothing is written.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.device.unblock"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.unblock"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.pin.cancel"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["access.pin.cancel"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: readDevice
+      QUERY: id=${output.kitchenId}
+- assertVisible: E2E OK readDevice token=no
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/access
+      TEXT: ${output.t["access.status.on"]}
+# Turning off asks for it, and only the new PIN does.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.turnOff"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.wrong", { count: 4 })}'
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "99887766"
+# The wrong one is shown to the owner first (access/0006).
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.attempts.continue"]}
+- extendedWaitUntil:
+    visible: ${output.t["access.status.off"]}
+    timeout: 15000
+# Turning on again can reuse the PIN, after entering it.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.turnOn"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.wizard.keepPin"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.enable"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "99887766"
+- extendedWaitUntil:
+    visible: ${output.t["access.device.this"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.turnOn"]}
+- extendedWaitUntil:
+    visible: ${output.t["access.status.on"]}
+    timeout: 15000

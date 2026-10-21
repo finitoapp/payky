@@ -1,0 +1,45 @@
+# web access-gates.spec.ts: "a typed URL neither removes an account nor reopens onboarding".
+appId: ${APP_ID}
+tags: [access-gates]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+# Create a second account; the first one is now inactive.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/accounts
+      TEXT: ${output.t["settings.accounts.title"]}
+- scrollUntilVisible:
+    element: ${output.t["accountChoice.new.title"]}
+- tapOn: ${output.t["accountChoice.new.title"]}
+- tapOn: ${output.t["settings.accounts.create.confirm.confirm"]}
+- extendedWaitUntil:
+    visible: ${output.t["onboarding.title"]}
+    timeout: 30000
+- runFlow: ../../subflows/complete-onboarding.yaml
+# A restore URL naming the other account removes nothing.
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: deviceAccountIds
+- copyTextFrom:
+    id: e2e-result
+- evalScript: '${output.firstAccount = maestro.copiedText.match(/first=(\S+)/)[1]}'
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: restore-account?source=onboarding&previous=${output.firstAccount}&created=true
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: deviceAccountIds
+      QUERY: again=1
+- assertVisible: E2E OK deviceAccountIds count=2.*
+# Onboarding is not shown to an onboarded account.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: onboarding
+      TEXT: ${output.t["home.pay"]}
+- assertNotVisible: ${output.t["onboarding.title"]}

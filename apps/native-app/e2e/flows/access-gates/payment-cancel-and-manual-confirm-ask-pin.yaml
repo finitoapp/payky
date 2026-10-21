@@ -1,0 +1,92 @@
+# web access-gates.spec.ts: "cancelling a payment and confirming money by hand ask a Basic device for the PIN".
+appId: ${APP_ID}
+tags: [access-gates]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/turn-on-access.yaml
+- runFlow:
+    file: ../../subflows/enter-amount.yaml
+    env:
+      AMOUNT: "5"
+- tapOn: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+# Confirming cash asks; cancelling the prompt confirms nothing.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.action"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.markCashPaid"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.pin.cancel"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["access.pin.cancel"]}
+    timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertNotVisible:
+          id: payment-paid-panel
+# Cancelling the payment takes the PIN.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cancel"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.cancelPayment"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 15000
+# Confirming a bank transfer by hand takes the PIN.
+- runFlow:
+    file: ../../subflows/enter-amount.yaml
+    env:
+      AMOUNT: "5"
+- tapOn: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.iban"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.copyQr"]}
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanPaid.action"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanPaid.action"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.markIbanPaid"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible:
+      id: payment-paid-panel
+    timeout: 15000
+- assertVisible: ${output.t["paymentWait.paid"]}

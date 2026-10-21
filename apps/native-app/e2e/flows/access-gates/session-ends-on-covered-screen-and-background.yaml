@@ -1,0 +1,58 @@
+# web access-gates.spec.ts: "a PIN session ends on a screen the device covers itself, and in the background". Going to the
+# background (Home, then back) is checked on Android only: Maestro's web driver
+# cannot hide the page.
+appId: ${APP_ID}
+tags: [access-gates]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      IN_APP: "true"
+      KEEP: "true"
+# A free screen keeps the session going.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- runFlow:
+    file: ../../subflows/open-settings-entry.yaml
+    env:
+      TITLE: ${output.t["settings.items.title"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.items.add"]}
+# The app going to the background ends it.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - pressKey: Home
+      # Back to the running app, not a fresh start.
+      - launchApp:
+          stopApp: false
+      - extendedWaitUntil:
+          visible: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.settings"] })}'
+          timeout: 15000
+      - runFlow:
+          file: ../../subflows/type-pin.yaml
+          env:
+            PIN: "4821"
+      - runFlow:
+          file: ../../subflows/assert-label.yaml
+          env:
+            LABEL: ${output.t["settings.items.add"]}
+# Going home, which the device covers, ends it.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 15000
+- runFlow: ../../subflows/open-locked-settings.yaml

@@ -14,6 +14,8 @@ vi.mock("expo-crypto", () => {
 
 const quickSubtle = vi.hoisted(() => ({ marker: "quick-crypto subtle" }))
 vi.mock("react-native-quick-crypto", () => ({ subtle: quickSubtle }))
+// The e2e setup entry imports (`src/e2e/e2e-setup.ts`) reaches for LogBox.
+vi.mock("react-native", () => ({ LogBox: { ignoreAllLogs: () => {} } }))
 
 vi.mock("expo-router/entry", async () => {
   // Exercise the real polyfills before the Router can evaluate domain imports.

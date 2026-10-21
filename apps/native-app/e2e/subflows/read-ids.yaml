@@ -1,0 +1,12 @@
+# Web's `new URL(page.url())` for ids: runs the `lastIds` bridge action and
+# keeps the newest bill's and payment's ids as `output.billId` and
+# `output.paymentId` ("-" for none). It leaves the app on the bridge page.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: e2e-action.yaml
+    env:
+      ACTION: lastIds
+- copyTextFrom:
+    id: e2e-result
+- evalScript: '${output.billId = maestro.copiedText.match(/bill=(\S+)/)[1]; output.paymentId = maestro.copiedText.match(/payment=(\S+)/)[1]}'

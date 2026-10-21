@@ -63,7 +63,9 @@ assertions.
   `add-catalog-item`, `add-category`, `add-table` are web's `addCatalogItem`,
   `addCatalogCategory`, `addTable`; `start-new-bill` is `startNewBill`,
   `new-bill` the same from the tables home; `charge-cash` pays the open bill
-  in cash and returns home.
+  in cash and returns home; `read-ids` is web's `new URL(page.url())` for
+  ids: the newest bill's and payment's ids as `output.billId` and
+  `output.paymentId` (it leaves the app on the bridge page, so `goto` next).
 
 ## The bridge
 

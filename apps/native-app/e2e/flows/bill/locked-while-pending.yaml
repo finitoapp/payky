@@ -1,0 +1,79 @@
+# web bill.spec.ts: "locks a bill while its payment is pending, and unlocks it
+# once that payment is canceled".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+# web's startBillAndBeginCashPayment.
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.cashPaid.action"]}
+    timeout: 15000
+- runFlow: ../../subflows/read-ids.yaml
+# The bill shows as locked while the payment is pending, and leads to it.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: ${output.t["bill.locked"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.locked.viewPayment"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cancel"]}
+# Canceling the payment goes back to the bill, unlocked again.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cancel"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertNotVisible: ${output.t["bill.locked"]}
+# The canceled payment's own page hands it to its activity detail, canceled,
+# with no paid panel.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: payment/${output.paymentId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- assertVisible: ${output.t["payment.status.canceled"]}
+- assertNotVisible:
+    id: payment-paid-panel
+# The redirect replaced the payment screen in history.
+- back
+- extendedWaitUntil:
+    notVisible: ${output.t["paymentDetail.title"]}
+    timeout: 10000
+- assertNotVisible: ${output.t["paymentWait.canceled"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cancel"]}
+      HIDDEN: "true"

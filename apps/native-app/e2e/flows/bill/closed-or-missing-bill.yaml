@@ -1,0 +1,44 @@
+# web bill.spec.ts: "shows the right message for a closed or missing bill".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+# Charge the cart with cash; back home through the app, so the bill's close
+# lands (as on web).
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- runFlow: ../../subflows/charge-cash.yaml
+- runFlow: ../../subflows/read-ids.yaml
+# The closed bill opens as its activity detail (access/0002).
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+# A well-formed but never-issued id opens as a fresh, empty cart: only its
+# first character is swapped, keeping the id's encoding intact.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: 'bill?billId=${(output.billId[0] === "a" ? "b" : "a") + output.billId.slice(1)}'
+      TEXT: ${output.t["bill.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 10000

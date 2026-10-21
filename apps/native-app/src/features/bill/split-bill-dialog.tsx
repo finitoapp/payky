@@ -23,7 +23,6 @@ import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import Minus from "lucide-react-native/icons/minus"
 import Plus from "lucide-react-native/icons/plus"
 import { useMemo, useState } from "react"
-import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
 import {
@@ -290,58 +289,59 @@ function ExistingBillOption({
   )
 
   return (
-    <Pressable role="button" aria-selected={selected} onPress={onSelect}>
-      <XStack
-        gap={8}
-        p={8}
-        items="center"
-        justify="space-between"
-        rounded={radius.md}
-        borderWidth={1}
-        borderColor={selected ? "primary" : "transparent"}
-        bg={selected ? "primary-10" : "transparent press:muted"}
-      >
-        <YStack flex={1} minW={0}>
-          <Text
-            fontSize={fontSize.sm}
-            lineHeight={fontSize.sm}
-            fontWeight={fontWeight.medium}
-            numberOfLines={1}
-          >
-            {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
-          </Text>
-          {tableName === null ? null : (
-            <Text
-              fontSize={fontSize.xs}
-              lineHeight={fontSize.xs}
-              color="muted-foreground"
-              numberOfLines={1}
-            >
-              {tableName}
-            </Text>
-          )}
-        </YStack>
-        <YStack shrink={0} items="flex-end" gap={2}>
+    // The row itself takes the press: a `press:` clause makes a Tamagui view
+    // its own touch responder, which kept a wrapping Pressable from ever
+    // seeing the tap on Android.
+    <XStack
+      role="button"
+      aria-selected={selected}
+      onPress={onSelect}
+      gap={8}
+      p={8}
+      items="center"
+      justify="space-between"
+      rounded={radius.md}
+      borderWidth={1}
+      borderColor={selected ? "primary" : "transparent"}
+      bg={selected ? "primary-10" : "transparent press:muted"}
+    >
+      <YStack flex={1} minW={0}>
+        <Text
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          fontWeight={fontWeight.medium}
+          numberOfLines={1}
+        >
+          {bill.label ?? t("bill.list.label", { number: bill.displayNumber })}
+        </Text>
+        {tableName === null ? null : (
           <Text
             fontSize={fontSize.xs}
             lineHeight={fontSize.xs}
             color="muted-foreground"
+            numberOfLines={1}
           >
-            {t("bill.itemsCount", { value: itemCount })}
+            {tableName}
           </Text>
-          <Text
-            fontSize={fontSize.sm}
-            lineHeight={fontSize.sm}
-            fontWeight={fontWeight.semibold}
-          >
-            {formatMoney(
-              { value: totalAmount, currency: bill.currency },
-              locale
-            )}
-          </Text>
-        </YStack>
-      </XStack>
-    </Pressable>
+        )}
+      </YStack>
+      <YStack shrink={0} items="flex-end" gap={2}>
+        <Text
+          fontSize={fontSize.xs}
+          lineHeight={fontSize.xs}
+          color="muted-foreground"
+        >
+          {t("bill.itemsCount", { value: itemCount })}
+        </Text>
+        <Text
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          fontWeight={fontWeight.semibold}
+        >
+          {formatMoney({ value: totalAmount, currency: bill.currency }, locale)}
+        </Text>
+      </YStack>
+    </XStack>
   )
 }
 

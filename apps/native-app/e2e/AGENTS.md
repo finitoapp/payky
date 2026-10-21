@@ -71,7 +71,12 @@ assertions.
   `parkCart`; `merge-scenario` is bill-split's `setupMergeScenario`;
   `to-tip-step` enters 5.9 and opens the tip step; `mark-cash-paid` is
   `markCashPaid`; `open-country-select` opens the legal entity's empty
-  country select.
+  country select; `inject-scan` (`CODE`) is `injectScanCode`, the camera
+  decoding a code: it opens the newest unfinished bill (a new cart when none
+  has a row yet) with the code, as the home screen's hardware scan does, so
+  scan mode need not be on and no `E2E OK` is waited for — assert the bill's
+  outcome after it. It does not reach the item form or list, whose scans
+  come from hardware keys only.
 - Optional env: `fill-input`/`fill-inline`/`clear-input` take `PLACEHOLDER`
   (an emptied input with one shows it as its text), `fill-input`/
   `fill-inline`/`tap-input` take `BUTTONS: "true"` for an inline field that

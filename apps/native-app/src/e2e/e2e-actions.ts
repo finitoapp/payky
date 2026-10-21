@@ -18,7 +18,7 @@ import {
   billByIdQuery,
   latestBillsQuery,
 } from "@payky/core/modules/bill/bill-queries"
-import { BillId } from "@payky/core/modules/bill/bill-types"
+import { BillId, createRandomBillId } from "@payky/core/modules/bill/bill-types"
 import {
   insertBillLineRows,
   loadCalculatedBillLineSummaries,
@@ -61,6 +61,7 @@ import {
   PositiveNumber,
   TimestampMsSchema,
 } from "@payky/core/modules/shared/schema"
+import { router } from "expo-router"
 import type { createStore } from "jotai"
 import type { SetStateAction } from "react"
 import { z } from "zod"
@@ -161,6 +162,27 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
     const [bill] = await run.deps.evolu.loadQuery(latestBillsQuery(1))
     const [payment] = await run.deps.evolu.loadQuery(latestPaymentsQuery(1))
     return `bill=${bill?.id ?? "-"} payment=${payment?.id ?? "-"}`
+  },
+
+  /**
+   * `__e2eInjectScanCode`: the bill's camera decoding `code`, without a
+   * camera. The camera's callback only exists while scan mode is on, and on
+   * web a link reloads the page and loses that state, so this goes through
+   * the hand-off the home screen uses for a hardware scan: it opens `/bill`
+   * with `scan=<code>` on the newest unfinished bill (a fresh cart has no row
+   * yet, so a new id then), and the page handles the code as any scan. It
+   * moves on by itself, so there is no `E2E OK` to wait for: flows wait for
+   * the bill's outcome.
+   */
+  injectScanCode: async (run, params) => {
+    const code = NonEmptyStringSchema.parse(params.code)
+    const [bill] = await run.deps.evolu.loadQuery(latestBillsQuery(1))
+    const open = bill && bill.closedAt === null && bill.canceledAt === null
+    router.replace({
+      pathname: "/bill",
+      params: { billId: open ? bill.id : createRandomBillId(), scan: code },
+    })
+    return undefined
   },
 
   /**

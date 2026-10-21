@@ -1,0 +1,59 @@
+# web bill-scan.spec.ts: "scanning an unknown code can create a new catalog
+# item and add it to the cart". The scan goes in through injectScanCode.
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/start-new-bill.yaml
+# An unknown code offers to add a new item.
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "3333"
+- tapOn:
+    text: ${output.t["bill.scan.unknown.create"]}
+    below: ${output.t["bill.scan.unknown.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.scan.create.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["settings.items.form.name.label"]}
+      VALUE: Muffin
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["settings.items.form.price.label"]}
+      VALUE: "2.5"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+# Its copy is the unknown-code dialog's too, hence below the last select.
+- tapOn:
+    text: ${output.t["bill.scan.create.save"]}
+    below:
+      id: ${output.re(output.t["settings.items.form.taxRate.label"])}
+# The new item is on the cart.
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 15000
+- assertVisible: \$2\.50
+# It was also saved to the catalog with its scan code.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: ${output.t["settings.items.title"]}
+- tapOn: Muffin
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.form.title.edit"]}
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: ${output.re(output.t["settings.items.form.scanCode.label"])}
+- assertVisible:
+    id: ${output.re(output.t["settings.items.form.scanCode.label"])}
+    text: "3333"

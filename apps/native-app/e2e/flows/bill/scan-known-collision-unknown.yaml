@@ -1,0 +1,70 @@
+# web bill-scan.spec.ts: "scan mode adds a known item, flags a code collision,
+# and reports an unknown code". The scan goes in through injectScanCode (the
+# camera is not driven) and works with scan mode off, so it is not turned on:
+# on web every link reloads the page, which would lose it. The summary's
+# total tells Tea ($3) from Cocoa ($4), which a brick under the dialog hides.
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+      SCAN_CODE: "1111"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Tea
+      PRICE: "3"
+      SCAN_CODE: "2222"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Cocoa
+      PRICE: "4"
+      SCAN_CODE: "2222"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+# A code matching exactly one item adds it directly.
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "1111"
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 15000
+# A code matching more than one opens the collision dialog; picking Tea adds
+# only Tea.
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "2222"
+- extendedWaitUntil:
+    visible: ${output.t["bill.scan.collision.title"]}
+    timeout: 15000
+- tapOn:
+    text: Tea
+    below: ${output.t["bill.scan.collision.description"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.scan.collision.title"]}
+    timeout: 10000
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 2 })}'
+    timeout: 10000
+- assertVisible: \$8\.00
+# An unrecognized code offers to create it; cancelling adds nothing.
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "9999"
+- tapOn: ${output.t["bill.scan.unknown.cancel"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.scan.unknown.cancel"]}
+    timeout: 10000
+- assertVisible: '${output.tv("bill.itemsCount", { value: 2 })}'

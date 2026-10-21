@@ -1,0 +1,7 @@
+# web's injectScanCode: the bill's camera decoding CODE, through the
+# injectScanCode bridge action. It moves on to the bill itself (the newest
+# unfinished one, a new cart if none has a row yet), so there is no E2E OK to
+# wait for: assert the bill's outcome after it.
+appId: ${APP_ID}
+---
+- openLink: '${BASE_URL}e2e/injectScanCode?code=${CODE}'

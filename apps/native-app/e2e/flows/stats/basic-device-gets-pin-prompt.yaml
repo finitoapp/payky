@@ -1,0 +1,15 @@
+# web stats.spec.ts: "a Basic device opening the statistics gets the PIN prompt".
+appId: ${APP_ID}
+tags: [stats]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/turn-on-access.yaml
+# A cold start with the link: on Android a link onto a locked route while the
+# app runs lands home (native-e2e.md open questions).
+- stopApp
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: stats
+      TEXT: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.stats"] })}'
+- assertNotVisible: ${output.t["stats.live"]}

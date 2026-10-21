@@ -2,8 +2,6 @@
 # one, and each links straight to it". Bills are #1 and #2 on Table B, #3 on
 # Table C; a tile's own bills are told apart by position (Table B's column
 # is left of "Table C", Table C's right of "Table B").
-# KNOWN APP BUG: fails on web, where the two chips are squashed
-# (native-e2e.md, open questions).
 appId: ${APP_ID}
 tags: [tables-overview]
 ---
@@ -93,7 +91,7 @@ tags: [tables-overview]
       - tapOn:
           id: ${output.re(output.t["tables.tile.newBill"])}
           leftOf: Table C
-          below: Table B
+          rightOf: Table B
 - runFlow:
     when:
       platform: Android

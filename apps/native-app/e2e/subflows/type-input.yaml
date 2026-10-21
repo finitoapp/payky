@@ -1,0 +1,12 @@
+# Types VALUE into the empty input named LABEL (fill-input when it may hold
+# text: its emptiness check reads a placeholder as text).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: tap-input.yaml
+    env:
+      LABEL: ${LABEL}
+- inputText: ${VALUE}
+- assertVisible:
+    id: ${output.re(LABEL)}
+    text: ${output.re(VALUE)}

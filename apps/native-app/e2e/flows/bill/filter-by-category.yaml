@@ -1,0 +1,41 @@
+# web bill.spec.ts: "filters the item grid by category".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-category.yaml
+    env:
+      NAME: Drinks
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+      CATEGORY: Drinks
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Sandwich
+      PRICE: "6"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+# Both items show under "All".
+- assertVisible: Coffee
+- assertVisible: Sandwich
+# "Drinks" shows only the categorized item.
+- tapOn: Drinks
+- assertVisible: Coffee
+- assertNotVisible: Sandwich
+# "Uncategorized" shows only the other one.
+- tapOn: ${output.t["bill.category.uncategorized"]}
+- assertVisible: Sandwich
+- assertNotVisible: Coffee
+# "All" shows both again.
+- tapOn: ${output.t["bill.category.all"]}
+- assertVisible: Coffee
+- assertVisible: Sandwich

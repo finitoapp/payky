@@ -1,0 +1,12 @@
+# From the tables home: starts a bill from the "no table" strip's "New bill"
+# and waits for the empty bill. A free table tile is named "New bill" too,
+# but the strip comes first.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["tables.tile.newBill"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.title"]}
+    timeout: 15000

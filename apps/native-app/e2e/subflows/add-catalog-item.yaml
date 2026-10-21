@@ -1,0 +1,109 @@
+# web's addCatalogItem: adds a catalog item through the settings form. NAME,
+# PRICE; optional INTERNAL_NAME, SKU, SCAN_CODE, CATEGORY (option text),
+# TAX_RATE (option text, a regex). Ends on the items list. The form starts
+# empty, so it types without clearing (clear-input would read a placeholder
+# as text).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: ${output.t["settings.items.title"]}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.items.add"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.form.title.create"]}
+    timeout: 15000
+- runFlow:
+    file: type-input.yaml
+    env:
+      LABEL: ${output.t["settings.items.form.name.label"]}
+      VALUE: ${NAME}
+- runFlow:
+    when:
+      true: ${typeof INTERNAL_NAME !== "undefined"}
+    file: type-input.yaml
+    env:
+      LABEL: ${output.t["settings.items.form.internalName.label"]}
+      VALUE: '${typeof INTERNAL_NAME === "undefined" ? "" : INTERNAL_NAME}'
+- runFlow:
+    file: type-input.yaml
+    env:
+      LABEL: ${output.t["settings.items.form.price.label"]}
+      VALUE: ${PRICE}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    when:
+      true: ${typeof SKU !== "undefined"}
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: ${output.re(output.t["settings.items.form.sku.label"])}
+      - runFlow:
+          file: type-input.yaml
+          env:
+            LABEL: ${output.t["settings.items.form.sku.label"]}
+            VALUE: '${typeof SKU === "undefined" ? "" : SKU}'
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - hideKeyboard
+- runFlow:
+    when:
+      true: ${typeof CATEGORY !== "undefined"}
+    commands:
+      # Its current value: on Android the field label matches the select's
+      # name too.
+      - scrollUntilVisible:
+          element: ${output.re(output.t["settings.items.form.category.none"])}
+          centerElement: true
+      - tapOn: ${output.re(output.t["settings.items.form.category.none"])}
+      - tapOn: '${typeof CATEGORY === "undefined" ? "" : output.re(CATEGORY)}'
+- runFlow:
+    when:
+      true: ${typeof SCAN_CODE !== "undefined"}
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: ${output.re(output.t["settings.items.form.scanCode.label"])}
+      # Not tap-input: the scan button sits over the input's right end.
+      - tapOn:
+          id: ${output.re(output.t["settings.items.form.scanCode.label"])}
+      - inputText: '${typeof SCAN_CODE === "undefined" ? "" : SCAN_CODE}'
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - hideKeyboard
+- runFlow:
+    when:
+      true: ${typeof TAX_RATE !== "undefined"}
+    commands:
+      # Its current value: on Android the field label matches the select's
+      # name too.
+      - scrollUntilVisible:
+          element: ${output.re(output.t["settings.items.form.taxRate.none"])}
+          centerElement: true
+      - tapOn: ${output.re(output.t["settings.items.form.taxRate.none"])}
+      - tapOn: '${typeof TAX_RATE === "undefined" ? "" : TAX_RATE}'
+# The Save button shares its copy with the page title, hence below the last
+# input.
+- scrollUntilVisible:
+    element:
+      id: ${output.re(output.t["settings.items.form.scanCode.label"])}
+    centerElement: true
+- tapOn:
+    text: ${output.re(output.t["settings.items.form.save.create"])}
+    below:
+      id: ${output.re(output.t["settings.items.form.scanCode.label"])}
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.title"]}
+    timeout: 15000

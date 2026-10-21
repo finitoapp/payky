@@ -1,0 +1,43 @@
+# web bill.spec.ts: "charges a cart and closes it once cash is paid".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["home.pay"]}
+# The tip step charges the bill's total.
+- extendedWaitUntil:
+    visible: ${output.t["paymentTip.title"]}
+    timeout: 15000
+- assertVisible: \$5\.00
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.action"]}
+- extendedWaitUntil:
+    visible:
+      id: payment-paid-panel
+    timeout: 15000
+- tapOn: ${output.t["paymentWait.back"]}
+# The paid bill is no longer resumable.
+- extendedWaitUntil:
+    visible: ${output.t["home.pos.noTable.empty"]}
+    timeout: 15000

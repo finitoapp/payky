@@ -1,6 +1,7 @@
 # Taps the control named LABEL by its accessibility label (icon-only and
 # other kit Buttons): content-desc text on Android, but an id on web, where
-# Maestro reads aria-label as an id rather than as text. Inputs: tap-input.
+# Maestro reads aria-label as an id rather than as text. PATTERN instead of
+# LABEL is a regex ("Bill #\\d+"). Inputs: tap-input.
 appId: ${APP_ID}
 ---
 - runFlow:
@@ -8,9 +9,9 @@ appId: ${APP_ID}
       platform: Web
     commands:
       - tapOn:
-          id: ${output.re(LABEL)}
+          id: '${typeof PATTERN === "undefined" ? output.re(LABEL) : PATTERN}'
 - runFlow:
     when:
       platform: Android
     commands:
-      - tapOn: ${output.re(LABEL)}
+      - tapOn: '${typeof PATTERN === "undefined" ? output.re(LABEL) : PATTERN}'

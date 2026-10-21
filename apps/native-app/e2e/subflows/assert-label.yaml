@@ -1,0 +1,36 @@
+# Waits until the control named LABEL (its accessibility label; or a regex
+# PATTERN) is visible, or with HIDDEN set, gone: tap-label's lookup,
+# content-desc text on Android, an id on web.
+appId: ${APP_ID}
+---
+- evalScript: '${output.label = typeof PATTERN === "undefined" ? output.re(LABEL) : PATTERN; output.hidden = typeof HIDDEN !== "undefined"}'
+- runFlow:
+    when:
+      true: ${maestro.platform === "web" && !output.hidden}
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: ${output.label}
+          timeout: 10000
+- runFlow:
+    when:
+      true: ${maestro.platform === "web" && output.hidden}
+    commands:
+      - extendedWaitUntil:
+          notVisible:
+            id: ${output.label}
+          timeout: 10000
+- runFlow:
+    when:
+      true: ${maestro.platform === "android" && !output.hidden}
+    commands:
+      - extendedWaitUntil:
+          visible: ${output.label}
+          timeout: 10000
+- runFlow:
+    when:
+      true: ${maestro.platform === "android" && output.hidden}
+    commands:
+      - extendedWaitUntil:
+          notVisible: ${output.label}
+          timeout: 10000

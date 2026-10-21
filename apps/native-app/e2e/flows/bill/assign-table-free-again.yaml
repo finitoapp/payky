@@ -1,0 +1,51 @@
+# web bill.spec.ts: "the assign-table dialog shows a table as free again once
+# its bill is settled".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-table.yaml
+    env:
+      NAME: Patio 1
+      SEATS: "4"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+# Start the bill on Patio 1 and pay it off.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.table.aria"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- tapOn: Patio 1
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- runFlow: ../../subflows/charge-cash.yaml
+# Patio 1 shows as free in a new bill's dialog.
+- runFlow: ../../subflows/new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.table.aria"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- assertVisible:
+    text: ${output.t["tables.tile.free"]}
+    below: Patio 1

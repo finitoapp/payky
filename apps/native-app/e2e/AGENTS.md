@@ -9,13 +9,20 @@ assertions.
 
 - `bun run test:e2e:native:web` / `bun run test:e2e:native:android` (root), or
   `bun run --cwd apps/native-app test:e2e -- --platform web|android [--build]
-  [e2e/flows/x/y.yaml ...]`. Not part of `bun run check`.
+  [--dev] [e2e/flows/x/y.yaml ...]`. Not part of `bun run check`.
 - Needs Maestro 2.11.0 (`curl -Ls https://get.maestro.mobile.dev |
   MAESTRO_VERSION=2.11.0 bash`, lands in `~/.maestro/bin`) and Java 17+.
 - The runner builds the e2e app when it is missing or with `--build`, always
   with `EXPO_PUBLIC_PAYKY_E2E=1`: web is an `expo export` in
   `.generated/web` served on `127.0.0.1:8790`, Android a release APK for the
   device's ABI in `.generated/app-e2e.apk`. Rebuild after app changes.
+- Android `--dev` is the quick loop: a debug APK (`.generated/app-e2e-debug.apk`,
+  rebuilt only with `--build`, i.e. after native changes) loads its JS from an
+  e2e Metro on port 8792 (8081 may be a developer's own Metro without the e2e
+  switch), so a JS change needs no rebuild. The flows launch it through
+  `subflows/launch.yaml` with a dev-client link that keeps the dev menu away;
+  an emulator reaches Metro at `10.0.2.2`. Release builds stay the reference
+  (CI); run them before calling a batch green.
 - Android runs on an emulator only (the first `emulator-*` in `adb devices`)
   unless `ANDROID_SERIAL` names a device. The e2e APK replaces any installed
   `me.payky.nativepreview` and its data — never point it at someone's phone
@@ -44,12 +51,19 @@ assertions.
   `goto` (`ROUTE`, `TEXT`) is `gotoPage`; `e2e-action` (`ACTION`, `QUERY`)
   runs a bridge action and waits for `E2E OK`; `complete-onboarding` is
   `completeOnboarding` through the real UI; `tap-label` (`LABEL`) taps a
-  kit Button or icon button by its label; `tap-input`, `clear-input`,
-  `fill-input` (`LABEL`, `VALUE`) work an input by its field label;
+  kit Button or icon button by its label (or a regex `PATTERN`, "Bill #\\d+");
+  `tap-input`, `clear-input`,
+  `fill-input` (`LABEL`, `VALUE`) work an input by its field label
+  (`type-input` types into an empty one: `clear-input` reads a placeholder
+  as text); `assert-label` (`LABEL`) waits for a control by its label;
   `fill-inline` is `fillInlineField` (type, Save, wait for "Saved"); `tap-id`
   taps a control by testID; `relaunch` (`TEXT`) is `reloadPage`;
   `enter-amount` (`AMOUNT`, `<` = backspace) is `enterAmount`;
-  `assert-checked` (`LABEL`, `CHECKED`) checks a switch, on Android only.
+  `assert-checked` (`LABEL`, `CHECKED`) checks a switch, on Android only;
+  `add-catalog-item`, `add-category`, `add-table` are web's `addCatalogItem`,
+  `addCatalogCategory`, `addTable`; `start-new-bill` is `startNewBill`,
+  `new-bill` the same from the tables home; `charge-cash` pays the open bill
+  in cash and returns home.
 
 ## The bridge
 
@@ -111,6 +125,14 @@ Never coordinates, index-only selectors, or sleeps; wait with
   on every later settings write.
 - RN maps `aria-label` only on View-based components: RN's `Switch` needs
   `accessibilityLabel` (`ui/switch.tsx`).
+- Maestro's web driver scrolls only `window` and re-finds the focused input
+  through an index-less XPath; in an e2e build `src/e2e/e2e-setup.web.ts`
+  makes both work with React Native Web (an inner ScrollView, sibling inputs
+  sharing classes). Its native twin mutes LogBox.
+- `childOf` does not work on Android for a view with a testID: UIAutomator
+  lists its children under another parent.
+- A Save button sharing its copy with the page title ("Add item"): select it
+  with `below:` the last input.
 - Tamagui 3 on web drops `accessibilityLabel`/`accessibilityRole` into the DOM
   as dead attributes; use `aria-label`/`role`/`aria-*` in app code so web gets
   them too.

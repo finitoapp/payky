@@ -1,0 +1,98 @@
+# web bill.spec.ts: "adds a bulk quantity through the quantity dialog". The
+# brick's quantity is read off the summary's count (the same number).
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+# A tap on the tile puts one on the bill.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+# Cancelling the dialog leaves the cart untouched.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.quantity.trigger.aria", { name: "Coffee" })}'
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["bill.brick.quantity.input.aria"]}
+      VALUE: "7"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.brick.quantity.cancel"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.brick.quantity.description"]}
+    timeout: 10000
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+# Confirming adds the whole quantity in one go.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.quantity.trigger.aria", { name: "Coffee" })}'
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["bill.brick.quantity.input.aria"]}
+      VALUE: "12"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.brick.quantity.confirm"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.brick.quantity.description"]}
+    timeout: 10000
+- assertVisible: '${output.tv("bill.itemsCount", { value: 13 })}'
+# Reopening the dialog starts empty, since confirming adds.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.quantity.trigger.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: ${output.t["bill.brick.quantity.description"]}
+    timeout: 10000
+- assertNotVisible:
+    id: ${output.re(output.t["bill.brick.quantity.input.aria"])}
+    text: \d+
+# Confirming again adds on top instead of setting.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["bill.brick.quantity.input.aria"]}
+      VALUE: "3"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.brick.quantity.confirm"]}
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 16 })}'
+    timeout: 10000

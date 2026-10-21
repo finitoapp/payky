@@ -1,0 +1,34 @@
+# web's addCatalogCategory: adds a category (NAME) through the settings form
+# and ends on the categories list.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: settings/categories
+      TEXT: ${output.t["settings.categories.title"]}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.categories.add"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.categories.form.title.create"]}
+    timeout: 15000
+- runFlow:
+    file: type-input.yaml
+    env:
+      LABEL: ${output.t["settings.categories.form.name.label"]}
+      VALUE: ${NAME}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+# The Save button shares its copy with the page title.
+- tapOn:
+    text: ${output.re(output.t["settings.categories.form.save.create"])}
+    below:
+      id: ${output.re(output.t["settings.categories.form.name.label"])}
+- extendedWaitUntil:
+    visible: ${output.t["settings.categories.title"]}
+    timeout: 15000

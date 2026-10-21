@@ -1,0 +1,42 @@
+# web bill.spec.ts: "the on-the-bill filter shows only the items the bill
+# holds".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Tea
+      PRICE: "3"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+# An empty bill says so.
+- tapOn: ${output.t["bill.filter.inBill"]}
+- assertVisible: ${output.t["bill.filter.inBill.empty"]}
+# Only the item added is listed.
+- tapOn: ${output.t["bill.category.all"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+- tapOn: ${output.t["bill.filter.inBill"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Tea" })}'
+      HIDDEN: "true"

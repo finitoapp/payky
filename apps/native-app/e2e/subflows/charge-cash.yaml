@@ -1,0 +1,27 @@
+# From a bill with something on it: Pay, no tip, mark cash paid, and back
+# home through the paid panel's Back (an in-app route, so the bill's close
+# write is not cut off, as on web).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.action"]}
+- extendedWaitUntil:
+    visible:
+      id: payment-paid-panel
+    timeout: 15000
+- assertVisible: ${output.t["paymentWait.paid"]}
+- tapOn: ${output.t["paymentWait.back"]}
+- extendedWaitUntil:
+    visible:
+      id: no-table-tile
+    timeout: 15000

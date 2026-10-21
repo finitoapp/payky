@@ -1,0 +1,76 @@
+# web bill.spec.ts: "assigns and clears a table on a cart from the bill
+# header".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-table.yaml
+    env:
+      NAME: Patio 1
+      SEATS: "4"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+# Assign the table before the cart has a bill yet.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.table.aria"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- tapOn: Patio 1
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- assertVisible: Patio 1
+# The lazily created bill keeps the assigned table.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.list.label", { number: "\\d+" })}'
+    timeout: 10000
+- assertVisible: Patio 1
+# The tables home shows the bill on Patio 1's tile.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+# (Android lists no children under a testID view, so this is the bill's label
+# plus an empty "no table" strip rather than web's lookup inside the tile.)
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      PATTERN: '${output.tv("bill.list.label", { number: "\\d+" })}'
+- assertVisible: ${output.t["home.pos.noTable.empty"]}
+# Clear the table assignment.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      PATTERN: '${output.tv("bill.list.label", { number: "\\d+" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.table.aria"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- tapOn: ${output.t["bill.table.dialog.none"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- assertVisible: ${output.t["bill.table.assign"]}

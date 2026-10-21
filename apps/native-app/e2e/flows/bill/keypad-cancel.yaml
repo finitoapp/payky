@@ -1,0 +1,28 @@
+# web bill.spec.ts: "canceling a bill-less keypad payment lands back on the
+# keypad".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/enter-amount.yaml
+    env:
+      AMOUNT: "5.9"
+- tapOn: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentWait.method.iban"])}|${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- runFlow:
+    when:
+      visible: ${output.re(output.t["paymentTip.none"])}
+    commands:
+      - tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cancel"]}
+# Back on the keypad, not in a brand-new bill.
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 15000
+- assertNotVisible: ${output.t["bill.title"]}

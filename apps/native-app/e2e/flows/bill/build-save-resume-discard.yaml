@@ -1,0 +1,98 @@
+# web bill.spec.ts: "build a cart, save it, resume it, and discard it".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+# Search filters the item grid.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["bill.search"]}
+      VALUE: nonexistent
+- assertVisible: ${output.t["bill.emptySearch"]}
+- runFlow:
+    file: ../../subflows/clear-input.yaml
+    env:
+      LABEL: ${output.t["bill.search"]}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+# Adding and removing items updates the summary, one tap at a time.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 2 })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.remove.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+# Expand the summary and undo/redo/clear. The last action was "remove one".
+- tapOn:
+    id: bill-summary-trigger
+- extendedWaitUntil:
+    visible: ${output.t["bill.summary.undo"]}
+    timeout: 10000
+- tapOn: ${output.t["bill.summary.undo"]}
+- assertVisible: '${output.tv("bill.itemsCount", { value: 2 })}'
+- tapOn: ${output.t["bill.summary.redo"]}
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+- tapOn: ${output.t["bill.summary.clear"]}
+- assertVisible: '${output.tv("bill.itemsCount", { value: 0 })}'
+- tapOn: ${output.t["bill.summary.undo"]}
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+# A tap outside the open summary only closes it.
+- tapOn:
+    id: bill-summary-backdrop
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.summary.redo"]}
+    timeout: 10000
+# Closing the bill returns to the tables home, where the saved cart appears.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- extendedWaitUntil:
+    visible:
+      id: no-table-tile
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      PATTERN: '${output.tv("bill.list.label", { number: "\\d+" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.list.label", { number: "\\d+" })}'
+    timeout: 10000
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+# Discard the resumed cart with confirmation.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.discard"]}
+- tapOn: ${output.t["bill.discard.confirm.confirm"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pos.noTable.empty"]}
+    timeout: 10000

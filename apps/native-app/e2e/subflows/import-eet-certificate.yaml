@@ -1,0 +1,42 @@
+# web's importEetCertificate, without its EIC check: "chooses" the certificate
+# file (the e2e picker), types PASSWORD and taps Import. On the EET settings.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.certificate.file.label"]}
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: ${output.re(output.t["settings.eet.certificate.file.label"])}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${output.re(output.t["settings.eet.certificate.file.label"])}
+          above: ${output.re(output.t["settings.eet.certificate.file.description"])}
+- extendedWaitUntil:
+    visible: CZ1234567890.p12
+    timeout: 15000
+- runFlow:
+    file: tap-input.yaml
+    env:
+      LABEL: ${output.t["settings.eet.certificate.password.label"]}
+- inputText: ${PASSWORD}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.certificate.import"]}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.certificate.import"]}

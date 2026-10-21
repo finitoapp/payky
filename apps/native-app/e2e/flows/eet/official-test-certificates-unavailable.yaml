@@ -1,0 +1,42 @@
+# web eet.spec.ts: "the official test certificates fall back to the file
+# import when unavailable".
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/official?available=false
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/eet
+      TEXT: ${output.t["settings.eet.title"]}
+- runFlow:
+    file: ../../subflows/select-eet-sandbox.yaml
+    env:
+      CONFIRM: "true"
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.officialTest.show"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.officialTest.show"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["settings.eet.officialTest.unavailable.title"])}
+    timeout: 20000
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.certificate.file.label"]}
+- assertVisible: ${output.re(output.t["settings.eet.certificate.none"])}

@@ -1,0 +1,10 @@
+# Calls the EET mock's control PATH ("/__mock/eet/reset", ".../connection?mode=
+# refusing", ".../expect?env=production&count=2") and fails unless it answers
+# 200. `expect` waits server-side until the requests match (web's
+# `expect.poll`); see e2e/scripts/mocks/eet.ts.
+appId: ${APP_ID}
+---
+- evalScript: ${output.eetMock = http.get(MOCK_URL + PATH)}
+- assertTrue:
+    condition: ${output.eetMock.ok}
+    label: 'EET mock: ${PATH} answered ${output.eetMock.status}: ${output.eetMock.body}'

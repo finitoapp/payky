@@ -1,0 +1,17 @@
+# web's selectEetSandbox: on the EET settings, picks the sandbox and answers
+# its confirmation (CONFIRM: "true", or "false" to cancel).
+appId: ${APP_ID}
+---
+- scrollUntilVisible:
+    element: ${output.re(output.t["settings.eet.environment.playground.title"])}
+- tapOn: ${output.re(output.t["settings.eet.environment.playground.title"])}
+- extendedWaitUntil:
+    visible: ${output.t["settings.eet.environment.sandboxConfirm.title"]}
+    timeout: 10000
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: '${CONFIRM === "true" ? output.t["settings.eet.environment.sandboxConfirm.confirm"] : output.t["settings.eet.environment.sandboxConfirm.cancel"]}'
+- extendedWaitUntil:
+    notVisible: ${output.t["settings.eet.environment.sandboxConfirm.title"]}
+    timeout: 10000

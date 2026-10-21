@@ -1,0 +1,42 @@
+# web's enableEetWithGeneratedCertificate: imports the generated certificate
+# (the e2e picker hands over CZ1234567890.p12), sets establishment 24 and
+# turns EET on, then waits for the settings list to say it is on. From any
+# screen of a seeded app.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: settings/eet
+      TEXT: ${output.t["settings.eet.title"]}
+- runFlow:
+    file: import-eet-certificate.yaml
+    env:
+      PASSWORD: generated-e2e-password
+- extendedWaitUntil:
+    visible: CZ1234567890
+    timeout: 15000
+# Back up to the reporting section.
+- scrollUntilVisible:
+    element:
+      id: ${output.re(output.t["settings.eet.establishment.label"])}
+    direction: UP
+- runFlow:
+    file: fill-inline.yaml
+    env:
+      LABEL: ${output.t["settings.eet.establishment.label"]}
+      VALUE: "24"
+- runFlow:
+    file: tap-id.yaml
+    env:
+      LABEL: ${output.t["settings.eet.enabled.label"]}
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: settings
+      TEXT: ${output.t["settings.title"]}
+- scrollUntilVisible:
+    element: ${output.t["settings.eet.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.eet.nav.production"]}
+    timeout: 15000

@@ -138,11 +138,15 @@ const control = async (url: URL): Promise<Response> => {
       return new Response("ok")
     case "/__mock/eet/expect":
       return await expectRequests(url)
-    case "/__mock/eet/unanswered":
-      return Response.json({
-        ok: state.unanswered > 0,
-        count: state.unanswered,
-      })
+    case "/__mock/eet/unanswered": {
+      // Waits, as `expect` does, for a request left hanging.
+      const deadline = Date.now() + 20_000
+      while (state.unanswered === 0 && Date.now() < deadline) await sleep(250)
+      return Response.json(
+        { count: state.unanswered },
+        { status: state.unanswered > 0 ? 200 : 408 }
+      )
+    }
     default:
       return new Response("no such control", { status: 404 })
   }

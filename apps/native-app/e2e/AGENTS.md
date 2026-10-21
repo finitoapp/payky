@@ -94,6 +94,18 @@ assertions.
   assistant spec's `allowAssistant`, in-app from home (Settings > About >
   Data and privacy, then back to Settings), and `open-assistant` opens the
   assistant from Settings.
+- EET (web's `support/eet.ts`): `eet-mock` (`PATH`) calls the EET mock's
+  control and fails unless it answers 200 — `/__mock/eet/reset` first in
+  every EET flow, `connection?mode=refusing|hanging|answering`,
+  `answer-next?answer=<url-encoded FakeEetAnswer>`, `official?available=false`,
+  `unanswered`, and
+  `expect?env=production|playground&payment=&count=&amounts=&first=&pokl=`,
+  which waits up to 20 s for the requests to match (web's `expect.poll` on
+  `fakeEet.requests`); `enable-eet` is `enableEetWithGeneratedCertificate`;
+  `import-eet-certificate` (`PASSWORD`) is `importEetCertificate`;
+  `select-eet-sandbox` (`CONFIRM`) is `selectEetSandbox`;
+  `take-cash-payment` (`AMOUNT`) is `takeCashPayment`, leaving
+  `output.paymentId`.
 - Optional env: `fill-input`/`fill-inline`/`clear-input` take `PLACEHOLDER`
   (an emptied input with one shows it as its text), `fill-input`/
   `fill-inline`/`tap-input` take `BUTTONS: "true"` for an inline field that
@@ -130,14 +142,22 @@ assertions.
   cannot be re-pointed at (LNURL: the host comes from a Lightning address)
   are listed in `src/e2e/e2e-fetch.ts`; the fetch dep sends them to
   `/__host/<host>/<path>` on the mock server.
-- A flow cannot talk to the mock or read back what the app sent, so a mock
-  decides by the request itself: `mocks/assistant.ts` answers by the last
+- A flow cannot read back what the app sent, so these mocks decide by the
+  request itself (the EET mock has control endpoints instead, below): `mocks/assistant.ts` answers by the last
   question and 400s when the tools, roles or bearer token are not what web's
   spec asserted; `mocks/donation.ts` settles an invoice some seconds after
   creating it, so a flow asserts "waiting" first, then "paid";
   `mocks/nostr.ts` is the only nostr relay of an e2e build (`/nostr`,
   websocket) and decides by the business name: "Café Skip" is refused,
   "Café Retry" refused once, a profile that is not the trimmed name refused.
+- The EET mock (`e2e/scripts/mocks/eet.ts`) answers as EET production and,
+  through `EXPO_PUBLIC_PAYKY_EET_PLAYGROUND_URL`, as the sandbox; an e2e
+  build's certificate picker skips the document chooser and hands over the
+  mock's `CZ1234567890.p12` (password `generated-e2e-password`). Its state
+  is shared, so flows tagged `eet` run one at a time on web.
+- `seedEetSaleFromAnotherDevice` (`paymentId`, `minutes`) records the
+  payment's EET sale as another device's, `minutes` ago, printing
+  `pokl=<cash register id>`.
 
 ## Selectors
 

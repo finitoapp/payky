@@ -1,0 +1,50 @@
+# web eet.spec.ts: "EET starts off and turns on after a certificate and an
+# establishment number". The switch's disabled state is checked on Android only.
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+# The settings list always offers EET, switched off.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings
+      TEXT: ${output.t["settings.title"]}
+- scrollUntilVisible:
+    element: ${output.t["settings.eet.title"]}
+- assertVisible: ${output.t["settings.eet.nav.off"]}
+- tapOn: ${output.t["settings.eet.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.eet.reporting.title"]}
+    timeout: 15000
+# The switch stays disabled and names what is missing.
+- assertVisible: '${output.tv("settings.eet.enabled.missing", { missing: output.t["settings.eet.gap.certificate"] + ", " + output.t["settings.eet.gap.establishment"] })}'
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: ${output.re(output.t["settings.eet.enabled.label"])}
+          enabled: false
+# A generated certificate imports and EET turns on.
+- runFlow: ../../subflows/enable-eet.yaml
+# The settings list shows EET on.
+- scrollUntilVisible:
+    element: ${output.t["settings.eet.title"]}
+- assertVisible: ${output.t["settings.eet.nav.production"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/eet
+      TEXT: ${output.t["settings.eet.title"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.eet.enabled.label"]}

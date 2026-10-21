@@ -1,0 +1,61 @@
+# web eet.spec.ts: "the official test certificate is picked in one step in
+# the sandbox". The mock serves CZ9876543210 as the official list. That the
+# sandbox stays selected is checked on Android only (web cannot read it).
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/eet
+      TEXT: ${output.t["settings.eet.title"]}
+- assertNotVisible: ${output.re(output.t["settings.eet.officialTest.show"])}
+- runFlow:
+    file: ../../subflows/select-eet-sandbox.yaml
+    env:
+      CONFIRM: "true"
+# The downloaded certificates are listed with EIČ and description.
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.officialTest.show"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.officialTest.show"]}
+- extendedWaitUntil:
+    visible: CZ9876543210
+    timeout: 20000
+- assertVisible: generated e2e taxpayer
+# Picking one stores it as a test certificate.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.eet.officialTest.use", { name: "CZ9876543210" })}'
+- extendedWaitUntil:
+    visible:
+      id: eet-certificate-eic
+      text: CZ9876543210
+    timeout: 15000
+- assertVisible: ${output.t["settings.eet.certificate.testBadge"]}
+# Production cannot be selected with a test certificate.
+- scrollUntilVisible:
+    element: ${output.re(output.t["settings.eet.environment.production.title"])}
+    direction: UP
+- tapOn: ${output.re(output.t["settings.eet.environment.production.title"])}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["settings.eet.environment.testCertificateBlocksProduction"])}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.eet.environment.playground.title"]}
+      BY_TEXT: "true"

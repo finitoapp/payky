@@ -1,0 +1,77 @@
+# web eet.spec.ts: "the connection test and the test sale show EET's answer
+# and record nothing". The sandbox is the mock (EXPO_PUBLIC_PAYKY_EET_PLAYGROUND_URL).
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+- runFlow: ../../subflows/enable-eet.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/eet
+      TEXT: ${output.t["settings.eet.title"]}
+- runFlow:
+    file: ../../subflows/select-eet-sandbox.yaml
+    env:
+      CONFIRM: "true"
+# The connection test passes in verification mode.
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.test.connection"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.test.connection"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["settings.eet.test.outcome.verified"])}
+    timeout: 20000
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/expect?env=playground&count=1
+# The test sale returns a test POK and both raw messages.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.eet.test.sale"]}
+- extendedWaitUntil:
+    visible:
+      id: eet-test-pok
+      text: .*-ff
+    timeout: 20000
+- scrollUntilVisible:
+    element: ${output.t["settings.eet.test.rawRequest"]}
+- tapOn: ${output.t["settings.eet.test.rawRequest"]}
+- assertVisible: (?s).*<tns:Trzba.*
+- scrollUntilVisible:
+    element: ${output.t["settings.eet.test.rawResponse"]}
+- tapOn: ${output.t["settings.eet.test.rawResponse"]}
+- assertVisible: (?s).*Potvrzeni.*
+# No sale record was created (a fresh screen: the open raw messages are
+# scroll views of their own).
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings
+      TEXT: ${output.t["settings.title"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/eet
+      TEXT: ${output.t["settings.eet.title"]}
+- scrollUntilVisible:
+    element: ${output.re(output.t["settings.eet.unconfirmed.empty"])}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.re(output.t["paymentHistory.empty.title"])}

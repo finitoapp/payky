@@ -1,0 +1,25 @@
+# web activity.spec.ts: "a payment with both a cancellation collision and an overpaid bill shows both issues on its list row".
+appId: ${APP_ID}
+tags: [activity]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: simulateBillModifiedDuringPayment
+      QUERY: billId=${output.billId}&mode=removeAll
+- runFlow: ../../subflows/reopen-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: simulateCancelAfterClaim
+      QUERY: paymentId=${output.paymentId}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.t["paymentDetail.collision.title"]}
+- assertVisible: ${output.t["paymentHistory.billOverpaid"]}

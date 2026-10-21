@@ -1,0 +1,20 @@
+# web activity.spec.ts: "the payment detail shows the bill's coverage as underpaid when another device edits it mid-payment (add)".
+appId: ${APP_ID}
+tags: [activity]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: simulateBillModifiedDuringPayment
+      QUERY: billId=${output.billId}&mode=add
+- runFlow:
+    file: ../../subflows/reopen-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow: ../../subflows/open-paid-detail.yaml
+- assertVisible: ${output.t["paymentDetail.bill.coverage.underpaid.title"]}
+- scrollUntilVisible:
+    element: ${output.t["paymentDetail.bill.coverage.changesTitle"]}
+- scrollUntilVisible:
+    element: '\+ 1 × e2e: concurrent addition'

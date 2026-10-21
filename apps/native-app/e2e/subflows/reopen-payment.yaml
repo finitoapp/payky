@@ -1,0 +1,9 @@
+# Back on the payment screen of output.paymentId (a link, after the bridge
+# page), waiting for TEXT (default: its cash button).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: payment/${output.paymentId}
+      TEXT: '${typeof TEXT === "undefined" ? output.t["paymentWait.cashPaid.action"] : TEXT}'

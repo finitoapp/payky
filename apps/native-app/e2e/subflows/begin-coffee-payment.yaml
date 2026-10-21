@@ -1,0 +1,34 @@
+# web's addCatalogItem(Coffee $5) + startBillAndBeginCashPayment: a seeded
+# app ends on the payment screen of a new $5 bill, its cash button showing.
+# Leaves the newest ids in output.billId / output.paymentId (read-ids), and
+# goes back to the payment screen, so the bridge page is not left open.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: start-new-bill.yaml
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.cashPaid.action"]}
+    timeout: 15000
+- runFlow: read-ids.yaml
+- runFlow: reopen-payment.yaml

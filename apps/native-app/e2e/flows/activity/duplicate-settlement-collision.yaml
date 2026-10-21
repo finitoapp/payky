@@ -1,0 +1,29 @@
+# web activity.spec.ts: "a duplicate-settlement payment collision is flagged in the payment detail and can be resolved".
+appId: ${APP_ID}
+tags: [activity]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow: ../../subflows/prepare-iban-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: simulateDuplicateSettlement
+      QUERY: paymentId=${output.paymentId}
+- runFlow:
+    file: ../../subflows/reopen-payment.yaml
+    env:
+      TEXT: ${output.t["paymentDetail.title"]}
+# A paid payment's own page hands it to its activity detail.
+- assertVisible: ${output.t["paymentDetail.excessCollision.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentDetail.excessCollision.acknowledge"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["paymentDetail.excessCollision.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["payment.status.paid"]}

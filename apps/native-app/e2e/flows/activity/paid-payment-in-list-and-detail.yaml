@@ -1,0 +1,23 @@
+# web activity.spec.ts: "a paid payment shows up in activity list and detail".
+appId: ${APP_ID}
+tags: [activity]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- tapOn: ${output.t["paymentWait.detail"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentDetail.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["payment.status.paid"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity
+      TEXT: ${output.t["activity.title"]}
+- tapOn: ${output.t["payment.status.paid"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentDetail.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["payment.status.paid"]}

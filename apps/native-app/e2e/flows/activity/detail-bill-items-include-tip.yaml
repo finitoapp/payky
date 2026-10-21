@@ -1,0 +1,39 @@
+# web activity.spec.ts: "the payment detail's bill items list includes the tip
+# so its total matches the payment amount".
+appId: ${APP_ID}
+tags: [activity]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentTip.title"]}
+    timeout: 15000
+- tapOn: '${output.re(output.tv("settings.tips.percentages.value", { value: 10 }))}'
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- tapOn: ${output.t["paymentWait.detail"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentDetail.title"]}
+    timeout: 15000
+# Coffee $5.00 + a 10% tip ($0.50) = $5.50.
+- assertVisible: Coffee
+- assertVisible: ${output.t["paymentDetail.tipAmount"]}
+- assertVisible: \$0\.50
+- assertVisible: \$5\.50

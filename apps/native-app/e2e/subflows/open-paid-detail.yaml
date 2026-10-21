@@ -1,0 +1,8 @@
+# From a payment screen showing the paid panel: its Detail button, then the
+# payment detail's title.
+appId: ${APP_ID}
+---
+- tapOn: ${output.t["paymentWait.detail"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentDetail.title"]}
+    timeout: 15000

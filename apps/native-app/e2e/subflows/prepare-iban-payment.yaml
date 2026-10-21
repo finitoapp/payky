@@ -1,0 +1,19 @@
+# web's prepareIbanPayment + back to the cash tab: visiting the IBAN tab is
+# what prepares it, so a duplicate settlement has details to match.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.iban"]}
+- runFlow:
+    file: assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.copyQr"]}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cash"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.cashPaid.action"]}
+    timeout: 15000

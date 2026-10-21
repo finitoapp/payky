@@ -1,6 +1,8 @@
 import { type Href, Redirect, router, useLocalSearchParams } from "expo-router"
+import { useAtomValue } from "jotai"
 import { useEffect, useState } from "react"
 import { Text, YStack } from "tamagui"
+import { accountAtom } from "../atoms/account.ts"
 import { nativeEnv } from "../core/native-env.ts"
 import { useAppRun } from "../hooks/use-app-run.ts"
 import { e2eActions } from "./e2e-actions.ts"
@@ -22,6 +24,7 @@ export function E2eBridgePage() {
     ...params
   } = useLocalSearchParams<{ action: string; next?: string }>()
   const appRun = useAppRun()
+  const { device } = useAtomValue(accountAtom)
   const [result, setResult] = useState<string | null>(null)
   const paramsKey = JSON.stringify(params)
 
@@ -38,7 +41,8 @@ export function E2eBridgePage() {
           appRunScope,
           Object.fromEntries(
             Object.entries(params).map(([key, v]) => [key, String(v)])
-          )
+          ),
+          { deviceId: device.id }
         )
         if (cancelled) return
         setResult(`E2E OK ${action}${value === undefined ? "" : ` ${value}`}`)
@@ -55,7 +59,7 @@ export function E2eBridgePage() {
     return () => {
       cancelled = true
     }
-  }, [action, appRun, paramsKey, next])
+  }, [action, appRun, device.id, paramsKey, next])
 
   if (!nativeEnv.EXPO_PUBLIC_PAYKY_E2E) return <Redirect href="/" />
   return (

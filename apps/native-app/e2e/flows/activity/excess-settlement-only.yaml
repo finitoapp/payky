@@ -1,0 +1,20 @@
+# web activity.spec.ts: "the activity list flags a payment's own duplicate settlement without also flagging its bill as overpaid".
+appId: ${APP_ID}
+tags: [activity]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow: ../../subflows/prepare-iban-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: simulateDuplicateSettlement
+      QUERY: paymentId=${output.paymentId}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.t["paymentDetail.excessCollision.title"]}
+- assertNotVisible: ${output.t["paymentHistory.billOverpaid"]}

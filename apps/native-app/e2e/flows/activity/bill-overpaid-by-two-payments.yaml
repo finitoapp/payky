@@ -1,0 +1,19 @@
+# web activity.spec.ts: "a bill overpaid by two separately paid payments is flagged on the payment detail".
+appId: ${APP_ID}
+tags: [activity]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: createAndPaySecondPayment
+      QUERY: billId=${output.billId}
+- runFlow:
+    file: ../../subflows/reopen-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow: ../../subflows/open-paid-detail.yaml
+- assertVisible: ${output.t["paymentDetail.bill.coverage.overpaid.title"]}
+- assertVisible: \$5\.00
+- scrollUntilVisible:
+    element: \$10\.00

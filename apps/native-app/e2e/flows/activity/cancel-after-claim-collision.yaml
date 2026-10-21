@@ -1,0 +1,40 @@
+# web activity.spec.ts: "a canceled+claimed payment collision is flagged in the activity list and detail, and can be resolved".
+appId: ${APP_ID}
+tags: [activity]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: simulateCancelAfterClaim
+      QUERY: paymentId=${output.paymentId}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.t["paymentDetail.collision.title"]}
+- tapOn: ${output.t["paymentDetail.collision.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentDetail.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["paymentDetail.collision.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentDetail.collision.markPaid"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["paymentDetail.collision.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["payment.status.paid"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity
+      TEXT: ${output.t["activity.title"]}
+- assertNotVisible: ${output.t["paymentDetail.collision.title"]}
+- assertVisible: ${output.t["payment.status.paid"]}

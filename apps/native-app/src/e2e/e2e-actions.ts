@@ -5,13 +5,47 @@ import {
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@payky/core/modules/account/account-actions"
+import { createCashRegisterAccountId } from "@payky/core/modules/account/account-utils"
+import { createAccountTransaction } from "@payky/core/modules/account-transaction/account-transaction-actions"
 import { completeOnboarding } from "@payky/core/modules/app-settings/app-settings-actions"
 import { PaymentMethodOrderJson } from "@payky/core/modules/app-settings/app-settings-utils"
-import { latestBillsQuery } from "@payky/core/modules/bill/bill-queries"
-import { latestPaymentsQuery } from "@payky/core/modules/payment/payment-queries"
+import { cancelBill } from "@payky/core/modules/bill/bill-actions"
+import {
+  billByIdQuery,
+  latestBillsQuery,
+} from "@payky/core/modules/bill/bill-queries"
+import { BillId } from "@payky/core/modules/bill/bill-types"
+import {
+  insertBillLineRows,
+  loadCalculatedBillLineSummaries,
+} from "@payky/core/modules/bill-line/bill-line-actions"
+import { deriveBillSummaryTotal } from "@payky/core/modules/bill-line/bill-line-utils"
+import type { DeviceId } from "@payky/core/modules/device/device-types"
+import { upsertItemSnapshot } from "@payky/core/modules/item/item-actions"
+import { createStandaloneItemSnapshot } from "@payky/core/modules/item/item-utils"
+import {
+  createPayment,
+  markPaymentPaidCash,
+} from "@payky/core/modules/payment/payment-actions"
+import {
+  latestPaymentsQuery,
+  paymentIbanDetailsByIdQuery,
+  paymentSparkDetailsByIdQuery,
+} from "@payky/core/modules/payment/payment-queries"
+import { PaymentId } from "@payky/core/modules/payment/payment-types"
+import {
+  claimManualReconciliation,
+  reconcileAccountTransaction,
+} from "@payky/core/modules/reconciliation-claim/reconciliation-claim-actions"
+import { runMutationWithCompletion } from "@payky/core/modules/shared/evolu-utils"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
+  NonEmptyString255Schema,
+  NonEmptyStringSchema,
+  NonNegativeInteger,
+  PositiveNumber,
+  TimestampMsSchema,
 } from "@payky/core/modules/shared/schema"
 import { z } from "zod"
 import type { NativeAppRun } from "../hooks/use-app-run.ts"
@@ -20,11 +54,17 @@ import type { NativeAppRun } from "../hooks/use-app-run.ts"
  * What a flow opens `/e2e/<action>?<params>` for: the native twin of web's
  * `window.__e2e*` functions (`e2e-test-bridge.tsx`), since Maestro cannot call
  * into the app. An action reads its params with zod, throws on failure, and
- * may return a value the bridge page prints for `assertVisible`.
+ * may return a value the bridge page prints for `assertVisible`. `context`
+ * is what only a component can read (the active device).
  */
+export interface E2eContext {
+  readonly deviceId: DeviceId
+}
+
 type E2eAction = (
   run: NativeAppRun,
-  params: Readonly<Record<string, string>>
+  params: Readonly<Record<string, string>>,
+  context: E2eContext
 ) => Promise<string | undefined>
 
 const SeedOnboardingParams = z.object({
@@ -91,4 +131,241 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
     const [payment] = await run.deps.evolu.loadQuery(latestPaymentsQuery(1))
     return `bill=${bill?.id ?? "-"} payment=${payment?.id ?? "-"}`
   },
+
+  /**
+   * `__e2eMarkSparkPaid`: settles `paymentId`'s prepared Spark invoice the way
+   * the sync job would, without a real wallet.
+   */
+  markSparkPaid: async (run, params) => {
+    const paymentId = PaymentId.parse(params.paymentId)
+    const [sparkDetails] = await run.deps.evolu.loadQuery(
+      paymentSparkDetailsByIdQuery(paymentId)
+    )
+    if (!sparkDetails) {
+      throw new Error(
+        `No prepared Spark payment found for payment ${paymentId}.`
+      )
+    }
+    const accountTransactionId = await run.ok(
+      createAccountTransaction({
+        accountId: sparkDetails.accountId,
+        amount: sparkDetails.amountSats,
+        currency: "BTC",
+        occurredAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        note: null,
+        internalTransferGroupId: null,
+        source: { deviceId: null, source: "auto" },
+        spark: {
+          sparkTransferId: NonEmptyStringSchema.decode(`e2e:${paymentId}`),
+          ...(sparkDetails.lnInvoice === null
+            ? {}
+            : {
+                lightning: {
+                  lnInvoice: NonEmptyStringSchema.decode(
+                    sparkDetails.lnInvoice
+                  ),
+                  preImage: null,
+                  paymentHash: null,
+                },
+              }),
+          ...(sparkDetails.sparkInvoice === null
+            ? {}
+            : {
+                sparkInvoice: {
+                  sparkInvoice: NonEmptyStringSchema.decode(
+                    sparkDetails.sparkInvoice
+                  ),
+                },
+              }),
+        },
+      })
+    )
+    await run.ok(reconcileAccountTransaction(accountTransactionId))
+    return undefined
+  },
+
+  /** `__e2eMarkIbanPaid`: the bank transfer arrives for `paymentId`. */
+  markIbanPaid: async (run, params) => {
+    const paymentId = PaymentId.parse(params.paymentId)
+    const accountTransactionId = await createIbanTransaction(
+      run,
+      paymentId,
+      `e2e:${paymentId}`
+    )
+    await run.ok(reconcileAccountTransaction(accountTransactionId))
+    return undefined
+  },
+
+  /**
+   * `__e2eSimulateCancelAfterClaim`: a CRDT merge race cancels the
+   * already-claimed `paymentId` directly, bypassing `cancelPayment`'s guard,
+   * so it ends up canceled+claimed.
+   */
+  simulateCancelAfterClaim: async (run, params) => {
+    const paymentId = PaymentId.parse(params.paymentId)
+    await runMutationWithCompletion((options) =>
+      run.deps.evolu.update(
+        "payment",
+        {
+          id: paymentId,
+          canceledAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        },
+        { ...options, owner: run.deps.evoluOwner }
+      )
+    )
+    return undefined
+  },
+
+  /**
+   * `__e2eSimulateDuplicateSettlement`: a second offline device settles the
+   * cash-claimed `paymentId` again through its prepared IBAN details, so it
+   * is claimed for more than its own amount.
+   */
+  simulateDuplicateSettlement: async (run, params) => {
+    const paymentId = PaymentId.parse(params.paymentId)
+    const accountTransactionId = await createIbanTransaction(
+      run,
+      paymentId,
+      `e2e:duplicate:${paymentId}`
+    )
+    await run.ok(
+      claimManualReconciliation({
+        paymentId,
+        accountTransactionId,
+        deviceId: null,
+      })
+    )
+    return undefined
+  },
+
+  /**
+   * `__e2eSimulateBillModifiedDuringPayment`: another, still-offline device
+   * edits `billId`'s lines while a payment is in flight. `mode=add` grows the
+   * total past the payment's fixed amount (underpaid once claimed),
+   * `mode=removeAll` shrinks it below (overpaid).
+   */
+  simulateBillModifiedDuringPayment: async (run, params) => {
+    const billId = BillId.parse(params.billId)
+    const owner = { owner: run.deps.evoluOwner }
+    if (params.mode === "add") {
+      const [billRow] = await run.deps.evolu.loadQuery(billByIdQuery(billId))
+      if (!billRow) throw new Error(`Bill ${billId} not found.`)
+      const snapshot = createStandaloneItemSnapshot({
+        catalogItemId: null,
+        name: NonEmptyString255Schema.decode("e2e: concurrent addition"),
+        description: null,
+        currency: billRow.currency,
+        unitAmount: NonNegativeInteger(300),
+        taxRateId: null,
+      })
+      await runMutationWithCompletion((options) => {
+        upsertItemSnapshot(run.deps.evolu, snapshot, { ...options, ...owner })
+        insertBillLineRows(
+          run.deps.evolu,
+          [
+            {
+              billId,
+              deviceId: null,
+              catalogItemId: null,
+              itemId: snapshot.id,
+              type: "manualAmount",
+              kind: "add",
+              quantity: PositiveNumber(1),
+              totalAmount: NonNegativeInteger(300),
+            },
+          ],
+          { ...options, ...owner }
+        )
+      })
+      return undefined
+    }
+    const summaries = await run.ok(loadCalculatedBillLineSummaries(billId))
+    await runMutationWithCompletion((options) => {
+      insertBillLineRows(
+        run.deps.evolu,
+        summaries.map((summary) => ({
+          billId,
+          deviceId: null,
+          catalogItemId: summary.catalogItemId,
+          itemId: summary.itemId,
+          type: summary.type,
+          kind: "remove" as const,
+          quantity: summary.quantity,
+          totalAmount: summary.totalAmount,
+        })),
+        { ...options, ...owner }
+      )
+    })
+    return undefined
+  },
+
+  /**
+   * `__e2eCreateAndPaySecondPayment`: a second, independent cash payment for
+   * `billId`, created and paid with the real actions — what a concurrent
+   * device could do before either claim arrives.
+   */
+  createAndPaySecondPayment: async (run, params, { deviceId }) => {
+    const billId = BillId.parse(params.billId)
+    const [billRow] = await run.deps.evolu.loadQuery(billByIdQuery(billId))
+    if (!billRow) throw new Error(`Bill ${billId} not found.`)
+    const summaries = await run.ok(loadCalculatedBillLineSummaries(billId))
+    // The cash register `seedOnboarding` enabled, in the bill's currency.
+    const accountId = createCashRegisterAccountId(billRow.currency)
+    const paymentId = await run.orThrow(
+      createPayment({
+        deviceId,
+        billId,
+        tableId: null,
+        amount: deriveBillSummaryTotal(summaries),
+        currency: billRow.currency,
+        tipAmount: NonNegativeInteger(0),
+        canceledAt: null,
+        expiresAt: null,
+        cashRegister: { accountId },
+      })
+    )
+    await run.orThrow(markPaymentPaidCash({ paymentId, accountId }))
+    return undefined
+  },
+
+  /**
+   * `__e2eCancelBill`: the real `cancelBill`, called directly because the
+   * bill page hides the discard button while a payment is pending, which the
+   * domain guard allows.
+   */
+  cancelBill: async (run, params) => {
+    await run.orThrow(cancelBill(BillId.parse(params.billId)))
+    return undefined
+  },
+}
+
+/** An IBAN account transaction matching `paymentId`'s prepared details. */
+async function createIbanTransaction(
+  run: NativeAppRun,
+  paymentId: PaymentId,
+  bankReference: string
+) {
+  const [ibanDetails] = await run.deps.evolu.loadQuery(
+    paymentIbanDetailsByIdQuery(paymentId)
+  )
+  if (!ibanDetails) {
+    throw new Error(`No prepared IBAN payment found for payment ${paymentId}.`)
+  }
+  return run.ok(
+    createAccountTransaction({
+      accountId: ibanDetails.accountId,
+      amount: ibanDetails.amount,
+      currency: ibanDetails.currency,
+      occurredAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+      note: null,
+      internalTransferGroupId: null,
+      source: { deviceId: null, source: "auto" },
+      iban: {
+        variableSymbol: ibanDetails.variableSymbol,
+        constantSymbol: null,
+        specificSymbol: ibanDetails.specificSymbol,
+        bankReference: NonEmptyString255Schema.decode(bankReference),
+      },
+    })
+  )
 }

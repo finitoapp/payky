@@ -1,10 +1,11 @@
 // Runs the Maestro flows: `bun e2e/scripts/run.ts --platform web|android
-// [--build] [--dev] [flow.yaml ...]` (all of e2e/flows by default). Builds the
+// [--build] [--dev] [--jobs N] [flow.yaml ...]` (all of e2e/flows by default). Builds the
 // e2e app when missing or with --build, writes the strings, runs, and leaves
 // JUnit reports and screenshots in e2e/.generated/report. With --dev, Android
 // runs a debug build on an e2e Metro, so a JS change needs no rebuild. See
-// e2e/AGENTS.md.
+// e2e/AGENTS.md. Web runs N flows at once (--jobs, default half the cores).
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs"
+import { availableParallelism } from "node:os"
 import { join, relative, resolve } from "node:path"
 import { parseArgs } from "node:util"
 import { $ } from "bun"
@@ -26,6 +27,10 @@ const { values, positionals } = parseArgs({
     platform: { type: "string" },
     build: { type: "boolean", default: false },
     dev: { type: "boolean", default: false },
+    jobs: {
+      type: "string",
+      default: String(Math.max(1, Math.floor(availableParallelism() / 2))),
+    },
   },
   allowPositionals: true,
 })
@@ -89,21 +94,45 @@ async function runWeb(): Promise<number> {
 
   // Web needs a `url:` header and keeps OPFS between the flows of one
   // invocation, so each flow runs alone through a wrapper (section 9 of the
-  // plan, e2e/AGENTS.md).
+  // plan, e2e/AGENTS.md) — which also lets --jobs of them run at once, each
+  // with its own wrapper and report.
   const failed: string[] = []
-  for (const flow of runnable) {
+  const queue = [...runnable]
+  const runOne = async (flow: string) => {
     const name = relative(join(e2eDir, "flows"), flow)
       .replace(/\.yaml$/, "")
       .replaceAll("/", "__")
     const wrapper = join(wrappers, `${name}.yaml`)
+    const report = join(reportDir, `${name}.xml`)
     await Bun.write(
       wrapper,
       `url: \${BASE_URL}\nname: ${name}\n---\n- runFlow: ${flow}\n`
     )
+    const started = Date.now()
     const result =
-      await $`${maestro} test -p web --headless --screen-size 412x915 -e BASE_URL=${baseUrl} -e APP_ID=${baseUrl} --format junit --output ${join(reportDir, `${name}.xml`)} --test-output-dir ${join(reportDir, name)} ${wrapper}`.nothrow()
-    if (result.exitCode !== 0) failed.push(name)
+      await $`${maestro} test -p web --headless --screen-size 412x915 -e BASE_URL=${baseUrl} -e APP_ID=${baseUrl} --format junit --output ${report} --test-output-dir ${join(reportDir, name)} ${wrapper}`
+        .quiet()
+        .nothrow()
+    const seconds = Math.round((Date.now() - started) / 1000)
+    if (result.exitCode === 0) {
+      console.log(`[Passed] ${name} (${seconds}s)`)
+      return
+    }
+    failed.push(name)
+    // The JUnit failure, or Maestro's own output when it never got that far
+    // (a YAML parse error).
+    const junit = existsSync(report) ? await Bun.file(report).text() : ""
+    const reason =
+      /<failure[^>]*>([^<]+)/.exec(junit)?.[1] ??
+      result.stdout.toString().trim().split("\n").at(-1)
+    console.log(`[Failed] ${name} (${seconds}s) (${reason})`)
   }
+  await Promise.all(
+    Array.from({ length: Number(values.jobs) }, async () => {
+      for (let flow = queue.shift(); flow !== undefined; flow = queue.shift())
+        await runOne(flow)
+    })
+  )
   server.stop(true)
   console.log(
     `\nweb: ${runnable.length - failed.length}/${runnable.length} passed${failed.length > 0 ? `; failed: ${failed.join(", ")}` : ""}`

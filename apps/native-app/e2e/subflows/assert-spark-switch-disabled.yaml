@@ -1,0 +1,11 @@
+# web's `expect(switchButton(dialog)).toBeDisabled()`, on Android only:
+# Maestro's web driver reports no disabled state.
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          text: ${output.t["settings.sparkAccount.wallet.switch"]}
+          enabled: false

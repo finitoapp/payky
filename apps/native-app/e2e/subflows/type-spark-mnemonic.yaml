@@ -1,0 +1,9 @@
+# Types MNEMONIC into the change-wallet dialog's field. The Spark page behind
+# the dialog has a field with the same label, so the dialog's is the one below
+# the dialog's own description. The field is masked, so there is no check-back.
+appId: ${APP_ID}
+---
+- tapOn:
+    id: ${output.re(output.t["settings.sparkAccount.mnemonic.label"])}
+    below: ${output.t["settings.sparkAccount.wallet.changeDialog.description"]}
+- inputText: ${MNEMONIC}

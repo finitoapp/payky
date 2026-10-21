@@ -80,6 +80,11 @@ assertions.
   in-app fake mint and turns Cashu on (see the bridge's `fake`);
   `fund-cashu-wallet` takes a Cashu payment and walks to a new Cashu
   withdrawal, by taps only.
+  `open-spark-wallet-dialog`, `type-spark-mnemonic`
+  (`MNEMONIC`, into the dialog's masked field, not the page's twin behind it),
+  `assert-spark-phrase` (`PHRASE`, restarts and reveals the wallet's phrase) and
+  `assert-spark-switch-disabled` (Android only) are settings-spark-wallet's
+  helpers.
 - Optional env: `fill-input`/`fill-inline`/`clear-input` take `PLACEHOLDER`
   (an emptied input with one shows it as its text), `fill-input`/
   `fill-inline`/`tap-input` take `BUTTONS: "true"` for an inline field that

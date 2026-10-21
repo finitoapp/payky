@@ -1,0 +1,15 @@
+# web's `expect(shownMnemonic(page)).toHaveValue(...)`: restarts the app (which
+# also proves the wallet survived), opens Spark settings, reveals the wallet's
+# phrase and checks it is PHRASE (a regex).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: reopen.yaml
+    env:
+      ROUTE: settings/payment-accounts/spark
+      TEXT: ${output.t["settings.sparkAccount.form.title"]}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["passwordTextarea.show"]}
+- assertVisible: ${PHRASE}

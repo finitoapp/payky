@@ -1,0 +1,8 @@
+# web settings-spark-wallet.spec.ts's `openChangeWalletDialog`: on Settings →
+# Payment accounts → Spark, taps "Change" and waits for the dialog.
+appId: ${APP_ID}
+---
+- tapOn: ${output.t["settings.sparkAccount.wallet.change"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.sparkAccount.wallet.changeDialog.title"]}
+    timeout: 10000

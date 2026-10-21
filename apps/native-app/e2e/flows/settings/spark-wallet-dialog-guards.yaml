@@ -1,0 +1,66 @@
+# web settings-spark-wallet.spec.ts: "the change wallet dialog only switches to
+# a wallet that makes sense" (the Switch button's disabled state is checked on
+# Android only). The masked field has no check-back, so what it
+# holds shows only through the word count and the errors.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: spark=true
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts/spark
+      TEXT: ${output.t["settings.sparkAccount.form.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["passwordTextarea.show"]}
+- copyTextFrom:
+    text: "(\\S+ ){11,}\\S+"
+- evalScript: ${output.paykyPhrase = maestro.copiedText}
+# The Payky wallet cannot be switched to while in use.
+- runFlow: ../../subflows/open-spark-wallet-dialog.yaml
+- assertVisible: ${output.t["settings.sparkAccount.wallet.changeDialog.inUse"]}
+- tapOn: ${output.t["settings.sparkAccount.wallet.changeDialog.inUse"]}
+- runFlow: ../../subflows/assert-spark-switch-disabled.yaml
+- tapOn: ${output.t["settings.sparkAccount.wallet.custom.title"]}
+# An incomplete or invalid mnemonic is refused.
+- runFlow:
+    file: ../../subflows/type-spark-mnemonic.yaml
+    env:
+      MNEMONIC: legal winner thank year
+- assertVisible: '${output.tv("settings.sparkAccount.wallet.changeDialog.wordCount", { value: 4 })}'
+- runFlow: ../../subflows/assert-spark-switch-disabled.yaml
+- eraseText: 100
+- inputText: legal winner thank year wave sausage worth useful legal winner thank thank
+- assertVisible: ${output.t["settings.sparkAccount.wallet.changeDialog.invalid"]}
+- runFlow: ../../subflows/assert-spark-switch-disabled.yaml
+# Cancel keeps the current wallet.
+- eraseText: 100
+- inputText: legal winner thank year wave sausage worth useful legal winner thank yellow
+- tapOn: ${output.t["settings.sparkAccount.wallet.cancel"]}
+- assertNotVisible: ${output.t["settings.sparkAccount.wallet.changeDialog.title"]}
+- runFlow:
+    file: ../../subflows/assert-spark-phrase.yaml
+    env:
+      PHRASE: ${output.paykyPhrase}
+# The wallet already in use is refused.
+- runFlow: ../../subflows/open-spark-wallet-dialog.yaml
+- runFlow:
+    file: ../../subflows/type-spark-mnemonic.yaml
+    env:
+      MNEMONIC: legal winner thank year wave sausage worth useful legal winner thank yellow
+- tapOn: ${output.t["settings.sparkAccount.wallet.switch"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.sparkAccount.wallet.custom.title"]}
+    timeout: 15000
+- runFlow: ../../subflows/open-spark-wallet-dialog.yaml
+- runFlow:
+    file: ../../subflows/type-spark-mnemonic.yaml
+    env:
+      MNEMONIC: legal winner thank year wave sausage worth useful legal winner thank yellow
+- assertVisible: ${output.t["settings.sparkAccount.wallet.changeDialog.current"]}
+- runFlow: ../../subflows/assert-spark-switch-disabled.yaml

@@ -1,0 +1,61 @@
+# web settings-spark-wallet.spec.ts: "switch from the Payky wallet to your own
+# wallets and back". The wallet's phrase is a masked field: each check
+# restarts the app and reveals it. The BIP-39 test vectors are valid wallets
+# with nothing real behind them.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: spark=true
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts/spark
+      TEXT: ${output.t["settings.sparkAccount.form.title"]}
+# Start on the Payky wallet; keep its phrase for the way back.
+- assertVisible: ${output.t["settings.sparkAccount.wallet.payky.title"]}
+- assertVisible: ${output.t["settings.sparkAccount.form.description"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["passwordTextarea.show"]}
+- copyTextFrom:
+    text: "(\\S+ ){11,}\\S+"
+- evalScript: ${output.paykyPhrase = maestro.copiedText}
+# Switch to your own wallet.
+- runFlow: ../../subflows/open-spark-wallet-dialog.yaml
+- runFlow:
+    file: ../../subflows/type-spark-mnemonic.yaml
+    env:
+      MNEMONIC: legal winner thank year wave sausage worth useful legal winner thank yellow
+- tapOn: ${output.t["settings.sparkAccount.wallet.switch"]}
+# Your own wallet is active and survives a restart.
+- runFlow:
+    file: ../../subflows/assert-spark-phrase.yaml
+    env:
+      PHRASE: legal winner thank year wave sausage worth useful legal winner thank yellow
+- assertVisible: ${output.t["settings.sparkAccount.wallet.custom.title"]}
+- assertVisible: ${output.t["settings.sparkAccount.form.customDescription"]}
+# Replace it with another one.
+- runFlow: ../../subflows/open-spark-wallet-dialog.yaml
+- runFlow:
+    file: ../../subflows/type-spark-mnemonic.yaml
+    env:
+      MNEMONIC: letter advice cage absurd amount doctor acoustic avoid letter advice cage above
+- tapOn: ${output.t["settings.sparkAccount.wallet.switch"]}
+- runFlow:
+    file: ../../subflows/assert-spark-phrase.yaml
+    env:
+      PHRASE: letter advice cage absurd amount doctor acoustic avoid letter advice cage above
+# Switch back to the Payky wallet.
+- runFlow: ../../subflows/open-spark-wallet-dialog.yaml
+- tapOn: ${output.t["settings.sparkAccount.wallet.payky.title"]}
+- assertNotVisible: '${output.tv("settings.sparkAccount.wallet.changeDialog.wordCount", { value: 0 })}'
+- tapOn: ${output.t["settings.sparkAccount.wallet.switch"]}
+- runFlow:
+    file: ../../subflows/assert-spark-phrase.yaml
+    env:
+      PHRASE: ${output.paykyPhrase}
+- assertVisible: ${output.t["settings.sparkAccount.form.description"]}

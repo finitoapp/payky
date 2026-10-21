@@ -1,0 +1,20 @@
+# web cashu.spec.ts: "the mints screen lists the default mint with its
+# balance" (the fake mint is the in-app one, e2e-cashu-mint.ts).
+appId: ${APP_ID}
+tags: [cashu]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/enable-cashu.yaml
+    env:
+      MODE: manual
+- tapOn: ${output.re(output.t["settings.paymentAccounts.method.cashu"])}
+- extendedWaitUntil:
+    visible: ${output.t["settings.cashuAccount.title"]}
+    timeout: 15000
+- tapOn: ${output.re(output.t["settings.cashuAccount.mints"])}
+- extendedWaitUntil:
+    visible: ${output.t["settings.cashuMints.title"]}
+    timeout: 15000
+- assertVisible: cashu.cz
+- assertVisible: ${output.t["settings.cashuMints.default"]}

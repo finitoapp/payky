@@ -1,0 +1,35 @@
+# web cashu.spec.ts's `fundCashuWallet` + `walkToNewCashuWithdrawal`: from a
+# seeded app, enables Cashu on the fake mint (autopay), takes a Cashu payment
+# so the mint holds ecash, then walks, by taps only (the fake mint lives in the
+# page), to the new-withdrawal form of the Cashu wallet.
+appId: ${APP_ID}
+---
+- runFlow: enable-cashu.yaml
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- runFlow: to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cashu"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.paid"]}
+    timeout: 45000
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.back"]}
+- runFlow:
+    file: open-settings-entry.yaml
+    env:
+      FROM_HOME: "true"
+      TITLE: ${output.t["settings.paymentAccounts.title"]}
+- tapOn: ${output.re(output.t["settings.paymentAccounts.method.cashu"])}
+- tapOn: ${output.re(output.t["settings.cashuAccount.withdraw"])}
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.history.empty"]}
+    timeout: 15000
+- tapOn: ${output.t["withdraw.history.new"]}

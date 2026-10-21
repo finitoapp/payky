@@ -1,0 +1,46 @@
+# web cashu.spec.ts: "withdraw from a mint to a Lightning invoice and follow
+# it on its detail". The 50-sat mainnet invoice is a fixed one stamped 2096
+# (a bolt11 expiry holds at most 12 days; web builds a fresh invoice per run).
+appId: ${APP_ID}
+tags: [cashu]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/fund-cashu-wallet.yaml
+# An on-chain address is refused while typing.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["withdraw.destination.label"]}
+      VALUE: bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq
+- assertVisible: ${output.t["withdraw.cashu.error.onchain"]}
+# An invoice sets the amount, which is then fixed; review the mint's fees.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["withdraw.destination.label"]}
+      VALUE: lnbc500n1rhxk2qqpp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygssp5yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3qxqy7sjqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8vuk42
+- extendedWaitUntil:
+    visible:
+      id: ${output.re(output.t["withdraw.amount.label"])}
+      text: "50"
+    timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: ${output.re(output.t["withdraw.amount.label"])}
+          enabled: false
+      - hideKeyboard
+- tapOn: ${output.t["withdraw.continue"]}
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.review.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["withdraw.cashu.review.feeReserve"]}
+# Confirming pays it and opens its detail.
+- tapOn: ${output.t["withdraw.review.confirm"]}
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.detail.title"]}
+    timeout: 30000
+- assertVisible: ${output.t["withdraw.status.done"]}
+- assertVisible: ${output.t["withdraw.kind.cashu"]}

@@ -76,7 +76,10 @@ assertions.
   has a row yet) with the code, as the home screen's hardware scan does, so
   scan mode need not be on and no `E2E OK` is waited for — assert the bill's
   outcome after it. It does not reach the item form or list, whose scans
-  come from hardware keys only.
+  come from hardware keys only. `enable-cashu` (`MODE`) puts the Cashu wallet on the
+  in-app fake mint and turns Cashu on (see the bridge's `fake`);
+  `fund-cashu-wallet` takes a Cashu payment and walks to a new Cashu
+  withdrawal, by taps only.
 - Optional env: `fill-input`/`fill-inline`/`clear-input` take `PLACEHOLDER`
   (an emptied input with one shows it as its text), `fill-input`/
   `fill-inline`/`tap-input` take `BUTTONS: "true"` for an inline field that
@@ -96,6 +99,14 @@ assertions.
   not guaranteed to rerun it — navigate elsewhere in between. `next=<path>`
   moves on to that screen in-app after a successful action (web reloads on
   every link, losing in-memory state).
+- `fake` swaps in outside services until the app restarts, so run it after
+  `seed-onboarding` and, on web, move on with `next=`: `spark=funded`
+  (`e2e-spark-presets.ts`), `cashu=manual|autopay` (`e2e-cashu-mint.ts`, web's
+  `__e2eCashuMint`: an in-app fake mint and no Linky sync; set it before the
+  Cashu wallet first starts). `cashuPayQuotes` is web's
+  `__e2eCashuPayQuotes` and prints how many quotes it paid; a web link
+  reloads the page and loses the mint, so flows use `cashu=autopay` instead,
+  which pays open quotes every 4 s by itself.
 
 ## Selectors
 

@@ -1,0 +1,27 @@
+# web cashu.spec.ts: "enable Cashu, take a payment over the mint's invoice and
+# see it settle". The fake mint pays its open quotes by itself every few
+# seconds (cashu=autopay) instead of web's `__e2eCashuPayQuotes` step, which
+# a web link reload would break; the QR is asserted first all the same.
+appId: ${APP_ID}
+tags: [cashu]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/enable-cashu.yaml
+# Back to the home by tapping (the fake mint lives in the page).
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cashu"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.copyQr"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.paid"]}
+    timeout: 45000

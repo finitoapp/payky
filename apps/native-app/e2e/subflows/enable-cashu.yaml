@@ -1,0 +1,15 @@
+# web's `addInitScript(__e2eCashuMint)` + toggling Cashu on: the `fake`
+# action (cashu=MODE, "manual" or "autopay"; default "autopay") moves on to
+# Settings > Payment methods in-app (a link would reload web and lose the
+# in-memory mint), where the Cashu switch is then turned on. Needs a seeded
+# app. From here on navigate by tapping, never by link, on web.
+appId: ${APP_ID}
+---
+- openLink: '${BASE_URL}e2e/fake?cashu=${typeof MODE === "undefined" ? "autopay" : MODE}&next=/settings/payment-accounts'
+- extendedWaitUntil:
+    visible: ${output.t["settings.paymentAccounts.title"]}
+    timeout: 30000
+- runFlow:
+    file: tap-id.yaml
+    env:
+      LABEL: ${output.t["settings.cashuAccount.enabled.label"]}

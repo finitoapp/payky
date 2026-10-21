@@ -11,6 +11,7 @@ import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
 import { evoluAtom } from "../atoms/evolu.ts"
 import { nativeEnv } from "../core/native-env.ts"
 import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
+import { createE2eSparkWalletDep } from "../e2e/e2e-spark-presets.ts"
 import { eetNativeCrypto } from "../platform/eet-crypto"
 import { lockManager } from "../platform/evolu-runtime"
 import { createFetchDep } from "../platform/native-deps.ts"
@@ -41,7 +42,7 @@ function useAppRunDeps() {
       lockManager,
       ...dateDep,
       ...fetchDep,
-      ...createSparkWalletDep(),
+      ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
       ...createYadioApiDep(),
       ...createSwitchioTerminalDep(),
       ...createEetApiDep(

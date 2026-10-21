@@ -65,6 +65,7 @@ import type { createStore } from "jotai"
 import type { SetStateAction } from "react"
 import { z } from "zod"
 import type { NativeAppRun } from "../hooks/use-app-run.ts"
+import { e2eSparkPresetNames, setE2eSparkPreset } from "./e2e-spark-presets.ts"
 
 /**
  * What a flow opens `/e2e/<action>?<params>` for: the native twin of web's
@@ -88,6 +89,8 @@ const SeedOnboardingParams = z.object({
   spark: z.stringbool().default(false),
   fiatCurrency: z.enum(FiatCurrency).default(FiatCurrency.USD),
 })
+
+const FakeParams = z.object({ spark: z.enum(e2eSparkPresetNames) })
 
 export const e2eActions: Readonly<Record<string, E2eAction>> = {
   ping: async () => undefined,
@@ -124,6 +127,17 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
         ),
       })
     )
+    return undefined
+  },
+
+  /**
+   * Swaps in a named fake for an outside service (`spark=funded`), standing
+   * in for web's `page.addInitScript` that sets `window.__e2eSparkWallet`.
+   * It lasts until the app restarts, so on web pass `next=` to move on
+   * in-app instead of opening another link.
+   */
+  fake: async (_run, params) => {
+    setE2eSparkPreset(FakeParams.parse(params).spark)
     return undefined
   },
 

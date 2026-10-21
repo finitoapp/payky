@@ -207,10 +207,13 @@ export const createEetApiDep = (
   deps: FetchDep & DateDep,
   {
     productionUrl,
+    playgroundUrl,
     timeoutMs = EET_REQUEST_TIMEOUT_MS,
     native,
   }: {
     readonly productionUrl?: string | undefined
+    /** Replaces EET's playground endpoint; only the e2e builds set it. */
+    readonly playgroundUrl?: string | undefined
     readonly timeoutMs?: number
     /** The native app's Quick Crypto; see `EetNativeCrypto`. */
     readonly native?: EetNativeCrypto | undefined
@@ -238,7 +241,7 @@ export const createEetApiDep = (
       ])
       const endpoint =
         environment === "playground"
-          ? sdk.EetEndpoint.playground
+          ? (playgroundUrl ?? sdk.EetEndpoint.playground)
           : productionUrl
       if (endpoint === undefined) {
         return failedLocally({

@@ -49,6 +49,7 @@ function useAppRunDeps() {
         { ...dateDep, ...fetchDep },
         {
           productionUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL,
+          playgroundUrl: nativeEnv.EXPO_PUBLIC_PAYKY_EET_PLAYGROUND_URL,
           native: eetNativeCrypto,
         }
       ),

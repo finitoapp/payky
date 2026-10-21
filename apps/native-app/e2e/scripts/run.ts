@@ -91,9 +91,16 @@ const skipTag = {
   android: ["web-only", "ios-only"],
 }[platform]
 const runnable: string[] = []
-for (const flow of flows)
-  if (!(await flowTags(flow)).some((tag) => skipTag.includes(tag)))
-    runnable.push(flow)
+// Flows that drive one mock's shared state (the EET mock's connection and
+// request log): on web they run one after another, beside the other flows.
+const sharedStateTags = ["eet"]
+const sharedState = new Set<string>()
+for (const flow of flows) {
+  const tags = await flowTags(flow)
+  if (tags.some((tag) => skipTag.includes(tag))) continue
+  runnable.push(flow)
+  if (tags.some((tag) => sharedStateTags.includes(tag))) sharedState.add(flow)
+}
 
 /**
  * Points the build at the mock server (mock-server.ts) at `host`, as the app
@@ -106,6 +113,7 @@ const pointAtMocks = (host: string) => {
   process.env.EXPO_PUBLIC_PAYKY_YADIO_URL = base
   process.env.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL = `${base}/eet/services/EETServiceSOAP/v4`
   process.env.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS = `ws://${host}:${mockPort}/nostr`
+  process.env.EXPO_PUBLIC_PAYKY_EET_PLAYGROUND_URL = `${base}/eet-playground/services/EETServiceSOAP/v4`
 }
 
 const mocks = serveMocks(mockPort)
@@ -130,7 +138,8 @@ async function runWeb(): Promise<number> {
   // plan, e2e/AGENTS.md) — which also lets --jobs of them run at once, each
   // with its own wrapper and report.
   const failed: string[] = []
-  const queue = [...runnable]
+  const queue = runnable.filter((flow) => !sharedState.has(flow))
+  const serialQueue = runnable.filter((flow) => sharedState.has(flow))
   const runOne = async (flow: string) => {
     const name = flowName(flow)
     const wrapper = join(wrappers, `${name}.yaml`)
@@ -141,14 +150,21 @@ async function runWeb(): Promise<number> {
     )
     const started = Date.now()
     const result =
-      await $`${maestro} test -p web --headless --screen-size 412x915 -e BASE_URL=${baseUrl} -e APP_ID=${baseUrl} --format junit --output ${report} --test-output-dir ${join(reportDir, name)} ${wrapper}`
+      await $`${maestro} test -p web --headless --screen-size 412x915 -e BASE_URL=${baseUrl} -e APP_ID=${baseUrl} -e MOCK_URL=http://127.0.0.1:${mockPort} --format junit --output ${report} --test-output-dir ${join(reportDir, name)} ${wrapper}`
         .quiet()
         .nothrow()
     if (!(await reportFlow(name, started, result, report))) failed.push(name)
   }
   await Promise.all(
-    Array.from({ length: Number(values.jobs) }, async () => {
-      for (let flow = queue.shift(); flow !== undefined; flow = queue.shift())
+    [
+      ...Array.from({ length: Number(values.jobs) }, () => queue),
+      serialQueue,
+    ].map(async (jobQueue) => {
+      for (
+        let flow = jobQueue.shift();
+        flow !== undefined;
+        flow = jobQueue.shift()
+      )
         await runOne(flow)
     })
   )
@@ -245,7 +261,7 @@ async function runAndroid(): Promise<number> {
     const report = join(reportDir, `${name}.xml`)
     const started = Date.now()
     const result =
-      await $`${maestro} --device ${serial} test -e BASE_URL=payky-native-preview:// -e APP_ID=${appId} ${metro === undefined ? [] : ["-e", `DEV_URL=${metro.url}`]} --format junit --output ${report} --test-output-dir ${join(reportDir, name)} ${flow}`
+      await $`${maestro} --device ${serial} test -e BASE_URL=payky-native-preview:// -e APP_ID=${appId} -e MOCK_URL=http://127.0.0.1:${mockPort} ${metro === undefined ? [] : ["-e", `DEV_URL=${metro.url}`]} --format junit --output ${report} --test-output-dir ${join(reportDir, name)} ${flow}`
         .quiet()
         .nothrow()
     if (!(await reportFlow(name, started, result, report))) failed.push(name)

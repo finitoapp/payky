@@ -1,5 +1,7 @@
 import * as DocumentPicker from "expo-document-picker"
 import { File } from "expo-file-system"
+import { nativeEnv } from "../core/native-env.ts"
+import { pickE2eCertificateFile } from "../e2e/e2e-certificate-file.ts"
 
 /** A certificate is a few KiB; anything bigger is not one. */
 const MAX_CERTIFICATE_BYTES = 1024 * 1024
@@ -18,6 +20,7 @@ export interface PickedCertificate {
  */
 export const pickCertificateFile =
   async (): Promise<PickedCertificate | null> => {
+    if (nativeEnv.EXPO_PUBLIC_PAYKY_E2E) return pickE2eCertificateFile()
     const result = await DocumentPicker.getDocumentAsync({
       // PKCS#12 has no reliable MIME type across Android providers.
       type: "*/*",

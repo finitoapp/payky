@@ -1,0 +1,12 @@
+# withdraw.spec's `invoiceIssuedAt(Date.now())`: runs the `lightningInvoice`
+# bridge action and keeps the fresh 1 000-sat invoice as `output.invoice`. It
+# leaves the app on the bridge page.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: e2e-action.yaml
+    env:
+      ACTION: lightningInvoice
+- copyTextFrom:
+    id: e2e-result
+- evalScript: '${output.invoice = maestro.copiedText.match(/invoice=(\S+)/)[1]}'

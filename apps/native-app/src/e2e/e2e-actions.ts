@@ -51,6 +51,7 @@ import {
   createRowId,
   runMutationWithCompletion,
 } from "@payky/core/modules/shared/evolu-utils"
+import { createTestInvoice } from "@payky/core/modules/shared/lightning-invoice-test-fixtures"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
@@ -456,6 +457,18 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
     )
     return undefined
   },
+
+  /**
+   * withdraw.spec's `invoiceIssuedAt(Date.now())`: a 1 000-sat mainnet
+   * invoice issued now, valid for an hour, printed as `invoice=<bolt11>`
+   * because a flow cannot build one (`subflows/read-invoice.yaml` keeps it).
+   */
+  lightningInvoice: async (run) =>
+    `invoice=${createTestInvoice({
+      hrp: "lnbc10u",
+      timestamp: Math.floor(run.deps.date.now().getTime() / 1000),
+      expirySeconds: 3600,
+    })}`,
 
   /**
    * `__e2eCancelBill`: the real `cancelBill`, called directly because the

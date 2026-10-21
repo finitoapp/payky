@@ -84,7 +84,12 @@ assertions.
   (`MNEMONIC`, into the dialog's masked field, not the page's twin behind it),
   `assert-spark-phrase` (`PHRASE`, restarts and reveals the wallet's phrase) and
   `assert-spark-switch-disabled` (Android only) are settings-spark-wallet's
-  helpers.
+  helpers; `read-invoice` keeps a fresh 1 000-sat Lightning invoice (the
+  `lightningInvoice` action) as `output.invoice`, leaving the app on the
+  bridge page. The funded fake Spark wallet: open
+  `${BASE_URL}e2e/fake?spark=funded&next=/` and wait for home (`next=`
+  replaces the bridge, so there is no `E2E OK`); a later link reloads web
+  and drops it, so take links (ids, invoices) before it.
 - Optional env: `fill-input`/`fill-inline`/`clear-input` take `PLACEHOLDER`
   (an emptied input with one shows it as its text), `fill-input`/
   `fill-inline`/`tap-input` take `BUTTONS: "true"` for an inline field that

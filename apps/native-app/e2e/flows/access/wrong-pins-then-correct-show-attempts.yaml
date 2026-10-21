@@ -1,0 +1,53 @@
+# web access.spec.ts: "wrong PINs followed by the correct one show the failed attempts".
+appId: ${APP_ID}
+tags: [access]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/turn-on-access.yaml
+- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "0000"
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.wrong", { count: 4 })}'
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "0000"
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.wrong", { count: 3 })}'
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible: '${output.tv("access.attempts.title", { count: 2 })}'
+    timeout: 15000
+- assertVisible: /settings.*
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.attempts.continue"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.items.add"]}
+# The list was cleared: after a restart (no session), the next PIN goes
+# straight in.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.re(output.t["home.pay"])}
+- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.items.add"]}
+- assertNotVisible: '${output.tv("access.attempts.title", { count: 1 })}'

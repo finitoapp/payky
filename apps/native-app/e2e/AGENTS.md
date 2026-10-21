@@ -59,7 +59,7 @@ assertions.
   `fill-inline` is `fillInlineField` (type, Save, wait for "Saved"); `tap-id`
   taps a control by testID; `relaunch` (`TEXT`) is `reloadPage`;
   `reopen` (`ROUTE`, `TEXT`) is `relaunch` then `goto`, to check a change survived;
-  `enter-amount` (`AMOUNT`, `<` = backspace) is `enterAmount`;
+  `turn-on-access` (`PIN`, `PRESET`, `KEEP`) is `turnOnAccessControl` (it restarts the app to end the PIN session unless `KEEP: "true"`), `type-pin` (`PIN`, 4 digits) is `typePin`, `wrong-pins` five wrong ones, `open-locked-settings` reaches the PIN screen for Settings in-app (Home → gear → Items), `read-phrase` keeps the recovery phrase as `output.phrase`; `enter-amount` (`AMOUNT`, `<` = backspace) is `enterAmount`;
   `assert-checked` (`LABEL`, `CHECKED`) checks a switch, on Android only;
   `add-catalog-item`, `add-category`, `add-table` are web's `addCatalogItem`,
   `addCatalogCategory`, `addTable`; `start-new-bill` is `startNewBill`,
@@ -117,6 +117,8 @@ Never coordinates, index-only selectors, or sleeps; wait with
 `extendedWaitUntil` on something visible.
 
 ## Gotchas
+
+- The PIN pad's OK is disabled until four digits are typed and Maestro does not see it; wait for the lock's heading (`access.pin.why.route`) instead. A PIN or recovery phrase input hides its text, so `fill-input`'s check-back fails: `tap-input` + `inputText`.
 
 - Typing into inputs: `eraseText` deletes backwards from the cursor on both
   platforms, so `tap-input` taps near the input's right end; typing right

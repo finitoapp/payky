@@ -1,0 +1,35 @@
+# web access.spec.ts: "turning access control on with the wizard locks what the device was not given".
+appId: ${APP_ID}
+tags: [access]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      KEEP: "true"
+- assertVisible: ${output.t["access.preset.basic"]}
+# Adding a device starts next to the device list.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.devices.add"]}
+- extendedWaitUntil:
+    visible: ${output.t["accountTransfer.source.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["accountTransfer.source.permissions"]}
+# Selling stays open without the PIN.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+# The catalog asks for the PIN, which opens it.
+- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.items.add"]}

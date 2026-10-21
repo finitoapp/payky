@@ -1,0 +1,15 @@
+# web access.spec.ts: "a device with no permissions starts on the PIN screen".
+appId: ${APP_ID}
+tags: [access]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      PRESET: ${output.t["access.preset.none"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.sell"] })}'
+- assertVisible: '${output.tv("access.pin.help", { permission: output.t["access.permission.sell"] })}'

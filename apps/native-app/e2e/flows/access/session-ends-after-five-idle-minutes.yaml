@@ -1,0 +1,24 @@
+# web access.spec.ts: "a PIN session ends after five minutes without activity (Android only: a web link reloads the page and drops the session)".
+appId: ${APP_ID}
+tags: [access, android-only]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/turn-on-access.yaml
+- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.items.add"]}
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: idleSession
+# Back to the screen the bridge covered; the session has ended by then.
+- back
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.settings"] })}'
+    timeout: 30000

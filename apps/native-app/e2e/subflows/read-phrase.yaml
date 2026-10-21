@@ -1,0 +1,10 @@
+# web's readRecoveryPhrase: on Settings → Security, reveals the phrase and
+# keeps it as output.phrase.
+appId: ${APP_ID}
+---
+- scrollUntilVisible:
+    element: ${output.t["passwordTextarea.show"]}
+- tapOn: ${output.t["passwordTextarea.show"]}
+- copyTextFrom:
+    text: "(\\S+ ){11,}\\S+"
+- evalScript: ${output.phrase = maestro.copiedText}

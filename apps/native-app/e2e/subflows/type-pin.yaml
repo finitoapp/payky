@@ -1,0 +1,23 @@
+# web's typePin: PIN (4 digits) on the PIN pad on screen, then Submit.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${PIN.charAt(0)}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${PIN.charAt(1)}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${PIN.charAt(2)}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${PIN.charAt(3)}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["access.pin.submit"]}

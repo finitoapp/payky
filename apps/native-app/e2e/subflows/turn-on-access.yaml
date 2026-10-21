@@ -1,0 +1,57 @@
+# web's turnOnAccessControl: Settings → Access and its wizard, PIN (default
+# 4821) as the owner PIN, optional PRESET (an access.preset.* key's text, e.g.
+# "None") for this device. Turning it on starts a PIN session on the Access
+# page, as web's helper leaves it: KEEP: "true" stays there with it; otherwise
+# the app restarts to end the session, which web's specs do with a reload.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: settings/access
+      TEXT: ${output.t["access.title"]}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["access.turnOn"]}
+- runFlow:
+    file: tap-input.yaml
+    env:
+      LABEL: ${output.t["access.newPin.label"]}
+- inputText: '${typeof PIN === "undefined" ? "4821" : PIN}'
+- runFlow:
+    file: tap-input.yaml
+    env:
+      LABEL: ${output.t["access.newPin.repeat"]}
+- inputText: '${typeof PIN === "undefined" ? "4821" : PIN}'
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["access.wizard.next"]}
+- extendedWaitUntil:
+    visible: ${output.t["access.device.this"]}
+    timeout: 15000
+- runFlow:
+    when:
+      true: ${typeof PRESET !== "undefined"}
+    commands:
+      - tapOn: ${output.re(output.t["access.preset.basic"])}
+      - tapOn: '${typeof PRESET === "undefined" ? "" : output.re(PRESET)}'
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["access.turnOn"]}
+- extendedWaitUntil:
+    visible: ${output.t["access.status.on"]}
+    timeout: 15000
+- runFlow:
+    when:
+      true: ${typeof KEEP === "undefined" || KEEP !== "true"}
+    file: relaunch.yaml
+    env:
+      TEXT: ${output.re(output.t["home.pay"])}|This screen needs .*

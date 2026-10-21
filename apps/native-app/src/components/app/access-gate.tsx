@@ -49,29 +49,32 @@ function Gate({ children }: { readonly children: ReactNode }) {
     }
   }, [access.accountId, sessionState, setSession])
 
-  if (
-    access.enabled &&
-    permission !== null &&
-    !access.effective.has(permission)
-  ) {
-    return (
-      <Screen>
-        <PinScreen
-          key={`${access.accountId}:${pathname}`}
-          permission={permission}
-          target={pathname}
-          onUnlocked={() => setSession({ accountId: access.accountId })}
-        />
-      </Screen>
-    )
-  }
+  const locked =
+    access.enabled && permission !== null && !access.effective.has(permission)
 
+  // The Stack stays mounted and outside the PIN screen's Suspense: React
+  // Navigation keeps its state in the navigator, so unmounting it or hiding it
+  // behind a fallback resets the app to "/" (web's router sits above the gate).
   return (
     <>
       {access.session ? (
         <SessionWatcher sell={access.defaults.has("sell")} />
       ) : null}
-      {children}
+      {locked ? (
+        <Screen>
+          <Suspense fallback={null}>
+            <PinScreen
+              key={`${access.accountId}:${pathname}`}
+              permission={permission}
+              target={pathname}
+              onUnlocked={() => setSession({ accountId: access.accountId })}
+            />
+          </Suspense>
+        </Screen>
+      ) : null}
+      <View style={{ flex: 1, display: locked ? "none" : "flex" }}>
+        {children}
+      </View>
     </>
   )
 }

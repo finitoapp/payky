@@ -1,0 +1,67 @@
+# web access.spec.ts: "another device unblocks a blocked one".
+appId: ${APP_ID}
+tags: [access]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: seedDevice
+      QUERY: name=Kitchen%20tablet&blocked=true
+- copyTextFrom:
+    id: e2e-result
+- evalScript: '${output.kitchenId = maestro.copiedText.match(/id=(\S+)/)[1]}'
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      KEEP: "true"
+- assertVisible: Kitchen tablet
+- assertVisible: ${output.t["access.device.blocked"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.device.unblock"]}
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: readDevice
+      QUERY: id=${output.kitchenId}
+- assertVisible: E2E OK readDevice token=yes
+# This device, once blocked, takes an unblock synced from another device.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.re(output.t["home.pay"])}
+- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow: ../../subflows/wrong-pins.yaml
+- extendedWaitUntil:
+    visible: ${output.t["access.pin.blocked.title"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: unblockThisDevice
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.re(output.t["home.pay"])}
+- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "0000"
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.wrong", { count: 4 })}'
+    timeout: 15000
+# The owner still sees every failed attempt at the next correct PIN.
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+- extendedWaitUntil:
+    visible: '${output.tv("access.attempts.title", { count: 6 })}'
+    timeout: 15000

@@ -1,0 +1,35 @@
+# web's typeWrongPins(5): five wrong PINs on the PIN pad on screen.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: type-pin.yaml
+    env:
+      PIN: "0000"
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.wrong", { count: 4 })}'
+    timeout: 15000
+- runFlow:
+    file: type-pin.yaml
+    env:
+      PIN: "0000"
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.wrong", { count: 3 })}'
+    timeout: 15000
+- runFlow:
+    file: type-pin.yaml
+    env:
+      PIN: "0000"
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.wrong", { count: 2 })}'
+    timeout: 15000
+- runFlow:
+    file: type-pin.yaml
+    env:
+      PIN: "0000"
+- extendedWaitUntil:
+    visible: '${output.tv("access.pin.wrong", { count: 1 })}'
+    timeout: 15000
+- runFlow:
+    file: type-pin.yaml
+    env:
+      PIN: "0000"

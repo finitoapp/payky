@@ -1,0 +1,49 @@
+# web access.spec.ts: "five wrong PINs block the device, and the recovery phrase unblocks it".
+appId: ${APP_ID}
+tags: [access]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/security
+      TEXT: ${output.t["settings.security.title"]}
+- runFlow:
+    file: ../../subflows/read-phrase.yaml
+- runFlow: ../../subflows/turn-on-access.yaml
+- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow: ../../subflows/wrong-pins.yaml
+- extendedWaitUntil:
+    visible: ${output.t["access.pin.blocked.title"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.pin.forgot"]}
+- assertVisible: ${output.t["access.phrase.warning"]}
+# Not fill-input: it checks the text back, which a recovery phrase field hides.
+- runFlow:
+    file: ../../subflows/tap-input.yaml
+    env:
+      LABEL: ${output.t["access.phrase.label"]}
+- inputText: ${output.phrase}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.phrase.submit"]}
+- extendedWaitUntil:
+    visible: '${output.tv("access.attempts.title", { count: 5 })}'
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["access.attempts.continue"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.items.add"]}

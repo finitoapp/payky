@@ -1,0 +1,20 @@
+# web settings-assistant.spec.ts: "retries a question the assistant could not
+# answer". The mock fails the first request for a question with a 400 and
+# answers the retry.
+appId: ${APP_ID}
+tags: [settings-assistant]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/allow-assistant.yaml
+    env:
+      OPTION: ${output.t["settings.privacy.aiAssistant.all.title"]}
+- runFlow: ../../subflows/open-assistant.yaml
+- tapOn: ${output.t["settings.assistant.suggestion.today"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.assistant.failed"]}
+    timeout: 20000
+- tapOn: ${output.t["settings.assistant.failed"]}
+- extendedWaitUntil:
+    visible: Now it works.
+    timeout: 20000

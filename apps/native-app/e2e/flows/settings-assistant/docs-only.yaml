@@ -1,0 +1,17 @@
+# web settings-assistant.spec.ts: "answers from the documentation alone without
+# the data tools". The mock refuses the request unless it carries exactly
+# listFiles, readFile and searchCode, as the spec's `toolNames` check does.
+appId: ${APP_ID}
+tags: [settings-assistant]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/allow-assistant.yaml
+    env:
+      OPTION: ${output.t["settings.privacy.aiAssistant.public.title"]}
+- runFlow: ../../subflows/open-assistant.yaml
+- assertNotVisible: ${output.t["settings.assistant.suggestion.openBills"]}
+- tapOn: ${output.t["settings.assistant.suggestion.howRefund"]}
+- extendedWaitUntil:
+    visible: Open the payment and refund it.
+    timeout: 20000

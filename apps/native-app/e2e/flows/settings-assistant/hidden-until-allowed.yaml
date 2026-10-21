@@ -1,0 +1,23 @@
+# web settings-assistant.spec.ts: "hides the assistant until the device allows it".
+appId: ${APP_ID}
+tags: [settings-assistant]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.settings"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.title"]}
+    timeout: 15000
+# The entry would sit just above Donations.
+- scrollUntilVisible:
+    element: ${output.t["settings.donations.title"]}
+    centerElement: true
+- assertNotVisible: ${output.t["settings.assistant.title"]}
+# Its address leads to the privacy settings.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/assistant
+      TEXT: ${output.t["settings.about.privacy.title"]}

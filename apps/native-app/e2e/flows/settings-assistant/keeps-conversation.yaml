@@ -1,0 +1,71 @@
+# web settings-assistant.spec.ts: "asks the assistant and keeps the conversation".
+# The mock answers the follow-up only when it carries the conversation so far
+# (system, user, assistant, user) under a 22-character bearer token and the
+# data tools, which is what the spec reads back from its recorded requests.
+appId: ${APP_ID}
+tags: [settings-assistant]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/allow-assistant.yaml
+    env:
+      OPTION: ${output.t["settings.privacy.aiAssistant.all.title"]}
+# A suggested question.
+- runFlow: ../../subflows/open-assistant.yaml
+- tapOn: ${output.t["settings.assistant.suggestion.openBills"]}
+- extendedWaitUntil:
+    visible: No bill is open.
+    timeout: 20000
+- assertNotVisible: ${output.t["settings.assistant.stopped"]}
+# A follow-up with the conversation so far.
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["settings.assistant.message.label"]}
+      VALUE: And payments?
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.assistant.send"]}
+- extendedWaitUntil:
+    visible: You have no payments yet.
+    timeout: 20000
+# The conversation is still there after leaving the page.
+- back
+- extendedWaitUntil:
+    visible: ${output.t["settings.donations.title"]}
+    timeout: 10000
+- runFlow: ../../subflows/open-assistant.yaml
+- assertVisible: You have no payments yet.
+# Allowing less starts afresh.
+- back
+- extendedWaitUntil:
+    visible: ${output.t["settings.donations.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/open-settings-entry.yaml
+    env:
+      TITLE: ${output.t["settings.about.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.about.privacy.title"]}
+    timeout: 10000
+- tapOn: ${output.t["settings.about.privacy.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.privacy.aiAssistant.title"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: ${output.t["settings.privacy.aiAssistant.public.title"]}
+    centerElement: true
+- tapOn: ${output.t["settings.privacy.aiAssistant.public.title"]}
+- back
+- back
+- extendedWaitUntil:
+    visible: ${output.t["settings.donations.title"]}
+    timeout: 10000
+- runFlow: ../../subflows/open-assistant.yaml
+- assertNotVisible: You have no payments yet.

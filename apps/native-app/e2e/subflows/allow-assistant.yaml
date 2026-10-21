@@ -1,0 +1,27 @@
+# web assistant spec's allowAssistant: from the terminal home, in-app (a link
+# would reload the web build and forget the conversation), Settings > About >
+# Data and privacy, then the AI assistant option titled OPTION;
+# back to Settings, which keeps its scroll near Donations (not its title).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: open-settings-entry.yaml
+    env:
+      FROM_HOME: "true"
+      TITLE: ${output.t["settings.about.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.about.privacy.title"]}
+    timeout: 10000
+- tapOn: ${output.t["settings.about.privacy.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.privacy.aiAssistant.title"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: ${OPTION}
+    centerElement: true
+- tapOn: ${OPTION}
+- back
+- back
+- extendedWaitUntil:
+    visible: ${output.t["settings.donations.title"]}
+    timeout: 10000

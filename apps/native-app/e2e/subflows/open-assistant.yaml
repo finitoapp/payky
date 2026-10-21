@@ -1,0 +1,10 @@
+# From Settings: the AI assistant entry, then its page.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: open-settings-entry.yaml
+    env:
+      TITLE: ${output.t["settings.assistant.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.assistant.message.placeholder"]}
+    timeout: 10000

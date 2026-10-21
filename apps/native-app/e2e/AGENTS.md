@@ -90,6 +90,10 @@ assertions.
   `${BASE_URL}e2e/fake?spark=funded&next=/` and wait for home (`next=`
   replaces the bridge, so there is no `E2E OK`); a later link reloads web
   and drops it, so take links (ids, invoices) before it.
+  `allow-assistant` (`OPTION`, the access option's title) is the
+  assistant spec's `allowAssistant`, in-app from home (Settings > About >
+  Data and privacy, then back to Settings), and `open-assistant` opens the
+  assistant from Settings.
 - Optional env: `fill-input`/`fill-inline`/`clear-input` take `PLACEHOLDER`
   (an emptied input with one shows it as its text), `fill-input`/
   `fill-inline`/`tap-input` take `BUTTONS: "true"` for an inline field that

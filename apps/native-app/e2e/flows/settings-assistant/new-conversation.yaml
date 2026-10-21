@@ -1,0 +1,26 @@
+# web settings-assistant.spec.ts: "starts a new conversation".
+appId: ${APP_ID}
+tags: [settings-assistant]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/allow-assistant.yaml
+    env:
+      OPTION: ${output.t["settings.privacy.aiAssistant.all.title"]}
+- runFlow: ../../subflows/open-assistant.yaml
+- tapOn: ${output.t["settings.assistant.suggestion.openBills"]}
+- extendedWaitUntil:
+    visible: No bill is open.
+    timeout: 20000
+# Start over: the suggestions are back and the button is gone.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.assistant.newConversation"]}
+- assertNotVisible: No bill is open.
+- assertVisible: ${output.t["settings.assistant.suggestion.openBills"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.assistant.newConversation"]}
+      HIDDEN: "true"

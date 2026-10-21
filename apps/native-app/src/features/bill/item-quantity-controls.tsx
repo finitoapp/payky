@@ -1,5 +1,6 @@
 import { PositiveNumber } from "@payky/core/modules/shared/schema"
 import { useState } from "react"
+import { Keyboard } from "react-native"
 import { Button } from "../../components/ui/button.tsx"
 import {
   Dialog,
@@ -36,7 +37,10 @@ export function ItemQuantityDialog({
       {open ? (
         <ItemQuantityDialogBody
           name={name}
-          onClose={() => onOpenChange(false)}
+          onClose={() => {
+            Keyboard.dismiss()
+            onOpenChange(false)
+          }}
           onAddQuantity={onAddQuantity}
         />
       ) : null}

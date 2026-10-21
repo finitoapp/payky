@@ -19,11 +19,11 @@ import { createRandomBillId } from "@payky/core/modules/bill/bill-types"
 import type { TableRow } from "@payky/core/modules/table/table"
 import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import type { TableId } from "@payky/core/modules/table/table-types"
-import { router } from "expo-router"
+import { router, useFocusEffect } from "expo-router"
 import { useAtom } from "jotai"
 import Plus from "lucide-react-native/icons/plus"
 import Users from "lucide-react-native/icons/users"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { FlatList, Pressable, ScrollView, View } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { screenPaddingX } from "../../components/screen.tsx"
@@ -70,10 +70,14 @@ const openBill = (billId: string) =>
 /**
  * The id is minted once per mounted button, as web's `NewBillLink`, so the
  * `/bill` URL is stable before the first tap and a bill left empty is
- * reopened rather than abandoned.
+ * reopened rather than abandoned. Web's home unmounts behind the bill and
+ * mints anew on return; native's stays mounted under the stack, so it mints
+ * anew once the home loses focus — otherwise the next "New bill" reopened
+ * the bill just charged.
  */
 function useNewBill(tableId: TableId | undefined) {
-  const [billId] = useState(createRandomBillId)
+  const [billId, setBillId] = useState(createRandomBillId)
+  useFocusEffect(useCallback(() => () => setBillId(createRandomBillId()), []))
   return () =>
     router.push({
       pathname: "/bill",

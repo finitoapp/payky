@@ -179,6 +179,9 @@ async function startMetro(
     ? undefined
     : Bun.spawn(["bun", "x", "expo", "start", "--port", String(metroPort)], {
         cwd: appDir,
+        // Explicitly: a child does not see EXPO_PUBLIC_PAYKY_E2E set above,
+        // and Metro without it bundles the app with the bridge turned off.
+        env: { ...process.env },
         stdout: "ignore",
         stderr: "inherit",
       })

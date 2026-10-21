@@ -98,7 +98,9 @@ const TriggerFrame = styled(View, {
     size: {
       // Web h-8; 40 to match the kit Input next to it in a form.
       default: { h: 40 },
-      sm: { h: 28, rounded: radius.md },
+      // No vertical padding: 8 of it left 10 of the 28 for 14-high text,
+      // which React Native clips where CSS lets it overflow.
+      sm: { h: 28, py: 0, rounded: radius.md },
     },
     disabled: { true: { opacity: 0.5, pointerEvents: "none" } },
   } as const,
@@ -138,7 +140,11 @@ export function SelectTrigger({
   )
 }
 
-/** The selected item's label from `items`, else `children` or `placeholder`. */
+/**
+ * `children` when given (a string is styled as a selected label: React Native
+ * renders text only inside a `Text`), else the selected item's label from
+ * `items`, else `placeholder`.
+ */
 export function SelectValue({
   placeholder,
   children,
@@ -147,8 +153,14 @@ export function SelectValue({
   readonly children?: ReactNode
 }) {
   const { value, items } = useSelect()
-  if (children !== undefined) return <View shrink={1}>{children}</View>
-  const label = value === null ? undefined : items?.[value]
+  if (children !== undefined && typeof children !== "string")
+    return <View shrink={1}>{children}</View>
+  const label =
+    typeof children === "string"
+      ? children
+      : value === null
+        ? undefined
+        : items?.[value]
   return (
     <Text
       shrink={1}

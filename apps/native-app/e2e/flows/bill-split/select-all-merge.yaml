@@ -1,0 +1,41 @@
+# web bill-split.spec.ts: "select all merges a bill fully into an existing
+# open bill".
+# KNOWN APP BUG: fails on Android, where the existing-bill row does not
+# select (native-e2e.md, open questions).
+appId: ${APP_ID}
+tags: [bill-split]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/merge-scenario.yaml
+# Select all, then merge into the bill on Merge Table.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.split.button.aria"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.split.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.split.selectAll"]}
+- tapOn: ${output.t["bill.split.destination.existing"]}
+# The target is bill #1; its subtitle "Merge Table" is also on the bill page
+# behind the dialog, where Android would tap it instead.
+- tapOn: '${output.tv("bill.list.label", { number: 1 })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.split.confirm"]}
+# On the target bill, now holding all three coffees.
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 3 })}'
+    timeout: 15000
+- assertVisible: '${output.tv("bill.list.label", { number: 1 })}'
+# The emptied source bill was canceled: its link opens its detail.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertVisible: ${output.t["bill.status.canceled"]}

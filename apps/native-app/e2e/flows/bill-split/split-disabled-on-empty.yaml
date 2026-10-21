@@ -1,0 +1,10 @@
+# web bill-split.spec.ts: "the split button is disabled on an empty bill".
+# Maestro's web driver reports no enabled state, so this checks Android.
+appId: ${APP_ID}
+tags: [bill-split, android-only]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/start-new-bill.yaml
+- assertVisible:
+    text: ${output.re(output.t["bill.split.button.aria"])}
+    enabled: false

@@ -1,0 +1,72 @@
+# web tables-overview.spec.ts: "shows a free table, starts a cart from it,
+# then shows it occupied".
+appId: ${APP_ID}
+tags: [tables-overview]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-table.yaml
+    env:
+      NAME: Table A
+      SEATS: "2"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.pos"]}
+# The table is free.
+- assertVisible:
+    text: ${output.t["tables.tile.free"]}
+    below: Table A
+- assertNotVisible: '${output.tv("bill.list.label", { number: "\\d+" })}'
+# Its tile starts a bill on it.
+- tapOn: Table A
+- extendedWaitUntil:
+    visible: ${output.t["bill.title"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.list.label", { number: 1 })}'
+    timeout: 10000
+- assertVisible: Table A
+# Back home, the table is occupied by that one bill.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- extendedWaitUntil:
+    visible:
+      id: no-table-tile
+    timeout: 10000
+- assertNotVisible:
+    text: ${output.t["tables.tile.free"]}
+    below: Table A
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("bill.list.label", { number: 1 })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["tables.tile.newBill"]}
+# The tile resumes its bill.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.list.label", { number: 1 })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 10000
+- assertVisible: '${output.tv("bill.list.label", { number: 1 })}'

@@ -1,0 +1,43 @@
+# web tables-overview.spec.ts: "lists a bill without a table inside the 'no
+# table' tile, alongside table tiles".
+appId: ${APP_ID}
+tags: [tables-overview]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-table.yaml
+    env:
+      NAME: Table A
+      SEATS: "2"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.pos"]}
+- runFlow: ../../subflows/park-cart.yaml
+# Table A stays free; the bill sits in the "no table" strip, above it.
+- assertVisible:
+    text: ${output.t["tables.tile.free"]}
+    below: Table A
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("bill.list.label", { number: 1 })}'
+- assertNotVisible: ${output.t["home.pos.noTable.empty"]}
+# Its row resumes it.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.list.label", { number: 1 })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 10000

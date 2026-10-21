@@ -1,0 +1,33 @@
+# web bill-split.spec.ts: "a partial split into an existing bill stays on
+# the source bill".
+# KNOWN APP BUG: fails on Android, where the existing-bill row does not
+# select (native-e2e.md, open questions).
+appId: ${APP_ID}
+tags: [bill-split]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/merge-scenario.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.split.button.aria"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.split.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.split.increase.aria", { name: "Coffee" })}'
+- tapOn: ${output.t["bill.split.destination.existing"]}
+# The target is bill #1; its subtitle "Merge Table" is also on the bill page
+# behind the dialog, where Android would tap it instead.
+- tapOn: '${output.tv("bill.list.label", { number: 1 })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.split.confirm"]}
+# Stays on the source bill (#2), which kept its other coffee.
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 15000
+- assertVisible: '${output.tv("bill.list.label", { number: 2 })}'

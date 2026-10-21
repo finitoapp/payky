@@ -1,0 +1,68 @@
+# web bill-split.spec.ts: "split selected items off a bill into a newly
+# created bill".
+appId: ${APP_ID}
+tags: [bill-split]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+- evalScript: ${output.taps = 0}
+- repeat:
+    times: 3
+    commands:
+      - runFlow:
+          file: ../../subflows/tap-label.yaml
+          env:
+            LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+      - evalScript: ${output.taps = output.taps + 1}
+      - extendedWaitUntil:
+          visible: '${output.tv("bill.itemsCount", { value: output.taps })}'
+          timeout: 10000
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: '${output.tv("bill.itemsCount", { value: 3 })}'
+# Split two coffees into a new bill.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.split.button.aria"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.split.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.split.increase.aria", { name: "Coffee" })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.split.increase.aria", { name: "Coffee" })}'
+- assertVisible: ${output.re(output.t["bill.split.selectedCount"])} 2.*
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.split.confirm"]}
+# Lands on the new bill with the moved items.
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 2 })}'
+    timeout: 15000
+# (Web titles it "Bill"; native numbers it, since the split created it.)
+- assertVisible: '${output.re(output.t["bill.title"])}( #\d+)?'
+# The source bill keeps the remaining coffee.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: '${output.tv("bill.itemsCount", { value: 1 })}'

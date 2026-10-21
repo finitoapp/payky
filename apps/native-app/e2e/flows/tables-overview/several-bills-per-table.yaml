@@ -1,0 +1,108 @@
+# web tables-overview.spec.ts: "a table with multiple open bills lists each
+# one, and each links straight to it". Bills are #1 and #2 on Table B, #3 on
+# Table C; a tile's own bills are told apart by position (Table B's column
+# is left of "Table C", Table C's right of "Table B").
+# KNOWN APP BUG: fails on web, where the two chips are squashed
+# (native-e2e.md, open questions).
+appId: ${APP_ID}
+tags: [tables-overview]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-table.yaml
+    env:
+      NAME: Table B
+      SEATS: "2"
+- runFlow:
+    file: ../../subflows/add-table.yaml
+    env:
+      NAME: Table C
+      SEATS: "2"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.pos"]}
+- runFlow:
+    file: ../../subflows/park-cart.yaml
+    env:
+      TABLE: Table B
+- runFlow:
+    file: ../../subflows/park-cart.yaml
+    env:
+      TABLE: Table B
+- runFlow:
+    file: ../../subflows/park-cart.yaml
+    env:
+      TABLE: Table C
+# Table B lists its two bills, Table C its one.
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - assertVisible:
+          id: '${output.re(output.tv("bill.list.label", { number: 1 }))}'
+          leftOf: Table C
+      - assertVisible:
+          id: '${output.re(output.tv("bill.list.label", { number: 2 }))}'
+          leftOf: Table C
+      - assertVisible:
+          id: '${output.re(output.tv("bill.list.label", { number: 3 }))}'
+          rightOf: Table B
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          text: '${output.re(output.tv("bill.list.label", { number: 1 }))}'
+          leftOf: Table C
+      - assertVisible:
+          text: '${output.re(output.tv("bill.list.label", { number: 2 }))}'
+          leftOf: Table C
+      - assertVisible:
+          text: '${output.re(output.tv("bill.list.label", { number: 3 }))}'
+          rightOf: Table B
+# One of Table B's bills opens that exact bill.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.list.label", { number: 1 })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 10000
+- assertVisible: '${output.tv("bill.list.label", { number: 1 })}'
+- assertVisible: Table B
+# Table B's "+" starts another bill on the same table.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: ${output.re(output.t["tables.tile.newBill"])}
+          leftOf: Table C
+          below: Table B
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${output.re(output.t["tables.tile.newBill"])}
+          leftOf: Table C
+          below: ${output.t["bill.table.dialog.none"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.title"]}
+    timeout: 15000
+- assertVisible: Table B

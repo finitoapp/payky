@@ -1,0 +1,13 @@
+# web tables-overview.spec.ts: "shows only the free 'no table' tile when
+# there are no tables or open bills yet".
+appId: ${APP_ID}
+tags: [tables-overview]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.pos"]}
+- assertVisible: ${output.t["home.pos.noTable.empty"]}
+- assertNotVisible:
+    id: table-tile

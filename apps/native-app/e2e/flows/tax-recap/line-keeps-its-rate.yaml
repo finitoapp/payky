@@ -1,0 +1,91 @@
+# web tax-recap.spec.ts: "changing a catalog item's tax rate does not
+# retroactively change an already-added bill line".
+appId: ${APP_ID}
+tags: [tax-recap]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Standard rate
+      RATE: "21"
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Reduced rate
+      RATE: "12"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "121"
+      TAX_RATE: Standard rate.*
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- scrollUntilVisible:
+    element: Standard rate \(21%\)
+- assertVisible: Base. \$100\.00 · VAT. \$21\.00
+# Move the item to the reduced rate.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: ${output.t["settings.items.title"]}
+- tapOn: Coffee
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.form.title.edit"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: Standard rate.*
+    centerElement: true
+- tapOn: Standard rate.*
+- tapOn: Reduced rate.*
+- extendedWaitUntil:
+    visible: Reduced rate.*
+    timeout: 10000
+# The line already on the bill keeps the original rate.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- scrollUntilVisible:
+    element: Standard rate \(21%\)
+- assertVisible: Base. \$100\.00 · VAT. \$21\.00
+- assertNotVisible: Reduced rate.*
+# Adding it again picks up the new rate as a separate line.
+- scrollUntilVisible:
+    element: ${output.t["billDetail.backToBill"]}
+    direction: UP
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["billDetail.backToBill"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 2 })}'
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- scrollUntilVisible:
+    element: Reduced rate \(12%\)
+- assertVisible: Standard rate \(21%\)

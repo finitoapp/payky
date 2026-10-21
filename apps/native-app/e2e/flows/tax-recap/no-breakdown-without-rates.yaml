@@ -1,0 +1,29 @@
+# web tax-recap.spec.ts: "no VAT breakdown appears when no item has a tax
+# rate".
+appId: ${APP_ID}
+tags: [tax-recap]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertNotVisible: ${output.t["taxRecap.title"]}

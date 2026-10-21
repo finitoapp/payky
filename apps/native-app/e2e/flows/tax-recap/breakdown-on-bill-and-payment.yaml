@@ -1,0 +1,86 @@
+# web tax-recap.spec.ts: "shows a VAT breakdown by tax rate on the bill and
+# payment detail".
+appId: ${APP_ID}
+tags: [tax-recap]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Standard rate
+      RATE: "21"
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Reduced rate
+      RATE: "12"
+# One item per rate, with round amounts.
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "121"
+      TAX_RATE: Standard rate.*
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Tea
+      PRICE: "112"
+      TAX_RATE: Reduced rate.*
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Tea" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 2 })}'
+- runFlow: ../../subflows/read-ids.yaml
+# The bill detail shows the breakdown by rate.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- scrollUntilVisible:
+    element: ${output.t["taxRecap.title"]}
+- assertVisible: Standard rate \(21%\)
+- assertVisible: Reduced rate \(12%\)
+- assertVisible: Base. \$100\.00 · VAT. \$21\.00
+- assertVisible: Base. \$100\.00 · VAT. \$12\.00
+# Pay the bill.
+- scrollUntilVisible:
+    element: ${output.t["billDetail.backToBill"]}
+    direction: UP
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["billDetail.backToBill"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow: ../../subflows/mark-cash-paid.yaml
+# The payment detail shows the same breakdown.
+- tapOn: ${output.t["paymentWait.detail"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentDetail.title"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: ${output.t["taxRecap.title"]}
+- assertVisible: Standard rate \(21%\)
+- assertVisible: Reduced rate \(12%\)
+- assertVisible: Base. \$100\.00 · VAT. \$21\.00
+- assertVisible: Base. \$100\.00 · VAT. \$12\.00

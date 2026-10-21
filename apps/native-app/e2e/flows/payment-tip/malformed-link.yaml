@@ -1,0 +1,12 @@
+# web payment-tip.spec.ts: "a malformed tip link shows a message instead of
+# the error screen".
+appId: ${APP_ID}
+tags: [payment-tip]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: payment/tip?amount=abc&currency=CZK
+      TEXT: ${output.t["paymentTip.invalidLink"]}
+- assertNotVisible: ${output.t["appError.title"]}

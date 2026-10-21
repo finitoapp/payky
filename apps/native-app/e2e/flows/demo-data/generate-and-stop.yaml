@@ -1,0 +1,49 @@
+# web demo-data.spec.ts: "a demo account generates from today back until
+# stopped, with its relays locked off". Maestro cannot walk the relay
+# switches one by one: on Android no switch may be on.
+appId: ${APP_ID}
+tags: [demo-data]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+# Create the demo account behind the warning.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/demo-data
+      TEXT: ${output.t["settings.demoData.title"]}
+- assertVisible: .*${output.re(output.t["settings.demoData.warning.relays"])}
+- scrollUntilVisible:
+    element: ${output.t["settings.demoData.action"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.demoData.action"]}
+- tapOn: ${output.t["settings.demoData.confirm.confirm"]}
+# Stop after the day in progress (finishing today can take a while).
+- extendedWaitUntil:
+    visible: ${output.t["demoData.running.title"]}
+    timeout: 60000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["demoData.stop"]}
+- extendedWaitUntil:
+    visible: ${output.t["demoData.finished.title"]}
+    timeout: 120000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["demoData.close"]}
+# Its relays are off and locked.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/security
+      TEXT: ${output.t["settings.security.title"]}
+- assertVisible: ${output.t["settings.security.transports.demo"]}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertNotVisible:
+          checked: true

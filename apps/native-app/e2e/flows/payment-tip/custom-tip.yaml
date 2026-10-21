@@ -1,0 +1,23 @@
+# web payment-tip.spec.ts: "charge with a custom tip amount, confirmed via its
+# own button".
+appId: ${APP_ID}
+tags: [payment-tip]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.t["paymentTip.custom.label"]}
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["paymentTip.custom.label"]}
+      VALUE: "2.50"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentTip.continue"]}
+- runFlow: ../../subflows/mark-cash-paid.yaml

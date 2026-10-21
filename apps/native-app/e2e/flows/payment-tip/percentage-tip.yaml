@@ -1,0 +1,10 @@
+# web payment-tip.spec.ts: "charge with a percentage tip preset then mark
+# cash paid".
+appId: ${APP_ID}
+tags: [payment-tip]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/to-tip-step.yaml
+# A percentage confirms immediately.
+- tapOn: '${output.re(output.tv("settings.tips.percentages.value", { value: 10 }))}'
+- runFlow: ../../subflows/mark-cash-paid.yaml

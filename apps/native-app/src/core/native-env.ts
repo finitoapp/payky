@@ -10,6 +10,8 @@ export const nativeEnv = createEnv({
     // Native has no /api of its own, so the default is the production origin.
     EXPO_PUBLIC_PAYKY_API_BASE_URL: z.url().default("https://payky.me"),
     EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL: z.url().optional(),
+    // Set by the e2e builds to the mock server; default is Yadio itself.
+    EXPO_PUBLIC_PAYKY_YADIO_URL: z.url().optional(),
     EXPO_PUBLIC_PAYKY_DONATE_LUD16_ADDRESS: z
       .string()
       .default("donate@payky.me"),
@@ -39,6 +41,7 @@ export const nativeEnv = createEnv({
     EXPO_PUBLIC_PAYKY_API_BASE_URL: process.env.EXPO_PUBLIC_PAYKY_API_BASE_URL,
     EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL:
       process.env.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL,
+    EXPO_PUBLIC_PAYKY_YADIO_URL: process.env.EXPO_PUBLIC_PAYKY_YADIO_URL,
     EXPO_PUBLIC_PAYKY_DONATE_LUD16_ADDRESS:
       process.env.EXPO_PUBLIC_PAYKY_DONATE_LUD16_ADDRESS,
     EXPO_PUBLIC_PAYKY_NOSTR_RELAYS: process.env.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS,

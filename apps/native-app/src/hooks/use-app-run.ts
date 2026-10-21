@@ -43,7 +43,7 @@ function useAppRunDeps() {
       ...dateDep,
       ...fetchDep,
       ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
-      ...createYadioApiDep(),
+      ...createYadioApiDep({ baseUrl: nativeEnv.EXPO_PUBLIC_PAYKY_YADIO_URL }),
       ...createSwitchioTerminalDep(),
       ...createEetApiDep(
         { ...dateDep, ...fetchDep },

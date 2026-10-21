@@ -3,9 +3,11 @@
 // Each service is a handler in e2e/scripts/mocks/; the first that answers a
 // request wins, anything else is a 404 (logged, so a missing mock shows).
 // The build points at it through EXPO_PUBLIC_* URLs (run.ts).
-import type { MockHandler } from "./mocks/mock-handler.ts"
 
-const handlers: ReadonlyArray<MockHandler> = []
+import type { MockHandler } from "./mocks/mock-handler.ts"
+import { yadioMock } from "./mocks/yadio.ts"
+
+const handlers: ReadonlyArray<MockHandler> = [yadioMock]
 
 export function serveMocks(port: number) {
   return Bun.serve({

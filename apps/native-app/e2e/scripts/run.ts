@@ -103,6 +103,7 @@ for (const flow of flows)
 const pointAtMocks = (host: string) => {
   const base = `http://${host}:${mockPort}`
   process.env.EXPO_PUBLIC_PAYKY_API_BASE_URL = base
+  process.env.EXPO_PUBLIC_PAYKY_YADIO_URL = base
   process.env.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL = `${base}/eet/services/EETServiceSOAP/v4`
 }
 

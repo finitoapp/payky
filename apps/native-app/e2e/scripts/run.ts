@@ -20,6 +20,9 @@ const metroPort = 8792
 const appId = "me.payky.nativepreview"
 const maestro =
   Bun.which("maestro") ?? join(process.env.HOME ?? "", ".maestro/bin/maestro")
+// The version e2e/AGENTS.md pins: other releases differ in selectors and
+// subflow env handling, which shows up as odd flow failures, not an error.
+const maestroVersion = "2.11.0"
 
 const { values, positionals } = parseArgs({
   args: Bun.argv.slice(2),
@@ -34,6 +37,17 @@ const { values, positionals } = parseArgs({
   },
   allowPositionals: true,
 })
+const installed = (await $`${maestro} --version`.quiet().nothrow().text())
+  .trim()
+  .split("\n")
+  .at(-1)
+if (installed !== maestroVersion) {
+  console.error(
+    `Maestro ${maestroVersion} is required, found ${installed || "none"} (${maestro}); see e2e/AGENTS.md`
+  )
+  process.exit(2)
+}
+
 const platform = values.platform
 if (platform !== "web" && platform !== "android") {
   console.error("--platform web|android is required")

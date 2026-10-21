@@ -1,0 +1,63 @@
+# web settings-fio-plugin.spec.ts: "save Fio settings and add a token, in either order".
+# Web also fails the test on console errors; Maestro cannot see them.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+# No plugin row saved yet: the plugin id is fixed, so the settings and the
+# token form are there straight away.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts/iban/fio-plugin
+      TEXT: ${output.t["settings.fioPlugin.title"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.fioPlugin.interval.label"]}
+# Add a token before the plugin exists. The token input hides its text, so
+# it is typed without a check-back, and tapped at its left: the show/hide eye
+# covers its right end.
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["settings.fioPlugin.token.label"]}
+- tapOn:
+    id: ${output.re(output.t["settings.fioPlugin.token.label"])}
+    point: 30%,50%
+- inputText: e2e-fio-token
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.fioPlugin.tokens.add.submit"]}
+# Only the last four characters of the token show.
+- extendedWaitUntil:
+    visible: ${output.re("********oken")}
+    timeout: 15000
+- assertNotVisible: ${output.t["settings.fioPlugin.tokens.empty"]}
+# Save a setting without touching the token.
+- scrollUntilVisible:
+    element:
+      id: ${output.re(output.t["settings.fioPlugin.interval.label"])}
+    direction: UP
+- runFlow:
+    file: ../../subflows/fill-inline.yaml
+    env:
+      LABEL: ${output.t["settings.fioPlugin.interval.label"]}
+      VALUE: "45"
+- scrollUntilVisible:
+    element: ${output.re("********oken")}
+# The setting survives a restart.
+- runFlow:
+    file: ../../subflows/reopen.yaml
+    env:
+      ROUTE: settings/payment-accounts/iban/fio-plugin
+      TEXT: ${output.t["settings.fioPlugin.title"]}
+- assertVisible:
+    id: ${output.re(output.t["settings.fioPlugin.interval.label"])}
+    text: "45"

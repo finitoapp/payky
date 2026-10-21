@@ -1,0 +1,45 @@
+# web settings-debug-console.spec.ts: "view, pause, and clear captured
+# console output".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+# Log one entry, then open the console in-app: the seed's relaunch cleared
+# the in-memory history, and on web another link would reload it away.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: e2e/log?next=/settings/debug-console
+      TEXT: ${output.t["settings.debugConsole.title"]}
+# The captured entry is shown.
+- assertVisible:
+    id: debug-console-entries
+# Pause, then resume capturing.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.debugConsole.pause"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.debugConsole.resume"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.debugConsole.pause"]}
+# Clear the history while paused (background jobs may log again otherwise).
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.debugConsole.pause"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.debugConsole.resume"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.debugConsole.clear"]}
+- assertVisible: ${output.t["settings.debugConsole.empty"]}
+- assertNotVisible:
+    id: debug-console-entries

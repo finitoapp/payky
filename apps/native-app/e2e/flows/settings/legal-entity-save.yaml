@@ -1,0 +1,39 @@
+# web settings-legal-entity.spec.ts: "saves country and VAT-payer status, and
+# persists after reload". The checkbox state is checked on Android only.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/legal-entity
+      TEXT: ${output.t["settings.legalEntity.title"]}
+- runFlow: ../../subflows/open-country-select.yaml
+- tapOn: ${output.t["country.sk"]}
+- extendedWaitUntil:
+    visible: ${output.t["country.sk"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-id.yaml
+    env:
+      LABEL: ${output.t["settings.legalEntity.vatPayer.label"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.legalEntity.vatPayer.label"]}
+# Both survive a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/legal-entity
+      TEXT: ${output.t["settings.legalEntity.title"]}
+- assertVisible: ${output.t["country.sk"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.legalEntity.vatPayer.label"]}

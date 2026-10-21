@@ -1,0 +1,48 @@
+# web settings-tax-rates.spec.ts: "renaming a tax rate updates its
+# already-assigned item".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Standard rate
+      RATE: "21"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "59"
+      TAX_RATE: Standard rate.*
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.rename", { name: "Standard rate" })}'
+- runFlow:
+    file: ../../subflows/fill-inline.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.rename.input", { name: "Standard rate" })}'
+      VALUE: Basic rate
+      BUTTONS: "true"
+- extendedWaitUntil:
+    visible: Basic rate
+    timeout: 10000
+# The item now shows the renamed rate.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: ${output.t["settings.items.title"]}
+- tapOn: Coffee
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.form.title.edit"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: Basic rate.*
+    centerElement: true

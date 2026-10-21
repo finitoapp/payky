@@ -1,0 +1,42 @@
+# web settings-payment-accounts.spec.ts: "edit the fiat bank account on its
+# own page".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts
+      TEXT: ${output.t["settings.paymentAccounts.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.paymentAccounts.method.iban"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.fiatBankAccount.form.title"]}
+    timeout: 10000
+# Change the bank account's currency under the advanced options.
+- scrollUntilVisible:
+    element: ${output.t["settings.fiatBankAccount.advanced"]}
+    centerElement: true
+- tapOn: ${output.t["settings.fiatBankAccount.advanced"]}
+- scrollUntilVisible:
+    element: ${output.t["settings.fiat.usd.title"]}
+    centerElement: true
+- tapOn: ${output.t["settings.fiat.usd.title"]}
+- tapOn: ${output.t["settings.fiat.eur.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.fiat.eur.title"]}
+    timeout: 10000
+# The app runs in USD, so the overview flags the mismatch, and the bank
+# transfer is not the default.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts
+      TEXT: ${output.t["settings.paymentAccounts.title"]}
+- assertVisible: '${output.re(output.tv("settings.paymentAccounts.status.currencyMismatch", { currency: "EUR", appCurrency: "USD" }))}'
+- assertNotVisible:
+    text: ${output.t["settings.paymentAccounts.default"]}
+    below: ${output.t["settings.paymentAccounts.method.iban"]}

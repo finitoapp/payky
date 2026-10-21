@@ -1,0 +1,29 @@
+# web settings-appearance.spec.ts: "toggle error reporting". Every consent
+# card has the same Enable/Disable copy, so this one's are found between its
+# title and the next card's.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/about/privacy
+      TEXT: ${output.t["settings.about.privacy.title"]}
+# Off by default (a device setting).
+- tapOn:
+    text: ${output.t["settings.privacy.errorReporting.enable"]}
+    below: ${output.t["settings.privacy.errorReporting.title"]}
+    above: ${output.t["settings.privacy.productLookup.title"]}
+- assertVisible:
+    text: ${output.t["settings.privacy.errorReporting.enabled"]}
+    below: ${output.t["settings.privacy.errorReporting.title"]}
+    above: ${output.t["settings.privacy.productLookup.title"]}
+- tapOn:
+    text: ${output.t["settings.privacy.errorReporting.disable"]}
+    below: ${output.t["settings.privacy.errorReporting.title"]}
+    above: ${output.t["settings.privacy.productLookup.title"]}
+- assertVisible:
+    text: ${output.t["settings.privacy.errorReporting.disabled"]}
+    below: ${output.t["settings.privacy.errorReporting.title"]}
+    above: ${output.t["settings.privacy.productLookup.title"]}

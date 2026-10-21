@@ -1,0 +1,59 @@
+# web settings-tax-rates.spec.ts: "validates the name and rate fields when
+# adding a tax rate". The empty-list message is the sign nothing was added.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+# An out-of-range rate is rejected.
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.name.label"]}
+      VALUE: Broken rate
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.rate.label"]}
+      VALUE: "150"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.add"]}
+- assertVisible: ${output.t["settings.taxRates.rate.invalid"]}
+- assertVisible: ${output.t["settings.taxRates.empty"]}
+# A blank name is rejected.
+- runFlow:
+    file: ../../subflows/tap-input.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.name.label"]}
+- runFlow:
+    file: ../../subflows/clear-input.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.name.label"]}
+      PLACEHOLDER: ${output.t["settings.taxRates.name.placeholder"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.rate.label"]}
+      VALUE: "21"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.add"]}
+- assertVisible: ${output.t["settings.taxRates.name.invalid"]}
+- assertVisible: ${output.t["settings.taxRates.empty"]}

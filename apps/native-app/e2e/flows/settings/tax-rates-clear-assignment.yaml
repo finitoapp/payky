@@ -1,0 +1,46 @@
+# web settings-tax-rates.spec.ts: "clearing an item's tax rate assignment".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Standard rate
+      RATE: "21"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "59"
+      TAX_RATE: Standard rate.*
+# Clear it back to no tax rate; the select saves on its own.
+- tapOn: Coffee
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.form.title.edit"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: Standard rate.*
+    centerElement: true
+- tapOn: Standard rate.*
+- tapOn: ${output.t["settings.items.form.taxRate.none"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.form.taxRate.none"]}
+    timeout: 10000
+# The cleared assignment survives a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: ${output.t["settings.items.title"]}
+- tapOn: Coffee
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.form.title.edit"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: ${output.t["settings.items.form.taxRate.none"]}
+    centerElement: true

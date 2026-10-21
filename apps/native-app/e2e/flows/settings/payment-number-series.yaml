@@ -1,0 +1,63 @@
+# web settings-misc.spec.ts: "edit the payment number series". The format
+# toggle's selected state is checked on Android only.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-number-series
+      TEXT: ${output.t["settings.paymentNumberSeries.title"]}
+- scrollUntilVisible:
+    element:
+      id: ${output.re(output.t["settings.paymentNumberSeries.prefix.label"])}
+    centerElement: true
+- runFlow:
+    file: ../../subflows/fill-inline.yaml
+    env:
+      LABEL: ${output.t["settings.paymentNumberSeries.prefix.label"]}
+      VALUE: INV-
+- scrollUntilVisible:
+    element:
+      id: ${output.re(output.t["settings.paymentNumberSeries.lastNumber.serialNumber.label"])}
+    direction: UP
+    centerElement: true
+- runFlow:
+    file: ../../subflows/fill-inline.yaml
+    env:
+      LABEL: ${output.t["settings.paymentNumberSeries.lastNumber.serialNumber.label"]}
+      VALUE: "42"
+# A format toggle saves as soon as it is picked.
+- scrollUntilVisible:
+    element: ${output.t["settings.paymentNumberSeries.year.short.title"]}
+    centerElement: true
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.paymentNumberSeries.year.short.title"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.paymentNumberSeries.year.short.title"]}
+      BY_TEXT: "true"
+# Both changes survive a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-number-series
+      TEXT: ${output.t["settings.paymentNumberSeries.title"]}
+- assertVisible:
+    id: ${output.re(output.t["settings.paymentNumberSeries.lastNumber.serialNumber.label"])}
+    text: "42"
+- scrollUntilVisible:
+    element:
+      id: ${output.re(output.t["settings.paymentNumberSeries.prefix.label"])}
+    centerElement: true
+- assertVisible:
+    id: ${output.re(output.t["settings.paymentNumberSeries.prefix.label"])}
+    text: INV-

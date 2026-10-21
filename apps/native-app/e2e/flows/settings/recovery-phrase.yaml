@@ -1,0 +1,15 @@
+# web settings-appearance.spec.ts: "reveal the recovery phrase".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/security
+      TEXT: ${output.t["settings.security.title"]}
+- scrollUntilVisible:
+    element: ${output.t["passwordTextarea.show"]}
+- tapOn: ${output.t["passwordTextarea.show"]}
+# A plausible phrase: at least twelve words.
+- assertVisible: "(\\S+ ){11,}\\S+"

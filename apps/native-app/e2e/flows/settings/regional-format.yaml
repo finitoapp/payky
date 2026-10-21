@@ -1,0 +1,41 @@
+# web settings-appearance.spec.ts: "switch the regional (device locale)
+# format". The selected state is checked on Android only.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/language
+      TEXT: ${output.t["settings.language.title"]}
+- scrollUntilVisible:
+    element: ${output.t["settings.language.locale.czech.title"]}
+    centerElement: true
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.language.locale.czech.title"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.language.locale.czech.title"]}
+      BY_TEXT: "true"
+# The choice survives a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/language
+      TEXT: ${output.t["settings.language.title"]}
+- scrollUntilVisible:
+    element: ${output.t["settings.language.locale.czech.title"]}
+    centerElement: true
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.language.locale.czech.title"]}
+      BY_TEXT: "true"

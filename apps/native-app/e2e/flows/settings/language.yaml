@@ -1,0 +1,38 @@
+# web settings-appearance.spec.ts: "switch the app language". Option labels
+# are in their own language; the app turning Czech is the visible proof.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/language
+      TEXT: ${output.t["settings.language.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: Čeština
+- extendedWaitUntil:
+    visible: ${output.cs["settings.language.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: Čeština
+      BY_TEXT: "true"
+# The choice survives a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.cs["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/language
+      TEXT: ${output.cs["settings.language.title"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: Čeština
+      BY_TEXT: "true"

@@ -1,0 +1,22 @@
+# web settings-legal-entity.spec.ts: "requires a country before saving, and
+# shows a placeholder for an account that never configured it". The disabled
+# VAT-payer checkbox is checked on Android only (Maestro's web driver reports
+# no enabled state).
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/legal-entity
+      TEXT: ${output.t["settings.legalEntity.title"]}
+- assertVisible: ${output.t["settings.legalEntity.country.placeholder"]}
+# The VAT-payer choice waits for a country.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: ${output.re(output.t["settings.legalEntity.vatPayer.label"])}
+          enabled: false

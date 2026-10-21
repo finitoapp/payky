@@ -1,0 +1,77 @@
+# web settings-misc.spec.ts: "configure tip presets".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tips
+      TEXT: ${output.t["settings.tips.title"]}
+# The defaults fill all four percentage slots: remove 20% first, add 25%.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.tips.preset.remove", { value: output.tv("settings.tips.percentages.value", { value: 20 }) })}'
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["settings.tips.percentages.label"]}
+      VALUE: "25"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.tips.percentages.add"]}
+- assertVisible: '${output.tv("settings.tips.percentages.value", { value: 25 })}'
+# And a fixed amount, then save.
+- scrollUntilVisible:
+    element:
+      id: ${output.re(output.t["settings.tips.fixedAmounts.label"])}
+    centerElement: true
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["settings.tips.fixedAmounts.label"]}
+      VALUE: "30.00"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.tips.fixedAmounts.add"]}
+- scrollUntilVisible:
+    element: ${output.t["settings.tips.save"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.tips.save"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.tips.saved"]}
+    timeout: 10000
+# The new presets survive a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tips
+      TEXT: ${output.t["settings.tips.title"]}
+- assertVisible: '${output.tv("settings.tips.percentages.value", { value: 25 })}'
+# Reset to the defaults.
+- scrollUntilVisible:
+    element: ${output.t["settings.tips.reset"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.tips.reset"]}
+- assertNotVisible: '${output.tv("settings.tips.percentages.value", { value: 25 })}'

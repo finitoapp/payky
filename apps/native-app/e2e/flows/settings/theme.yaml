@@ -1,0 +1,35 @@
+# web settings-appearance.spec.ts: "switch the theme". The option's selected
+# state is checked on Android only (native-e2e AGENTS.md, gotchas).
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/theme
+      TEXT: ${output.t["settings.theme.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.theme.dark.title"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.theme.dark.title"]}
+      BY_TEXT: "true"
+# The choice survives a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/theme
+      TEXT: ${output.t["settings.theme.title"]}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.theme.dark.title"]}
+      BY_TEXT: "true"

@@ -1,0 +1,27 @@
+# web settings-about.spec.ts: "browse about, privacy, and terms pages".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/about
+      TEXT: ${output.t["settings.about.title"]}
+- assertVisible: ${output.re(output.t["settings.appVersion"])}.*
+# The privacy policy.
+- tapOn: ${output.t["settings.about.privacy.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.about.privacy.title"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: ${output.t["settings.about.privacy.heading"]}
+# Back, then the terms of service.
+- back
+- extendedWaitUntil:
+    visible: ${output.t["settings.about.terms.title"]}
+    timeout: 10000
+- tapOn: ${output.t["settings.about.terms.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.about.terms.heading"]}
+    timeout: 10000

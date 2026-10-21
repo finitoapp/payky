@@ -1,0 +1,28 @@
+# web settings-misc.spec.ts: "switch the default fiat currency". The select
+# is opened by its current value: on Android its label is the field label's
+# text too.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/legal-entity
+      TEXT: ${output.t["settings.legalEntity.title"]}
+- tapOn: ${output.t["settings.fiat.usd.title"]}
+- tapOn: ${output.t["settings.fiat.czk.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.fiat.czk.title"]}
+    timeout: 10000
+# The choice survives a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/legal-entity
+      TEXT: ${output.t["settings.legalEntity.title"]}
+- assertVisible: ${output.t["settings.fiat.czk.title"]}

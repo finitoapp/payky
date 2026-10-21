@@ -1,0 +1,138 @@
+# web settings-tax-rates.spec.ts: "create, set default, rename, archive and
+# reactivate a tax rate". Native's inline field holds no focus, so web's
+# focus checks are left out.
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+- assertVisible: ${output.t["settings.taxRates.empty"]}
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Standard rate
+      RATE: "21"
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Reduced rate
+      RATE: "12.5"
+- assertVisible: Standard rate
+- assertVisible: 21%
+- assertVisible: Reduced rate
+- assertVisible: 12\.5%
+# Neither is the default yet; make the standard rate the default.
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.set", { name: "Reduced rate" })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.set", { name: "Standard rate" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.unset", { name: "Standard rate" })}'
+# The default survives a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.unset", { name: "Standard rate" })}'
+# Unsetting it leaves no default.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.unset", { name: "Standard rate" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.set", { name: "Standard rate" })}'
+# Rename the reduced rate.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.rename", { name: "Reduced rate" })}'
+- runFlow:
+    file: ../../subflows/fill-inline.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.rename.input", { name: "Reduced rate" })}'
+      VALUE: Reduced VAT rate
+      BUTTONS: "true"
+- extendedWaitUntil:
+    visible: Reduced VAT rate
+    timeout: 10000
+# The rename survives a restart; the rate itself is unchanged.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+- assertVisible: Reduced VAT rate
+- assertVisible: 12\.5%
+# Archive it after confirming; it moves to the archived section.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.archive", { name: "Reduced VAT rate" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("settings.taxRates.archive.confirm.title", { name: "Reduced VAT rate" })}'
+    timeout: 10000
+- tapOn: ${output.t["settings.taxRates.archive.confirm.confirm"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.taxRates.archived.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.activate", { name: "Reduced VAT rate" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.rename", { name: "Reduced VAT rate" })}'
+      HIDDEN: "true"
+# Still archived after a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.activate", { name: "Reduced VAT rate" })}'
+# Reactivate it after confirming: active again, rename and rate intact.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.activate", { name: "Reduced VAT rate" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("settings.taxRates.activate.confirm.title", { name: "Reduced VAT rate" })}'
+    timeout: 10000
+- tapOn: ${output.t["settings.taxRates.activate.confirm.confirm"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.rename", { name: "Reduced VAT rate" })}'
+- assertVisible: 12\.5%

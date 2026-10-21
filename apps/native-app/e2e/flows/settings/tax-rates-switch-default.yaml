@@ -1,0 +1,55 @@
+# web settings-tax-rates.spec.ts: "switching the default tax rate between two
+# existing rates".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Rate A
+      RATE: "21"
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Rate B
+      RATE: "12"
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.set", { name: "Rate A" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.unset", { name: "Rate A" })}'
+# Making B the default unsets A.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.set", { name: "Rate B" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.unset", { name: "Rate B" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.set", { name: "Rate A" })}'
+# The swap survives a restart.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.unset", { name: "Rate B" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.set", { name: "Rate A" })}'

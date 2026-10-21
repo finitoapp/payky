@@ -1,0 +1,30 @@
+# web settings-tax-rates.spec.ts: "assign a tax rate to an item from the
+# item form".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Standard rate
+      RATE: "21"
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Reduced rate
+      RATE: "12"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "59"
+      TAX_RATE: Reduced rate.*
+# The assignment survives reopening the item.
+- tapOn: Coffee
+- extendedWaitUntil:
+    visible: ${output.t["settings.items.form.title.edit"]}
+    timeout: 10000
+- scrollUntilVisible:
+    element: Reduced rate.*
+    centerElement: true

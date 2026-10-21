@@ -1,0 +1,29 @@
+# web settings-tax-rates.spec.ts: "the default tax rate is preselected when
+# adding a new item".
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-tax-rate.yaml
+    env:
+      NAME: Standard rate
+      RATE: "21"
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.set", { name: "Standard rate" })}'
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("settings.taxRates.default.unset", { name: "Standard rate" })}'
+# The new item form preselects it.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items/new
+      TEXT: ${output.t["settings.items.form.title.create"]}
+- scrollUntilVisible:
+    element: Standard rate.*
+    centerElement: true
+- assertNotVisible: ${output.t["settings.items.form.taxRate.none"]}

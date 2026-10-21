@@ -1,0 +1,12 @@
+# web donation.spec.ts: "a donation invoice link with a malformed verify URL
+# still opens the page" (it used to throw into the global error boundary).
+appId: ${APP_ID}
+tags: [donation]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/donations-invoice?invoice=lnbc1&verify=not-a-url
+      TEXT: ${output.t["settings.donations.invoice.title"]}
+- assertNotVisible: ${output.t["appError.title"]}

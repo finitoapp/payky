@@ -118,6 +118,20 @@ assertions.
   reloads the page and loses the mint, so flows use `cashu=autopay` instead,
   which pays open quotes every 4 s by itself.
 
+## Mock server
+
+- `scripts/mock-server.ts` answers the outside HTTP services, one handler per
+  service in `scripts/mocks/` (the runner starts it and points
+  `EXPO_PUBLIC_PAYKY_API_BASE_URL` at it). Services on an https host the app
+  cannot be re-pointed at (LNURL: the host comes from a Lightning address)
+  are listed in `src/e2e/e2e-fetch.ts`; the fetch dep sends them to
+  `/__host/<host>/<path>` on the mock server.
+- A flow cannot talk to the mock or read back what the app sent, so a mock
+  decides by the request itself: `mocks/assistant.ts` answers by the last
+  question and 400s when the tools, roles or bearer token are not what web's
+  spec asserted; `mocks/donation.ts` settles an invoice some seconds after
+  creating it, so a flow asserts "waiting" first, then "paid".
+
 ## Selectors
 
 1. Visible translated text.

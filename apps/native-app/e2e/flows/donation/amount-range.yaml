@@ -1,0 +1,42 @@
+# web donation.spec.ts: "donation amount is validated against the LNURL
+# sendable range". The mock allows 100-5000 sats (web's spec narrows the
+# range to 100-500 for this test), so 9999 is above it.
+appId: ${APP_ID}
+tags: [donation]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/donations
+      TEXT: ${output.t["settings.donations.title"]}
+# Above the range: the error shows and the button stays off.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.donations.sats.label"]}
+      VALUE: "9999"
+- assertVisible: ${output.t["settings.donations.amount.range"]}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+      - assertVisible:
+          text: ${output.re(output.t["settings.donations.create"])}
+          enabled: false
+# Inside it: the button is on.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.donations.sats.label"]}
+      VALUE: "200"
+- assertNotVisible: ${output.t["settings.donations.amount.range"]}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+      - assertVisible:
+          text: ${output.re(output.t["settings.donations.create"])}
+          enabled: true

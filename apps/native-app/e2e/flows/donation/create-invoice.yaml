@@ -1,0 +1,44 @@
+# web donation.spec.ts: "create a donation invoice then simulate the incoming
+# payment". The mock (mocks/donation.ts) settles the invoice a few seconds
+# after creating it, where web's spec flips the flag itself.
+appId: ${APP_ID}
+tags: [donation]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/donations
+      TEXT: ${output.t["settings.donations.title"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.donations.sats.label"]}
+      VALUE: "1000"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.donations.create"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.donations.invoice.verify.waiting"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["settings.donations.invoice.copy"]}
+# The incoming payment.
+- extendedWaitUntil:
+    visible: ${output.t["settings.donations.invoice.verify.paid"]}
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.donations.invoice.backToSettings"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.title"]}
+    timeout: 10000

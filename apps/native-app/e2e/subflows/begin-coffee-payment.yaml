@@ -2,23 +2,17 @@
 # app ends on the payment screen of a new $5 bill, its cash button showing.
 # Leaves the newest ids in output.billId / output.paymentId (read-ids), and
 # goes back to the payment screen, so the bridge page is not left open.
+# SKIP_ITEM: "true" when Coffee already exists.
 appId: ${APP_ID}
 ---
 - runFlow:
+    when:
+      true: ${typeof SKIP_ITEM === "undefined"}
     file: add-catalog-item.yaml
     env:
       NAME: Coffee
       PRICE: "5"
-- runFlow:
-    file: goto.yaml
-    env:
-      ROUTE: ""
-      TEXT: ${output.t["home.pay"]}
-- runFlow: start-new-bill.yaml
-- runFlow:
-    file: tap-label.yaml
-    env:
-      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- runFlow: coffee-bill.yaml
 - runFlow:
     file: tap-label.yaml
     env:

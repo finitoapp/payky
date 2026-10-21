@@ -1,0 +1,18 @@
+# web activity-bills.spec.ts: "a payment individually canceled after being claimed shows a warning icon in the bill detail's payments list".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: simulateCancelAfterClaim
+      QUERY: paymentId=${output.paymentId}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertVisible: ${output.t["payment.status.canceled"]}

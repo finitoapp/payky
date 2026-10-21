@@ -1,0 +1,59 @@
+# web activity-bills.spec.ts: "the bill detail page shows the total, items, table, and linked payment".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-table.yaml
+    env:
+      NAME: Patio 1
+      SEATS: "4"
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.table.aria"]}
+- extendedWaitUntil:
+    visible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- tapOn: Patio 1
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.table.dialog.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.list.label", { number: "\\d+" })}'
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertVisible: ${output.t["bill.status.closed"]}
+- assertVisible: \$5\.00
+- assertVisible: Coffee
+- assertVisible: Patio 1
+- assertVisible: ${output.t["payment.status.paid"]}

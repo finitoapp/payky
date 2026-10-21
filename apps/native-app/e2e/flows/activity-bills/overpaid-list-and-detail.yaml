@@ -1,0 +1,26 @@
+# web activity-bills.spec.ts: "the bills list and detail page show an overpaid bill when another device changed the total while the payment was in flight".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: simulateBillModifiedDuringPayment
+      QUERY: billId=${output.billId}&mode=removeAll
+- runFlow: ../../subflows/reopen-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.t["bill.status.closed"]}
+- assertVisible: ${output.t["billHistory.overpaid"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertVisible: ${output.t["paymentDetail.bill.coverage.overpaid.title"]}

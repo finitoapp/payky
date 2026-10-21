@@ -1,0 +1,37 @@
+# web activity-bills.spec.ts: "the bill detail page's back-to-bill button returns to an open bill and is hidden once it's closed".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow: ../../subflows/coffee-bill.yaml
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["billDetail.backToBill"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+# A closed bill's detail page has no back-to-bill button.
+- runFlow:
+    file: ../../subflows/begin-coffee-payment.yaml
+    env:
+      SKIP_ITEM: "true"
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertNotVisible: ${output.t["billDetail.backToBill"]}

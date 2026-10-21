@@ -1,0 +1,23 @@
+# web activity-bills.spec.ts: "the bill detail page shows an invalid id or a missing bill message".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/not-a-real-id
+      TEXT: ${output.t["billDetail.invalidId"]}
+- runFlow: ../../subflows/coffee-bill.yaml
+- runFlow: ../../subflows/read-ids.yaml
+- evalScript: '${output.missingId = (output.billId[0] === "a" ? "b" : "a") + output.billId.slice(1)}'
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.missingId}
+      TEXT: ${output.t["billDetail.notFound"]}

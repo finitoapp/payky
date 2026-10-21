@@ -1,0 +1,27 @@
+# web activity-bills.spec.ts: "the bill detail page's own collision message resolves directly".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: cancelBill
+      QUERY: billId=${output.billId}
+- runFlow: ../../subflows/reopen-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertVisible: ${output.t["bill.collision.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.collision.markClosed"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.collision.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["bill.status.closed"]}

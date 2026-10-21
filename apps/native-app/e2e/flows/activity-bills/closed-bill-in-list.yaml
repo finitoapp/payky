@@ -1,0 +1,15 @@
+# web activity-bills.spec.ts: "the bills list shows an ordinary closed bill, fully paid".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.t["bill.status.closed"]}
+- assertNotVisible: ${output.t["billHistory.underpaid"]}
+- assertNotVisible: ${output.t["billHistory.overpaid"]}

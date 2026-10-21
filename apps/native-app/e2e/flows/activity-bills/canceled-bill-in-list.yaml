@@ -1,0 +1,26 @@
+# web activity-bills.spec.ts: "the bills list shows an ordinary canceled bill, discarded before any payment".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow: ../../subflows/coffee-bill.yaml
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.discard"]}
+- tapOn: ${output.t["bill.discard.confirm.confirm"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pos.noTable.empty"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.t["bill.status.canceled"]}
+- assertNotVisible: ${output.t["bill.collision.title"]}

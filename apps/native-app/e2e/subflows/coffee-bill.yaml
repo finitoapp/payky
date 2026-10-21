@@ -1,0 +1,17 @@
+# web's startBillWithCoffee: from the terminal home, a new bill with one
+# Coffee on it (the catalog item must exist).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.re(output.t["home.pay"])}|${output.re(output.t["bill.table.dialog.none"])}
+- runFlow: start-new-bill.yaml
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.list.label", { number: "\\d+" })}'
+    timeout: 10000

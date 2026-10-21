@@ -1,0 +1,20 @@
+# web activity-bills.spec.ts: "the bills list shows an ordinary open bill with nothing paid yet".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow: ../../subflows/coffee-bill.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.t["bill.status.open"]}
+- assertNotVisible: ${output.t["billHistory.underpaid"]}
+- assertNotVisible: ${output.t["billHistory.overpaid"]}
+- assertNotVisible: ${output.t["bill.collision.title"]}

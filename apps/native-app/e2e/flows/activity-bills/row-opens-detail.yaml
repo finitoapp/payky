@@ -1,0 +1,17 @@
+# web activity-bills.spec.ts: "clicking a bill row in the list opens its detail page".
+appId: ${APP_ID}
+tags: [activity-bills]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills
+      TEXT: ${output.t["activity.title"]}
+- tapOn: ${output.t["bill.status.closed"]}
+- extendedWaitUntil:
+    visible: ${output.t["billDetail.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["bill.status.closed"]}

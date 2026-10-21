@@ -1,0 +1,76 @@
+# web payment-iban.spec.ts: "pay with IBAN: bank details stay hidden until
+# toggled, show the IBAN grouped in fours, and let the IBAN/VS be copied and
+# the transfer confirmed manually".
+appId: ${APP_ID}
+tags: [payment-iban]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.iban"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.copyQr"]}
+# Hidden until the toggle is pressed.
+- assertNotVisible: CZ65 0800 0000 1920 0014 5399
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanDetails.show"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanDetails.show"]}
+- extendedWaitUntil:
+    visible: CZ65 0800 0000 1920 0014 5399
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanDetails.iban.copy"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanDetails.iban.copy"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.ibanDetails.iban.copied"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanDetails.variableSymbol.copy"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanDetails.variableSymbol.copy"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.ibanDetails.variableSymbol.copied"]}
+    timeout: 10000
+# Toggling again hides the details (once the toast no longer covers it).
+- extendedWaitUntil:
+    notVisible: ${output.t["paymentWait.ibanDetails.variableSymbol.copied"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanDetails.hide"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.ibanDetails.hide"]}
+- extendedWaitUntil:
+    notVisible: CZ65 0800 0000 1920 0014 5399
+    timeout: 10000
+# Manual confirmation.
+- scrollUntilVisible:
+    element: ${output.t["paymentWait.ibanPaid.action"]}
+- tapOn: ${output.t["paymentWait.ibanPaid.action"]}
+- extendedWaitUntil:
+    visible:
+      id: payment-paid-panel
+    timeout: 15000
+- assertVisible: ${output.t["paymentWait.paid"]}

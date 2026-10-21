@@ -1,0 +1,31 @@
+# web payment-iban.spec.ts: "pay with IBAN: renders a scannable bank QR in
+# either format, then simulate the incoming payment". The QR format switch
+# is not checked (native offers the toggle only when a second format
+# applies; payBySquare is a web-only copy, native-e2e.md 3.4). A link onto
+# the now-paid payment lands on its detail, not on the paid panel.
+appId: ${APP_ID}
+tags: [payment-iban]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.iban"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.copyQr"]}
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: markIbanPaid
+      QUERY: paymentId=${output.paymentId}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: payment/${output.paymentId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- assertVisible: ${output.t["payment.status.paid"]}

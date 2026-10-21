@@ -50,7 +50,7 @@ assertions.
 - Subflows (env in brackets) replace web's `support/` helpers:
   `goto` (`ROUTE`, `TEXT`) is `gotoPage`; `e2e-action` (`ACTION`, `QUERY`)
   runs a bridge action and waits for `E2E OK`; `complete-onboarding` is
-  `completeOnboarding` through the real UI; `tap-label` (`LABEL`) taps a
+  `completeOnboarding` through the real UI; `scroll-to-label` (`LABEL`/`PATTERN`) scrolls to what `tap-label` taps; `tap-label` (`LABEL`) taps a
   kit Button or icon button by its label (or a regex `PATTERN`, "Bill #\\d+");
   `tap-input`, `clear-input`,
   `fill-input` (`LABEL`, `VALUE`) work an input by its field label

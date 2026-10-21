@@ -1,0 +1,17 @@
+# Scrolls until the control named LABEL shows (an id on web, text on Android,
+# as tap-label); a regex PATTERN instead of LABEL.
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: '${typeof PATTERN === "undefined" ? output.re(LABEL) : PATTERN}'
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element: '${typeof PATTERN === "undefined" ? output.re(LABEL) : PATTERN}'

@@ -7,6 +7,8 @@ import {
 } from "@payky/core/modules/account/account-actions"
 import { completeOnboarding } from "@payky/core/modules/app-settings/app-settings-actions"
 import { PaymentMethodOrderJson } from "@payky/core/modules/app-settings/app-settings-utils"
+import { latestBillsQuery } from "@payky/core/modules/bill/bill-queries"
+import { latestPaymentsQuery } from "@payky/core/modules/payment/payment-queries"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
@@ -66,5 +68,17 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
       })
     )
     return undefined
+  },
+
+  /**
+   * The ids web's specs read off the URL (`/bill?billId=`, `/payment/<id>`),
+   * which a flow cannot: the newest bill's and payment's, printed as
+   * `bill=<id> payment=<id>` (`-` for none). `subflows/read-ids.yaml` keeps
+   * them as `output.billId` and `output.paymentId`.
+   */
+  lastIds: async (run) => {
+    const [bill] = await run.deps.evolu.loadQuery(latestBillsQuery(1))
+    const [payment] = await run.deps.evolu.loadQuery(latestPaymentsQuery(1))
+    return `bill=${bill?.id ?? "-"} payment=${payment?.id ?? "-"}`
   },
 }

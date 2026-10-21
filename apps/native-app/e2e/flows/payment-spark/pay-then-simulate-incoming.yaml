@@ -1,0 +1,38 @@
+# web payment-spark.spec.ts: "pay with Spark then simulate the incoming
+# payment". The Lightning invoice comes from the `funded` fake Spark wallet
+# (Yadio's rate from the mock server). Like payment-iban, a link onto the
+# now-paid payment lands on its detail, not on the paid panel.
+appId: ${APP_ID}
+tags: [payment-spark]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: spark=true
+# `next=/` replaces the bridge page, so there is no "E2E OK" to wait for.
+- openLink: ${BASE_URL}e2e/fake?spark=funded&next=/
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 15000
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.lightning"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.copyQr"]}
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: markSparkPaid
+      QUERY: paymentId=${output.paymentId}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: payment/${output.paymentId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- assertVisible: ${output.t["payment.status.paid"]}

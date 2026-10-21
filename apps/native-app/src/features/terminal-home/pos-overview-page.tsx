@@ -361,7 +361,13 @@ function TableTile({
       }
     >
       {rows.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        // flexShrink 0: React Native Web's ScrollView shrinks in a column
+        // when the tile is short, down to a few pixels.
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0, flexShrink: 0 }}
+        >
           <XStack gap={6}>
             {rows.map((row) => (
               <BillChip

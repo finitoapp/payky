@@ -9,6 +9,7 @@ import {
   retryPaymentMethodPreparation,
 } from "@payky/app-shared/payment-method-preparation"
 import { useNow } from "@payky/app-shared/use-now"
+import { useRedirectIfClosedOnOpen } from "@payky/app-shared/use-redirect-if-closed-on-open"
 import { buildCashuPaymentUri } from "@payky/core/cashu/cashu-payment-request"
 import {
   fetchNostrProfile,
@@ -300,6 +301,17 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           now,
         })
   useScreenWakeLock(status === "pending")
+  // The payment screen serves only an open payment (access/0008): opened on a
+  // paid or canceled one (a typed link, Back) it hands it to its activity
+  // detail. Decided once, so a payment paid while open still shows Paid.
+  const closedOnOpen = useRedirectIfClosedOnOpen(
+    status === "paid" || status === "canceled",
+    () =>
+      router.replace({
+        pathname: "/activity/[paymentId]",
+        params: { paymentId },
+      })
+  )
 
   const ibanNumber = ibanAccount?.iban ?? null
   const ibanName = ibanAccount?.name ?? null
@@ -435,6 +447,12 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     void prepare(active, preparationKey)
   }, [status, active, preparationKey, prepared, preparation])
 
+  if (closedOnOpen)
+    return (
+      <YStack flex={1} items="center" justify="center">
+        <ActivityIndicator size="large" />
+      </YStack>
+    )
   if (payment === undefined || status === null)
     return <RouteMessage>{t("paymentWait.notFound")}</RouteMessage>
   if (status === "canceled")

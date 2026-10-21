@@ -1,0 +1,14 @@
+# web hardware-scanner.spec.ts: "a hardware scan on the home screen with an
+# unknown code offers to create the item". The code goes in through
+# injectScanCode (see hardware-scan-opens-bill.yaml).
+appId: ${APP_ID}
+tags: [home]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "99998888"
+- extendedWaitUntil:
+    visible: ${output.t["bill.scan.unknown.create"]}
+    timeout: 15000

@@ -1,0 +1,31 @@
+# web hardware-scanner.spec.ts: "a hardware scan on the home keypad opens a new
+# bill instead of charging". The code goes in through injectScanCode, which
+# uses the same hand-off to /bill as the home screen's scan; the key events
+# themselves (with their timing) are not driven.
+appId: ${APP_ID}
+tags: [home]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+      SCAN_CODE: "12345678"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "12345678"
+# A new bill holds the scanned item and no payment was made.
+- extendedWaitUntil:
+    visible: "Bill #1"
+    timeout: 15000
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 15000
+- assertNotVisible: ${output.t["paymentWait.cancel"]}

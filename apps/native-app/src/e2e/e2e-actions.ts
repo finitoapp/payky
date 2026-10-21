@@ -1,3 +1,4 @@
+import { accessLastActivityAtom } from "@payky/app-shared/access-state"
 import { updateDeviceSettings } from "@payky/core/evolu/device-account"
 import { getDeviceLocaleForLanguage } from "@payky/core/evolu/device-client"
 import {
@@ -20,7 +21,13 @@ import {
   loadCalculatedBillLineSummaries,
 } from "@payky/core/modules/bill-line/bill-line-actions"
 import { deriveBillSummaryTotal } from "@payky/core/modules/bill-line/bill-line-utils"
-import type { DeviceId } from "@payky/core/modules/device/device-types"
+import {
+  registerDevice,
+  setDevicePinBlocked,
+  unblockDevice,
+} from "@payky/core/modules/device/device-actions"
+import { deviceByIdQuery } from "@payky/core/modules/device/device-queries"
+import { DeviceId } from "@payky/core/modules/device/device-types"
 import { upsertItemSnapshot } from "@payky/core/modules/item/item-actions"
 import { createStandaloneItemSnapshot } from "@payky/core/modules/item/item-utils"
 import {
@@ -37,16 +44,22 @@ import {
   claimManualReconciliation,
   reconcileAccountTransaction,
 } from "@payky/core/modules/reconciliation-claim/reconciliation-claim-actions"
-import { runMutationWithCompletion } from "@payky/core/modules/shared/evolu-utils"
+import {
+  createRowId,
+  runMutationWithCompletion,
+} from "@payky/core/modules/shared/evolu-utils"
 import {
   BankAccountInputIbanSchema,
   FiatCurrency,
+  NonEmptyString255,
   NonEmptyString255Schema,
   NonEmptyStringSchema,
   NonNegativeInteger,
   PositiveNumber,
   TimestampMsSchema,
 } from "@payky/core/modules/shared/schema"
+import type { createStore } from "jotai"
+import type { SetStateAction } from "react"
 import { z } from "zod"
 import type { NativeAppRun } from "../hooks/use-app-run.ts"
 
@@ -59,6 +72,7 @@ import type { NativeAppRun } from "../hooks/use-app-run.ts"
  */
 export interface E2eContext {
   readonly deviceId: DeviceId
+  readonly store: ReturnType<typeof createStore>
 }
 
 type E2eAction = (
@@ -325,6 +339,59 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
       })
     )
     await run.orThrow(markPaymentPaidCash({ paymentId, accountId }))
+    return undefined
+  },
+
+  /**
+   * `__e2eSeedDevice`: a second device that synced in (`name=`, `blocked=`),
+   * printed as `id=<id>`.
+   */
+  seedDevice: async (run, params) => {
+    const id = createRowId<"Device">()
+    await run.ok(
+      registerDevice({
+        id,
+        name: NonEmptyString255(params.name ?? "Kitchen tablet"),
+        deviceType: NonEmptyString255("tablet"),
+        browserName: null,
+        osName: NonEmptyString255("Android"),
+      })
+    )
+    if (params.blocked === "true") {
+      await run.ok(setDevicePinBlocked({ id, blocked: true }))
+    }
+    return `id=${id}`
+  },
+
+  /**
+   * `__e2eReadDevice`: whether `id` carries an unblock token, printed as
+   * `token=yes` or `token=no` (the token itself is not for a screen).
+   */
+  readDevice: async (run, params) => {
+    const [row] = await run.deps.evolu.loadQuery(
+      deviceByIdQuery(DeviceId.parse(params.id))
+    )
+    return `token=${row?.pinUnblockToken ? "yes" : "no"}`
+  },
+
+  /** `__e2eUnblockThisDevice`: another device's unblock reaching this one. */
+  unblockThisDevice: async (run, _params, { deviceId }) => {
+    await run.ok(unblockDevice(deviceId))
+    return undefined
+  },
+
+  /**
+   * Stands in for web's `page.clock.fastForward("05:10")` (native-e2e.md 4.5):
+   * the PIN session's last activity moves back six minutes, so the watcher's
+   * next tick (5 s) ends it. Needs the session to survive the link, which web
+   * does not (every link reloads the page): Android only.
+   */
+  idleSession: async (_run, _params, { store }) => {
+    const now: number = Date.now()
+    store.set<number, [SetStateAction<number>], void>(
+      accessLastActivityAtom,
+      now - 6 * 60 * 1000
+    )
     return undefined
   },
 

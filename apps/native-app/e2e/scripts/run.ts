@@ -105,6 +105,7 @@ const pointAtMocks = (host: string) => {
   process.env.EXPO_PUBLIC_PAYKY_API_BASE_URL = base
   process.env.EXPO_PUBLIC_PAYKY_YADIO_URL = base
   process.env.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL = `${base}/eet/services/EETServiceSOAP/v4`
+  process.env.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS = `ws://${host}:${mockPort}/nostr`
 }
 
 const mocks = serveMocks(mockPort)

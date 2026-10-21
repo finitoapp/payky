@@ -1,0 +1,26 @@
+# web onboarding.spec.ts: "business name publication during onboarding:
+# empty". A blank name publishes nothing; the mock relay would refuse a blank
+# profile, which would hold onboarding on its failure message.
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- tapOn: ${output.t["accountChoice.new.title"]}
+- assertVisible: ${output.t["onboarding.payments.title"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.businessName.label"]}
+      VALUE: "   "
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.finishWithoutBankTransfer"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000

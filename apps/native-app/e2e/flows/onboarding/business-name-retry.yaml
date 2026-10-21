@@ -1,0 +1,46 @@
+# web onboarding.spec.ts: "business name publication during onboarding:
+# retry". The mock relay refuses "Café Retry" on the account's first attempt
+# only (web's spec flips its relay instead). No fake clock: the retry's event
+# gets a later second-resolution timestamp by itself.
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- tapOn: ${output.t["accountChoice.new.title"]}
+- assertVisible: ${output.t["onboarding.payments.title"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.businessName.label"]}
+      VALUE: " Café Retry "
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.finishWithoutBankTransfer"]}
+# The failure holds the step and keeps the name as typed.
+- extendedWaitUntil:
+    visible: ${output.t["onboarding.businessName.publishFailed.title"]}
+    timeout: 30000
+- assertVisible:
+    id: ${output.re(output.t["onboarding.businessName.label"])}
+    text: " Café Retry "
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.businessName.retry"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/profile
+      TEXT: ${output.t["settings.profile.title"]}
+- extendedWaitUntil:
+    visible: Café Retry
+    timeout: 15000

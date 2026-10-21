@@ -1,0 +1,36 @@
+# web onboarding.spec.ts: "business name publication during onboarding:
+# skip". The mock relay always refuses "Café Skip". Not checked: that the
+# relay saw exactly one attempt (a flow cannot read the mock).
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- tapOn: ${output.t["accountChoice.new.title"]}
+- assertVisible: ${output.t["onboarding.payments.title"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.businessName.label"]}
+      VALUE: " Café Skip "
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.finishWithoutBankTransfer"]}
+- extendedWaitUntil:
+    visible: ${output.t["onboarding.businessName.publishFailed.title"]}
+    timeout: 30000
+- assertVisible:
+    id: ${output.re(output.t["onboarding.businessName.label"])}
+    text: " Café Skip "
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.businessName.continueWithoutPublishing"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000

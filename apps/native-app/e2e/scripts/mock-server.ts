@@ -7,6 +7,7 @@
 import { assistantMock } from "./mocks/assistant.ts"
 import { donationMock } from "./mocks/donation.ts"
 import type { MockHandler } from "./mocks/mock-handler.ts"
+import { nostrRelay } from "./mocks/nostr.ts"
 import { yadioMock } from "./mocks/yadio.ts"
 
 const handlers: ReadonlyArray<MockHandler> = [
@@ -19,8 +20,11 @@ export function serveMocks(port: number) {
   return Bun.serve({
     hostname: "0.0.0.0",
     port,
-    async fetch(request) {
+    // The nostr relay (mocks/nostr.ts) at /nostr.
+    websocket: nostrRelay,
+    async fetch(request, server) {
       const url = new URL(request.url)
+      if (url.pathname === "/nostr" && server.upgrade(request)) return
       if (request.method === "OPTIONS")
         return new Response(null, { status: 204, headers: corsHeaders })
       for (const handle of handlers) {

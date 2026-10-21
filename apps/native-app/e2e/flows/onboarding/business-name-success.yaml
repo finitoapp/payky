@@ -1,0 +1,35 @@
+# web onboarding.spec.ts: "business name publication during onboarding:
+# success". The mock relay (mocks/nostr.ts) accepts the profile only as the
+# trimmed name, which is the spec's check of the published event.
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- tapOn: ${output.t["accountChoice.new.title"]}
+- assertVisible: ${output.t["onboarding.payments.title"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.businessName.label"]}
+      VALUE: " Café Example "
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.finishWithoutBankTransfer"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000
+# The profile reads the published name back from the relay.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/profile
+      TEXT: ${output.t["settings.profile.title"]}
+- extendedWaitUntil:
+    visible: Café Example
+    timeout: 15000

@@ -134,7 +134,10 @@ assertions.
   decides by the request itself: `mocks/assistant.ts` answers by the last
   question and 400s when the tools, roles or bearer token are not what web's
   spec asserted; `mocks/donation.ts` settles an invoice some seconds after
-  creating it, so a flow asserts "waiting" first, then "paid".
+  creating it, so a flow asserts "waiting" first, then "paid";
+  `mocks/nostr.ts` is the only nostr relay of an e2e build (`/nostr`,
+  websocket) and decides by the business name: "Café Skip" is refused,
+  "Café Retry" refused once, a profile that is not the trimmed name refused.
 
 ## Selectors
 

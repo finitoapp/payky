@@ -1,7 +1,9 @@
 // Runs the Maestro flows: `bun e2e/scripts/run.ts --platform web|android
-// [--build] [flow.yaml ...]` (all of e2e/flows by default). Builds the e2e
-// app when missing or with --build, writes the strings, runs, and leaves JUnit
-// reports and screenshots in e2e/.generated/report. See e2e/AGENTS.md.
+// [--build] [--dev] [flow.yaml ...]` (all of e2e/flows by default). Builds the
+// e2e app when missing or with --build, writes the strings, runs, and leaves
+// JUnit reports and screenshots in e2e/.generated/report. With --dev, Android
+// runs a debug build on an e2e Metro, so a JS change needs no rebuild. See
+// e2e/AGENTS.md.
 import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs"
 import { join, relative, resolve } from "node:path"
 import { parseArgs } from "node:util"
@@ -12,6 +14,8 @@ const appDir = resolve(import.meta.dirname, "../..")
 const e2eDir = join(appDir, "e2e")
 const generated = join(e2eDir, ".generated")
 const webPort = 8790
+// Not 8081: a developer's own Metro (without the e2e switch) may hold it.
+const metroPort = 8792
 const appId = "me.payky.nativepreview"
 const maestro =
   Bun.which("maestro") ?? join(process.env.HOME ?? "", ".maestro/bin/maestro")
@@ -21,6 +25,7 @@ const { values, positionals } = parseArgs({
   options: {
     platform: { type: "string" },
     build: { type: "boolean", default: false },
+    dev: { type: "boolean", default: false },
   },
   allowPositionals: true,
 })
@@ -119,7 +124,8 @@ async function runAndroid(): Promise<number> {
     console.error("no emulator running; start one or set ANDROID_SERIAL")
     return 2
   }
-  const apk = join(generated, "app-e2e.apk")
+  const variant = values.dev ? "debug" : "release"
+  const apk = join(generated, values.dev ? "app-e2e-debug.apk" : "app-e2e.apk")
   if (values.build || !existsSync(apk)) {
     const androidDir = join(appDir, "android")
     if (!existsSync(androidDir))
@@ -133,18 +139,58 @@ async function runAndroid(): Promise<number> {
     const abi = (
       await $`adb -s ${serial} shell getprop ro.product.cpu.abi`.text()
     ).trim()
-    await $`./gradlew assembleRelease -PreactNativeArchitectures=${abi}`
+    const task = values.dev ? "assembleDebug" : "assembleRelease"
+    await $`./gradlew ${task} -PreactNativeArchitectures=${abi}`
       .cwd(androidDir)
       .env({ ...process.env, SENTRY_DISABLE_AUTO_UPLOAD: "true" })
     await Bun.write(
       apk,
       Bun.file(
-        join(androidDir, "app/build/outputs/apk/release/app-release.apk")
+        join(androidDir, `app/build/outputs/apk/${variant}/app-${variant}.apk`)
       )
     )
   }
+  const metro = values.dev ? await startMetro(serial) : undefined
   await $`adb -s ${serial} install -r ${apk}`
   const result =
-    await $`${maestro} --device ${serial} test -e BASE_URL=payky-native-preview:// -e APP_ID=${appId} --format junit --output ${join(reportDir, "android.xml")} --test-output-dir ${reportDir} ${runnable}`.nothrow()
+    await $`${maestro} --device ${serial} test -e BASE_URL=payky-native-preview:// -e APP_ID=${appId} ${metro === undefined ? [] : ["-e", `DEV_URL=${metro.url}`]} --format junit --output ${join(reportDir, "android.xml")} --test-output-dir ${reportDir} ${runnable}`.nothrow()
+  metro?.stop()
   return result.exitCode
+}
+
+/**
+ * An e2e Metro for the debug build (reused when one already answers on
+ * `metroPort`). `url` is the
+ * dev-client link the flows launch the app with (subflows/launch.yaml),
+ * without the dev menu's first-run sheet, launch menu and tools button.
+ */
+async function startMetro(
+  serial: string
+): Promise<{ readonly url: string; readonly stop: () => void }> {
+  const status = `http://127.0.0.1:${metroPort}/status`
+  const running = async () =>
+    (
+      await fetch(status).then(
+        (r) => r.text(),
+        () => ""
+      )
+    ).includes("running")
+  const process_ = (await running())
+    ? undefined
+    : Bun.spawn(["bun", "x", "expo", "start", "--port", String(metroPort)], {
+        cwd: appDir,
+        stdout: "ignore",
+        stderr: "inherit",
+      })
+  while (!(await running())) await Bun.sleep(1000)
+  // An emulator reaches the host at 10.0.2.2, which survives Maestro
+  // restarting its device server (that drops `adb reverse` rules).
+  const host = serial.startsWith("emulator-") ? "10.0.2.2" : "127.0.0.1"
+  if (host === "127.0.0.1")
+    await $`adb -s ${serial} reverse tcp:${metroPort} tcp:${metroPort}`.quiet()
+  const bundle = encodeURIComponent(`http://${host}:${metroPort}`)
+  return {
+    url: `payky-native-preview://expo-development-client/?url=${bundle}&__expo_disable_onboarding=1&__expo_disable_auto_launch=1&__expo_disable_fab=1`,
+    stop: () => process_?.kill(),
+  }
 }

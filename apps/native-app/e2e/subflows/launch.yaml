@@ -1,0 +1,15 @@
+# Starts the app. With the runner's --dev, a debug build, whose dev-client
+# launcher is pointed at the e2e Metro instead (DEV_URL, which also keeps the
+# dev menu and its tools button away).
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      true: ${typeof DEV_URL === "undefined"}
+    commands:
+      - launchApp
+- runFlow:
+    when:
+      true: ${typeof DEV_URL !== "undefined"}
+    commands:
+      - openLink: '${typeof DEV_URL === "undefined" ? "" : DEV_URL}'

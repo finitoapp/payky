@@ -4,7 +4,7 @@
 appId: ${APP_ID}
 ---
 - stopApp
-- launchApp
+- runFlow: launch.yaml
 - extendedWaitUntil:
     visible: ${TEXT}
     timeout: 30000

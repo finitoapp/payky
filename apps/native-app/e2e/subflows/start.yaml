@@ -4,8 +4,8 @@
 appId: ${APP_ID}
 ---
 - runScript: ../.generated/strings.js
-- launchApp:
-    clearState: true
+- clearState
+- runFlow: launch.yaml
 - extendedWaitUntil:
     visible: ${output.t["onboarding.title"]}
     timeout: 30000

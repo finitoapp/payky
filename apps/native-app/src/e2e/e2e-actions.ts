@@ -31,6 +31,8 @@ import {
 } from "@payky/core/modules/device/device-actions"
 import { deviceByIdQuery } from "@payky/core/modules/device/device-queries"
 import { DeviceId } from "@payky/core/modules/device/device-types"
+import { createEetSale } from "@payky/core/modules/eet/eet-actions"
+import { toEetCashRegisterId } from "@payky/core/modules/eet/eet-utils"
 import { upsertItemSnapshot } from "@payky/core/modules/item/item-actions"
 import { createStandaloneItemSnapshot } from "@payky/core/modules/item/item-utils"
 import {
@@ -39,6 +41,7 @@ import {
 } from "@payky/core/modules/payment/payment-actions"
 import {
   latestPaymentsQuery,
+  paymentDetailQuery,
   paymentIbanDetailsByIdQuery,
   paymentSparkDetailsByIdQuery,
 } from "@payky/core/modules/payment/payment-queries"
@@ -478,6 +481,45 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
   cancelBill: async (run, params) => {
     await run.orThrow(cancelBill(BillId.parse(params.billId)))
     return undefined
+  },
+
+  /**
+   * `__e2eSeedEetSaleFromAnotherDevice`: the EET sale a second device took
+   * `minutes` ago for `paymentId` (a cash payment paid before EET was on, so
+   * this device has no sale of its own), with the real `createEetSale` under
+   * a device id that is not this one. Prints the other device's cash register
+   * as `pokl=<id>`, the `id_pokl` its repeat must carry.
+   */
+  seedEetSaleFromAnotherDevice: async (run, params) => {
+    const paymentId = PaymentId.parse(params.paymentId)
+    const minutes = z.coerce.number().parse(params.minutes)
+    const [payment] = await run.deps.evolu.loadQuery(
+      paymentDetailQuery(paymentId)
+    )
+    if (!payment) throw new Error(`Payment ${paymentId} not found.`)
+    const otherDeviceId = createRowId<"Device">()
+    const saleId = await run.ok(
+      createEetSale({
+        payment: {
+          id: paymentId,
+          billId: payment.billId,
+          amount: payment.amount,
+          tipAmount: payment.tipAmount,
+          cashReceivedAmount: null,
+          currency: payment.currency,
+          method: "cashRegister",
+          firstClaimedAt: TimestampMsSchema.decode(
+            run.deps.date.now().getTime() - minutes * 60_000
+          ),
+          firstClaimTransactionId: createRowId<"AccountTransaction">(),
+          firstSettlementValue: payment.amount,
+        },
+        deviceId: otherDeviceId,
+      })
+    )
+    if (saleId === null)
+      throw new Error("EET is not set up, so no sale was created.")
+    return `pokl=${toEetCashRegisterId(otherDeviceId)}`
   },
 }
 

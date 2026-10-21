@@ -1,5 +1,6 @@
 import type { ConnectivityDep, FetchDep } from "@payky/core/deps"
 import { addNetworkStateListener } from "expo-network"
+import { e2eFetchInput } from "../e2e/e2e-fetch.ts"
 
 // React Native has no CORS, so the plain global fetch is the whole dep, except
 // that its aborted-request error is a generic Error. Core recognizes an abort by
@@ -7,7 +8,7 @@ import { addNetworkStateListener } from "expo-network"
 export const createFetchDep = (): FetchDep => ({
   fetch: async (input, init) => {
     try {
-      return await globalThis.fetch(input, init)
+      return await globalThis.fetch(e2eFetchInput(input), init)
     } catch (error) {
       if (init?.signal?.aborted) throw init.signal.reason
       throw error

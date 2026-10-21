@@ -99,9 +99,7 @@ async function runWeb(): Promise<number> {
   const failed: string[] = []
   const queue = [...runnable]
   const runOne = async (flow: string) => {
-    const name = relative(join(e2eDir, "flows"), flow)
-      .replace(/\.yaml$/, "")
-      .replaceAll("/", "__")
+    const name = flowName(flow)
     const wrapper = join(wrappers, `${name}.yaml`)
     const report = join(reportDir, `${name}.xml`)
     await Bun.write(
@@ -113,19 +111,7 @@ async function runWeb(): Promise<number> {
       await $`${maestro} test -p web --headless --screen-size 412x915 -e BASE_URL=${baseUrl} -e APP_ID=${baseUrl} --format junit --output ${report} --test-output-dir ${join(reportDir, name)} ${wrapper}`
         .quiet()
         .nothrow()
-    const seconds = Math.round((Date.now() - started) / 1000)
-    if (result.exitCode === 0) {
-      console.log(`[Passed] ${name} (${seconds}s)`)
-      return
-    }
-    failed.push(name)
-    // The JUnit failure, or Maestro's own output when it never got that far
-    // (a YAML parse error).
-    const junit = existsSync(report) ? await Bun.file(report).text() : ""
-    const reason =
-      /<failure[^>]*>([^<]+)/.exec(junit)?.[1] ??
-      result.stdout.toString().trim().split("\n").at(-1)
-    console.log(`[Failed] ${name} (${seconds}s) (${reason})`)
+    if (!(await reportFlow(name, started, result, report))) failed.push(name)
   }
   await Promise.all(
     Array.from({ length: Number(values.jobs) }, async () => {
@@ -134,8 +120,41 @@ async function runWeb(): Promise<number> {
     })
   )
   server.stop(true)
+  return summarize(failed)
+}
+
+/** `flows/bill/x.yaml` → `bill__x`, the report's and wrapper's name. */
+function flowName(flow: string): string {
+  return relative(join(e2eDir, "flows"), flow)
+    .replace(/\.yaml$/, "")
+    .replaceAll("/", "__")
+}
+
+/** Prints the flow's one line, with its failure; true when it passed. */
+async function reportFlow(
+  name: string,
+  started: number,
+  result: { readonly exitCode: number; readonly stdout: Buffer },
+  report: string
+): Promise<boolean> {
+  const seconds = Math.round((Date.now() - started) / 1000)
+  if (result.exitCode === 0) {
+    console.log(`[Passed] ${name} (${seconds}s)`)
+    return true
+  }
+  // The JUnit failure, or Maestro's own output when it never got that far
+  // (a YAML parse error).
+  const junit = existsSync(report) ? await Bun.file(report).text() : ""
+  const reason =
+    /<failure[^>]*>([^<]+)/.exec(junit)?.[1] ??
+    result.stdout.toString().trim().split("\n").at(-1)
+  console.log(`[Failed] ${name} (${seconds}s) (${reason})`)
+  return false
+}
+
+function summarize(failed: ReadonlyArray<string>): number {
   console.log(
-    `\nweb: ${runnable.length - failed.length}/${runnable.length} passed${failed.length > 0 ? `; failed: ${failed.join(", ")}` : ""}`
+    `\n${platform}: ${runnable.length - failed.length}/${runnable.length} passed${failed.length > 0 ? `; failed: ${failed.join(", ")}` : ""}`
   )
   return failed.length > 0 ? 1 : 0
 }
@@ -181,10 +200,21 @@ async function runAndroid(): Promise<number> {
   }
   const metro = values.dev ? await startMetro(serial) : undefined
   await $`adb -s ${serial} install -r ${apk}`
-  const result =
-    await $`${maestro} --device ${serial} test -e BASE_URL=payky-native-preview:// -e APP_ID=${appId} ${metro === undefined ? [] : ["-e", `DEV_URL=${metro.url}`]} --format junit --output ${join(reportDir, "android.xml")} --test-output-dir ${reportDir} ${runnable}`.nothrow()
+  // One invocation per flow, as on web: when Maestro's device server dies
+  // mid-run, every later flow of that invocation fails within milliseconds.
+  const failed: string[] = []
+  for (const flow of runnable) {
+    const name = flowName(flow)
+    const report = join(reportDir, `${name}.xml`)
+    const started = Date.now()
+    const result =
+      await $`${maestro} --device ${serial} test -e BASE_URL=payky-native-preview:// -e APP_ID=${appId} ${metro === undefined ? [] : ["-e", `DEV_URL=${metro.url}`]} --format junit --output ${report} --test-output-dir ${join(reportDir, name)} ${flow}`
+        .quiet()
+        .nothrow()
+    if (!(await reportFlow(name, started, result, report))) failed.push(name)
+  }
   metro?.stop()
-  return result.exitCode
+  return summarize(failed)
 }
 
 /**

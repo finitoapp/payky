@@ -1,0 +1,31 @@
+# web's addTaxRate: adds a tax rate (NAME, RATE) on the tax rates page and
+# waits for its row ("RATE%"), since adding stays on the page.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: settings/tax-rates
+      TEXT: ${output.t["settings.taxRates.title"]}
+- runFlow:
+    file: type-input.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.name.label"]}
+      VALUE: ${NAME}
+- runFlow:
+    file: type-input.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.rate.label"]}
+      VALUE: ${RATE}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.taxRates.add"]}
+- extendedWaitUntil:
+    visible: ${output.re(RATE)}%
+    timeout: 10000

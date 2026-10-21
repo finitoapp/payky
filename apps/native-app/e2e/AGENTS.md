@@ -65,7 +65,18 @@ assertions.
   `new-bill` the same from the tables home; `charge-cash` pays the open bill
   in cash and returns home; `read-ids` is web's `new URL(page.url())` for
   ids: the newest bill's and payment's ids as `output.billId` and
-  `output.paymentId` (it leaves the app on the bridge page, so `goto` next).
+  `output.paymentId` (it leaves the app on the bridge page, so `goto` next);
+  `add-tax-rate` is `addTaxRate`; `park-cart` is tables-overview's
+  `parkCart`; `merge-scenario` is bill-split's `setupMergeScenario`;
+  `to-tip-step` enters 5.9 and opens the tip step; `mark-cash-paid` is
+  `markCashPaid`; `open-country-select` opens the legal entity's empty
+  country select.
+- Optional env: `fill-input`/`fill-inline`/`clear-input` take `PLACEHOLDER`
+  (an emptied input with one shows it as its text), `fill-input`/
+  `fill-inline`/`tap-input` take `BUTTONS: "true"` for an inline field that
+  opens already editing (its Save/Discard cover the input's right end),
+  `assert-checked` takes `BY_TEXT: "true"` for a toggle-group option (no
+  testID). An optional value passed on to another subflow uses `""` for none.
 
 ## The bridge
 
@@ -76,7 +87,9 @@ assertions.
   `testID="e2e-result"`. Without `EXPO_PUBLIC_PAYKY_E2E` it redirects home.
 - Port a web bridge function as an action with its doc comment; params are
   strings, parsed with zod. Opening the same action URL twice in a row is
-  not guaranteed to rerun it — navigate elsewhere in between.
+  not guaranteed to rerun it — navigate elsewhere in between. `next=<path>`
+  moves on to that screen in-app after a successful action (web reloads on
+  every link, losing in-memory state).
 
 ## Selectors
 
@@ -110,7 +123,12 @@ Never coordinates, index-only selectors, or sleeps; wait with
   `clear-input` waits for the field to be empty. Use `fill-input`, not a bare
   `eraseText` + `inputText`.
 - After typing on Android the keyboard is up, and the next tap elsewhere may
-  only close it: put `hideKeyboard` (in an Android-only `runFlow`) first.
+  only close it: put `hideKeyboard` (in an Android-only `runFlow`) first —
+  but only where the keyboard is surely up: without one, `hideKeyboard`
+  presses Back and leaves the screen.
+- Maestro has no "within": a tile or row's own text is told apart by
+  position (`below:`/`above:`/`leftOf:`/`rightOf:` a neighbouring label), or
+  by deterministic names (bills are numbered #1, #2, ... in creation order).
 - Maestro's web driver ignores opacity and `aria-hidden`, and reports no
   checked state; such checks run on Android only (`when: platform: Android`),
   next to a web-visible assertion where there is one.

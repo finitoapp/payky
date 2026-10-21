@@ -6,10 +6,12 @@ appId: ${APP_ID}
     file: tap-input.yaml
     env:
       LABEL: ${LABEL}
+      BUTTONS: '${typeof BUTTONS === "undefined" ? "" : BUTTONS}'
 - runFlow:
     file: clear-input.yaml
     env:
       LABEL: ${LABEL}
+      PLACEHOLDER: '${typeof PLACEHOLDER === "undefined" ? "" : PLACEHOLDER}'
 - inputText: ${VALUE}
 - assertVisible:
     id: ${output.re(LABEL)}

@@ -1,0 +1,11 @@
+# From the keypad: 5.9, Pay, and wait for the tip step.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: enter-amount.yaml
+    env:
+      AMOUNT: "5.9"
+- tapOn: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentTip.title"]}
+    timeout: 15000

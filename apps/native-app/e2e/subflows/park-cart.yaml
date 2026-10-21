@@ -1,0 +1,36 @@
+# tables-overview.spec.ts's parkCart: from the tables home, starts a bill from
+# the "no table" strip, puts it on TABLE (optional), adds a Coffee and goes
+# back home.
+appId: ${APP_ID}
+---
+- runFlow: new-bill.yaml
+- runFlow:
+    when:
+      true: ${typeof TABLE !== "undefined"}
+    commands:
+      - runFlow:
+          file: tap-label.yaml
+          env:
+            LABEL: ${output.t["bill.table.aria"]}
+      - extendedWaitUntil:
+          visible: ${output.t["bill.table.dialog.title"]}
+          timeout: 10000
+      - tapOn: '${typeof TABLE === "undefined" ? "" : TABLE}'
+      - extendedWaitUntil:
+          notVisible: ${output.t["bill.table.dialog.title"]}
+          timeout: 10000
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- extendedWaitUntil:
+    visible: '${output.tv("bill.list.label", { number: "\\d+" })}'
+    timeout: 10000
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- extendedWaitUntil:
+    visible:
+      id: no-table-tile
+    timeout: 10000

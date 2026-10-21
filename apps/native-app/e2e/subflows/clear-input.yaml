@@ -3,12 +3,13 @@
 # Native's controlled value has caught up with the erase mangles the text on
 # Android, so this waits for the field to be empty. A text selector also
 # matches the input's label (content-desc, or aria-label on web), hence
-# "non-empty" is (?!label$).+
+# "non-empty" is (?!label$).+ — and not PLACEHOLDER, which an emptied input
+# with one shows as its text (optional, "" for none; fill-input and fill-inline pass it on).
 appId: ${APP_ID}
 ---
 - eraseText
 - extendedWaitUntil:
     notVisible:
       id: ${output.re(LABEL)}
-      text: (?!${output.re(LABEL)}$).+
+      text: '(?!${output.re(LABEL)}$${typeof PLACEHOLDER === "undefined" || PLACEHOLDER === "" ? "" : "|" + output.re(PLACEHOLDER) + "$"}).+'
     timeout: 5000

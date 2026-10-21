@@ -1,12 +1,23 @@
 # From the tables home: starts a bill from the "no table" strip's "New bill"
-# and waits for the empty bill. A free table tile is named "New bill" too,
-# but the strip comes first.
+# and waits for the empty bill. A table tile is named "New bill" too (a free
+# tile, or the "+" of an occupied one), and on Android the first match is
+# not the strip's, so it is the one right of the strip's "No table" label.
 appId: ${APP_ID}
 ---
 - runFlow:
-    file: tap-label.yaml
-    env:
-      LABEL: ${output.t["tables.tile.newBill"]}
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: ${output.re(output.t["tables.tile.newBill"])}
+          rightOf: ${output.t["bill.table.dialog.none"]}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${output.re(output.t["tables.tile.newBill"])}
+          rightOf: ${output.t["bill.table.dialog.none"]}
 - extendedWaitUntil:
     visible: ${output.t["bill.title"]}
     timeout: 15000

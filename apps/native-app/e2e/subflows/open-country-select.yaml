@@ -1,0 +1,19 @@
+# Opens the legal entity's country select while no country is set. Its
+# trigger is then empty (the placeholder is a line above it, native-e2e.md,
+# open questions): an id on web, the trigger's label below that line on
+# Android, where the field label above reads "Country" too.
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: ${output.re(output.t["settings.legalEntity.country.label"])}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: ${output.re(output.t["settings.legalEntity.country.label"])}
+          below: ${output.re(output.t["settings.legalEntity.country.placeholder"])}

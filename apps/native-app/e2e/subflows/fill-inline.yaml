@@ -1,5 +1,6 @@
 # web's fillInlineField: replaces the inline-edit field LABEL's text with
-# VALUE, saves with the Save button and waits for the "saved" toast.
+# VALUE, saves with the Save button and waits for the "saved" toast. BUTTONS:
+# "true" for a field that opens already editing (see tap-input).
 appId: ${APP_ID}
 ---
 - runFlow:
@@ -7,6 +8,8 @@ appId: ${APP_ID}
     env:
       LABEL: ${LABEL}
       VALUE: ${VALUE}
+      PLACEHOLDER: '${typeof PLACEHOLDER === "undefined" ? "" : PLACEHOLDER}'
+      BUTTONS: '${typeof BUTTONS === "undefined" ? "" : BUTTONS}'
 - runFlow:
     file: tap-label.yaml
     env:

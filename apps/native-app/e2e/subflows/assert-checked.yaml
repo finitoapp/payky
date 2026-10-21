@@ -2,14 +2,15 @@
 # is on (CHECKED: "true") or off ("false"). Android only: Maestro's web
 # driver reports no checked state, so on web this checks nothing — keep
 # another web-visible assertion beside it. (`checked:` takes no ${} values.)
-# Optional env has no header default: a subflow's own `env:` overrides what
+# BY_TEXT: "true" finds it by its label as text instead (a toggle-group
+# option, whose label is no testID). Optional env has no header default: a subflow's own `env:` overrides what
 # the caller passes.
 appId: ${APP_ID}
 ---
 - runFlow:
     when:
       platform: Android
-      true: ${typeof CHECKED === "undefined" || CHECKED === "true"}
+      true: ${typeof BY_TEXT === "undefined" && (typeof CHECKED === "undefined" || CHECKED === "true")}
     commands:
       - assertVisible:
           id: ${output.re(LABEL)}
@@ -17,8 +18,24 @@ appId: ${APP_ID}
 - runFlow:
     when:
       platform: Android
-      true: ${typeof CHECKED !== "undefined" && CHECKED !== "true"}
+      true: ${typeof BY_TEXT === "undefined" && typeof CHECKED !== "undefined" && CHECKED !== "true"}
     commands:
       - assertVisible:
           id: ${output.re(LABEL)}
+          checked: false
+- runFlow:
+    when:
+      platform: Android
+      true: ${typeof BY_TEXT !== "undefined" && (typeof CHECKED === "undefined" || CHECKED === "true")}
+    commands:
+      - assertVisible:
+          text: ${output.re(LABEL)}
+          checked: true
+- runFlow:
+    when:
+      platform: Android
+      true: ${typeof BY_TEXT !== "undefined" && typeof CHECKED !== "undefined" && CHECKED !== "true"}
+    commands:
+      - assertVisible:
+          text: ${output.re(LABEL)}
           checked: false

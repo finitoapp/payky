@@ -1,0 +1,56 @@
+# bill-split.spec.ts's setupMergeScenario: a Coffee item and a "Merge Table";
+# the target bill (#1) on that table with one coffee, then an unrelated
+# source bill (#2) with two, left open. The source's id ends up in
+# `output.billId`.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+- runFlow:
+    file: add-table.yaml
+    env:
+      NAME: Merge Table
+      SEATS: "2"
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.pos"]}
+# A free table's tile starts a bill on it.
+- tapOn: Merge Table
+- extendedWaitUntil:
+    visible: ${output.t["bill.title"]}
+    timeout: 15000
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- runFlow: new-bill.yaml
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 1 })}'
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: '${output.tv("bill.brick.add.aria", { name: "Coffee" })}'
+- assertVisible: '${output.tv("bill.itemsCount", { value: 2 })}'
+- runFlow: read-ids.yaml
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: '${output.tv("bill.itemsCount", { value: 2 })}'

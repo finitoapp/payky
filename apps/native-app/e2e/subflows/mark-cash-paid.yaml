@@ -1,0 +1,17 @@
+# web's markCashPaid: on the payment screen, marks cash received and waits for
+# the paid panel.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.action"]}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.action"]}
+- extendedWaitUntil:
+    visible:
+      id: payment-paid-panel
+    timeout: 15000
+- assertVisible: ${output.t["paymentWait.paid"]}

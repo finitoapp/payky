@@ -7,6 +7,8 @@ const out = new URL("../.generated/strings.js", import.meta.url)
 await Bun.write(
   out,
   `output.t = ${JSON.stringify(resources.en)}
+// The Czech copy, for flows that switch the app's language.
+output.cs = ${JSON.stringify(resources.cs)}
 // translateValue: output.tv("x.y", { value: "10%" }) fills {value}.
 output.tv = function (key, params) {
   return output.t[key].replace(/\\{(\\w+)\\}/g, function (all, name) {

@@ -1,7 +1,5 @@
 # web bill-split.spec.ts: "select all merges a bill fully into an existing
 # open bill".
-# KNOWN APP BUG: fails on Android, where the existing-bill row does not
-# select (native-e2e.md, open questions).
 appId: ${APP_ID}
 tags: [bill-split]
 ---
@@ -32,7 +30,13 @@ tags: [bill-split]
     visible: '${output.tv("bill.itemsCount", { value: 3 })}'
     timeout: 15000
 - assertVisible: '${output.tv("bill.list.label", { number: 1 })}'
-# The emptied source bill was canceled: its link opens its detail.
+# The emptied source bill was canceled: its link opens its detail. After a
+# restart: a link onto the bill screen that is already mounted keeps its old
+# "open on arrival" decision (native-e2e.md, open questions).
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}|${output.t["bill.table.dialog.none"]}
 - runFlow:
     file: ../../subflows/goto.yaml
     env:

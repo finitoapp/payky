@@ -1,7 +1,5 @@
 # web bill-split.spec.ts: "a partial split into an existing bill stays on
 # the source bill".
-# KNOWN APP BUG: fails on Android, where the existing-bill row does not
-# select (native-e2e.md, open questions).
 appId: ${APP_ID}
 tags: [bill-split]
 ---

@@ -58,11 +58,7 @@ tags: [settings]
     timeout: 10000
 # The new presets survive a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/tips
       TEXT: ${output.t["settings.tips.title"]}

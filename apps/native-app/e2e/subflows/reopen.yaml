@@ -1,0 +1,14 @@
+# Restarts the app with its data (relaunch, waiting for the terminal home),
+# then opens ROUTE and waits until TEXT is visible (goto): web's
+# `reloadPage` + `gotoPage` pair, for checking that a change survived.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: ${ROUTE}
+      TEXT: ${TEXT}

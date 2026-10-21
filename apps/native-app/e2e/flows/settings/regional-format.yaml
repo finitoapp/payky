@@ -23,11 +23,7 @@ tags: [settings]
       BY_TEXT: "true"
 # The choice survives a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/language
       TEXT: ${output.t["settings.language.title"]}

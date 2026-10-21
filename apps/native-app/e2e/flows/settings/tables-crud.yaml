@@ -64,11 +64,7 @@ tags: [settings]
     text: "6"
 # The edits survive a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/tables
       TEXT: ${output.t["settings.tables.title"]}

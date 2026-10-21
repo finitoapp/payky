@@ -43,11 +43,7 @@ tags: [settings]
       BY_TEXT: "true"
 # Both changes survive a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/payment-number-series
       TEXT: ${output.t["settings.paymentNumberSeries.title"]}

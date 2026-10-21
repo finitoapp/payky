@@ -83,11 +83,7 @@ tags: [settings]
       LABEL: ${output.t["settings.items.form.scanCode.scan.aria"]}
 # The edits survive a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/items
       TEXT: ${output.t["settings.items.title"]}

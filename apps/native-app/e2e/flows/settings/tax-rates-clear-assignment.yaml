@@ -29,11 +29,7 @@ tags: [settings]
     timeout: 10000
 # The cleared assignment survives a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/items
       TEXT: ${output.t["settings.items.title"]}

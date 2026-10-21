@@ -58,6 +58,7 @@ assertions.
   as text); `assert-label` (`LABEL`) waits for a control by its label;
   `fill-inline` is `fillInlineField` (type, Save, wait for "Saved"); `tap-id`
   taps a control by testID; `relaunch` (`TEXT`) is `reloadPage`;
+  `reopen` (`ROUTE`, `TEXT`) is `relaunch` then `goto`, to check a change survived;
   `enter-amount` (`AMOUNT`, `<` = backspace) is `enterAmount`;
   `assert-checked` (`LABEL`, `CHECKED`) checks a switch, on Android only;
   `add-catalog-item`, `add-category`, `add-table` are web's `addCatalogItem`,

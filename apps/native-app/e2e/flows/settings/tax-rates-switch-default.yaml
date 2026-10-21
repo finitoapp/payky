@@ -37,11 +37,7 @@ tags: [settings]
       LABEL: '${output.tv("settings.taxRates.default.set", { name: "Rate A" })}'
 # The swap survives a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/tax-rates
       TEXT: ${output.t["settings.taxRates.title"]}

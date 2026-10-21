@@ -40,11 +40,7 @@ tags: [settings]
       LABEL: '${output.tv("settings.taxRates.default.unset", { name: "Standard rate" })}'
 # The default survives a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/tax-rates
       TEXT: ${output.t["settings.taxRates.title"]}
@@ -77,11 +73,7 @@ tags: [settings]
     timeout: 10000
 # The rename survives a restart; the rate itself is unchanged.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/tax-rates
       TEXT: ${output.t["settings.taxRates.title"]}
@@ -110,11 +102,7 @@ tags: [settings]
       HIDDEN: "true"
 # Still archived after a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/tax-rates
       TEXT: ${output.t["settings.taxRates.title"]}

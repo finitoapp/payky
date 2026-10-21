@@ -53,11 +53,7 @@ tags: [settings]
     above: ${output.t["settings.paymentAccounts.method.cashRegister"]}
 # The order and the disabled method survive a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/payment-accounts
       TEXT: ${output.t["settings.paymentAccounts.title"]}

@@ -31,11 +31,7 @@ tags: [settings]
       PLACEHOLDER: ${output.t["settings.categories.form.name.placeholder"]}
 # The edit survives a restart.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/categories
       TEXT: ${output.t["settings.categories.title"]}

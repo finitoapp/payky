@@ -16,11 +16,7 @@ tags: [settings]
     timeout: 10000
 # After a restart it shows Other, not the placeholder.
 - runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}
-- runFlow:
-    file: ../../subflows/goto.yaml
+    file: ../../subflows/reopen.yaml
     env:
       ROUTE: settings/legal-entity
       TEXT: ${output.t["settings.legalEntity.title"]}

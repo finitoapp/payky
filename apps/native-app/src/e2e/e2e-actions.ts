@@ -71,6 +71,16 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
   },
 
   /**
+   * One warning through the run's console (a release build keeps warnings and
+   * up), so the debug console has an entry: web's spec reads the ones
+   * onboarding logged, which the seed's relaunch clears on native.
+   */
+  log: async (run) => {
+    run.deps.console.warn("e2e log")
+    return undefined
+  },
+
+  /**
    * The ids web's specs read off the URL (`/bill?billId=`, `/payment/<id>`),
    * which a flow cannot: the newest bill's and payment's, printed as
    * `bill=<id> payment=<id>` (`-` for none). `subflows/read-ids.yaml` keeps

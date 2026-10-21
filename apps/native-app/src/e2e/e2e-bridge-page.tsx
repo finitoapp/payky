@@ -1,4 +1,4 @@
-import { Redirect, useLocalSearchParams } from "expo-router"
+import { type Href, Redirect, router, useLocalSearchParams } from "expo-router"
 import { useEffect, useState } from "react"
 import { Text, YStack } from "tamagui"
 import { nativeEnv } from "../core/native-env.ts"
@@ -9,14 +9,18 @@ import { e2eActions } from "./e2e-actions.ts"
  * `/e2e/<action>?<params>`: runs one `e2eActions` entry and prints
  * `E2E OK <action>` (and its value) or `E2E FAIL <action>: <message>`, which
  * the flow waits for before going on — its stand-in for awaiting web's
- * `page.evaluate`. Outside an e2e build (`EXPO_PUBLIC_PAYKY_E2E`) it only
+ * `page.evaluate`. With `next=<path>` it then moves on to that screen in-app:
+ * on web an `openLink` reloads the page, which loses in-memory state such as
+ * the debug console's history. Outside an e2e build (`EXPO_PUBLIC_PAYKY_E2E`) it only
  * redirects home. The text is for Maestro, not for people, so it is not
  * translated.
  */
 export function E2eBridgePage() {
-  const { action = "", ...params } = useLocalSearchParams<{
-    action: string
-  }>()
+  const {
+    action = "",
+    next,
+    ...params
+  } = useLocalSearchParams<{ action: string; next?: string }>()
   const appRun = useAppRun()
   const [result, setResult] = useState<string | null>(null)
   const paramsKey = JSON.stringify(params)
@@ -36,8 +40,9 @@ export function E2eBridgePage() {
             Object.entries(params).map(([key, v]) => [key, String(v)])
           )
         )
-        if (!cancelled)
-          setResult(`E2E OK ${action}${value === undefined ? "" : ` ${value}`}`)
+        if (cancelled) return
+        setResult(`E2E OK ${action}${value === undefined ? "" : ` ${value}`}`)
+        if (next !== undefined) router.replace(next as Href)
       } catch (error) {
         if (!cancelled)
           setResult(
@@ -50,7 +55,7 @@ export function E2eBridgePage() {
     return () => {
       cancelled = true
     }
-  }, [action, appRun, paramsKey])
+  }, [action, appRun, paramsKey, next])
 
   if (!nativeEnv.EXPO_PUBLIC_PAYKY_E2E) return <Redirect href="/" />
   return (

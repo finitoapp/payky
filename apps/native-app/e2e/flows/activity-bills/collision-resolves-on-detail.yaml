@@ -3,14 +3,7 @@ appId: ${APP_ID}
 tags: [activity-bills]
 ---
 - runFlow: ../../subflows/seed-onboarding.yaml
-- runFlow: ../../subflows/begin-coffee-payment.yaml
-- runFlow:
-    file: ../../subflows/e2e-action.yaml
-    env:
-      ACTION: cancelBill
-      QUERY: billId=${output.billId}
-- runFlow: ../../subflows/reopen-payment.yaml
-- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow: ../../subflows/collision-bill.yaml
 - runFlow:
     file: ../../subflows/goto.yaml
     env:

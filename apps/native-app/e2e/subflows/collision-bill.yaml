@@ -1,0 +1,14 @@
+# web's startCollisionBill: a seeded app gets a $5 Coffee bill whose cash
+# payment is pending, the bill is canceled behind it (the `cancelBill`
+# action), and the payment is then confirmed anyway. Leaves the ids in
+# output.billId / output.paymentId and the app on the paid payment screen.
+appId: ${APP_ID}
+---
+- runFlow: begin-coffee-payment.yaml
+- runFlow:
+    file: e2e-action.yaml
+    env:
+      ACTION: cancelBill
+      QUERY: billId=${output.billId}
+- runFlow: reopen-payment.yaml
+- runFlow: mark-cash-paid.yaml

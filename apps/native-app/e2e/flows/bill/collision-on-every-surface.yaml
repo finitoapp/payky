@@ -1,0 +1,59 @@
+# web bill.spec.ts: "a bill canceled while its payment is pending, then confirmed anyway, is flagged as a collision on every surface and can be resolved".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/collision-bill.yaml
+# The bills list flags the collision (one bill, so its row is the only one).
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills
+      TEXT: ${output.t["activity.title"]}
+- assertVisible: ${output.t["bill.status.canceled"]}
+- assertVisible: ${output.t["bill.collision.title"]}
+# The bill detail page flags it.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertVisible: ${output.t["bill.collision.title"]}
+- assertVisible: ${output.t["bill.collision.description"]}
+# The bill screen shows it with the total and links to the funding payment's
+# detail, not its wait screen: that payment is already settled.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: ${output.t["bill.collision.title"]}
+- assertVisible: \$5\.00
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.collision.viewPayment"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentDetail.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["bill.collision.title"]}
+# Resolving it from the payment detail closes the bill.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.collision.markClosed"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.collision.title"]}
+    timeout: 15000
+# A closed bill is not served by the bill screen: the link hands it to its
+# detail. Restart first, so Android's mounted bill screen does not keep its
+# "open on arrival" decision (native-e2e.md, open questions).
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["home.pay"]}|${output.t["bill.table.dialog.none"]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- assertNotVisible: ${output.t["bill.collision.title"]}

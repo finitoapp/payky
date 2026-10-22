@@ -70,7 +70,8 @@ assertions.
   `add-tax-rate` is `addTaxRate`; `park-cart` is tables-overview's
   `parkCart`; `merge-scenario` is bill-split's `setupMergeScenario`;
   `to-tip-step` enters 5.9 and opens the tip step; `mark-cash-paid` is
-  `markCashPaid`; `open-country-select` opens the legal entity's empty
+  `markCashPaid`; `collision-bill` is `startCollisionBill` (a $5 bill
+  canceled behind its pending cash payment, which is then confirmed); `open-country-select` opens the legal entity's empty
   country select; `inject-scan` (`CODE`) is `injectScanCode`, the camera
   decoding a code: it opens the newest unfinished bill (a new cart when none
   has a row yet) with the code, as the home screen's hardware scan does, so

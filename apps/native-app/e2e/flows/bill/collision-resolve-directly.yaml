@@ -1,0 +1,19 @@
+# web bill.spec.ts: "the bill page's own collision message resolves directly, without going through the payment".
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/collision-bill.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill?billId=${output.billId}
+      TEXT: ${output.t["bill.collision.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["bill.collision.markClosed"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.collision.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["bill.closed"]}

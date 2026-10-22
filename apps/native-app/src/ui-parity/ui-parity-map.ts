@@ -32,6 +32,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
+    native: "src/components/app/app-migrations.tsx",
+    web: ["apps/web-app/src/components/app/app-migrations.tsx"],
+    status: "matched",
+  },
+  {
     native: "src/components/app/app-error-screen.tsx",
     web: ["apps/web-app/src/components/app/error-boundary.tsx"],
     status: "matched",

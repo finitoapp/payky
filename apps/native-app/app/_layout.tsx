@@ -13,6 +13,7 @@ import {
 } from "../src/components/app/app-background-jobs.tsx"
 import { AppErrorScreen } from "../src/components/app/app-error-screen.tsx"
 import { AppLoader } from "../src/components/app/app-loader.tsx"
+import { AppMigrations } from "../src/components/app/app-migrations.tsx"
 import { ConfirmHost } from "../src/components/app/confirm-host.tsx"
 import { DemoDataSeed } from "../src/components/app/demo-data-seed.tsx"
 import { DeviceRegistration } from "../src/components/app/device-registration.tsx"
@@ -120,6 +121,10 @@ function ThemedApp() {
           <ConfirmHost />
           <PinPromptHost />
           <ToastHost />
+          {/* Its own boundary: the pending check suspends on every account switch. */}
+          <Suspense fallback={null}>
+            <AppMigrations />
+          </Suspense>
           <Suspense fallback={null}>
             <SentryController />
             <DeviceRegistration />

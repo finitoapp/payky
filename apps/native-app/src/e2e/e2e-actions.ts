@@ -537,12 +537,19 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
    * withdraw.spec's `invoiceIssuedAt(Date.now())`: a 1 000-sat mainnet
    * invoice issued now, valid for an hour, printed as `invoice=<bolt11>`
    * because a flow cannot build one (`subflows/read-invoice.yaml` keeps it).
+   * `expiry` (seconds) shortens its validity: Maestro has no fake clock, so a
+   * flow lets an invoice expire for real where web fast-forwards the clock.
    */
-  lightningInvoice: async (run) =>
+  lightningInvoice: async (run, params) =>
     `invoice=${createTestInvoice({
       hrp: "lnbc10u",
       timestamp: Math.floor(run.deps.date.now().getTime() / 1000),
-      expirySeconds: 3600,
+      expirySeconds: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(3600)
+        .parse(params.expiry),
     })}`,
 
   /**

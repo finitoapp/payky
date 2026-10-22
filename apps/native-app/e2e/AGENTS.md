@@ -85,9 +85,12 @@ assertions.
   (`MNEMONIC`, into the dialog's masked field, not the page's twin behind it),
   `assert-spark-phrase` (`PHRASE`, restarts and reveals the wallet's phrase) and
   `assert-spark-switch-disabled` (Android only) are settings-spark-wallet's
-  helpers; `read-invoice` keeps a fresh 1 000-sat Lightning invoice (the
+  helpers; `read-invoice` (`EXPIRY`) keeps a fresh 1 000-sat Lightning invoice (the
   `lightningInvoice` action) as `output.invoice`, leaving the app on the
-  bridge page. The funded fake Spark wallet: open
+  bridge page; `EXPIRY` (seconds, default an hour) stands in for web's
+  `page.clock` by letting it expire for real — the app refuses an invoice a
+  minute before its expiry. `next=/withdraw/new?destination=<invoice>`
+  (URL-encoded) opens the form with it filled in, sparing the slow typing. The funded fake Spark wallet: open
   `${BASE_URL}e2e/fake?spark=funded&next=/` and wait for home (`next=`
   replaces the bridge, so there is no `E2E OK`); a later link reloads web
   and drops it, so take links (ids, invoices) before it.

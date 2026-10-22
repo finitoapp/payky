@@ -1,12 +1,14 @@
 # withdraw.spec's `invoiceIssuedAt(Date.now())`: runs the `lightningInvoice`
 # bridge action and keeps the fresh 1 000-sat invoice as `output.invoice`. It
-# leaves the app on the bridge page.
+# leaves the app on the bridge page. Optional EXPIRY (seconds, default an
+# hour) issues one that expires that soon, for real.
 appId: ${APP_ID}
 ---
 - runFlow:
     file: e2e-action.yaml
     env:
       ACTION: lightningInvoice
+      QUERY: '${typeof EXPIRY === "undefined" ? "" : "expiry=" + EXPIRY}'
 - copyTextFrom:
     id: e2e-result
 - evalScript: '${output.invoice = maestro.copiedText.match(/invoice=(\S+)/)[1]}'

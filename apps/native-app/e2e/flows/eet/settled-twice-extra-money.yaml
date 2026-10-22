@@ -40,6 +40,9 @@ tags: [eet]
       TEXT: ${output.t["paymentDetail.title"]}
 - scrollUntilVisible:
     element: ${output.re(output.t["paymentDetail.eet.extra.description"])}
+    # The extra sale's row can take longer than the default 20 s to show
+    # under parallel runs.
+    timeout: 45000
 - extendedWaitUntil:
     visible: ${output.t["eet.status.confirmed"]}
     timeout: 20000

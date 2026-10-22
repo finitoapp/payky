@@ -1,3 +1,4 @@
+import { sqliteFalse } from "@evolu/common"
 import { accessLastActivityAtom } from "@payky/app-shared/access-state"
 import {
   accountListQuery,
@@ -9,7 +10,10 @@ import {
   saveFiatBankAccount,
   saveSparkAccount,
 } from "@payky/core/modules/account/account-actions"
-import { createCashRegisterAccountId } from "@payky/core/modules/account/account-utils"
+import {
+  createCashRegisterAccountId,
+  legacyFiatBankAccountId,
+} from "@payky/core/modules/account/account-utils"
 import { createAccountTransaction } from "@payky/core/modules/account-transaction/account-transaction-actions"
 import { completeOnboarding } from "@payky/core/modules/app-settings/app-settings-actions"
 import { PaymentMethodOrderJson } from "@payky/core/modules/app-settings/app-settings-utils"
@@ -62,6 +66,7 @@ import {
   NonEmptyString255Schema,
   NonEmptyStringSchema,
   NonNegativeInteger,
+  PositiveInteger,
   PositiveNumber,
   TimestampMsSchema,
 } from "@payky/core/modules/shared/schema"
@@ -71,6 +76,10 @@ import type { SetStateAction } from "react"
 import { z } from "zod"
 import type { NativeAppRun } from "../hooks/use-app-run.ts"
 import { payE2eCashuQuotes, setE2eCashu } from "./e2e-cashu-mint.ts"
+import {
+  holdE2eMigrations,
+  releaseE2eMigrations,
+} from "./e2e-hold-migration.ts"
 import { e2eSparkPresetNames, setE2eSparkPreset } from "./e2e-spark-presets.ts"
 
 /**
@@ -151,6 +160,69 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
     const { spark, cashu } = FakeParams.parse(params)
     if (spark !== undefined) setE2eSparkPreset(spark)
     if (cashu !== undefined) setE2eCashu(cashu === "off" ? null : cashu)
+    return undefined
+  },
+
+  /**
+   * `__e2eSeedLegacyFioPlugin`: writes the row shape the versions before the
+   * Fio plugin became a singleton left behind — a `fioPlugin` at a generated
+   * id (rather than the fixed `fioPluginId`), with a token keyed to that same
+   * id. Written directly rather than through `saveFioPlugin`/
+   * `addFioPluginToken`, because those two now only ever write the fixed id —
+   * reproducing the old shape is the whole point. Gives
+   * `fioPluginFixedIdMigration` something to migrate at the next start, which
+   * the migration popup needs before it appears at all.
+   */
+  seedLegacyFioPlugin: async (run) => {
+    const { evoluOwner } = run.deps
+    const legacyPluginId = createRowId<"FioPlugin">()
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, owner: evoluOwner }
+      run.deps.evolu.upsert(
+        "fioPlugin",
+        {
+          id: legacyPluginId,
+          accountId: legacyFiatBankAccountId,
+          numberOfSecondsBetweenChecks: PositiveInteger(300),
+          syncLookbackDays: PositiveInteger(3),
+          isActive: sqliteFalse,
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
+      )
+      run.deps.evolu.upsert(
+        "fioPluginToken",
+        {
+          id: createRowId<"FioPluginToken">(),
+          fioPluginId: legacyPluginId,
+          token: NonEmptyString255Schema.decode("e2e-legacy-fio-token-1234"),
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
+      )
+    })
+    return undefined
+  },
+
+  /**
+   * Web's `holdMigrations`: arms the `e2e-hold` migration for every later
+   * start, so the popup's running state can be caught (the real migrations
+   * finish in milliseconds). Persisted, so restart the app after it (web's
+   * `page.reload()`); `releaseMigrations` disarms it again.
+   */
+  holdMigrations: async () => {
+    holdE2eMigrations()
+    return undefined
+  },
+
+  /**
+   * Web's `releaseMigrations` and `stopHoldingMigrations` in one: lets the
+   * held migration finish and disarms the hold for later starts. The popup
+   * stays over the bridge page, so a flow waits for its success, not for
+   * `E2E OK`.
+   */
+  releaseMigrations: async () => {
+    releaseE2eMigrations()
     return undefined
   },
 

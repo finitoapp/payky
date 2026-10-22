@@ -7,6 +7,7 @@ import {
 } from "@payky/core/migrations/migrations"
 import { atom } from "jotai"
 import { nativeConsole, nativeRun } from "../core/native-runtime.ts"
+import { e2eHoldMigration } from "../e2e/e2e-hold-migration.ts"
 import { evoluAtom } from "./evolu.ts"
 
 export interface AppMigrationReport {
@@ -28,7 +29,9 @@ export const pendingAppMigrationsAtom = atom(
 
     try {
       await using run = createMigrationRun(evolu)
-      return await run.ok(loadPendingMigrations(appMigrations))
+      return await run.ok(
+        loadPendingMigrations([e2eHoldMigration, ...appMigrations])
+      )
     } catch (error) {
       nativeConsole.error("Data migration failed.", error)
       return null

@@ -1,0 +1,51 @@
+# web migrations.spec.ts: "the migration popup reports a run in progress,
+# then its success".
+appId: ${APP_ID}
+tags: [migrations]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+# Leave behind the data an older version would have written, and arm the
+# hold so the running state can be caught.
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: seedLegacyFioPlugin
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: holdMigrations
+# The popup reports the migration while it runs.
+- runFlow:
+    file: ../../subflows/relaunch.yaml
+    env:
+      TEXT: ${output.t["migration.running.title"]}
+- assertVisible: ${output.t["migration.running.description"]}
+# Nothing to decide until it finishes, so there is no way to dismiss it.
+- assertNotVisible: ${output.t["migration.close"]}
+- takeScreenshot: migration-running
+# It stays open with a success message once the run finishes. The popup
+# covers the bridge page, so its OK is not waited for.
+- openLink: ${BASE_URL}e2e/releaseMigrations
+- extendedWaitUntil:
+    visible: ${output.t["migration.success.title"]}
+    timeout: 30000
+- assertVisible: ${output.t["migration.success.description"]}
+- takeScreenshot: migration-success
+# And the user dismisses it themselves.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["migration.close"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["migration.success.title"]}
+    timeout: 10000
+# The migrated token shows up in the Fio settings: its masked tail only
+# appears there if the migration re-keyed it onto the fixed id.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts/iban/fio-plugin
+      TEXT: ${output.t["settings.fioPlugin.title"]}
+- scrollUntilVisible:
+    element: ${output.re("********1234")}
+- assertNotVisible: ${output.t["settings.fioPlugin.tokens.empty"]}

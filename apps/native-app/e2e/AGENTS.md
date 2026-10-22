@@ -156,6 +156,15 @@ assertions.
   build's certificate picker skips the document chooser and hands over the
   mock's `CZ1234567890.p12` (password `generated-e2e-password`). Its state
   is shared, so flows tagged `eet` run one at a time on web.
+- Migrations (web's `support/migrations.ts`): `seedLegacyFioPlugin` writes
+  the pre-singleton Fio plugin rows `fioPluginFixedIdMigration` moves at the
+  next start; `holdMigrations` arms the `e2e-hold` migration
+  (`src/e2e/e2e-hold-migration.ts`) in the kv store, so it survives the
+  restart (`relaunch`) whose migrations it holds, popup up and running;
+  `releaseMigrations` lets it finish and disarms it (web's
+  `releaseMigrations` + `stopHoldingMigrations`). The popup covers the bridge
+  page, so open the release link and wait for the popup's success, not
+  `E2E OK`.
 - `seedEetSaleFromAnotherDevice` (`paymentId`, `minutes`) records the
   payment's EET sale as another device's, `minutes` ago, printing
   `pokl=<cash register id>`.

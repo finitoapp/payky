@@ -4,7 +4,11 @@ tags: [access, android-only]
 ---
 - runFlow: ../../subflows/seed-onboarding.yaml
 - runFlow: ../../subflows/turn-on-access.yaml
-- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.settings"] })}'
 - runFlow:
     file: ../../subflows/type-pin.yaml
     env:

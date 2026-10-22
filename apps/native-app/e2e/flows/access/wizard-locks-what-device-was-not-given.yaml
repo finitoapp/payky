@@ -24,7 +24,11 @@ tags: [access]
       ROUTE: ""
       TEXT: ${output.t["home.pay"]}
 # The catalog asks for the PIN, which opens it.
-- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.settings"] })}'
 - runFlow:
     file: ../../subflows/type-pin.yaml
     env:

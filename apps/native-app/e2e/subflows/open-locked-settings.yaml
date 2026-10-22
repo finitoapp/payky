@@ -1,7 +1,7 @@
 # From the terminal home with access control on and no PIN session: the
-# settings gear, then Items, which lands on the PIN screen for Settings. In-app, because
-# on Android a link onto a locked route while the app runs lands home
-# (native-e2e.md open questions).
+# settings gear, then Items, which lands on the PIN screen for Settings.
+# In-app, for flows mirroring web's openSettingsEntry; a flow mirroring
+# web's page.goto links to the locked route instead (goto).
 appId: ${APP_ID}
 ---
 - runFlow:

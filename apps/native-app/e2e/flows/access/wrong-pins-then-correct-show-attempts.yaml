@@ -4,7 +4,11 @@ tags: [access]
 ---
 - runFlow: ../../subflows/seed-onboarding.yaml
 - runFlow: ../../subflows/turn-on-access.yaml
-- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.settings"] })}'
 - runFlow:
     file: ../../subflows/type-pin.yaml
     env:
@@ -36,12 +40,16 @@ tags: [access]
     env:
       LABEL: ${output.t["settings.items.add"]}
 # The list was cleared: after a restart (no session), the next PIN goes
-# straight in.
+# straight in, here on Tables.
 - runFlow:
     file: ../../subflows/relaunch.yaml
     env:
       TEXT: ${output.re(output.t["home.pay"])}
-- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/tables
+      TEXT: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.settings"] })}'
 - runFlow:
     file: ../../subflows/type-pin.yaml
     env:
@@ -49,5 +57,5 @@ tags: [access]
 - runFlow:
     file: ../../subflows/assert-label.yaml
     env:
-      LABEL: ${output.t["settings.items.add"]}
+      LABEL: ${output.t["settings.tables.add"]}
 - assertNotVisible: '${output.tv("access.attempts.title", { count: 1 })}'

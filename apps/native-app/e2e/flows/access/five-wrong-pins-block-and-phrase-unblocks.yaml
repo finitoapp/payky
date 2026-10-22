@@ -11,7 +11,11 @@ tags: [access]
 - runFlow:
     file: ../../subflows/read-phrase.yaml
 - runFlow: ../../subflows/turn-on-access.yaml
-- runFlow: ../../subflows/open-locked-settings.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/items
+      TEXT: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.settings"] })}'
 - runFlow: ../../subflows/wrong-pins.yaml
 - extendedWaitUntil:
     visible: ${output.t["access.pin.blocked.title"]}

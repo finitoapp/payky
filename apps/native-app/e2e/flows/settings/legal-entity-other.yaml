@@ -9,7 +9,10 @@ tags: [settings]
     env:
       ROUTE: settings/legal-entity
       TEXT: ${output.t["settings.legalEntity.title"]}
-- runFlow: ../../subflows/open-country-select.yaml
+- runFlow:
+    file: ../../subflows/tap-id.yaml
+    env:
+      LABEL: ${output.t["settings.legalEntity.country.label"]}
 - tapOn: ${output.t["country.other"]}
 - extendedWaitUntil:
     visible: ${output.t["country.other"]}

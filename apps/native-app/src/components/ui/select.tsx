@@ -130,6 +130,8 @@ export function SelectTrigger({
       onPress={select.disabled ? undefined : () => select.setOpen(true)}
       role="combobox"
       aria-label={ariaLabel}
+      // As ui/switch: its name doubles as testID for e2e `id:` selectors.
+      testID={ariaLabel}
       aria-expanded={select.open}
       aria-disabled={select.disabled}
       {...(fullWidth ? { self: "stretch" } : {})}

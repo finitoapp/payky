@@ -71,8 +71,7 @@ assertions.
   `parkCart`; `merge-scenario` is bill-split's `setupMergeScenario`;
   `to-tip-step` enters 5.9 and opens the tip step; `mark-cash-paid` is
   `markCashPaid`; `collision-bill` is `startCollisionBill` (a $5 bill
-  canceled behind its pending cash payment, which is then confirmed); `open-country-select` opens the legal entity's empty
-  country select; `inject-scan` (`CODE`) is `injectScanCode`, the camera
+  canceled behind its pending cash payment, which is then confirmed); `inject-scan` (`CODE`) is `injectScanCode`, the camera
   decoding a code: it opens the newest unfinished bill (a new cart when none
   has a row yet) with the code, as the home screen's hardware scan does, so
   scan mode need not be on and no `E2E OK` is waited for — assert the bill's
@@ -197,7 +196,8 @@ assertions.
 
 4. Inputs: `tap-input`/`fill-input`. A kit input's field label is also its
    aria-label and testID, so `id: <label>` finds it on both platforms (a text
-   selector on Android also hits the FieldLabel above it).
+   selector on Android also hits the FieldLabel above it). A kit select
+   trigger is named the same way: open it with `tap-id`.
 
 `id:` selectors are regexes with no literal fallback: wrap copy in
 `output.re(...)` ("Bank account (optional)"). Text selectors fall back to a

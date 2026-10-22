@@ -11,7 +11,11 @@ tags: [settings]
     env:
       ROUTE: settings/legal-entity
       TEXT: ${output.t["settings.legalEntity.title"]}
-- assertVisible: ${output.t["settings.legalEntity.country.placeholder"]}
+# The placeholder sits inside the country select.
+- assertVisible:
+    text: ${output.re(output.t["settings.legalEntity.country.placeholder"])}
+    childOf:
+      id: ${output.re(output.t["settings.legalEntity.country.label"])}
 # The VAT-payer choice waits for a country.
 - runFlow:
     when:

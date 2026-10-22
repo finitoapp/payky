@@ -11,7 +11,6 @@ import { getFiatCurrency } from "@payky/core/modules/app-settings/app-settings-u
 import { setLegalEntity } from "@payky/core/modules/legal-entity/legal-entity-actions"
 import { legalEntityQuery } from "@payky/core/modules/legal-entity/legal-entity-queries"
 import type { CountryCode } from "@payky/core/modules/legal-entity/legal-entity-types"
-import { Text } from "tamagui"
 import { z } from "zod"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
@@ -91,16 +90,11 @@ export function LegalEntitySettingsPage() {
           <FieldGroup>
             <Field>
               <FieldLabel>{t("settings.legalEntity.country.label")}</FieldLabel>
-              {country.value === undefined ? (
-                <Text color="muted-foreground">
-                  {t("settings.legalEntity.country.placeholder")}
-                </Text>
-              ) : null}
               {/* Nothing is selected until a country is chosen: the row does not exist. */}
               <Select
                 value={
                   country.value === undefined
-                    ? ""
+                    ? null
                     : z.encode(countryCodec, country.value)
                 }
                 onValueChange={(value) => {
@@ -124,7 +118,9 @@ export function LegalEntitySettingsPage() {
                   fullWidth
                   aria-label={t("settings.legalEntity.country.label")}
                 >
-                  <SelectValue />
+                  <SelectValue
+                    placeholder={t("settings.legalEntity.country.placeholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent title={t("settings.legalEntity.country.label")}>
                   {countryOptions

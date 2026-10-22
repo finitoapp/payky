@@ -1166,7 +1166,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       FieldLabel:
         "native renders the select labels as FieldLabel parts; web's InlineEditSelect owns those labels",
       Select:
-        "native uses the platform choice sheet and shows the unset country prompt above the empty select; web uses InlineEditSelect with its placeholder inside the field",
+        "native uses the platform choice sheet; web uses InlineEditSelect, both with the unset country placeholder inside the field",
       SelectContent:
         "native's SelectContent presents the available values in the platform choice sheet; web's InlineEditSelect owns its select presentation",
       SelectItem:

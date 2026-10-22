@@ -19,6 +19,7 @@ import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-paymen
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { hapticButtonPress } from "../../platform/haptics.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
+import { useKeypadKeyboard } from "./use-keypad-keyboard.ts"
 
 type AmountInputAtom = PrimitiveAtom<string>
 
@@ -33,7 +34,9 @@ type AmountInputAtom = PrimitiveAtom<string>
  * (`text-3xl`, rows `gap-y-10` around keys that overlap by `-m-6`) and the
  * round outline Charge button (`h-14 rounded-full text-base font-bold`),
  * spread over the height. Web's press bubble and amount bounce are motion
- * effects left out; a key shows the ghost press tint instead.
+ * effects left out; a key shows the ghost press tint instead. A physical
+ * keyboard types too (`useKeypadKeyboard`), and its Enter charges as the
+ * Charge button does, so the pending charge lives here, shared by both.
  */
 export function AmountKeypad({
   currency,
@@ -43,6 +46,43 @@ export function AmountKeypad({
   readonly tipsEnabled: boolean
 }) {
   const [amountInputAtom] = useState(() => atom(""))
+  const createTerminalPayment = useCreateTerminalPayment()
+  const [pending, setPending] = useState(false)
+  // The ref closes the window before `pending` re-renders: a double tap
+  // creates one payment (web's `TerminalPaymentKeypad` does the same).
+  const pendingRef = useRef(false)
+
+  const charge = async (minor: number) => {
+    if (pendingRef.current) return
+    pendingRef.current = true
+    setPending(true)
+    try {
+      const chargeAmount = NonNegativeInteger(minor)
+      if (tipsEnabled) {
+        router.push({
+          pathname: "/payment/tip",
+          params: { amount: String(chargeAmount), currency },
+        })
+      } else {
+        await createTerminalPayment({
+          amount: chargeAmount,
+          currency,
+          tipAmount: NonNegativeInteger(0),
+        })
+      }
+    } finally {
+      pendingRef.current = false
+      setPending(false)
+    }
+  }
+  const handleCharge = (minor: number) => void charge(minor)
+
+  useKeypadKeyboard({
+    amountInputAtom,
+    currency,
+    pending,
+    onCharge: handleCharge,
+  })
 
   return (
     <YStack flex={1} justify="space-between">
@@ -52,7 +92,8 @@ export function AmountKeypad({
       <ChargeButton
         amountInputAtom={amountInputAtom}
         currency={currency}
-        tipsEnabled={tipsEnabled}
+        pending={pending}
+        onCharge={handleCharge}
       />
     </YStack>
   )
@@ -179,44 +220,17 @@ function KeypadKey({
 function ChargeButton({
   amountInputAtom,
   currency,
-  tipsEnabled,
+  pending,
+  onCharge,
 }: {
   readonly amountInputAtom: AmountInputAtom
   readonly currency: FiatCurrency
-  readonly tipsEnabled: boolean
+  readonly pending: boolean
+  readonly onCharge: (minor: number) => void
 }) {
   const { t } = useTranslation()
   const amountInput = useAtomValue(amountInputAtom)
   const amount = decimalAmountToMinorUnits({ currency, value: amountInput })
-  const createTerminalPayment = useCreateTerminalPayment()
-  const [pending, setPending] = useState(false)
-  // The ref closes the window before `pending` re-renders: a double tap
-  // creates one payment (web's `TerminalPaymentKeypad` does the same).
-  const pendingRef = useRef(false)
-
-  const charge = async (minor: number) => {
-    if (pendingRef.current) return
-    pendingRef.current = true
-    setPending(true)
-    try {
-      const chargeAmount = NonNegativeInteger(minor)
-      if (tipsEnabled) {
-        router.push({
-          pathname: "/payment/tip",
-          params: { amount: String(chargeAmount), currency },
-        })
-      } else {
-        await createTerminalPayment({
-          amount: chargeAmount,
-          currency,
-          tipAmount: NonNegativeInteger(0),
-        })
-      }
-    } finally {
-      pendingRef.current = false
-      setPending(false)
-    }
-  }
 
   return (
     <Button
@@ -229,7 +243,7 @@ function ChargeButton({
       onPress={() => {
         if (amount === null) return
         hapticButtonPress()
-        void charge(amount)
+        onCharge(amount)
       }}
     >
       <Text

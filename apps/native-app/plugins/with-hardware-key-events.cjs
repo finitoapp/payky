@@ -11,10 +11,13 @@ const IMPORTS = [
 
 /**
  * Every key the activity receives, forwarded unchanged to JS as a
- * `payky.hardwareKey` device event. A keyboard-wedge barcode scanner types a
- * code like a keyboard, and React Native has no global key listener; the
- * burst classification stays in JS (`@payky/app-shared/hardware-scan`, one
- * implementation with web). The event is never consumed, so nothing about
+ * `payky.hardwareKey` device event (`src/platform/hardware-keys.ts`), with
+ * web's `KeyboardEvent.key` names for the keys JS reads. A keyboard-wedge
+ * barcode scanner types a code like a keyboard, a counter terminal's
+ * keyboard types the keypad amount, and React Native has no global key
+ * listener; the burst classification stays in JS
+ * (`@payky/app-shared/hardware-scan`, one implementation with web). The
+ * event is never consumed, so nothing about
  * normal key handling changes. A soft keyboard commits text without key
  * events, so only hardware keys arrive here.
  */
@@ -24,6 +27,9 @@ const METHOD = `
       val key = when (event.keyCode) {
         KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> "Enter"
         KeyEvent.KEYCODE_SHIFT_LEFT, KeyEvent.KEYCODE_SHIFT_RIGHT -> "Shift"
+        KeyEvent.KEYCODE_DEL -> "Backspace"
+        KeyEvent.KEYCODE_FORWARD_DEL -> "Delete"
+        KeyEvent.KEYCODE_ESCAPE -> "Escape"
         else -> {
           val char = event.unicodeChar
           if (char > 0 && (char and KeyCharacterMap.COMBINING_ACCENT) == 0)

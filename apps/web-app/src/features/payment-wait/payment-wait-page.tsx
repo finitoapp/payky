@@ -196,6 +196,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   // payment that also has `canceledAt` set — unlike the old `claims.length >
   // 0` check, which ignored cancellation entirely.
   const closedOnOpen = useRedirectIfClosedOnOpen(
+    paymentId,
     paymentStatus === "paid" || paymentStatus === "canceled",
     () => {
       void navigate({

@@ -196,6 +196,7 @@ export function BillPage({
   const billStatus = useBillStatus(billId)
   // A cancellation collision stays: confirming the bill despite it is `sell`.
   const closedOnOpen = useRedirectIfClosedOnOpen(
+    billId,
     bill !== undefined &&
       billStatus?.status !== "open" &&
       billStatus?.hasCancellationCollision !== true,

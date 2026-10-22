@@ -92,6 +92,7 @@ import { useHardwareScanner } from "../../hooks/use-hardware-scanner.ts"
 import { useIsConfirmOpen } from "../../hooks/use-is-confirm-open.ts"
 import { useProductLookup } from "../../hooks/use-product-lookup.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
+import { useScreenVisit } from "../../hooks/use-screen-visit.ts"
 import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -194,10 +195,14 @@ function BillPage({
 
   // As web: a bill that is already closed when opened (Back, a stale link)
   // goes to its detail, which `sell` alone cannot read, so the PIN gate asks.
-  // Decided once, so a bill paid while the cart is open still shows its
-  // message. A cancellation collision (canceled but funded) stays here: it is
-  // resolved from activity/refund, which arrive later.
+  // Decided once per arrival — this bill, this visit of the screen — so a
+  // bill paid while the cart is open still shows its message, while a link or
+  // Back onto the screen still mounted decides again. A cancellation
+  // collision (canceled but funded) stays here: it is resolved from
+  // activity/refund, which arrive later.
+  const visit = useScreenVisit()
   const closedOnOpen = useRedirectIfClosedOnOpen(
+    `${billId}@${visit}`,
     bill !== undefined &&
       billStatus?.status !== "open" &&
       billStatus?.hasCancellationCollision !== true,

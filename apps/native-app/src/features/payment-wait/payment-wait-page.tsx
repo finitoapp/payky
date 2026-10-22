@@ -84,6 +84,7 @@ import { useAppRun, useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useCashuRunToast, useRunToast } from "../../hooks/use-run-toast.ts"
+import { useScreenVisit } from "../../hooks/use-screen-visit.ts"
 import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { isSwitchioSupported } from "../../platform/switchio.ts"
@@ -303,8 +304,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   useScreenWakeLock(status === "pending")
   // The payment screen serves only an open payment (access/0008): opened on a
   // paid or canceled one (a typed link, Back) it hands it to its activity
-  // detail. Decided once, so a payment paid while open still shows Paid.
+  // detail. Decided once per arrival — this payment, this visit of the
+  // screen — so a payment paid while open still shows Paid.
+  const visit = useScreenVisit()
   const closedOnOpen = useRedirectIfClosedOnOpen(
+    `${paymentId}@${visit}`,
     status === "paid" || status === "canceled",
     () =>
       router.replace({

@@ -30,13 +30,8 @@ tags: [bill-split]
     visible: '${output.tv("bill.itemsCount", { value: 3 })}'
     timeout: 15000
 - assertVisible: '${output.tv("bill.list.label", { number: 1 })}'
-# The emptied source bill was canceled: its link opens its detail. After a
-# restart: a link onto the bill screen that is already mounted keeps its old
-# "open on arrival" decision (native-e2e.md, open questions).
-- runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}|${output.t["bill.table.dialog.none"]}
+# The emptied source bill was canceled: its link opens its detail, also on
+# Android, where it reuses the bill screen showing the target bill.
 - runFlow:
     file: ../../subflows/goto.yaml
     env:

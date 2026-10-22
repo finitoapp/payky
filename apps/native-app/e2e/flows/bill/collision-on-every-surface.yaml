@@ -45,12 +45,7 @@ tags: [bill]
     notVisible: ${output.t["bill.collision.title"]}
     timeout: 15000
 # A closed bill is not served by the bill screen: the link hands it to its
-# detail. Restart first, so Android's mounted bill screen does not keep its
-# "open on arrival" decision (native-e2e.md, open questions).
-- runFlow:
-    file: ../../subflows/relaunch.yaml
-    env:
-      TEXT: ${output.t["home.pay"]}|${output.t["bill.table.dialog.none"]}
+# detail, also on Android, where it returns to the bill screen still mounted.
 - runFlow:
     file: ../../subflows/goto.yaml
     env:

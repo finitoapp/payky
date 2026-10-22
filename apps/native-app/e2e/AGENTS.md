@@ -214,6 +214,10 @@ Never coordinates, index-only selectors, or sleeps; wait with
   only close it: put `hideKeyboard` (in an Android-only `runFlow`) first —
   but only where the keyboard is surely up: without one, `hideKeyboard`
   presses Back and leaves the screen.
+- With no input focused, `inputText` and `pressKey` (`Backspace`, `Enter`)
+  are hardware keys, which the home keypad types. Maestro sets no pace
+  between them, so a flow never drives a scan's key burst: scans go through
+  `inject-scan`.
 - Maestro has no "within": a tile or row's own text is told apart by
   position (`below:`/`above:`/`leftOf:`/`rightOf:` a neighbouring label), or
   by deterministic names (bills are numbered #1, #2, ... in creation order).

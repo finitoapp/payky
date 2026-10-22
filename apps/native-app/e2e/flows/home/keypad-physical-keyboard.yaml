@@ -1,0 +1,26 @@
+# web keypad.spec.ts: "the keypad takes physical-keyboard input and Enter
+# charges the amount on screen", by keys: inputText types the characters as
+# key presses, pressKey sends Backspace and Enter. keypad.yaml taps the same.
+appId: ${APP_ID}
+tags: [home]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: "5"
+- inputText: "5.9"
+- extendedWaitUntil:
+    visible: .*5.9
+    timeout: 15000
+# Correct the last digit with Backspace.
+- pressKey: Backspace
+- inputText: "7"
+- extendedWaitUntil:
+    visible: .*5.7
+    timeout: 15000
+# Enter charges the corrected amount.
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentWait.method.iban"])}|${output.re(output.t["paymentTip.none"])}
+    timeout: 15000

@@ -1,7 +1,7 @@
 # web keypad.spec.ts: "the keypad takes physical-keyboard input and Enter
-# charges the amount on screen". Native has no physical-keyboard amount entry
-# (native-e2e.md, open questions), so the same corrections are tapped, and
-# Pay charges what is on screen.
+# charges the amount on screen", with the same corrections tapped on the
+# keypad and Pay charging what is on screen. keypad-physical-keyboard.yaml
+# types them on keys.
 appId: ${APP_ID}
 tags: [home]
 ---

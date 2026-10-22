@@ -1,0 +1,25 @@
+# web's takeCashPayment: from anywhere in a seeded app, AMOUNT (default 5.9)
+# on the keypad, Pay, no tip, the cash tab, marked paid. Leaves the newest ids
+# in output.billId / output.paymentId (read-ids; the app is on the bridge page).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: enter-amount.yaml
+    env:
+      AMOUNT: '${typeof AMOUNT === "undefined" ? "5.9" : AMOUNT}'
+- tapOn: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cash"]}
+- runFlow: mark-cash-paid.yaml
+- runFlow: read-ids.yaml

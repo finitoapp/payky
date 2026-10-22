@@ -1,0 +1,42 @@
+# web eet.spec.ts: "the bill detail shows the EET status of each payment".
+# The item costs CZK 5 (begin-coffee-payment), web's 50.
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+- runFlow: ../../subflows/enable-eet.yaml
+# One payment is rejected and the other confirmed.
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/answer-next?answer=%7B%22type%22%3A%22error%22%2C%22code%22%3A4%2C%22message%22%3A%22Neplatny%20podpis%20SOAP%20zpravy%22%7D
+- runFlow: ../../subflows/begin-coffee-payment.yaml
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: createAndPaySecondPayment
+      QUERY: billId=${output.billId}
+- runFlow: ../../subflows/reopen-payment.yaml
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/expect?count=2
+# Each payment row carries its own EET status.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/bills/${output.billId}
+      TEXT: ${output.t["billDetail.title"]}
+- scrollUntilVisible:
+    element: ${output.t["eet.status.rejected"]}
+- extendedWaitUntil:
+    visible: ${output.t["eet.status.confirmed"]}
+    timeout: 20000

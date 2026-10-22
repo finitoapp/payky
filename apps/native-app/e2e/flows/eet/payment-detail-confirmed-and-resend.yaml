@@ -1,0 +1,61 @@
+# web eet.spec.ts: "the payment detail shows a confirmed sale and lets staff
+# resend a pending one".
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+- runFlow: ../../subflows/enable-eet.yaml
+# A cash payment is confirmed by EET.
+- runFlow: ../../subflows/take-cash-payment.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/${output.paymentId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- scrollUntilVisible:
+    element: ${output.t["paymentDetail.eet.amount"]}
+- extendedWaitUntil:
+    visible: ${output.t["eet.status.confirmed"]}
+    timeout: 20000
+- assertVisible: ${output.t["paymentDetail.eet.pok"]}
+- assertVisible: ${output.t["paymentDetail.eet.receivedAt"]}
+# A payment EET could not be reached for stays pending.
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/connection?mode=refusing
+- runFlow: ../../subflows/take-cash-payment.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/${output.paymentId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- scrollUntilVisible:
+    element: ${output.t["paymentDetail.eet.amount"]}
+- extendedWaitUntil:
+    visible: ${output.t["eet.status.pending"]}
+    timeout: 20000
+- runFlow:
+    file: ../../subflows/scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["paymentDetail.eet.retry"]}
+# Staff resends it and EET confirms it.
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/connection?mode=answering
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentDetail.eet.retry"]}
+- extendedWaitUntil:
+    visible: ${output.t["eet.status.confirmed"]}
+    timeout: 20000
+- assertNotVisible: ${output.t["paymentDetail.eet.retry"]}

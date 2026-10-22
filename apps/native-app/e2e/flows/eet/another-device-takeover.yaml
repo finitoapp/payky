@@ -1,0 +1,61 @@
+# web eet.spec.ts: "another device's sale waits for that device, then is sent
+# from here as a repeat".
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+# Two cash payments before EET is on.
+- runFlow: ../../subflows/take-cash-payment.yaml
+- evalScript: ${output.recentId = output.paymentId}
+- runFlow: ../../subflows/take-cash-payment.yaml
+- evalScript: ${output.olderId = output.paymentId}
+- runFlow: ../../subflows/enable-eet.yaml
+# A sale another device took 3 minutes ago waits for it.
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: seedEetSaleFromAnotherDevice
+      QUERY: paymentId=${output.recentId}&minutes=3
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/${output.recentId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- scrollUntilVisible:
+    element: '${output.t["paymentDetail.eet.waitingForDevice"].split("{time}").map(output.re).join(".+")}'
+- assertNotVisible: ${output.t["paymentDetail.eet.retry"]}
+# A sale another device took 11 minutes ago is sent from here, as a repeat
+# under that device's cash register.
+- runFlow:
+    file: ../../subflows/e2e-action.yaml
+    env:
+      ACTION: seedEetSaleFromAnotherDevice
+      QUERY: paymentId=${output.olderId}&minutes=11
+- copyTextFrom:
+    id: e2e-result
+- evalScript: ${output.pokl = maestro.copiedText.match(/pokl=(\S+)/)[1]}
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/${output.olderId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- scrollUntilVisible:
+    element: ${output.t["paymentDetail.eet.amount"]}
+- extendedWaitUntil:
+    visible: ${output.t["eet.status.confirmed"]}
+    timeout: 20000
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/expect?payment=${output.olderId}&count=1&first=false&pokl=${output.pokl}
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/expect?payment=${output.recentId}&count=0&timeout=0

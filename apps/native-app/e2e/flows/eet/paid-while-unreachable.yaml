@@ -1,0 +1,42 @@
+# web eet.spec.ts: "the paid screen appears at once while EET cannot be
+# reached": the mock holds every EET request open.
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+- runFlow: ../../subflows/enable-eet.yaml
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/connection?mode=hanging
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cash"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.action"]}
+- extendedWaitUntil:
+    visible:
+      id: payment-paid-panel
+    timeout: 3000
+- assertVisible: ${output.t["paymentWait.paid"]}
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/unanswered

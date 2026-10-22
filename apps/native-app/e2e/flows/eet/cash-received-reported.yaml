@@ -1,0 +1,84 @@
+# web eet.spec.ts: "a cash sale is reported as the cash received". That Mark
+# as paid stays disabled below the charge is checked on Android only. Money
+# matches "CZK.80.00": Intl puts a no-break space after the code.
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+- runFlow: ../../subflows/enable-eet.yaml
+# 78.90 confirmed as prefilled is reported rounded to 79.00.
+- runFlow:
+    file: ../../subflows/take-cash-payment.yaml
+    env:
+      AMOUNT: "78.9"
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/expect?amounts=79.00
+# 78.90 with the change left is reported as 80.00.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow:
+    file: ../../subflows/enter-amount.yaml
+    env:
+      AMOUNT: "78.9"
+- tapOn: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cash"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.received"]}
+      VALUE: "77"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+      - assertVisible:
+          text: ${output.t["paymentWait.cashPaid.action"]}
+          enabled: false
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.received"]}
+      VALUE: "80"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- assertVisible: '${output.tv("paymentWait.cashPaid.difference", { amount: "CZK.1.10" })}'
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/expect?amounts=79.00,80.00
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/${output.paymentId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- assertVisible: '${output.tv("paymentDetail.cashReceived", { amount: "CZK.80.00" })}'
+- scrollUntilVisible:
+    element: ${output.t["paymentDetail.eet.amount"]}
+- assertVisible:
+    text: CZK.80.00
+    rightOf: ${output.t["paymentDetail.eet.amount"]}

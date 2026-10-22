@@ -1,0 +1,62 @@
+# web eet.spec.ts: "tips that belong to employees are left out of the
+# reported sale". Which tip owner is selected is checked on Android only.
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+- runFlow: ../../subflows/enable-eet.yaml
+# Tips belong to the business until the merchant says otherwise.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/eet
+      TEXT: ${output.t["settings.eet.title"]}
+- scrollUntilVisible:
+    element: ${output.re(output.t["settings.eet.tip.note"])}
+- assertVisible: ${output.re(output.t["settings.eet.tip.description"])}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.eet.tip.business.title"]}
+      BY_TEXT: "true"
+# The merchant says tips belong to employees.
+- tapOn: ${output.re(output.t["settings.eet.tip.employees.title"])}
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.eet.tip.employees.title"]}
+      BY_TEXT: "true"
+# A cash payment with a 10% tip is reported as its goods in whole crowns.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: '${output.tv("settings.tips.percentages.value", { value: 10 })}'
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cash"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.received"]}
+      VALUE: "6.49"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/expect?amounts=6.00

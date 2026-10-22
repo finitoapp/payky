@@ -81,10 +81,11 @@ const respond = async (request: Request, responder: FakeEetResponder) => {
 }
 
 /**
- * `GET /__mock/eet/expect?env=production&payment=&count=&amounts=&first=&pokl=`:
+ * `GET /__mock/eet/expect?env=production&payment=&count=&amounts=&first=&pokl=&lastNegates=`:
  * waits (up to `timeout` ms) until the requests of `env` — only those whose
  * `porad_cis` is `payment`, when given — match every given condition, then
  * answers 200; 408 with what it saw otherwise. Web's `expect.poll`.
+ * `lastNegates=<i>`: the last amount is the i-th one's reversal.
  */
 const expectRequests = async (url: URL): Promise<Response> => {
   const query = url.searchParams
@@ -99,6 +100,7 @@ const expectRequests = async (url: URL): Promise<Response> => {
     const amounts = query.get("amounts")
     const first = query.get("first")
     const pokl = query.get("pokl")
+    const lastNegates = query.get("lastNegates")
     return {
       requests,
       ok:
@@ -107,7 +109,11 @@ const expectRequests = async (url: URL): Promise<Response> => {
           requests.map(({ data }) => data.celk_trzba).join(",") === amounts) &&
         (first === null ||
           requests.every(({ header }) => header.prvni_zaslani === first)) &&
-        (pokl === null || requests.every(({ data }) => data.id_pokl === pokl)),
+        (pokl === null ||
+          requests.every(({ data }) => data.id_pokl === pokl)) &&
+        (lastNegates === null ||
+          requests.at(-1)?.data.celk_trzba ===
+            `-${requests[Number(lastNegates)]?.data.celk_trzba}`),
     }
   }
   const deadline = Date.now() + Number(query.get("timeout") ?? 20_000)

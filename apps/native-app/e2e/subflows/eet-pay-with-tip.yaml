@@ -1,0 +1,27 @@
+# eet.spec.ts's payWithTip: 5.90 with a 10% tip, paid with 6.49 in cash.
+# Leaves the payment's id in output.paymentId (read-ids; on the bridge page).
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: to-tip-step.yaml
+- tapOn: '${output.tv("settings.tips.percentages.value", { value: 10 })}'
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cash"]}
+- runFlow:
+    file: fill-input.yaml
+    env:
+      LABEL: ${output.t["paymentWait.cashPaid.received"]}
+      VALUE: "6.49"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow: mark-cash-paid.yaml
+- runFlow: read-ids.yaml

@@ -99,13 +99,14 @@ assertions.
   every EET flow, `connection?mode=refusing|hanging|answering`,
   `answer-next?answer=<url-encoded FakeEetAnswer>`, `official?available=false`,
   `unanswered`, and
-  `expect?env=production|playground&payment=&count=&amounts=&first=&pokl=`,
+  `expect?env=production|playground&payment=&count=&amounts=&first=&pokl=&lastNegates=`,
   which waits up to 20 s for the requests to match (web's `expect.poll` on
   `fakeEet.requests`); `enable-eet` is `enableEetWithGeneratedCertificate`;
   `import-eet-certificate` (`PASSWORD`) is `importEetCertificate`;
   `select-eet-sandbox` (`CONFIRM`) is `selectEetSandbox`;
   `take-cash-payment` (`AMOUNT`) is `takeCashPayment`, leaving
-  `output.paymentId`.
+  `output.paymentId`; `eet-pay-with-tip` is the refund tests' `payWithTip`
+  (5.90 + 10 %, 6.49 cash).
 - Optional env: `fill-input`/`fill-inline`/`clear-input` take `PLACEHOLDER`
   (an emptied input with one shows it as its text), `fill-input`/
   `fill-inline`/`tap-input` take `BUTTONS: "true"` for an inline field that

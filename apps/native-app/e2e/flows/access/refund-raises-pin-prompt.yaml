@@ -1,8 +1,7 @@
 # web access.spec.ts: "a refund raises the one-shot PIN prompt naming the
-# permission it needs". Android only: on web the refund sheet stays above the
-# PIN prompt, so the pad cannot be reached (native-e2e.md open questions).
+# permission it needs".
 appId: ${APP_ID}
-tags: [access, android-only]
+tags: [access]
 ---
 - runFlow: ../../subflows/seed-onboarding.yaml
 - runFlow:

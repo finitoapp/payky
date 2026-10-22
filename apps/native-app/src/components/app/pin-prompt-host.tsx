@@ -36,31 +36,35 @@ export function PinPromptHost() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: accountVersion is the trigger
   useEffect(() => clear, [accountVersion, clear])
 
+  // Mounted only while a prompt is asked, not kept mounted and hidden: React
+  // Native Web's `Modal` appends its portal to `body` when it mounts, and
+  // every modal sits on the same z-index, so a modal kept mounted since the
+  // start drew under any dialog opened later (the refund dialog covered the
+  // pad). Mounting on demand stacks it last, as Android stacks the window
+  // shown last.
+  if (head === undefined) return null
+
   return (
     <Modal
-      visible={head !== undefined}
+      visible
       transparent
       animationType="fade"
-      onRequestClose={() => {
-        if (head !== undefined) settle({ id: head.id, granted: false })
-      }}
+      onRequestClose={() => settle({ id: head.id, granted: false })}
     >
       <YStack flex={1} justify="center" p="4" bg="rgba(0,0,0,0.5)">
-        {head === undefined ? null : (
-          <YStack bg="card" rounded="6" p="4" maxH="100%" aria-modal>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <Suspense fallback={null}>
-                <PinPrompt
-                  key={head.id}
-                  request={head}
-                  onSettled={(granted, sessionAccountId) =>
-                    settle({ id: head.id, granted, sessionAccountId })
-                  }
-                />
-              </Suspense>
-            </ScrollView>
-          </YStack>
-        )}
+        <YStack bg="card" rounded="6" p="4" maxH="100%" aria-modal>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <Suspense fallback={null}>
+              <PinPrompt
+                key={head.id}
+                request={head}
+                onSettled={(granted, sessionAccountId) =>
+                  settle({ id: head.id, granted, sessionAccountId })
+                }
+              />
+            </Suspense>
+          </ScrollView>
+        </YStack>
       </YStack>
     </Modal>
   )

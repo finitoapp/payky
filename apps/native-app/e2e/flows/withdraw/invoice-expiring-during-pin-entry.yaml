@@ -1,0 +1,70 @@
+# web withdraw.spec.ts: "an invoice expiring during PIN entry leaves the review
+# with an error and a new estimate". Maestro has no fake clock, so where web
+# fast-forwards two hours with the PIN prompt open, the invoice here is issued
+# with a short real expiry and the flow waits it out at the prompt. The app
+# refuses an invoice a minute before it expires
+# (WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS), and the prompt is up about 13 s after
+# the invoice is issued on web, so EXPIRY 100 leaves the flow 40 s to reach
+# it and the wait at the prompt is under half a minute. Unlike web's, this
+# review offers a new estimate from the start (it does from two minutes before
+# the expiry), so the last check only proves the button stays. The invoice comes
+# before the funded fake wallet: a later link reloads the web app and drops it.
+appId: ${APP_ID}
+tags: [withdraw]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: spark=true
+- runFlow:
+    file: ../../subflows/turn-on-access.yaml
+    env:
+      PRESET: ${output.t["access.preset.owner"]}
+- runFlow:
+    file: ../../subflows/read-invoice.yaml
+    env:
+      EXPIRY: "100"
+# `next=` replaces the bridge page, so there is no "E2E OK" to wait for. It
+# opens the form with the invoice already in, as a scanned one does: typing
+# its 242 characters would take most of the time the invoice has.
+- openLink: ${BASE_URL}e2e/fake?spark=funded&next=${encodeURIComponent("/withdraw/new?destination=" + output.invoice)}
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.form.title"]}
+    timeout: 15000
+- assertVisible:
+    id: ${output.re(output.t["withdraw.destination.label"])}
+    text: ${output.invoice}
+# Review a Lightning invoice.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["withdraw.continue"]}
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.review.title"]}
+    timeout: 15000
+# The invoice expires while the PIN is being typed.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["withdraw.review.confirm"]}
+- runFlow:
+    file: ../../subflows/assert-prompt.yaml
+    env:
+      ACTION: ${output.t["access.action.withdraw"]}
+# The review under the prompt shows the expiry as it happens.
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.error.lightningInvoiceExpired"]}
+    timeout: 60000
+- runFlow:
+    file: ../../subflows/type-pin.yaml
+    env:
+      PIN: "4821"
+# The review stays, with the error and a new estimate.
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.error.lightningInvoiceExpired"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["withdraw.review.newQuote"]}
+- assertVisible: ${output.t["withdraw.review.title"]}

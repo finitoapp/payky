@@ -1,0 +1,42 @@
+# web cashu.spec.ts: "withdraw all from a mint to a Lightning address". The
+# address's LNURL pay endpoints are the mock server's (e2e-fetch.ts).
+appId: ${APP_ID}
+tags: [cashu]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/fund-cashu-wallet.yaml
+# A Lightning address offers withdraw all.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["withdraw.destination.label"]}
+      VALUE: donate@payky.me
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.destination.kind.lightningAddress"]}
+    timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-id.yaml
+    env:
+      LABEL: ${output.t["withdraw.all.label"]}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: ${output.re(output.t["withdraw.amount.label"])}
+          enabled: false
+- tapOn: ${output.t["withdraw.continue"]}
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.review.title"]}
+    timeout: 15000
+- assertVisible: ${output.t["withdraw.cashu.review.feeReserve"]}
+# Confirming pays it and opens its detail.
+- tapOn: ${output.t["withdraw.review.confirm"]}
+- extendedWaitUntil:
+    visible: ${output.t["withdraw.status.done"]}
+    timeout: 30000

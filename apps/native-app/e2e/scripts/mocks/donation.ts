@@ -31,7 +31,7 @@ const LNURL = "https://donate.e2e.test"
 let invoice = ""
 let createdAt = 0
 
-export const donationMock: MockHandler = (request, url) => {
+export const donationMock: MockHandler = (_request, url) => {
   const { pathname } = url
   if (pathname === "/api/donations")
     return Response.json({ items: [], nextCursor: null })

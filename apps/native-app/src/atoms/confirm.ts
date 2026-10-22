@@ -1,9 +1,15 @@
 import { atom } from "jotai"
+import type { ReactNode } from "react"
 
 /** Mirrors the web request, with texts already translated. */
 export interface ConfirmRequest {
   readonly title: string
-  readonly description: string
+  /**
+   * A string renders as the dialog's description; a node (one that
+   * subscribes to something itself, as the unknown-code lookup) renders
+   * as it is, styled by its author.
+   */
+  readonly description: ReactNode
   readonly confirmLabel: string
   readonly cancelLabel: string
   readonly variant?: "default" | "destructive"

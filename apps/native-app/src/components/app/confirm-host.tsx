@@ -44,7 +44,13 @@ export function ConfirmHost() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{head.title}</AlertDialogTitle>
-            <AlertDialogDescription>{head.description}</AlertDialogDescription>
+            {typeof head.description === "string" ? (
+              <AlertDialogDescription>
+                {head.description}
+              </AlertDialogDescription>
+            ) : (
+              head.description
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel

@@ -1,0 +1,130 @@
+# web bill-scan.spec.ts: "an opted-in device prefills a scanned retail
+# barcode from Open Food Facts". The scans go in through injectScanCode with
+# scan mode off (as the other scan flows); the mock server answers the
+# lookup (e2e/scripts/mocks/open-facts.ts) and counts it for web's
+# `lookedUpUrls`.
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/open-facts-mock.yaml
+    env:
+      PATH: /__mock/open-facts/reset
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+# A device that has not opted in sends nothing.
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "5449000000996"
+- extendedWaitUntil:
+    visible: ${output.t["bill.scan.unknown.title"]}
+    timeout: 15000
+- assertNotVisible: ${output.t["bill.scan.unknown.match"]}
+- tapOn:
+    text: ${output.t["bill.scan.unknown.cancel"]}
+    below: ${output.t["bill.scan.unknown.title"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.scan.unknown.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/open-facts-mock.yaml
+    env:
+      PATH: /__mock/open-facts/expect?count=0
+# Opt in to product lookup (every consent card says Enable: this one's sits
+# between its title and the next card's).
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/about/privacy
+      TEXT: ${output.t["settings.about.privacy.title"]}
+- tapOn:
+    text: ${output.t["settings.privacy.productLookup.enable"]}
+    below: ${output.t["settings.privacy.productLookup.title"]}
+    above: ${output.t["settings.privacy.aiAssistant.title"]}
+- extendedWaitUntil:
+    visible:
+      text: ${output.t["settings.privacy.productLookup.enabled"]}
+      below: ${output.t["settings.privacy.productLookup.title"]}
+      above: ${output.t["settings.privacy.aiAssistant.title"]}
+    timeout: 10000
+# An internal code is never looked up. (Home remembers its tables mode now.)
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["nav.pos"]}
+- runFlow: ../../subflows/start-new-bill.yaml
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "3333"
+- extendedWaitUntil:
+    visible: ${output.t["bill.scan.unknown.title"]}
+    timeout: 15000
+- tapOn:
+    text: ${output.t["bill.scan.unknown.cancel"]}
+    below: ${output.t["bill.scan.unknown.title"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["bill.scan.unknown.title"]}
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/open-facts-mock.yaml
+    env:
+      PATH: /__mock/open-facts/expect?count=0
+# The unknown-code dialog already names the product.
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "5449000000996"
+- extendedWaitUntil:
+    visible: ${output.t["bill.scan.unknown.match"]}
+    timeout: 15000
+- assertVisible: Coca-Cola Original
+- assertVisible: Coca-Cola, 330 ml
+- assertVisible: '${output.tv("bill.scan.lookup.source", { source: "Open Food Facts" })}'
+# A retail barcode opens the form prefilled. The empty catalog's own "Add
+# item" sits under the dialog, below its title but above this last line.
+- tapOn:
+    text: ${output.t["bill.scan.unknown.create"]}
+    below: '${output.tv("bill.scan.lookup.source", { source: "Open Food Facts" })}'
+- extendedWaitUntil:
+    visible: ${output.t["bill.scan.create.title"]}
+    timeout: 10000
+- assertVisible:
+    id: ${output.re(output.t["settings.items.form.name.label"])}
+    text: Coca-Cola Original
+- assertVisible:
+    id: ${output.re(output.t["settings.items.form.description.label"])}
+    text: Coca-Cola, 330 ml
+- assertVisible: '${output.tv("bill.scan.lookup.source", { source: "Open Food Facts" })}'
+- runFlow:
+    file: ../../subflows/open-facts-mock.yaml
+    env:
+      PATH: /__mock/open-facts/expect?count=1
+# Saving adds the prefilled item to the cart.
+- runFlow:
+    file: ../../subflows/type-input.yaml
+    env:
+      LABEL: ${output.t["settings.items.form.price.label"]}
+      VALUE: "1.5"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+# Its copy is the unknown-code dialog's too, hence below the last select.
+- tapOn:
+    text: ${output.t["bill.scan.create.save"]}
+    below:
+      id: ${output.re(output.t["settings.items.form.taxRate.label"])}
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 15000
+- assertVisible: \$1\.50
+- assertVisible: Coca-Cola Original

@@ -103,8 +103,13 @@ function CreateForm({
   const evolu = useAtomValue(evoluAtom)
   const { defaultTaxRate, categoryOptions, taxRateOptions } =
     useCatalogItemOptions()
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
+  // Unlike web's dialog, this form mounts only when it opens, by which time
+  // the lookup (started with the unknown-code confirmation) usually answered:
+  // start from that product, then follow it below.
+  const [name, setName] = useState(productLookup.product?.name ?? "")
+  const [description, setDescription] = useState(
+    productLookup.product?.description ?? ""
+  )
   const [price, setPrice] = useState("")
   const [categoryId, setCategoryId] = useState<CatalogCategoryId | "none">(
     NO_OPTION

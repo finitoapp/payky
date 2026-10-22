@@ -64,7 +64,7 @@ import {
   ScrollView,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, useTheme, View, XStack, YStack } from "tamagui"
+import { styled, Text, useTheme, View, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { LoadingView } from "../../components/loading-view.tsx"
 import { RouteMessage } from "../../components/route-message.tsx"
@@ -511,7 +511,7 @@ function BillCart({
       setLookupCode(rawValue)
       const confirmed = await confirm({
         title: t("bill.scan.unknown.title"),
-        description: t("bill.scan.unknown.description", { code: rawValue }),
+        description: <UnknownCodeDescription code={rawValue} />,
         confirmLabel: t("bill.scan.unknown.create"),
         cancelLabel: t("bill.scan.unknown.cancel"),
       })
@@ -1300,3 +1300,59 @@ function ItemBrick({
     </Card>
   )
 }
+
+/**
+ * The unknown-code confirmation's description, as web's: the code, then what
+ * the product lookup recognized. Rendered by the confirm host, outside this
+ * page, so it subscribes to the lookup itself — the same query key as the
+ * page's, so it shares that request and fills in the moment it answers.
+ */
+function UnknownCodeDescription({ code }: { readonly code: string }) {
+  const { t } = useTranslation()
+
+  return (
+    <YStack>
+      <DescriptionText>
+        {t("bill.scan.unknown.description", { code })}
+      </DescriptionText>
+      {/* The lookup's device-settings read may suspend; the code shows meanwhile. */}
+      <Suspense fallback={null}>
+        <UnknownCodeMatch code={code} />
+      </Suspense>
+    </YStack>
+  )
+}
+
+function UnknownCodeMatch({ code }: { readonly code: string }) {
+  const { t } = useTranslation()
+  const { product, isFetching } = useProductLookup(code)
+
+  if (isFetching) {
+    return (
+      <DescriptionText mt={12}>{t("bill.scan.lookup.loading")}</DescriptionText>
+    )
+  }
+  if (product === undefined) return null
+  return (
+    <YStack mt={12}>
+      <DescriptionText>{t("bill.scan.unknown.match")}</DescriptionText>
+      <DescriptionText color="foreground" fontWeight={fontWeight.medium}>
+        {product.name}
+      </DescriptionText>
+      {product.description === null ? null : (
+        <DescriptionText>{product.description}</DescriptionText>
+      )}
+      <DescriptionText mt={4} fontSize={fontSize.xs} lineHeight={fontSize.xs}>
+        {t("bill.scan.lookup.source", { source: product.source })}
+      </DescriptionText>
+    </YStack>
+  )
+}
+
+/** `AlertDialogDescription`'s look, one block per line as web's spans. */
+const DescriptionText = styled(Text, {
+  text: "center",
+  fontSize: fontSize.sm,
+  lineHeight: fontSize.sm,
+  color: "muted-foreground",
+})

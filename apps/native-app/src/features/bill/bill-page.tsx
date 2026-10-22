@@ -486,9 +486,14 @@ function BillCart({
   )
   const categories = useEvoluQuery(catalogCategoriesQuery).data
 
-  const addScanned = (item: CatalogItemRow) => {
+  const addScanned = async (item: CatalogItemRow) => {
     setLastScanned(item)
-    void cart.addOne(item)
+    const added = await cart.addOne(item)
+    // Scan mode shows the scanned item in its own panel; the grid may have
+    // it scrolled out of view, so say what was added (as web).
+    if (added && !scanMode) {
+      toast.success(t("bill.scan.added", { name: getStaffDisplayName(item) }))
+    }
   }
   const confirmOpen = useIsConfirmOpen()
   const scanDialogOpen =
@@ -513,7 +518,7 @@ function BillCart({
       if (confirmed) setCreateCode(rawValue)
       else setLookupCode(null)
     } else if (matches.length > 1) setCollisionCandidates(matches)
-    else addScanned(first)
+    else await addScanned(first)
   }
   const [search, setSearch] = useState("")
   // At any time, not only in scan mode, as web (scanner/0001).
@@ -785,7 +790,7 @@ function BillCart({
         onCreated={(item) => {
           setCreateCode(null)
           setLookupCode(null)
-          addScanned(item)
+          void addScanned(item)
         }}
       />
       <ScanCodeCollisionDialog
@@ -793,7 +798,7 @@ function BillCart({
         onClose={() => setCollisionCandidates([])}
         onSelect={(item) => {
           setCollisionCandidates([])
-          addScanned(item)
+          void addScanned(item)
         }}
       />
       <AssignTableDialog

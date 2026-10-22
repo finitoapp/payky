@@ -1,0 +1,34 @@
+# web hardware-scanner.spec.ts: "a hardware scan adds the item to the bill
+# outside scan mode", its first step. The code goes in through
+# injectScanCode, which hands it to the bill page as the home screen's
+# hardware scan does; the key burst itself (under 50 ms a key) is not driven.
+# Skipped: the second step, a scan typed into the focused search field
+# leaving the search as it was, which needs those key events in the field.
+appId: ${APP_ID}
+tags: [bill]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/add-catalog-item.yaml
+    env:
+      NAME: Coffee
+      PRICE: "5"
+      SCAN_CODE: "12345678"
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+# A fresh cart in grid mode.
+- runFlow: ../../subflows/start-new-bill.yaml
+# A scan adds the item and says so (the toast leaves after 4 s, so first).
+- runFlow:
+    file: ../../subflows/inject-scan.yaml
+    env:
+      CODE: "12345678"
+- extendedWaitUntil:
+    visible: '${output.tv("bill.scan.added", { name: "Coffee" })}'
+    timeout: 15000
+- extendedWaitUntil:
+    visible: '${output.tv("bill.itemsCount", { value: 1 })}'
+    timeout: 15000

@@ -155,6 +155,10 @@ assertions.
   `mocks/nostr.ts` is the only nostr relay of an e2e build (`/nostr`,
   websocket) and decides by the business name: "Café Skip" is refused,
   "Café Retry" refused once, a profile that is not the trimmed name refused.
+- `mocks/open-facts.ts` answers every Open Food Facts lookup with web's
+  Coca-Cola product and counts them: `open-facts-mock` (`PATH`) calls
+  `/__mock/open-facts/reset` or `.../expect?count=N` (web's `lookedUpUrls`)
+  and fails unless it answers 200.
 - The EET mock (`e2e/scripts/mocks/eet.ts`) answers as EET production and,
   through `EXPO_PUBLIC_PAYKY_EET_PLAYGROUND_URL`, as the sandbox; an e2e
   build's certificate picker skips the document chooser and hands over the

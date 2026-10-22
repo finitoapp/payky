@@ -1,0 +1,9 @@
+# Calls the Open Facts mock's control PATH ("/__mock/open-facts/reset",
+# ".../expect?count=1") and fails unless it answers 200; see
+# e2e/scripts/mocks/open-facts.ts. Web's `lookedUpUrls`.
+appId: ${APP_ID}
+---
+- evalScript: ${output.openFactsMock = http.get(MOCK_URL + PATH)}
+- assertTrue:
+    condition: ${output.openFactsMock.ok}
+    label: 'Open Facts mock: ${PATH} answered ${output.openFactsMock.status}: ${output.openFactsMock.body}'

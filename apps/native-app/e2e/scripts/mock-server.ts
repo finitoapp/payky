@@ -1,5 +1,6 @@
 // The e2e builds' stand-in for every outside HTTP service (native-e2e.md
-// 4.4): EET, the donation and assistant APIs, and whatever else a flow needs.
+// 4.4): EET, the donation and assistant APIs, Open Food Facts, and whatever
+// else a flow needs.
 // Each service is a handler in e2e/scripts/mocks/; the first that answers a
 // request wins, anything else is a 404 (logged, so a missing mock shows).
 // The build points at it through EXPO_PUBLIC_* URLs (run.ts).
@@ -9,6 +10,7 @@ import { donationMock } from "./mocks/donation.ts"
 import { eetMock } from "./mocks/eet.ts"
 import type { MockHandler } from "./mocks/mock-handler.ts"
 import { nostrRelay } from "./mocks/nostr.ts"
+import { openFactsMock } from "./mocks/open-facts.ts"
 import { yadioMock } from "./mocks/yadio.ts"
 
 const handlers: ReadonlyArray<MockHandler> = [
@@ -16,6 +18,7 @@ const handlers: ReadonlyArray<MockHandler> = [
   donationMock,
   assistantMock,
   eetMock,
+  openFactsMock,
 ]
 
 export function serveMocks(port: number) {

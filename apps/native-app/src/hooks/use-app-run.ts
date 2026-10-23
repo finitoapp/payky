@@ -1,6 +1,7 @@
 import { createDateDep } from "@payky/core/deps"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
+import { createQerkoApiDep } from "@payky/core/integrations/qerko/qerko-client"
 import { createYadioApiDep } from "@payky/core/integrations/yadio/yadio-client"
 import { createSparkWalletDep } from "@payky/core/spark/spark-wallet"
 import { useAtomValue, useStore } from "jotai"
@@ -21,7 +22,7 @@ import { createSwitchioTerminalDep } from "../platform/switchio.ts"
  * Native composition root for Task actions, the counterpart of web's
  * `useAppRun`: the same dependency set (console, evolu, deviceEvolu,
  * evoluOwner, masterKey, lockManager, date, fetch, sparkWallet, yadioApi,
- * switchioTerminal, eetApi, nostr), built fresh for each run. Use as
+ * qerkoApi, switchioTerminal, eetApi, nostr), built fresh for each run. Use as
  * `await using run = appRun()`. The Cashu wallet comes from `useCashuAppRun`.
  */
 /** Every app dependency but the Cashu ones, built fresh for each run. */
@@ -44,6 +45,7 @@ function useAppRunDeps() {
       ...fetchDep,
       ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
       ...createYadioApiDep({ baseUrl: nativeEnv.EXPO_PUBLIC_PAYKY_YADIO_URL }),
+      ...createQerkoApiDep({ posId: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_POS_ID }),
       ...createSwitchioTerminalDep(),
       ...createEetApiDep(
         { ...dateDep, ...fetchDep },

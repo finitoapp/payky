@@ -12,6 +12,9 @@ export const nativeEnv = createEnv({
     EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL: z.url().optional(),
     // Set by the e2e builds to the mock server; default is Yadio itself.
     EXPO_PUBLIC_PAYKY_YADIO_URL: z.url().optional(),
+    // The `Pos-Id` header of every Qerko POS API call (see web's
+    // `VITE_PAYKY_QERKO_POS_ID`).
+    EXPO_PUBLIC_PAYKY_QERKO_POS_ID: z.string().default("payky"),
     // Set only by the e2e builds: the mock server stands in for EET's playground.
     EXPO_PUBLIC_PAYKY_EET_PLAYGROUND_URL: z.url().optional(),
     EXPO_PUBLIC_PAYKY_DONATE_LUD16_ADDRESS: z
@@ -44,6 +47,7 @@ export const nativeEnv = createEnv({
     EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL:
       process.env.EXPO_PUBLIC_PAYKY_EET_PRODUCTION_URL,
     EXPO_PUBLIC_PAYKY_YADIO_URL: process.env.EXPO_PUBLIC_PAYKY_YADIO_URL,
+    EXPO_PUBLIC_PAYKY_QERKO_POS_ID: process.env.EXPO_PUBLIC_PAYKY_QERKO_POS_ID,
     EXPO_PUBLIC_PAYKY_EET_PLAYGROUND_URL:
       process.env.EXPO_PUBLIC_PAYKY_EET_PLAYGROUND_URL,
     EXPO_PUBLIC_PAYKY_DONATE_LUD16_ADDRESS:

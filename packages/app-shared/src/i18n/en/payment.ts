@@ -242,6 +242,7 @@ export const enPayment = {
   "paymentWait.ibanPaid.pending": "Confirming...",
   "paymentWait.invalidId": "Invalid payment id.",
   "paymentWait.method.cashu": "Cashu",
+  "paymentWait.method.qerko": "Terminal",
   "paymentWait.preparing.cashu": "Preparing Cashu request...",
   "paymentWait.cashu.quoteExpired":
     "The mint's invoice expired before it was paid.",
@@ -282,7 +283,49 @@ export const enPayment = {
   "paymentWait.preparing.card": "Preparing payment by payment card...",
   "paymentWait.preparing.cash": "Preparing cash payment...",
   "paymentWait.preparing.iban": "Preparing bank QR payment...",
+  "paymentWait.preparing.qerko": "Preparing the terminal…",
   "paymentWait.preparing.spark": "Preparing Lightning request...",
+  "paymentWait.qerko.action": "Pay on the terminal",
+  "paymentWait.qerko.cancel": "Cancel on the terminal",
+  "paymentWait.qerko.cancel.notCancellable":
+    "The payment can no longer be cancelled.",
+  "paymentWait.qerko.error.attemptRunning":
+    "A payment is already running on the terminal.",
+  "paymentWait.qerko.error.generic":
+    "The payment could not be taken. Try again.",
+  "paymentWait.qerko.error.notPaired": "The Qerko terminal is not paired.",
+  "paymentWait.qerko.error.notPayable": "This payment can no longer be paid.",
+  "paymentWait.qerko.error.unreachable":
+    "Qerko could not be reached. Check the connection.",
+  "paymentWait.qerko.failed.cancelled":
+    "The payment was cancelled on the terminal.",
+  "paymentWait.qerko.failed.declined": "The card was declined.",
+  "paymentWait.qerko.failed.reversed": "The payment was reversed.",
+  "paymentWait.qerko.noTerminal": "This device has no terminal chosen.",
+  "paymentWait.qerko.noTerminal.link": "Choose a terminal",
+  "paymentWait.qerko.notStarted.busy":
+    "The terminal is busy. Try again in a moment.",
+  "paymentWait.qerko.notStarted.notActivated":
+    "The terminal is not activated in Qerko.",
+  "paymentWait.qerko.notStarted.notConnected": "The terminal is not connected.",
+  "paymentWait.qerko.notStarted.timeout":
+    "The terminal did not answer in time. Check it before trying again.",
+  "paymentWait.qerko.notStarted.unknownTerminal":
+    "Qerko does not know this terminal. Choose it again in the settings.",
+  "paymentWait.qerko.retry": "Pay on the terminal again",
+  "paymentWait.qerko.retryUnresolved.cancel": "Cancel",
+  "paymentWait.qerko.retryUnresolved.confirm": "I have checked, pay again",
+  "paymentWait.qerko.retryUnresolved.description":
+    "The last attempt ended with an unknown result and the card may have been charged. Have you checked the terminal and Qerko?",
+  "paymentWait.qerko.retryUnresolved.title": "Pay again?",
+  "paymentWait.qerko.step.authorizing": "Authorizing the payment…",
+  "paymentWait.qerko.step.connecting": "Connecting to the terminal…",
+  "paymentWait.qerko.step.finishing": "Finishing the payment…",
+  "paymentWait.qerko.step.waitingForCard": "Waiting for the card…",
+  "paymentWait.qerko.step.waitingForCustomer": "Waiting for the customer…",
+  "paymentWait.qerko.step.waitingForPin": "The customer is entering the PIN…",
+  "paymentWait.qerko.unresolved":
+    "The result of the last attempt is unknown, so the card may have been charged. Check the terminal and the payment history in Qerko before trying again.",
   "paymentWait.qrCopied": "QR code content copied.",
   "paymentWait.qrCopyFailed": "Could not copy QR code content.",
   "paymentWait.qrFormat.payBySquare1_0_0": "Pay by square 1.0 (Slovakia)",

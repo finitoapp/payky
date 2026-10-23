@@ -48,6 +48,7 @@ import {
   CreditCardIcon,
   LandmarkIcon,
   LoaderCircleIcon,
+  NfcIcon,
   XIcon,
   ZapIcon,
 } from "lucide-react"
@@ -95,6 +96,7 @@ const preparingPaymentMethodKeys = {
   iban: "paymentWait.preparing.iban",
   cash: "paymentWait.preparing.cash",
   card: "paymentWait.preparing.card",
+  qerko: "paymentWait.preparing.qerko",
   cashu: "paymentWait.preparing.cashu",
 } satisfies Record<PaymentMethodTab, TranslationKey>
 
@@ -314,6 +316,24 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       })
     }
 
+    // Qerko is plain HTTP with CORS open, so unlike Switchio it works in the
+    // PWA as well.
+    const enabledQerkoAccount = enabledPaymentMethodAccounts.find(
+      (account) =>
+        account.kind === "qerkoTerminal" &&
+        account.qerkoTerminalCurrency === payment?.currency
+    )
+    if (enabledQerkoAccount) {
+      paymentMethods.push({
+        id: "qerko",
+        kind: "qerkoTerminal",
+        accountId: enabledQerkoAccount.id,
+        label: t("paymentWait.method.qerko"),
+        qrPayload: null,
+        icon: <NfcIcon />,
+      })
+    }
+
     const enabledCashuAccount = enabledPaymentMethodAccounts.find(
       (account) => account.kind === "cashu"
     )
@@ -396,6 +416,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       (activePaymentMethod.id === "card" &&
         payment.cardAccountId !== null &&
         payment.cardAccountId !== undefined) ||
+      (activePaymentMethod.id === "qerko" &&
+        payment.qerkoAccountId !== null &&
+        payment.qerkoAccountId !== undefined) ||
       (activePaymentMethod.id === "cashu" &&
         payment.cashuLnInvoice !== null &&
         payment.cashuLnInvoice !== undefined))
@@ -427,6 +450,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                 : {}),
               ...(method.kind === "cardSwitchio"
                 ? { card: { accountId: method.accountId } }
+                : {}),
+              ...(method.kind === "qerkoTerminal"
+                ? { qerkoTerminal: { accountId: method.accountId } }
                 : {}),
               ...(method.kind === "iban"
                 ? { bank: { accountId: method.accountId } }
@@ -754,6 +780,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                     value === "iban" ||
                     value === "cash" ||
                     value === "card" ||
+                    value === "qerko" ||
                     value === "cashu"
                   ) {
                     setSelectedPaymentMethod(value)
@@ -867,6 +894,13 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               }
               onMarkIbanPaid={() => void handleMarkIbanPaid()}
               onPayCard={() => void handlePayCard()}
+              qerkoPaymentId={paymentId}
+              qerkoAccountId={payment.qerkoAccountId}
+              qerkoPayable={paymentStatus === "pending"}
+              qerkoPendingTransactionId={payment.qerkoPendingTransactionId}
+              qerkoUnresolvedTransactionId={
+                payment.qerkoUnresolvedTransactionId
+              }
               cashuPaymentId={paymentId}
               newCashuQuotePending={newCashuQuotePending}
               onNewCashuQuote={() => void handleNewCashuQuote()}

@@ -2,8 +2,10 @@ import { describe, expect, test } from "vitest"
 
 import {
   describeQerkoPairingFailure,
+  describeQerkoPaymentError,
   describeQerkoTerminalStatus,
   isQerkoCodeComplete,
+  isQerkoStepCancellable,
   parseQerkoIdentificationNumber,
   selectableQerkoLocations,
 } from "./qerko-terminal-flow.ts"
@@ -130,5 +132,42 @@ describe("describeQerkoTerminalStatus", () => {
       key: "settings.qerkoTerminal.test.busy",
       ok: false,
     })
+  })
+})
+
+describe("describeQerkoPaymentError", () => {
+  test("a refusal to start names its reason", () => {
+    expect(
+      describeQerkoPaymentError({
+        type: "QerkoTerminalNotStarted",
+        reason: "terminalNotConnected",
+      })
+    ).toBe("paymentWait.qerko.notStarted.notConnected")
+  })
+
+  test("a decline never reads like a connection problem", () => {
+    expect(
+      describeQerkoPaymentError({
+        type: "QerkoTerminalPaymentFailed",
+        reason: "declined",
+      })
+    ).toBe("paymentWait.qerko.failed.declined")
+  })
+
+  test("a dropped connection and an unknown error each have a message", () => {
+    expect(describeQerkoPaymentError({ type: "FetchError" })).toBe(
+      "paymentWait.qerko.error.unreachable"
+    )
+    expect(describeQerkoPaymentError({ type: "SomethingNew" })).toBe(
+      "paymentWait.qerko.error.generic"
+    )
+  })
+})
+
+describe("isQerkoStepCancellable", () => {
+  test("is false once the card is being authorized", () => {
+    expect(isQerkoStepCancellable("waitingForCard")).toBe(true)
+    expect(isQerkoStepCancellable("authorizing")).toBe(false)
+    expect(isQerkoStepCancellable("finishing")).toBe(false)
   })
 })

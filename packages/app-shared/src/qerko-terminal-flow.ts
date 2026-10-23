@@ -3,6 +3,9 @@ import {
   type QerkoCountry,
   QerkoCountrySchema,
   type QerkoEnvironment,
+  type QerkoNotStartedReason,
+  type QerkoPaymentFailureReason,
+  type QerkoStep,
   type QerkoTerminalStatus,
   type QerkoTerminals,
 } from "@payky/core/integrations/qerko/qerko-client"
@@ -155,3 +158,82 @@ export const describeQerkoTerminalStatus = (
       ? { key: "settings.qerkoTerminal.test.bankUnreachable", ok: false }
       : { key: qerkoTerminalStatusKeys.status, ok: true }
     : { key: qerkoTerminalStatusKeys[status.type], ok: false }
+
+/** What the terminal is doing while a payment is pending, as the screen words it. */
+export const qerkoStepKeys = {
+  connecting: "paymentWait.qerko.step.connecting",
+  waitingForCard: "paymentWait.qerko.step.waitingForCard",
+  waitingForPin: "paymentWait.qerko.step.waitingForPin",
+  waitingForCustomer: "paymentWait.qerko.step.waitingForCustomer",
+  authorizing: "paymentWait.qerko.step.authorizing",
+  finishing: "paymentWait.qerko.step.finishing",
+} satisfies Record<QerkoStep, TranslationKey>
+
+/** Once the card is authorizing the payment is out of anyone's hands. */
+export const isQerkoStepCancellable = (step: QerkoStep): boolean =>
+  step === "connecting" ||
+  step === "waitingForCard" ||
+  step === "waitingForPin" ||
+  step === "waitingForCustomer"
+
+const qerkoFailureKeys = {
+  declined: "paymentWait.qerko.failed.declined",
+  cancelled: "paymentWait.qerko.failed.cancelled",
+  reversed: "paymentWait.qerko.failed.reversed",
+} satisfies Record<QerkoPaymentFailureReason, TranslationKey>
+
+const qerkoNotStartedKeys = {
+  busy: "paymentWait.qerko.notStarted.busy",
+  terminalBusy: "paymentWait.qerko.notStarted.busy",
+  terminalNotActivated: "paymentWait.qerko.notStarted.notActivated",
+  terminalNotConnected: "paymentWait.qerko.notStarted.notConnected",
+  unknownTerminal: "paymentWait.qerko.notStarted.unknownTerminal",
+  upstreamTimeout: "paymentWait.qerko.notStarted.timeout",
+  duplicateTransaction: "paymentWait.qerko.error.generic",
+  notStarted: "paymentWait.qerko.error.generic",
+  upstreamError: "paymentWait.qerko.error.generic",
+} satisfies Record<QerkoNotStartedReason, TranslationKey>
+
+/**
+ * Failures that carry no further detail. `QerkoAttemptUnresolved` is shown
+ * by its own "check the terminal" state, but an attempt refused for it still
+ * needs a word here.
+ */
+const qerkoPaymentErrorKeys = {
+  PaymentNotFound: "paymentWait.qerko.error.generic",
+  PaymentNotPayable: "paymentWait.qerko.error.notPayable",
+  QerkoAttemptUnresolved: "paymentWait.qerko.error.attemptRunning",
+  QerkoTerminalAccountNotFound: "paymentWait.qerko.error.generic",
+  AccountCurrencyMismatch: "paymentWait.qerko.error.generic",
+  QerkoPluginNotPaired: "paymentWait.qerko.error.notPaired",
+  QerkoHttpError: "paymentWait.qerko.error.unreachable",
+  QerkoApiError: "paymentWait.qerko.error.unreachable",
+  FetchError: "paymentWait.qerko.error.unreachable",
+} satisfies Record<string, TranslationKey>
+
+/**
+ * How a failed start or poll reads. A refusal to start and a definite
+ * decline name their reason; the rest fall back to the lookup above, and
+ * anything unknown to the generic message, so a new error type never leaves
+ * the screen silent.
+ */
+export const describeQerkoPaymentError = (error: {
+  readonly type: string
+  readonly reason?: string
+}): TranslationKey => {
+  if (error.type === "QerkoTerminalNotStarted") {
+    return qerkoNotStartedKeys[
+      (error.reason ?? "notStarted") as QerkoNotStartedReason
+    ]
+  }
+  if (error.type === "QerkoTerminalPaymentFailed") {
+    return qerkoFailureKeys[
+      (error.reason ?? "declined") as QerkoPaymentFailureReason
+    ]
+  }
+  return (
+    (qerkoPaymentErrorKeys as Record<string, TranslationKey | undefined>)[
+      error.type
+    ] ?? "paymentWait.qerko.error.generic"
+  )
+}

@@ -242,6 +242,7 @@ export const skPayment = {
   "paymentWait.ibanPaid.pending": "Potvrdzujem...",
   "paymentWait.invalidId": "Neplatné ID platby.",
   "paymentWait.method.cashu": "Cashu",
+  "paymentWait.method.qerko": "Terminál",
   "paymentWait.preparing.cashu": "Pripravujem Cashu platbu...",
   "paymentWait.cashu.quoteExpired":
     "Faktúra mintu vypršala skôr, než bola zaplatená.",
@@ -281,7 +282,47 @@ export const skPayment = {
   "paymentWait.preparing.card": "Pripravujem platbu platobnou kartou...",
   "paymentWait.preparing.cash": "Pripravujem hotovostnú platbu...",
   "paymentWait.preparing.iban": "Pripravujem bankovú QR platbu...",
+  "paymentWait.preparing.qerko": "Pripravujem terminál…",
   "paymentWait.preparing.spark": "Pripravujem Lightning žiadosť...",
+  "paymentWait.qerko.action": "Zaplatiť na termináli",
+  "paymentWait.qerko.cancel": "Zrušiť na termináli",
+  "paymentWait.qerko.cancel.notCancellable": "Platbu už nie je možné zrušiť.",
+  "paymentWait.qerko.error.attemptRunning": "Na termináli už platba beží.",
+  "paymentWait.qerko.error.generic":
+    "Platbu sa nepodarilo uskutočniť. Skúste to znova.",
+  "paymentWait.qerko.error.notPaired": "Terminál Qerko nie je spárovaný.",
+  "paymentWait.qerko.error.notPayable": "Túto platbu už nie je možné zaplatiť.",
+  "paymentWait.qerko.error.unreachable":
+    "Qerko sa nepodarilo zastihnúť. Skontrolujte pripojenie.",
+  "paymentWait.qerko.failed.cancelled": "Platba bola zrušená na termináli.",
+  "paymentWait.qerko.failed.declined": "Karta bola zamietnutá.",
+  "paymentWait.qerko.failed.reversed": "Platba bola stornovaná.",
+  "paymentWait.qerko.noTerminal": "Na tomto zariadení nie je vybraný terminál.",
+  "paymentWait.qerko.noTerminal.link": "Vybrať terminál",
+  "paymentWait.qerko.notStarted.busy":
+    "Terminál je zaneprázdnený. Skúste to o chvíľu.",
+  "paymentWait.qerko.notStarted.notActivated":
+    "Terminál nie je v Qerku aktivovaný.",
+  "paymentWait.qerko.notStarted.notConnected": "Terminál nie je pripojený.",
+  "paymentWait.qerko.notStarted.timeout":
+    "Terminál neodpovedal včas. Pred ďalším pokusom ho skontrolujte.",
+  "paymentWait.qerko.notStarted.unknownTerminal":
+    "Qerko tento terminál nepozná. Vyberte ho znova v nastaveniach.",
+  "paymentWait.qerko.retry": "Zaplatiť na termináli znova",
+  "paymentWait.qerko.retryUnresolved.cancel": "Zrušiť",
+  "paymentWait.qerko.retryUnresolved.confirm":
+    "Skontroloval(a) som, zaplatiť znova",
+  "paymentWait.qerko.retryUnresolved.description":
+    "Posledný pokus skončil s neznámym výsledkom a karta mohla byť stiahnutá. Skontrolovali ste terminál a Qerko?",
+  "paymentWait.qerko.retryUnresolved.title": "Zaplatiť znova?",
+  "paymentWait.qerko.step.authorizing": "Autorizujem platbu…",
+  "paymentWait.qerko.step.connecting": "Pripájam sa k terminálu…",
+  "paymentWait.qerko.step.finishing": "Dokončujem platbu…",
+  "paymentWait.qerko.step.waitingForCard": "Čakám na kartu…",
+  "paymentWait.qerko.step.waitingForCustomer": "Čakám na zákazníka…",
+  "paymentWait.qerko.step.waitingForPin": "Zákazník zadáva PIN…",
+  "paymentWait.qerko.unresolved":
+    "Výsledok posledného pokusu nie je známy, karta teda mohla byť stiahnutá. Pred ďalším pokusom skontrolujte terminál a históriu platieb v Qerku.",
   "paymentWait.qrCopied": "Obsah QR kódu skopírovaný.",
   "paymentWait.qrCopyFailed": "Obsah QR kódu sa nepodarilo skopírovať.",
   "paymentWait.qrFormat.payBySquare1_0_0": "Pay by square 1.0 (Slovensko)",

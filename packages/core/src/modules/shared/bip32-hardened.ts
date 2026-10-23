@@ -13,8 +13,11 @@ import { hmacSha512 } from "./hmac-sha512.ts"
  * compares it with `HDKey` byte for byte.
  */
 
-const CURVE_ORDER =
-  0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n
+// Built with BigInt() rather than as a bigint literal: CodeQL reads the
+// literal as undefined and flags every comparison and sum with it.
+const CURVE_ORDER = BigInt(
+  "0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141"
+)
 const HARDENED_OFFSET = 0x80000000
 const MASTER_HMAC_KEY = new TextEncoder().encode("Bitcoin seed")
 

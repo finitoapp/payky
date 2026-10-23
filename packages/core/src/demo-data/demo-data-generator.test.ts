@@ -49,6 +49,19 @@ describe("generateDemoData", () => {
     expect(
       rows.filter((row) => row.canceledAt === null && row.claims !== 1)
     ).toEqual([])
+    // The Qerko terminal takes part of the card payments.
+    expect(
+      (
+        await evolu.loadQuery(
+          createQuery((db) =>
+            db
+              .selectFrom("accountTransaction")
+              .select("id")
+              .where("kind", "=", "qerkoTerminal")
+          )
+        )
+      ).length
+    ).toBeGreaterThan(0)
     expect(
       await evolu.loadQuery(
         createQuery((db) => db.selectFrom("eetSettings").select("id"))

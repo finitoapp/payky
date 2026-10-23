@@ -16,14 +16,19 @@ import {
   createCashuWalletDep,
 } from "../cashu/cashu-wallet.ts"
 import { createFakeCashuMint } from "../cashu/fake-cashu-mint.ts"
-import type { EvoluOwnerDep, MasterKeyDep } from "../deps.ts"
+import type { EvoluOwnerDep, MasterKeyDep, UuidDep } from "../deps.ts"
 import type { DeviceLanguage } from "../evolu/device-client.ts"
+import {
+  createQerkoApiDep,
+  type QerkoApiDep,
+} from "../integrations/qerko/qerko-client.ts"
 import type { YadioApiDep } from "../integrations/yadio/yadio-client.ts"
 import {
   saveCardSwitchioAccount,
   saveCashRegisterAccount,
   saveCashuAccount,
   saveFiatBankAccount,
+  saveQerkoTerminalAccount,
   saveSparkAccount,
 } from "../modules/account/account-actions.ts"
 import { createAccountTransaction } from "../modules/account-transaction/account-transaction-actions.ts"
@@ -57,8 +62,10 @@ import {
   prepareCashuPaymentMethod,
   preparePaymentMethod,
 } from "../modules/payment/payment-preparation-actions.ts"
+import { startQerkoTerminalPayment } from "../modules/payment/payment-qerko-actions.ts"
 import { paymentSparkDetailsByIdQuery } from "../modules/payment/payment-queries.ts"
 import type { PaymentId } from "../modules/payment/payment-types.ts"
+import { saveQerkoPlugin } from "../modules/qerko-plugin/qerko-plugin-actions.ts"
 import { reconcileAccountTransaction } from "../modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import { refundPayment } from "../modules/refund/refund-actions.ts"
 import type { DeviceEvoluDep, EvoluDep } from "../modules/shared/evolu-deps.ts"
@@ -162,11 +169,12 @@ const closingMinute = 21 * 60 + 30
 const dayPartOf = (minuteOfDay: number) =>
   minuteOfDay < 11 * 60 ? "morning" : minuteOfDay < 15 * 60 ? "noon" : "evening"
 
-type PaymentMethod = "cash" | "card" | "iban" | "spark" | "cashu"
+type PaymentMethod = "cash" | "card" | "qerko" | "iban" | "spark" | "cashu"
 
 const paymentMethodWeights = {
   cash: 0.45,
-  card: 0.35,
+  card: 0.2,
+  qerko: 0.15,
   iban: 0.1,
   spark: 0.06,
   cashu: 0.04,
@@ -268,16 +276,51 @@ export const generateDemoData =
 
     const fakeServices: SparkWalletDep &
       YadioApiDep &
+      QerkoApiDep &
+      UuidDep &
       SwitchioTerminalDep & { readonly fetch: typeof globalThis.fetch } = {
-      fetch: async (input) => {
+      fetch: async (input, init) => {
         const url =
           input instanceof Request ? input.url : new URL(String(input)).href
         if (url.includes("/exrates/")) {
           return Response.json({ BTC: btcRate(), timestamp: simulatedNow })
         }
+        // The Qerko terminal approves every payment for the amount asked.
+        if (url.endsWith("/create-terminal-payment")) {
+          const body = JSON.parse(String(init?.body)) as {
+            readonly transactionId: string
+            readonly amount: string
+          }
+          return Response.json({
+            type: "started",
+            payment: {
+              status: "approved",
+              transactionId: body.transactionId,
+              currency,
+              amount: body.amount,
+              chargedAmount: body.amount,
+              chargedTipAmount: "0",
+              authorizationCode: String(random.int(100_000, 999_999)),
+              card: {
+                brand: random.weighted(["VISA", "MASTERCARD"], () => 1),
+                maskedPan: `************${random.int(1000, 9999)}`,
+                entryMode: "contactless",
+              },
+              receipt: {
+                merchantId: "DEMO",
+                terminalId: "PAYKY002",
+                sequenceNumber: String(random.int(1000, 9999)),
+                terminalDateTime: format(simulatedNow, "yyyy-MM-dd'T'HH:mm:ss"),
+                refundId: crypto.randomUUID(),
+              },
+            },
+          })
+        }
         throw new Error(`Demo data reaches no network: ${url}`)
       },
       yadioApi: { baseUrl: "https://api.yadio.io" },
+      ...createQerkoApiDep({ posId: "demo" }),
+      uuid: { create: () => crypto.randomUUID() },
       sparkWallet: {
         create: async () =>
           createFakeSparkWallet({
@@ -386,6 +429,21 @@ export const generateDemoData =
         await demoRun.ok(saveCardSwitchioAccount({ enabled: true, currency })),
         "the card terminal account"
       )
+      // Paired with a fictional company, so the terminal method is on.
+      await demoRun.ok(
+        saveQerkoPlugin({
+          environment: "sandbox",
+          apiKey: NonEmptyStringSchema.decode("demo-key"),
+          apiKeyName: NonEmptyString255("Payky"),
+          legalEntityName: NonEmptyString255("Demo Café"),
+          identificationNumber: NonEmptyString255("12345678"),
+          country: "CZ",
+        })
+      )
+      const qerkoAccount = required(
+        await demoRun.ok(saveQerkoTerminalAccount({ enabled: true, currency })),
+        "the Qerko terminal account"
+      )
       const cashuAccount = required(
         await demoRun.ok(saveCashuAccount({ enabled: true })),
         "the Cashu account"
@@ -398,6 +456,7 @@ export const generateDemoData =
           paymentMethodOrderJson: z.encode(PaymentMethodOrderJson, [
             "cashRegister",
             "cardSwitchio",
+            "qerkoTerminal",
             "iban",
             "spark",
             "cashu",
@@ -516,6 +575,24 @@ export const generateDemoData =
               payPaymentWithSwitchioCard({
                 paymentId,
                 accountId: cardAccount,
+                deviceId,
+              })
+            )
+            return
+          }
+          case "qerko": {
+            await demoRun.orThrow(
+              preparePaymentMethod({
+                paymentId,
+                qerkoTerminal: { accountId: qerkoAccount },
+              })
+            )
+            advance(random.int(25, 55) * second)
+            await demoRun.orThrow(
+              startQerkoTerminalPayment({
+                paymentId,
+                accountId: qerkoAccount,
+                terminalId: NonEmptyString255("demo-terminal"),
                 deviceId,
               })
             )

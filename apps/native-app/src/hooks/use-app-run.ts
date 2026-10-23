@@ -4,6 +4,7 @@ import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
 import { createQerkoApiDep } from "@payky/core/integrations/qerko/qerko-client"
 import { createYadioApiDep } from "@payky/core/integrations/yadio/yadio-client"
 import { createSparkWalletDep } from "@payky/core/spark/spark-wallet"
+import * as Crypto from "expo-crypto"
 import { useAtomValue, useStore } from "jotai"
 import { useCallback } from "react"
 import { accountAtom } from "../atoms/account.ts"
@@ -46,6 +47,7 @@ function useAppRunDeps() {
       ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
       ...createYadioApiDep({ baseUrl: nativeEnv.EXPO_PUBLIC_PAYKY_YADIO_URL }),
       ...createQerkoApiDep({ posId: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_POS_ID }),
+      uuid: { create: () => Crypto.randomUUID() },
       ...createSwitchioTerminalDep(),
       ...createEetApiDep(
         { ...dateDep, ...fetchDep },

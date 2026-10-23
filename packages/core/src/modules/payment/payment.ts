@@ -112,6 +112,43 @@ export const paymentCardSwitchio = {
   terminalDateTime: NonEmptyString255Schema.nullable(),
 } as const
 
+/**
+ * A payment taken on a terminal Qerko drives remotely (qerko/0001..0005).
+ *
+ * Starting an attempt stores `transactionId` (a UUID, Qerko's idempotency
+ * key) as both itself and `pendingTransactionId` *before* the request leaves,
+ * so a crash or a dropped response still leaves something to poll. A pending
+ * attempt is resolved by `syncQerkoTerminalPayment`: approved settles the
+ * payment and clears both markers, a definite failure clears them, and an
+ * answer of `unknown` (or an upstream timeout when starting) moves the
+ * attempt to `unresolvedTransactionId`, where it stays until staff confirm
+ * a retry (payment/0006). Every clear compares against the attempt's own
+ * `transactionId`, so a late answer for an old attempt cannot resolve a newer
+ * one.
+ *
+ * The trace fields are what Qerko's receipt carries; `qerkoRefundId` is what
+ * a refund to the card needs (`receipt.refundId`). `chargedTipAmount` is the
+ * tip the card was charged, which can exceed the payment's own when the
+ * customer tipped on the terminal.
+ */
+export const paymentQerkoTerminal = {
+  id: PaymentId,
+  accountId: AccountId,
+  transactionId: NonEmptyString255Schema.nullable(),
+  pendingTransactionId: NonEmptyString255Schema.nullable(),
+  unresolvedTransactionId: NonEmptyString255Schema.nullable(),
+  terminalId: NonEmptyString255Schema.nullable(),
+  qerkoRefundId: NonEmptyString255Schema.nullable(),
+  authorizationCode: NonEmptyString255Schema.nullable(),
+  cardBrand: NonEmptyString255Schema.nullable(),
+  maskedPan: NonEmptyString255Schema.nullable(),
+  entryMode: z.enum(["contactless", "chip", "magstripe"]).nullable(),
+  sequenceNumber: NonEmptyString255Schema.nullable(),
+  merchantId: NonEmptyString255Schema.nullable(),
+  terminalDateTime: NonEmptyString255Schema.nullable(),
+  chargedTipAmount: NonNegativeIntegerSchema.nullable(),
+} as const
+
 export const paymentIban = {
   id: PaymentId,
   accountId: AccountId,
@@ -164,6 +201,12 @@ export const paymentIndexes = ((create) => [
   create("paymentCardSwitchio_transactionId")
     .on("paymentCardSwitchio")
     .column("transactionId"),
+  create("paymentQerkoTerminal_accountId")
+    .on("paymentQerkoTerminal")
+    .column("accountId"),
+  create("paymentQerkoTerminal_pendingTransactionId")
+    .on("paymentQerkoTerminal")
+    .column("pendingTransactionId"),
   create("paymentIban_accountId").on("paymentIban").column("accountId"),
   create("paymentCashu_quoteId").on("paymentCashu").column("quoteId"),
   create("paymentCashu_receiveOperationId")
@@ -181,4 +224,5 @@ export type PaymentBtcLightningRow = InferTable<typeof paymentBtcLightning>
 export type PaymentBtcSparkRow = InferTable<typeof paymentBtcSpark>
 export type PaymentIbanRow = InferTable<typeof paymentIban>
 export type PaymentCardSwitchioRow = InferTable<typeof paymentCardSwitchio>
+export type PaymentQerkoTerminalRow = InferTable<typeof paymentQerkoTerminal>
 export type PaymentCashuRow = InferTable<typeof paymentCashu>

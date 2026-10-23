@@ -17,6 +17,7 @@ const manualPaymentTransactionIdPrefixes = {
   cashRegister: "accountTransaction:cashRegister:payment:",
   iban: "accountTransaction:iban:manual:payment:",
   cardSwitchio: "accountTransaction:cardSwitchio:payment:",
+  qerkoTerminal: "accountTransaction:qerkoTerminal:payment:",
 } satisfies Record<PaymentAccountKind, string>
 
 /**

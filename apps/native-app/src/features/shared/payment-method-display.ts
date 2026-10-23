@@ -5,6 +5,7 @@ import Bitcoin from "lucide-react-native/icons/bitcoin"
 import Coins from "lucide-react-native/icons/coins"
 import CreditCard from "lucide-react-native/icons/credit-card"
 import Landmark from "lucide-react-native/icons/landmark"
+import Nfc from "lucide-react-native/icons/nfc"
 import Zap from "lucide-react-native/icons/zap"
 
 /**
@@ -17,6 +18,7 @@ export const paymentMethodIcon = {
   iban: Landmark,
   onchain: Bitcoin,
   cardSwitchio: CreditCard,
+  qerkoTerminal: Nfc,
   spark: Zap,
   cashu: Coins,
 } satisfies Record<AccountTransactionKind, LucideIcon>

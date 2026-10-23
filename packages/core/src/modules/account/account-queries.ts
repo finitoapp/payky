@@ -63,6 +63,33 @@ export const cardSwitchioAccountByIdQuery = (idValue: AccountId) =>
       }>()
   )
 
+export const qerkoTerminalAccountByIdQuery = (idValue: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("account")
+      .innerJoin(
+        "accountQerkoTerminal",
+        "accountQerkoTerminal.id",
+        "account.id"
+      )
+      .select([
+        "account.id",
+        "account.name",
+        "account.kind",
+        "accountQerkoTerminal.currency",
+      ])
+      .where("account.id", "=", idValue)
+      .where("account.kind", "=", "qerkoTerminal")
+      .where("account.isDeleted", "is not", sqliteTrue)
+      .where("accountQerkoTerminal.isDeleted", "is not", sqliteTrue)
+      .where("accountQerkoTerminal.currency", "is not", null)
+      .$narrowType<{
+        name: KyselyNotNull
+        kind: KyselyNotNull
+        currency: KyselyNotNull
+      }>()
+  )
+
 export const ibanAccountByIdQuery = (idValue: AccountId) =>
   createQuery((db) =>
     db
@@ -217,6 +244,33 @@ export const cardSwitchioAccountQuery = createQuery((db) =>
     }>()
 )
 
+export const qerkoTerminalAccountQuery = createQuery((db) =>
+  db
+    .selectFrom("account")
+    .innerJoin("accountQerkoTerminal", "accountQerkoTerminal.id", "account.id")
+    .select([
+      "account.id",
+      "account.name",
+      "account.kind",
+      "account.isDeleted",
+      "accountQerkoTerminal.currency",
+    ])
+    .where("account.kind", "=", "qerkoTerminal")
+    .where("accountQerkoTerminal.isDeleted", "is not", sqliteTrue)
+    .where("account.name", "is not", null)
+    .where("account.kind", "is not", null)
+    .where("accountQerkoTerminal.currency", "is not", null)
+    .orderBy("account.isDeleted")
+    .orderBy("account.createdAt", "desc")
+    .orderBy("account.id")
+    .limit(1)
+    .$narrowType<{
+      name: KyselyNotNull
+      kind: KyselyNotNull
+      currency: KyselyNotNull
+    }>()
+)
+
 /** The Cashu account, enabled or not: there is at most one per shared wallet. */
 export const cashuAccountQuery = createQuery((db) =>
   db
@@ -275,6 +329,11 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
         .onRef("accountCardSwitchio.id", "=", "account.id")
         .on("accountCardSwitchio.isDeleted", "is not", sqliteTrue)
     )
+    .leftJoin("accountQerkoTerminal", (join) =>
+      join
+        .onRef("accountQerkoTerminal.id", "=", "account.id")
+        .on("accountQerkoTerminal.isDeleted", "is not", sqliteTrue)
+    )
     .select([
       "account.id",
       "account.kind",
@@ -285,6 +344,7 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
       "accountIban.defaultQrFormat as ibanDefaultQrFormat",
       "accountCashRegister.currency as cashRegisterCurrency",
       "accountCardSwitchio.currency as cardCurrency",
+      "accountQerkoTerminal.currency as qerkoTerminalCurrency",
     ])
     .where("account.isDeleted", "is not", sqliteTrue)
     .where("account.id", "is not", null)

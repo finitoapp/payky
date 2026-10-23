@@ -183,10 +183,16 @@ export const paymentNonExpiringMethodsByIdQuery = (idValue: PaymentId) =>
           .onRef("paymentCardSwitchio.id", "=", "payment.id")
           .on("paymentCardSwitchio.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentQerkoTerminal", (join) =>
+        join
+          .onRef("paymentQerkoTerminal.id", "=", "payment.id")
+          .on("paymentQerkoTerminal.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "paymentIban.accountId as ibanAccountId",
         "paymentCashRegister.accountId as cashRegisterAccountId",
         "paymentCardSwitchio.accountId as cardAccountId",
+        "paymentQerkoTerminal.accountId as qerkoAccountId",
       ])
       .where("payment.id", "=", idValue)
       .where("payment.isDeleted", "is not", sqliteTrue)
@@ -206,6 +212,48 @@ export const paymentCardSwitchioByIdQuery = (idValue: PaymentId) =>
       .where("accountId", "is not", null)
       .$narrowType<{ accountId: KyselyNotNull }>()
   )
+
+/**
+ * The Qerko terminal row of a payment: what `startQerkoTerminalPayment` reads
+ * for the previous attempt, and `syncQerkoTerminalPayment` for the one it
+ * polls.
+ */
+export const paymentQerkoTerminalByIdQuery = (idValue: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentQerkoTerminal")
+      .select([
+        "id",
+        "accountId",
+        "transactionId",
+        "pendingTransactionId",
+        "unresolvedTransactionId",
+        "terminalId",
+        "qerkoRefundId",
+      ])
+      .where("id", "=", idValue)
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("accountId", "is not", null)
+      .$narrowType<{ accountId: KyselyNotNull }>()
+  )
+
+/**
+ * Every payment with a Qerko attempt still to be resolved, for the sync job:
+ * a pending attempt is polled until Qerko gives a final answer, on whichever
+ * device is open.
+ */
+export const pendingQerkoTerminalPaymentsQuery = createQuery((db) =>
+  db
+    .selectFrom("paymentQerkoTerminal")
+    .select(["id", "accountId", "pendingTransactionId"])
+    .where("isDeleted", "is not", sqliteTrue)
+    .where("pendingTransactionId", "is not", null)
+    .where("accountId", "is not", null)
+    .$narrowType<{
+      accountId: KyselyNotNull
+      pendingTransactionId: KyselyNotNull
+    }>()
+)
 
 /**
  * The payment a terminal request id was launched for — how a result that
@@ -663,6 +711,11 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
           .onRef("paymentCardSwitchio.id", "=", "payment.id")
           .on("paymentCardSwitchio.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentQerkoTerminal", (join) =>
+        join
+          .onRef("paymentQerkoTerminal.id", "=", "payment.id")
+          .on("paymentQerkoTerminal.isDeleted", "is not", sqliteTrue)
+      )
       .leftJoin("paymentCashu", (join) =>
         join
           .onRef("paymentCashu.id", "=", "payment.id")
@@ -686,6 +739,10 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentCashRegister.accountId as cashRegisterAccountId",
         "paymentCardSwitchio.accountId as cardAccountId",
         "paymentCardSwitchio.unresolvedTransactionId as cardUnresolvedTransactionId",
+        "paymentQerkoTerminal.accountId as qerkoAccountId",
+        "paymentQerkoTerminal.pendingTransactionId as qerkoPendingTransactionId",
+        "paymentQerkoTerminal.unresolvedTransactionId as qerkoUnresolvedTransactionId",
+        "paymentQerkoTerminal.terminalId as qerkoTerminalId",
         "paymentCashu.accountId as cashuAccountId",
         "paymentCashu.amountSats as cashuAmountSats",
         "paymentCashu.lnInvoice as cashuLnInvoice",

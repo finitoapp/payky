@@ -42,6 +42,7 @@ import {
   cashRegisterAccountQuery,
   cashuAccountQuery,
   fiatBankAccountQuery,
+  qerkoTerminalAccountQuery,
   sparkAccountQuery,
 } from "./account-queries.ts"
 import { sparkAccountSyncPointerByAccountIdQuery } from "./account-spark-queries.ts"
@@ -51,6 +52,7 @@ import {
   createCashRegisterAccountId,
   createCashuAccountId,
   createIbanAccountId,
+  createQerkoTerminalAccountId,
   createSparkAccountId,
 } from "./account-utils.ts"
 
@@ -665,6 +667,71 @@ export const saveCardSwitchioAccount =
           deviceId: null,
           name: NonEmptyString255("Card terminal"),
           kind: "cardSwitchio",
+          isDeleted: sqliteFalse,
+        },
+        mutationOptions
+      )
+    })
+
+    return ok(id)
+  }
+
+/**
+ * Enables or disables the Qerko card terminal, mirroring
+ * {@link saveCardSwitchioAccount}. Unlike SwitchioPay it needs no Android: the
+ * account is plain synced data and the terminal is driven over HTTP, so any
+ * device can take the payment once the plugin is paired and it has chosen a
+ * terminal.
+ */
+export const saveQerkoTerminalAccount =
+  ({
+    enabled,
+    currency,
+  }: {
+    readonly enabled: boolean
+    readonly currency: FiatCurrency
+  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerDep> =>
+  async (run) => {
+    const { evolu, evoluOwner } = run.deps
+
+    const [current] = await evolu.loadQuery(qerkoTerminalAccountQuery)
+
+    if (!enabled) {
+      if (current === undefined) return ok(null)
+
+      await runMutationWithCompletion((options) =>
+        evolu.update(
+          "account",
+          { id: current.id, isDeleted: sqliteTrue },
+          { ...options, owner: evoluOwner }
+        )
+      )
+
+      return ok(current.id)
+    }
+
+    const id = createQerkoTerminalAccountId(currency)
+
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, owner: evoluOwner }
+
+      evolu.upsert("accountQerkoTerminal", { id, currency }, mutationOptions)
+
+      if (current !== undefined && current.id !== id) {
+        evolu.update(
+          "account",
+          { id: current.id, isDeleted: sqliteTrue },
+          mutationOptions
+        )
+      }
+
+      return evolu.upsert(
+        "account",
+        {
+          id,
+          deviceId: null,
+          name: NonEmptyString255("Qerko terminal"),
+          kind: "qerkoTerminal",
           isDeleted: sqliteFalse,
         },
         mutationOptions

@@ -65,6 +65,17 @@ export const accountCardSwitchio = {
 } as const
 
 /**
+ * The card terminal Qerko drives remotely (qerko/0001). Owns nothing but a
+ * currency: the API key is the `qerkoPlugin`, the terminal a device picks is
+ * in the device database, and everything about the terminal itself stays at
+ * Qerko.
+ */
+export const accountQerkoTerminal = {
+  id: AccountId,
+  currency: FiatCurrencySchema,
+} as const
+
+/**
  * The Cashu payment method (cashu.md §4). It has no secret: the wallet is the
  * one Linky shows, derived from the master key, and its mint is Linky's
  * synced default mint, read when a payment is prepared.
@@ -85,4 +96,5 @@ export type SparkAccountSyncPointerRow = InferTable<
 >
 export type AccountCashRegisterRow = InferTable<typeof accountCashRegister>
 export type AccountCardSwitchioRow = InferTable<typeof accountCardSwitchio>
+export type AccountQerkoTerminalRow = InferTable<typeof accountQerkoTerminal>
 export type AccountCashuRow = InferTable<typeof accountCashu>

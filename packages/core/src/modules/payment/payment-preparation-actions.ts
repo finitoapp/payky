@@ -29,6 +29,7 @@ import {
   cardSwitchioAccountByIdQuery,
   cashRegisterAccountByIdQuery,
   ibanAccountByIdQuery,
+  qerkoTerminalAccountByIdQuery,
 } from "../account/account-queries.ts"
 import { activeSparkAccountByIdQuery } from "../account/account-spark-queries.ts"
 import type { AccountId } from "../account/account-types.ts"
@@ -56,6 +57,7 @@ import type {
   paymentCardSwitchio,
   paymentCashRegister,
   paymentIban,
+  paymentQerkoTerminal,
 } from "./payment.ts"
 import {
   createPayment,
@@ -79,12 +81,14 @@ import {
   createIbanAccountNotFoundError,
   createPaymentNumberNotFoundError,
   createPaymentPreparationFailedError,
+  createQerkoTerminalAccountNotFoundError,
   createZeroAmountNotPayableError,
   type IbanAccountNotFoundError,
   type PaymentNotFoundError,
   type PaymentNumberNotFoundError,
   type PaymentPreparationFailedError,
   type PreparePaymentMethodError,
+  type QerkoTerminalAccountNotFoundError,
   type ZeroAmountNotPayableError,
 } from "./payment-errors.ts"
 import { loadAccountWithCurrencyCheck } from "./payment-guards.ts"
@@ -312,6 +316,39 @@ const prepareCashRegisterMethod =
     return ok({ id: paymentId, accountId })
   }
 
+const prepareQerkoTerminalMethod =
+  ({
+    paymentId,
+    accountId,
+    paymentCurrency,
+  }: {
+    readonly paymentId: PaymentId
+    readonly accountId: AccountId
+    readonly paymentCurrency: FiatCurrency
+  }): Task<
+    UpsertValues<typeof paymentQerkoTerminal>,
+    QerkoTerminalAccountNotFoundError | AccountCurrencyMismatchError,
+    EvoluDep
+  > =>
+  async (run) => {
+    const accountResult = loadAccountWithCurrencyCheck({
+      rows: await run.deps.evolu.loadQuery(
+        qerkoTerminalAccountByIdQuery(accountId)
+      ),
+      notFoundError: createQerkoTerminalAccountNotFoundError({
+        id: accountId,
+      }),
+      accountKind: "qerkoTerminal",
+      accountId,
+      expectedCurrency: paymentCurrency,
+    })
+    if (!accountResult.ok) return accountResult
+
+    // Only the account: the attempt markers are written by the attempt, and
+    // preparing the method again must not erase an unresolved one.
+    return ok({ id: paymentId, accountId })
+  }
+
 const prepareCardMethod =
   ({
     paymentId,
@@ -455,6 +492,7 @@ export const preparePaymentMethod =
     bank,
     cashRegister,
     card,
+    qerkoTerminal,
     spark,
   }: {
     readonly paymentId: PaymentId
@@ -465,6 +503,9 @@ export const preparePaymentMethod =
       readonly accountId: AccountId
     }
     readonly card?: {
+      readonly accountId: AccountId
+    }
+    readonly qerkoTerminal?: {
       readonly accountId: AccountId
     }
     readonly spark?: {
@@ -497,39 +538,50 @@ export const preparePaymentMethod =
     // failing to prepare it — hence one nullable `Result` each, collapsed to
     // plain nullable values below. The cash, card and bank preparations are
     // independent reads, so they run together.
-    const [cashRegisterResult, cardResult, ibanResult] = await Promise.all([
-      cashRegister === undefined
-        ? null
-        : run(
-            prepareCashRegisterMethod({
-              paymentId,
-              accountId: cashRegister.accountId,
-              paymentCurrency: payment.currency,
-            })
-          ),
-      card === undefined
-        ? null
-        : run(
-            prepareCardMethod({
-              paymentId,
-              accountId: card.accountId,
-              paymentCurrency: payment.currency,
-            })
-          ),
-      bank === undefined
-        ? null
-        : run(
-            prepareIbanMethod({
-              paymentId,
-              accountId: bank.accountId,
-              paymentCurrency: payment.currency,
-            })
-          ),
-    ])
+    const [cashRegisterResult, cardResult, qerkoResult, ibanResult] =
+      await Promise.all([
+        cashRegister === undefined
+          ? null
+          : run(
+              prepareCashRegisterMethod({
+                paymentId,
+                accountId: cashRegister.accountId,
+                paymentCurrency: payment.currency,
+              })
+            ),
+        card === undefined
+          ? null
+          : run(
+              prepareCardMethod({
+                paymentId,
+                accountId: card.accountId,
+                paymentCurrency: payment.currency,
+              })
+            ),
+        qerkoTerminal === undefined
+          ? null
+          : run(
+              prepareQerkoTerminalMethod({
+                paymentId,
+                accountId: qerkoTerminal.accountId,
+                paymentCurrency: payment.currency,
+              })
+            ),
+        bank === undefined
+          ? null
+          : run(
+              prepareIbanMethod({
+                paymentId,
+                accountId: bank.accountId,
+                paymentCurrency: payment.currency,
+              })
+            ),
+      ])
     if (cashRegisterResult !== null && !cashRegisterResult.ok) {
       return cashRegisterResult
     }
     if (cardResult !== null && !cardResult.ok) return cardResult
+    if (qerkoResult !== null && !qerkoResult.ok) return qerkoResult
     if (ibanResult !== null && !ibanResult.ok) return ibanResult
 
     // Spark waits its turn: it calls out to Yadio and the Spark SDK, so
@@ -549,12 +601,14 @@ export const preparePaymentMethod =
 
     const cashRegisterValues = cashRegisterResult?.value ?? null
     const cardValues = cardResult?.value ?? null
+    const qerkoValues = qerkoResult?.value ?? null
     const ibanValues = ibanResult?.value ?? null
     const sparkValues = sparkResult?.value ?? null
 
     if (
       cashRegisterValues === null &&
       cardValues === null &&
+      qerkoValues === null &&
       ibanValues === null &&
       sparkValues === null
     ) {
@@ -573,11 +627,13 @@ export const preparePaymentMethod =
     const hasNonExpiringMethod =
       cashRegisterValues !== null ||
       cardValues !== null ||
+      qerkoValues !== null ||
       ibanValues !== null ||
       nonExpiringMethods.some(
         (row) =>
           row.cashRegisterAccountId !== null ||
           row.cardAccountId !== null ||
+          row.qerkoAccountId !== null ||
           row.ibanAccountId !== null
       )
 
@@ -591,6 +647,13 @@ export const preparePaymentMethod =
 
       if (cardValues !== null) {
         run.deps.evolu.upsert("paymentCardSwitchio", cardValues, {
+          ...options,
+          owner: evoluOwner,
+        })
+      }
+
+      if (qerkoValues !== null) {
+        run.deps.evolu.upsert("paymentQerkoTerminal", qerkoValues, {
           ...options,
           owner: evoluOwner,
         })
@@ -721,6 +784,7 @@ export const prepareCashuPaymentMethod =
       (row) =>
         row.cashRegisterAccountId !== null ||
         row.cardAccountId !== null ||
+        row.qerkoAccountId !== null ||
         row.ibanAccountId !== null
     )
     const quoteExpiresAt =

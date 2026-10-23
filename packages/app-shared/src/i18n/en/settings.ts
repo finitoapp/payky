@@ -59,6 +59,8 @@ export const enSettings = {
   "settings.appearance": "APPEARANCE & LANGUAGE",
   "settings.cashRegisterAccount.enabled.label": "Enable cash register",
   "settings.cardSwitchioAccount.enabled.label": "Enable card terminal",
+  "settings.qerkoTerminal.enabled.label": "Enable Qerko terminal",
+  "settings.qerkoTerminal.status.notPaired": "Not paired with Qerko",
   "settings.cardSwitchioAccount.info.contract":
     "a signed contract with a payment solution provider, for example Comgate.",
   "settings.cardSwitchioAccount.info.description":
@@ -559,6 +561,7 @@ export const enSettings = {
   "settings.paymentAccounts.method.iban": "Bank transfer",
   "settings.paymentAccounts.method.cashu": "Cashu",
   "settings.paymentAccounts.method.cardSwitchio": "Payment card",
+  "settings.paymentAccounts.method.qerkoTerminal": "Card terminal (Qerko)",
   "settings.paymentAccounts.method.spark": "Bitcoin",
   "settings.paymentAccounts.moveDown.aria": "Move {name} down",
   "settings.paymentAccounts.moveUp.aria": "Move {name} up",

@@ -518,6 +518,7 @@ for (const bankTransferEnabled of [false, true]) {
       const order = [
         "iban",
         "cardSwitchio",
+        "qerkoTerminal",
         "spark",
         "cashu",
         "cashRegister",

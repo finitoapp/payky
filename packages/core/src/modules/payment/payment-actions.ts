@@ -129,7 +129,7 @@ import type { PaymentAccountKind, PaymentId } from "./payment-types.ts"
  * tracing a transaction, and losing one of them must never fail a payment
  * whose card was already charged.
  */
-const optionalNonEmptyString255 = (
+export const optionalNonEmptyString255 = (
   value: string | null | undefined
 ): NonEmptyString255 | null => {
   if (value === null || value === undefined || value === "") return null
@@ -433,12 +433,13 @@ interface MarkPaymentPaidInput {
  * recording the money twice; `deriveManualPaymentAccountTransactionId` owns
  * the prefixes.
  */
-const markPaymentPaid =
+export const markPaymentPaid =
   <TRow extends { readonly currency: FiatCurrency }, TNotFoundError>({
     accountKind,
     accountQuery,
     notFoundError,
     receivedCashAmount,
+    chargedAmount,
     paymentId,
     accountId,
     deviceId,
@@ -449,6 +450,13 @@ const markPaymentPaid =
     readonly accountQuery: (accountId: AccountId) => Query<EvoluSchema, TRow>
     readonly notFoundError: TNotFoundError
     readonly receivedCashAmount?: NonNegativeInteger
+    /**
+     * What the account actually received, when it is not the payment's own
+     * `amount`: a card terminal reports what it charged, tip added on the
+     * terminal included (qerko/0002). The excess then reads as an overpayment
+     * through the ordinary coverage rule.
+     */
+    readonly chargedAmount?: NonNegativeInteger
   }): Task<
     PaymentId,
     PaymentNotFoundError | TNotFoundError | AccountCurrencyMismatchError,
@@ -488,7 +496,7 @@ const markPaymentPaid =
         // records the movement: there is no bank statement row behind a
         // hand-confirmed transfer, so no `iban` detail implies the kind.
         kind: accountKind,
-        amount: payment.amount,
+        amount: chargedAmount ?? payment.amount,
         currency: payment.currency,
         occurredAt:
           occurredAt ?? TimestampMsSchema.decode(run.deps.date.now().getTime()),

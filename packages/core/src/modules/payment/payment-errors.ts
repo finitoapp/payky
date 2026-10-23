@@ -2,6 +2,11 @@ import type { FetchError } from "../../deps.ts"
 import { defineError } from "../../error.ts"
 import type { RedeemLnurlWithdrawError } from "../../integrations/lnurl/lnurl-withdraw-client.ts"
 import type {
+  QerkoClientError,
+  QerkoNotStartedReason,
+  QerkoPaymentFailureReason,
+} from "../../integrations/qerko/qerko-client.ts"
+import type {
   YadioApiError,
   YadioHttpError,
 } from "../../integrations/yadio/yadio-client.ts"
@@ -11,6 +16,7 @@ import type {
   BillNotFoundError,
   BillStatusNotAllowedError,
 } from "../bill/bill-guards.ts"
+import type { QerkoPluginNotPairedError } from "../qerko-plugin/qerko-plugin-actions.ts"
 import type {
   FiatCurrency,
   NonEmptyString255,
@@ -129,6 +135,15 @@ export const createCardSwitchioAccountNotFoundError = defineError(
 }>()
 export type CardSwitchioAccountNotFoundError = ReturnType<
   typeof createCardSwitchioAccountNotFoundError
+>
+
+export const createQerkoTerminalAccountNotFoundError = defineError(
+  "QerkoTerminalAccountNotFound"
+)<{
+  readonly id: AccountId
+}>()
+export type QerkoTerminalAccountNotFoundError = ReturnType<
+  typeof createQerkoTerminalAccountNotFoundError
 >
 
 export const createAccountCurrencyMismatchError = defineError(
@@ -271,6 +286,7 @@ export type PreparePaymentMethodError =
   | ZeroAmountNotPayableError
   | CashRegisterAccountNotFoundError
   | CardSwitchioAccountNotFoundError
+  | QerkoTerminalAccountNotFoundError
   | AccountCurrencyMismatchError
   | AccountSparkNotFoundError
   | IbanAccountNotFoundError
@@ -279,3 +295,63 @@ export type PreparePaymentMethodError =
   | YadioHttpError
   | YadioApiError
   | FetchError
+
+/**
+ * The previous Qerko attempt's outcome is unknown (payment/0006), so the card
+ * may have been charged already. Another attempt needs staff to have checked
+ * the terminal first and to retry explicitly.
+ */
+export const createQerkoAttemptUnresolvedError = defineError(
+  "QerkoAttemptUnresolved"
+)<{
+  readonly id: PaymentId
+  readonly transactionId: NonEmptyString255
+}>()
+export type QerkoAttemptUnresolvedError = ReturnType<
+  typeof createQerkoAttemptUnresolvedError
+>
+
+/**
+ * Qerko did not start the payment (`create-terminal-payment` answered with
+ * something other than `started`), so no card was asked: `reason` is the
+ * answer's `type`.
+ */
+export const createQerkoTerminalNotStartedError = defineError(
+  "QerkoTerminalNotStarted"
+)<{
+  readonly id: PaymentId
+  readonly reason: QerkoNotStartedReason
+}>()
+export type QerkoTerminalNotStartedError = ReturnType<
+  typeof createQerkoTerminalNotStartedError
+>
+
+/** The terminal answered with a definite no. */
+export const createQerkoTerminalPaymentFailedError = defineError(
+  "QerkoTerminalPaymentFailed"
+)<{
+  readonly id: PaymentId
+  readonly reason: QerkoPaymentFailureReason
+}>()
+export type QerkoTerminalPaymentFailedError = ReturnType<
+  typeof createQerkoTerminalPaymentFailedError
+>
+
+export type StartQerkoTerminalPaymentError =
+  | PaymentNotFoundError
+  | PaymentNotPayableError
+  | QerkoAttemptUnresolvedError
+  | QerkoTerminalAccountNotFoundError
+  | AccountCurrencyMismatchError
+  | QerkoPluginNotPairedError
+  | QerkoTerminalNotStartedError
+  | QerkoTerminalPaymentFailedError
+  | QerkoClientError
+
+export type SyncQerkoTerminalPaymentError =
+  | PaymentNotFoundError
+  | QerkoTerminalAccountNotFoundError
+  | AccountCurrencyMismatchError
+  | QerkoPluginNotPairedError
+  | QerkoTerminalPaymentFailedError
+  | QerkoClientError

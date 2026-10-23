@@ -36,7 +36,8 @@ export function QerkoTerminalChooser({
 }: {
   /** Also turns the payment method on, as the end of first-time pairing does. */
   readonly enableAccount?: boolean
-  readonly onChosen: () => void
+  /** Gets the id of the terminal just chosen. */
+  readonly onChosen: (terminalId: string) => void
   /** Offers to leave without a terminal; pairing does, so it never dead-ends. */
   readonly onSkip?: () => void
   /** Starts pairing anew when Qerko no longer accepts the key. */
@@ -104,7 +105,7 @@ export function QerkoTerminalChooser({
       })
       if (!saved) return
     }
-    onChosen()
+    onChosen(terminalId.data)
   }
 
   const skip =

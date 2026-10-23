@@ -95,7 +95,8 @@ export function QerkoPairingWizard({
   onFinished,
 }: {
   readonly onPaired: () => void
-  readonly onFinished: () => void
+  /** The terminal chosen, or nothing when the merchant chose later. */
+  readonly onFinished: (terminalId?: string) => void
 }) {
   const { t } = useTranslation()
   const appRun = useAppRun()
@@ -432,7 +433,9 @@ export function QerkoPairingWizard({
           <QerkoTerminalChooser
             enableAccount
             onChosen={onFinished}
-            onSkip={onFinished}
+            onSkip={() => {
+              onFinished()
+            }}
           />
         </CardContent>
       ) : null}

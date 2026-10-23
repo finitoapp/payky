@@ -136,6 +136,8 @@ export const paymentQerkoTerminal = {
   accountId: AccountId,
   transactionId: NonEmptyString255Schema.nullable(),
   pendingTransactionId: NonEmptyString255Schema.nullable(),
+  /** When the pending attempt started: see `qerkoUnknownAttemptGraceMs`. */
+  pendingSince: TimestampMsSchema.nullable(),
   unresolvedTransactionId: NonEmptyString255Schema.nullable(),
   terminalId: NonEmptyString255Schema.nullable(),
   qerkoRefundId: NonEmptyString255Schema.nullable(),

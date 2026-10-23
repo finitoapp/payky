@@ -9,6 +9,7 @@ import { createDateDep } from "@payky/core/deps"
 import type { Evolu } from "@payky/core/evolu/schema"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
+import { createQerkoApiDep } from "@payky/core/integrations/qerko/qerko-client"
 import type { DeviceId } from "@payky/core/modules/device/device-types"
 import { useAtomValue } from "jotai"
 import { useCallback, useEffect } from "react"
@@ -51,6 +52,7 @@ const createAppJobDeps = ({
       { ...dateDep, ...fetchDep },
       { productionUrl: appEnv.VITE_PAYKY_EET_PRODUCTION_URL }
     ),
+    ...createQerkoApiDep({ posId: appEnv.VITE_PAYKY_QERKO_POS_ID }),
     lockManager: navigator.locks,
     console,
     onError: (error: unknown) => {

@@ -2,6 +2,7 @@ import { sqliteTrue, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 import type { ConnectivityDep } from "../../deps.ts"
 import { createQuery } from "../../evolu/schema.ts"
+import { createQerkoApiDep } from "../../integrations/qerko/qerko-client.ts"
 import { createAccount } from "../../modules/account/account-actions.ts"
 import {
   addManualAmountToBill,
@@ -97,6 +98,7 @@ const startJob = async (
   const errors: unknown[] = []
   const jobDeps: AppBackgroundJobContext = {
     ...context.deps,
+    ...createQerkoApiDep({ posId: "test" }),
     ...connectivity,
     deviceId,
     onError: (error) => {

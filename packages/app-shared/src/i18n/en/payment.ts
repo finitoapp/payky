@@ -58,6 +58,7 @@ export const enPayment = {
   "paymentDetail.refunds.action": "Refund money",
   "paymentDetail.refunds.method.cashRegister": "From the cash register",
   "paymentDetail.refunds.method.outside": "Outside Payky",
+  "paymentDetail.refunds.method.qerkoTerminal": "To the card",
   "paymentDetail.refunds.title": "Refunds",
   "paymentDetail.refunds.tipAction": "Refund the tip ({amount})",
   "paymentDetail.refunds.tip": "Tip",
@@ -338,6 +339,21 @@ export const enPayment = {
   "paymentWait.wakeLockUnsupported":
     "This browser cannot keep the screen awake automatically.",
   "refund.created": "Refund recorded.",
+  "refund.dialog.method.qerkoTerminal": "Back to the card on the terminal",
+  "refund.qerko.dismiss": "Dismiss",
+  "refund.qerko.dismissUnresolved": "I have checked, dismiss",
+  "refund.qerko.error.notAvailable":
+    "This payment was not taken on the Qerko terminal, so it cannot be refunded to the card.",
+  "refund.qerko.error.running":
+    "Another refund of this payment to the card is still waiting for the terminal.",
+  "refund.qerko.failed.cancelled":
+    "The refund to the card was cancelled on the terminal.",
+  "refund.qerko.failed.declined":
+    "The terminal declined the refund to the card.",
+  "refund.qerko.pending": "Refunding to the card",
+  "refund.qerko.started": "The refund was sent to the terminal.",
+  "refund.qerko.unresolved":
+    "The result of the refund to the card is unknown, so the card may have been refunded. Check the terminal and Qerko before refunding again.",
   "refund.tipDialog.title": "Refund the tip",
   "refund.tipDialog.description":
     "Returns the whole tip of {amount}. A refund of goods never includes it.",

@@ -1,4 +1,5 @@
 import type { sqliteTrue } from "@evolu/common"
+import { describeQerkoPaymentError } from "@payky/app-shared/qerko-terminal-flow"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
 import type { ItemLineType } from "@payky/core/modules/item/item-types"
 import type { PaymentLineId } from "@payky/core/modules/payment-line/payment-line-types"
@@ -43,6 +44,7 @@ export type RefundQuantities = Readonly<Partial<Record<PaymentLineId, number>>>
 
 export const refundMethodLabelKey = {
   cashRegister: "paymentDetail.refunds.method.cashRegister",
+  qerkoTerminal: "paymentDetail.refunds.method.qerkoTerminal",
   outside: "paymentDetail.refunds.method.outside",
 } satisfies Record<RefundMethod, TranslationKey>
 
@@ -62,11 +64,43 @@ export const tipRefundErrorKeys = {
   CashRegisterAccountNotFound: "refund.error.cashRegister",
 } satisfies Record<RefundPaymentTipError["type"], TranslationKey>
 
-/** The method a refund starts on: the cash register when the payment took cash. */
+/**
+ * The method a refund starts on: the cash register when the payment took
+ * cash, the terminal when it took the card there and the card can be
+ * refunded from this device (qerko/0004).
+ */
 export const defaultRefundMethod = (
-  paymentMethodKinds: ReadonlyArray<string>
+  paymentMethodKinds: ReadonlyArray<string>,
+  { qerkoRefundable = false }: { readonly qerkoRefundable?: boolean } = {}
 ): RefundMethod =>
-  paymentMethodKinds.includes("cashRegister") ? "cashRegister" : "outside"
+  paymentMethodKinds.includes("cashRegister")
+    ? "cashRegister"
+    : qerkoRefundable && paymentMethodKinds.includes("qerkoTerminal")
+      ? "qerkoTerminal"
+      : "outside"
+
+/**
+ * How a failed card refund reads: the refund's own checks, what is specific to
+ * the terminal, and for the rest (offline, a refusal to start) the payment's
+ * wording.
+ */
+export const describeQerkoRefundError = (error: {
+  readonly type: string
+  readonly reason?: string
+}): TranslationKey => {
+  const refundKeys: Record<string, TranslationKey | undefined> = {
+    ...refundErrorKeys,
+    ...tipRefundErrorKeys,
+    QerkoRefundNotAvailable: "refund.qerko.error.notAvailable",
+    QerkoRefundAttemptRunning: "refund.qerko.error.running",
+  }
+  if (error.type === "QerkoTerminalRefundFailed") {
+    return error.reason === "cancelled"
+      ? "refund.qerko.failed.cancelled"
+      : "refund.qerko.failed.declined"
+  }
+  return refundKeys[error.type] ?? describeQerkoPaymentError(error)
+}
 
 /**
  * What a payment's refund panel offers (refund/0002, 0004, 0005): the limit of

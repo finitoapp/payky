@@ -221,7 +221,10 @@ export const describeQerkoPaymentError = (error: {
   readonly type: string
   readonly reason?: string
 }): TranslationKey => {
-  if (error.type === "QerkoTerminalNotStarted") {
+  if (
+    error.type === "QerkoTerminalNotStarted" ||
+    error.type === "QerkoTerminalRefundNotStarted"
+  ) {
     return qerkoNotStartedKeys[
       (error.reason ?? "notStarted") as QerkoNotStartedReason
     ]

@@ -6,6 +6,7 @@ import {
   deriveRefundAmountText,
   deriveRefundAvailability,
   deriveRefundForm,
+  describeQerkoRefundError,
   type RefundablePaymentLine,
   stepRefundQuantity,
 } from "./refund-form.ts"
@@ -136,5 +137,45 @@ describe("refund form", () => {
   test("starts on the cash register when the payment took cash", () => {
     expect(defaultRefundMethod(["cashRegister"])).toBe("cashRegister")
     expect(defaultRefundMethod(["bank"])).toBe("outside")
+    // The card goes back to the card only when this device can ask the terminal.
+    expect(defaultRefundMethod(["qerkoTerminal"])).toBe("outside")
+    expect(
+      defaultRefundMethod(["qerkoTerminal"], { qerkoRefundable: true })
+    ).toBe("qerkoTerminal")
+    expect(
+      defaultRefundMethod(["cashRegister"], { qerkoRefundable: true })
+    ).toBe("cashRegister")
+  })
+})
+
+describe("describeQerkoRefundError", () => {
+  test("keeps the wording of a refund's own checks", () => {
+    expect(describeQerkoRefundError({ type: "RefundAmountInvalid" })).toBe(
+      "refund.error.amount"
+    )
+    expect(describeQerkoRefundError({ type: "RefundTipUnavailable" })).toBe(
+      "refund.error.tip"
+    )
+  })
+
+  test("says what is specific to the card terminal", () => {
+    expect(describeQerkoRefundError({ type: "QerkoRefundNotAvailable" })).toBe(
+      "refund.qerko.error.notAvailable"
+    )
+    expect(
+      describeQerkoRefundError({
+        type: "QerkoTerminalRefundFailed",
+        reason: "cancelled",
+      })
+    ).toBe("refund.qerko.failed.cancelled")
+  })
+
+  test("words a refusal to start like a payment's", () => {
+    expect(
+      describeQerkoRefundError({
+        type: "QerkoTerminalRefundNotStarted",
+        reason: "terminalBusy",
+      })
+    ).toBe("paymentWait.qerko.notStarted.busy")
   })
 })

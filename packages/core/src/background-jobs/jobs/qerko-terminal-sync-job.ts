@@ -2,6 +2,9 @@ import { ok, type Run } from "@evolu/common"
 import { syncQerkoTerminalPayment } from "../../modules/payment/payment-qerko-actions.ts"
 import { pendingQerkoTerminalPaymentsQuery } from "../../modules/payment/payment-queries.ts"
 import type { PaymentId } from "../../modules/payment/payment-types.ts"
+import { syncQerkoTerminalRefund } from "../../modules/refund/refund-qerko-actions.ts"
+import { pendingQerkoTerminalRefundAttemptsQuery } from "../../modules/refund/refund-queries.ts"
+import type { RefundId } from "../../modules/refund/refund-types.ts"
 import type {
   AppBackgroundJob,
   AppBackgroundJobContext,
@@ -17,15 +20,23 @@ export const getQerkoPollDelayMs = (
   baseDelayMs = QERKO_POLL_BASE_DELAY_MS
 ): number => Math.min(baseDelayMs * 2 ** polls, QERKO_POLL_MAX_DELAY_MS)
 
+/** What is being polled: a payment's attempt or a refund to the card. */
+type Subject =
+  | { readonly kind: "payment"; readonly id: PaymentId }
+  | { readonly kind: "refund"; readonly id: RefundId }
+
+const subjectKey = ({ kind, id }: Subject): string => `${kind}:${id}`
+
 interface TrackedAttempt {
+  readonly subject: Subject
   readonly attemptId: string
   readonly polls: number
   readonly timer: ReturnType<typeof setTimeout> | null
 }
 
 /**
- * Settles Qerko card payments nobody is watching (qerko/0005): a pending
- * attempt is polled until Qerko gives a final answer, whichever device is
+ * Settles Qerko card payments and refunds nobody is watching (qerko/0005): a
+ * pending attempt is polled until Qerko gives a final answer, whichever device is
  * open — the one that started it may be closed, offline or gone. It is driven
  * by the pending attempts themselves, so it needs no schedule of its own, and
  * every write `syncQerkoTerminalPayment` makes is idempotent, which is what
@@ -59,7 +70,7 @@ export const startQerkoTerminalSyncJob = createQerkoTerminalSyncJob()
 class QerkoTerminalSync {
   private readonly run: Run<AppBackgroundJobContext>
   private readonly baseDelayMs: number
-  private readonly tracked = new Map<PaymentId, TrackedAttempt>()
+  private readonly tracked = new Map<string, TrackedAttempt>()
   private readonly unsubscribes: ReadonlyArray<() => void>
   private readonly queue = createKeyedTaskQueue<string>({
     onError: (error) => this.run.deps.onError(error),
@@ -71,6 +82,9 @@ class QerkoTerminalSync {
     const { evolu, connectivity } = run.deps
     this.unsubscribes = [
       evolu.subscribeQuery(pendingQerkoTerminalPaymentsQuery)(() => {
+        this.queueReconcile()
+      }),
+      evolu.subscribeQuery(pendingQerkoTerminalRefundAttemptsQuery)(() => {
         this.queueReconcile()
       }),
       connectivity.onOnline(() => {
@@ -100,87 +114,110 @@ class QerkoTerminalSync {
 
   /** Starts watching new pending attempts and forgets the ones that ended. */
   private async reconcile(): Promise<void> {
-    const rows = await this.run.deps.evolu.loadQuery(
-      pendingQerkoTerminalPaymentsQuery
-    )
+    const { evolu } = this.run.deps
+    const [payments, refunds] = await Promise.all([
+      evolu.loadQuery(pendingQerkoTerminalPaymentsQuery),
+      evolu.loadQuery(pendingQerkoTerminalRefundAttemptsQuery),
+    ])
     if (this.queue.isDisposed) return
 
-    const pendingIds = new Set(rows.map(({ id }) => id))
-    for (const [paymentId, attempt] of this.tracked) {
-      if (pendingIds.has(paymentId)) continue
+    const pending: ReadonlyArray<{
+      readonly subject: Subject
+      readonly attemptId: string
+    }> = [
+      ...payments.map((row) => ({
+        subject: { kind: "payment", id: row.id } satisfies Subject,
+        attemptId: row.pendingTransactionId,
+      })),
+      ...refunds.map((row) => ({
+        subject: { kind: "refund", id: row.id } satisfies Subject,
+        attemptId: row.transactionId,
+      })),
+    ]
+    const pendingKeys = new Set(
+      pending.map(({ subject }) => subjectKey(subject))
+    )
+    for (const [key, attempt] of this.tracked) {
+      if (pendingKeys.has(key)) continue
       if (attempt.timer !== null) clearTimeout(attempt.timer)
-      this.tracked.delete(paymentId)
+      this.tracked.delete(key)
     }
 
-    for (const row of rows) {
-      const attempt = this.tracked.get(row.id)
-      if (attempt?.attemptId === row.pendingTransactionId) continue
-      // A new attempt on a payment already watched starts over.
+    for (const { subject, attemptId } of pending) {
+      const attempt = this.tracked.get(subjectKey(subject))
+      if (attempt?.attemptId === attemptId) continue
+      // A new attempt on a subject already watched starts over.
       if (attempt !== undefined && attempt.timer !== null) {
         clearTimeout(attempt.timer)
       }
-      this.track(row.id, row.pendingTransactionId, 0)
+      this.track(subject, attemptId, 0)
     }
   }
 
-  private track(paymentId: PaymentId, attemptId: string, polls: number): void {
+  private track(subject: Subject, attemptId: string, polls: number): void {
+    const key = subjectKey(subject)
     const timer = setTimeout(
       () => {
-        this.queue.enqueue(paymentId, () => this.poll(paymentId))
+        this.queue.enqueue(key, () => this.poll(key))
       },
       getQerkoPollDelayMs(polls, this.baseDelayMs)
     )
     ;(timer as { readonly unref?: () => void }).unref?.()
-    this.tracked.set(paymentId, { attemptId, polls, timer })
+    this.tracked.set(key, { subject, attemptId, polls, timer })
   }
 
   private pollAllNow(): void {
-    for (const [paymentId, attempt] of this.tracked) {
+    for (const [key, attempt] of this.tracked) {
       if (attempt.timer !== null) clearTimeout(attempt.timer)
-      this.tracked.set(paymentId, { ...attempt, polls: 0, timer: null })
-      this.queue.enqueue(paymentId, () => this.poll(paymentId))
+      this.tracked.set(key, { ...attempt, polls: 0, timer: null })
+      this.queue.enqueue(key, () => this.poll(key))
     }
   }
 
-  private async poll(paymentId: PaymentId): Promise<void> {
-    const attempt = this.tracked.get(paymentId)
+  private async poll(key: string): Promise<void> {
+    const attempt = this.tracked.get(key)
     if (attempt === undefined) return
+    const { subject } = attempt
 
-    const result = await this.run(
-      syncQerkoTerminalPayment({
-        paymentId,
-        deviceId: this.run.deps.deviceId,
-      })
-    )
+    const result =
+      subject.kind === "payment"
+        ? await this.run(
+            syncQerkoTerminalPayment({
+              paymentId: subject.id,
+              deviceId: this.run.deps.deviceId,
+            })
+          )
+        : await this.run(syncQerkoTerminalRefund(subject.id))
     if (this.queue.isDisposed) return
 
     if (!result.ok) {
-      this.run.deps.console.debug("Qerko payment poll failed.", {
-        paymentId,
+      this.run.deps.console.debug("Qerko poll failed.", {
+        key,
         reason: result.error.type,
       })
       // A definite answer ended the attempt; anything else (offline, Qerko
       // down) is tried again later.
       if (
         result.error.type === "QerkoTerminalPaymentFailed" ||
+        result.error.type === "QerkoTerminalRefundFailed" ||
         result.error.type === "PaymentNotFound"
       ) {
-        this.tracked.delete(paymentId)
+        this.tracked.delete(key)
         return
       }
-      this.track(paymentId, attempt.attemptId, attempt.polls + 1)
+      this.track(subject, attempt.attemptId, attempt.polls + 1)
       return
     }
 
     if (result.value.status === "pending") {
-      this.track(paymentId, attempt.attemptId, attempt.polls + 1)
+      this.track(subject, attempt.attemptId, attempt.polls + 1)
       return
     }
 
-    this.run.deps.console.info("Settled Qerko payment poll.", {
-      paymentId,
+    this.run.deps.console.info("Settled a Qerko attempt.", {
+      key,
       status: result.value.status,
     })
-    this.tracked.delete(paymentId)
+    this.tracked.delete(key)
   }
 }

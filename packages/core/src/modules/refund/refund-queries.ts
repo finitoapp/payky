@@ -7,6 +7,7 @@ import {
 import { createQuery } from "../../evolu/schema.ts"
 import type { BillId } from "../bill/bill-types.ts"
 import type { PaymentId } from "../payment/payment-types.ts"
+import type { RefundId } from "./refund-types.ts"
 
 const refundColumns = [
   "refund.id",
@@ -196,3 +197,73 @@ export const otherClaimedPaymentOfBillQuery = (paymentId: PaymentId) =>
       .where("other.isDeleted", "is not", sqliteTrue)
       .limit(1)
   )
+
+const qerkoRefundAttemptColumns = [
+  "id",
+  "paymentId",
+  "deviceId",
+  "transactionId",
+  "terminalId",
+  "amount",
+  "isTip",
+  "linesJson",
+  "status",
+  "failureReason",
+  "startedAt",
+] as const
+
+type QerkoRefundAttemptRequiredColumns = {
+  paymentId: KyselyNotNull
+  transactionId: KyselyNotNull
+  terminalId: KyselyNotNull
+  amount: KyselyNotNull
+  status: KyselyNotNull
+  startedAt: KyselyNotNull
+}
+
+/** The refunds to the card of one payment that have not been written as refunds yet. */
+export const qerkoTerminalRefundAttemptsByPaymentIdQuery = (
+  paymentId: PaymentId
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("qerkoTerminalRefundAttempt")
+      .select(qerkoRefundAttemptColumns)
+      .where("paymentId", "=", paymentId)
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("transactionId", "is not", null)
+      .where("terminalId", "is not", null)
+      .where("amount", "is not", null)
+      .where("status", "is not", null)
+      .where("startedAt", "is not", null)
+      .orderBy("startedAt", "desc")
+      .orderBy("id")
+      .$narrowType<QerkoRefundAttemptRequiredColumns>()
+  )
+
+export const qerkoTerminalRefundAttemptByIdQuery = (refundId: RefundId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("qerkoTerminalRefundAttempt")
+      .select(qerkoRefundAttemptColumns)
+      .where("id", "=", refundId)
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("paymentId", "is not", null)
+      .where("transactionId", "is not", null)
+      .where("terminalId", "is not", null)
+      .where("amount", "is not", null)
+      .where("status", "is not", null)
+      .where("startedAt", "is not", null)
+      .$narrowType<QerkoRefundAttemptRequiredColumns>()
+  )
+
+/** Every card refund the terminal is still working on, for the sync job. */
+export const pendingQerkoTerminalRefundAttemptsQuery = createQuery((db) =>
+  db
+    .selectFrom("qerkoTerminalRefundAttempt")
+    .select(["id", "transactionId"])
+    .where("isDeleted", "is not", sqliteTrue)
+    .where("status", "=", "pending")
+    .where("transactionId", "is not", null)
+    .$narrowType<{ transactionId: KyselyNotNull }>()
+)

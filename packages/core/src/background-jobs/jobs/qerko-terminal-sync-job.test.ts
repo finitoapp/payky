@@ -14,6 +14,8 @@ import { startQerkoTerminalPayment } from "../../modules/payment/payment-qerko-a
 import { accountTransactionsByPaymentIdQuery } from "../../modules/payment/payment-test-fixtures.ts"
 import type { PaymentId } from "../../modules/payment/payment-types.ts"
 import { saveQerkoPlugin } from "../../modules/qerko-plugin/qerko-plugin-actions.ts"
+import { startQerkoTerminalRefund } from "../../modules/refund/refund-qerko-actions.ts"
+import { refundsByPaymentIdQuery } from "../../modules/refund/refund-queries.ts"
 import { createRowId } from "../../modules/shared/evolu-utils.ts"
 import {
   NonEmptyString255,
@@ -80,7 +82,11 @@ const approved = (transactionId: string) => ({
 const setup = async () => {
   const testEvolu = await createEvoluTest()
   const { evolu } = testEvolu
-  const state = { answer: "pending" as "pending" | "approved", polls: 0 }
+  const state = {
+    answer: "pending" as "pending" | "approved",
+    refundAnswer: "pending" as "pending" | "approved",
+    polls: 0,
+  }
   const clock = createTestDateDep()
   const connectivity = createConnectivity()
   let uuid = 0
@@ -104,6 +110,28 @@ const setup = async () => {
             status: "pending",
             transactionId: body.transactionId,
             step: "waitingForCard",
+          },
+        })
+      }
+      if (path === "create-terminal-refund") {
+        return Response.json({
+          type: "started",
+          refund: {
+            status: "pending",
+            transactionId: body.transactionId,
+            step: "waitingForCard",
+          },
+        })
+      }
+      if (path === "get-terminal-refund-status") {
+        return Response.json({
+          type: "found",
+          refund: {
+            status: state.refundAnswer,
+            transactionId: body.transactionId,
+            ...(state.refundAnswer === "pending"
+              ? { step: "waitingForCard" }
+              : {}),
           },
         })
       }
@@ -178,6 +206,7 @@ const setup = async () => {
 
   return {
     evolu,
+    deps,
     paymentId,
     state,
     errors,
@@ -252,6 +281,40 @@ describe("qerko terminal sync job", () => {
         ).length
       })
       .toBe(1)
+  }, 15_000)
+
+  test("settles a refund to the card the terminal approves later", async () => {
+    await using test = await setup()
+    test.state.answer = "approved"
+    await using _job = await test.startJob(5)
+    await expect
+      .poll(() =>
+        test.evolu.loadQuery(
+          accountTransactionsByPaymentIdQuery(test.paymentId)
+        )
+      )
+      .toHaveLength(1)
+
+    await using run = testCreateRun(test.deps)
+    await expect(
+      run(
+        startQerkoTerminalRefund({
+          paymentId: test.paymentId,
+          terminalId,
+          deviceId: null,
+          amount: NonNegativeInteger(5_000),
+        })
+      )
+    ).resolves.toMatchObject({ ok: true, value: { status: "pending" } })
+    await expect(
+      test.evolu.loadQuery(refundsByPaymentIdQuery(test.paymentId))
+    ).resolves.toEqual([])
+
+    test.state.refundAnswer = "approved"
+    await expect
+      .poll(() => test.evolu.loadQuery(refundsByPaymentIdQuery(test.paymentId)))
+      .toMatchObject([{ amount: 5_000, method: "qerkoTerminal" }])
+    expect(test.errors).toEqual([])
   }, 15_000)
 
   test("does nothing when no attempt is pending", async () => {

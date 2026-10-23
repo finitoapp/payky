@@ -197,6 +197,29 @@ test("a key Qerko no longer accepts: the terminal list offers to pair again", as
   })
 })
 
+test("pay on the terminal with a key Qerko refuses: the screen says to pair again", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  qerko.rejectKey = true
+
+  await createPayment(page, "en", "5.9")
+  await page.getByRole("tab", { name: t("paymentWait.method.qerko") }).click()
+  await page
+    .getByRole("button", { name: t("paymentWait.qerko.action") })
+    .click()
+  await expect(
+    page.getByText(t("paymentWait.qerko.error.keyRejected"))
+  ).toBeVisible()
+  await expect(
+    page.getByRole("link", {
+      name: t("paymentWait.qerko.error.keyRejected.link"),
+    })
+  ).toBeVisible()
+})
+
 test("pay on the terminal: the step shows while it waits, then the payment is paid", async ({
   seededPage: page,
 }) => {

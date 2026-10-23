@@ -1,5 +1,6 @@
 import {
   describeQerkoPaymentError,
+  isQerkoKeyRejected,
   isQerkoStepCancellable,
   qerkoStepKeys,
 } from "@payky/app-shared/qerko-terminal-flow"
@@ -158,7 +159,23 @@ export function QerkoPaymentTab({
           type: "QerkoTerminalPaymentFailed",
           reason: failureReason,
         })
-  const errorKey = startErrorKey ?? failureKey
+  // A refused key shows even while an attempt is pending: nothing else will
+  // ever move that attempt along.
+  const rejectedKey =
+    outcome?.kind === "error" && isQerkoKeyRejected(outcome.error)
+      ? describeQerkoPaymentError(outcome.error)
+      : null
+  const errorKey = startErrorKey ?? rejectedKey ?? failureKey
+  const settingsLink =
+    errorKey === "paymentWait.qerko.error.keyRejected" ? (
+      <Button
+        variant="link"
+        label={t("paymentWait.qerko.error.keyRejected.link")}
+        onPress={() => {
+          router.push("/settings/payment-accounts/qerko-terminal")
+        }}
+      />
+    ) : null
 
   if (selection === undefined) {
     return (
@@ -206,6 +223,20 @@ export function QerkoPaymentTab({
             }}
           />
         ) : null}
+        {rejectedKey === null ? null : (
+          <Text
+            maxW={288}
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+            color="destructive"
+            text="center"
+            role="alert"
+          >
+            {t(rejectedKey)}
+          </Text>
+        )}
+        {settingsLink}
       </YStack>
     )
   }
@@ -251,6 +282,7 @@ export function QerkoPaymentTab({
           {t(errorKey)}
         </Text>
       ) : null}
+      {unresolved ? null : settingsLink}
     </YStack>
   )
 }

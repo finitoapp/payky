@@ -119,6 +119,8 @@ export const skPayment = {
   "paymentDetail.notFound": "Platba sa nenašla.",
   "paymentDetail.paymentMethod.card": "Platobnou kartou",
   "paymentDetail.paymentMethod.qerkoTerminal": "Platobnou kartou (terminál)",
+  "paymentDetail.paymentMethod.qerkoTerminalTid":
+    "Platobnou kartou (terminál {tid})",
   "paymentDetail.paymentMethod.cashu": "Cashu",
   "paymentDetail.paymentMethod.cash": "Hotovosť",
   "paymentDetail.paymentMethod.iban": "IBAN",

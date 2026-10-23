@@ -118,6 +118,8 @@ export const enPayment = {
   "paymentDetail.notFound": "Payment was not found.",
   "paymentDetail.paymentMethod.card": "Payment card",
   "paymentDetail.paymentMethod.qerkoTerminal": "Payment card (terminal)",
+  "paymentDetail.paymentMethod.qerkoTerminalTid":
+    "Payment card (terminal {tid})",
   "paymentDetail.paymentMethod.cashu": "Cashu",
   "paymentDetail.paymentMethod.cash": "Cash",
   "paymentDetail.paymentMethod.iban": "IBAN",

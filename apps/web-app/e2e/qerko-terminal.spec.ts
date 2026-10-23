@@ -344,6 +344,15 @@ test("refund a card payment back to the card through the terminal", async ({
   await test.step("the refund goes back to the card by default", async () => {
     await waitForLocalWriteToSettle(page)
     await gotoPage(page, `/activity/${paymentId}`, "en", "paymentDetail.title")
+    // The detail names the terminal that took the card.
+    await expect(
+      page.getByText(
+        t("paymentDetail.paymentMethod.qerkoTerminalTid").replace(
+          "{tid}",
+          qerkoTerminalTid
+        )
+      )
+    ).toBeVisible()
     await page
       .getByRole("button", { name: t("paymentDetail.refunds.action") })
       .click()

@@ -350,7 +350,11 @@ test("refund a card payment back to the card through the terminal", async ({
     const dialog = page.getByRole("dialog")
     await expect(
       dialog.getByRole("button", {
-        name: t("refund.dialog.method.qerkoTerminal"),
+        // The refund names the terminal the payment was taken on.
+        name: t("refund.dialog.method.qerkoTerminalTid").replace(
+          "{tid}",
+          qerkoTerminalTid
+        ),
       })
     ).toHaveAttribute("aria-pressed", "true")
     const [confirmPrefix = ""] = t("refund.dialog.confirm").split("{amount}")
@@ -413,4 +417,40 @@ test("a card refund waiting on a key Qerko refuses: the attempt says to pair aga
       name: t("paymentWait.qerko.error.keyRejected.link"),
     })
   ).toBeVisible()
+})
+
+test("a card refund when the original terminal is no longer activated: the message says only that terminal can take it", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+
+  await createPayment(page, "en", "5.9")
+  await page.getByRole("tab", { name: t("paymentWait.method.qerko") }).click()
+  const paymentId = getPaymentIdFromUrl(page)
+  await page
+    .getByRole("button", { name: t("paymentWait.qerko.action") })
+    .click()
+  await expect(
+    page.getByTestId("payment-paid-panel").getByText(t("paymentWait.paid"))
+  ).toBeVisible()
+  await waitForLocalWriteToSettle(page)
+  await gotoPage(page, `/activity/${paymentId}`, "en", "paymentDetail.title")
+
+  qerko.refundNotStarted = "terminalNotActivated"
+  await page
+    .getByRole("button", { name: t("paymentDetail.refunds.action") })
+    .click()
+  const dialog = page.getByRole("dialog")
+  const [confirmPrefix = ""] = t("refund.dialog.confirm").split("{amount}")
+  await dialog
+    .getByRole("button", { name: new RegExp(`^${confirmPrefix}.+`, "u") })
+    .click()
+
+  await expect(
+    page.getByText(t("refund.qerko.error.terminalNotActivated"))
+  ).toBeVisible()
+  // Nothing is recorded, and no other terminal is suggested.
+  await expect(page.getByTestId("payment-detail-refund")).toHaveCount(0)
 })

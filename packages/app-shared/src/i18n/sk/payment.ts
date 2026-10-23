@@ -340,12 +340,19 @@ export const skPayment = {
     "Tento prehliadač nevie automaticky udržať obrazovku zapnutú.",
   "refund.created": "Vrátenie je zaznamenané.",
   "refund.dialog.method.qerkoTerminal": "Späť na kartu cez terminál",
+  "refund.dialog.method.qerkoTerminalTid": "Späť na kartu na terminále {tid}",
   "refund.qerko.dismiss": "Zavrieť",
   "refund.qerko.dismissUnresolved": "Skontroloval(a) som, zavrieť",
   "refund.qerko.error.notAvailable":
     "Táto platba nebola prijatá na termináli Qerko, takže ju nie je možné vrátiť na kartu.",
   "refund.qerko.error.running":
     "Ďalšie vrátenie tejto platby na kartu stále čaká na terminál.",
+  "refund.qerko.error.terminalNotActivated":
+    "Terminál, na ktorom platba prebehla, nie je v Qerku aktivovaný. Refund na kartu možno urobiť len na ňom, požiadajte preto podporu Qerko o jeho opätovnú aktiváciu.",
+  "refund.qerko.error.terminalNotConnected":
+    "Terminál, na ktorom platba prebehla, nie je pripojený. Refund na kartu možno urobiť len na ňom, pripojte ho a skúste to znova.",
+  "refund.qerko.error.unknownTerminal":
+    "Qerko terminál, na ktorom platba prebehla, nepozná. Refund na kartu možno urobiť len na ňom, kontaktujte preto podporu Qerko.",
   "refund.qerko.failed.cancelled":
     "Vrátenie na kartu bolo zrušené na termináli.",
   "refund.qerko.failed.declined": "Terminál vrátenie na kartu zamietol.",

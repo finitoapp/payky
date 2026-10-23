@@ -146,6 +146,8 @@ export const paymentQerkoTerminal = {
    */
   failureReason: z.enum(["declined", "cancelled", "reversed"]).nullable(),
   terminalId: NonEmptyString255Schema.nullable(),
+  /** The terminal's printed TID, kept so staff can tell which one a refund needs. */
+  terminalTid: NonEmptyString255Schema.nullable(),
   qerkoRefundId: NonEmptyString255Schema.nullable(),
   authorizationCode: NonEmptyString255Schema.nullable(),
   cardBrand: NonEmptyString255Schema.nullable(),

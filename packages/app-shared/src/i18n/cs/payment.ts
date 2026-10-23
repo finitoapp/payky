@@ -337,12 +337,19 @@ export const csPayment = {
     "Tento prohlížeč neumí automaticky udržet obrazovku zapnutou.",
   "refund.created": "Vratka je zaznamenaná.",
   "refund.dialog.method.qerkoTerminal": "Zpět na kartu přes terminál",
+  "refund.dialog.method.qerkoTerminalTid": "Zpět na kartu na terminálu {tid}",
   "refund.qerko.dismiss": "Zavřít",
   "refund.qerko.dismissUnresolved": "Zkontroloval(a) jsem, zavřít",
   "refund.qerko.error.notAvailable":
     "Tato platba nebyla přijata na terminálu Qerko, takže ji nelze vrátit na kartu.",
   "refund.qerko.error.running":
     "Další vrácení této platby na kartu stále čeká na terminál.",
+  "refund.qerko.error.terminalNotActivated":
+    "Terminál, na kterém platba proběhla, není v Qerku aktivovaný. Refund na kartu lze provést jen na něm, požádejte proto podporu Qerko o jeho opětovnou aktivaci.",
+  "refund.qerko.error.terminalNotConnected":
+    "Terminál, na kterém platba proběhla, není připojený. Refund na kartu lze provést jen na něm, připojte ho a zkuste to znovu.",
+  "refund.qerko.error.unknownTerminal":
+    "Qerko terminál, na kterém platba proběhla, nezná. Refund na kartu lze provést jen na něm, kontaktujte proto podporu Qerko.",
   "refund.qerko.failed.cancelled":
     "Vrácení na kartu bylo zrušeno na terminálu.",
   "refund.qerko.failed.declined": "Terminál vrácení na kartu zamítl.",

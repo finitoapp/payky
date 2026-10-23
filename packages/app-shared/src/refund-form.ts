@@ -1,5 +1,6 @@
 import type { sqliteTrue } from "@evolu/common"
 import { describeQerkoPaymentError } from "@payky/app-shared/qerko-terminal-flow"
+import type { QerkoNotStartedReason } from "@payky/core/integrations/qerko/qerko-client"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
 import type { ItemLineType } from "@payky/core/modules/item/item-types"
 import type { PaymentLineId } from "@payky/core/modules/payment-line/payment-line-types"
@@ -84,6 +85,12 @@ export const defaultRefundMethod = (
  * the terminal, and for the rest (offline, a refusal to start) the payment's
  * wording.
  */
+const qerkoRefundNotStartedKeys = {
+  terminalNotActivated: "refund.qerko.error.terminalNotActivated",
+  unknownTerminal: "refund.qerko.error.unknownTerminal",
+  terminalNotConnected: "refund.qerko.error.terminalNotConnected",
+} satisfies Partial<Record<QerkoNotStartedReason, TranslationKey>>
+
 export const describeQerkoRefundError = (error: {
   readonly type: string
   readonly reason?: string
@@ -93,6 +100,14 @@ export const describeQerkoRefundError = (error: {
     ...tipRefundErrorKeys,
     QerkoRefundNotAvailable: "refund.qerko.error.notAvailable",
     QerkoRefundAttemptRunning: "refund.qerko.error.running",
+  }
+  // The terminal cannot be swapped for a refund, so the payment's wording
+  // ("choose it again in the settings") would send staff the wrong way.
+  if (error.type === "QerkoTerminalRefundNotStarted") {
+    const key = (
+      qerkoRefundNotStartedKeys as Record<string, TranslationKey | undefined>
+    )[error.reason ?? ""]
+    if (key !== undefined) return key
   }
   if (error.type === "QerkoTerminalRefundFailed") {
     return error.reason === "cancelled"

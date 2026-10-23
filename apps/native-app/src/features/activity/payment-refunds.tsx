@@ -1,7 +1,10 @@
 import type { InferRow } from "@evolu/common"
 import { formatDateTime } from "@payky/app-shared/format-date"
 import { formatMoney } from "@payky/app-shared/format-money"
-import { qerkoStepKeys } from "@payky/app-shared/qerko-terminal-flow"
+import {
+  isQerkoKeyRejected,
+  qerkoStepKeys,
+} from "@payky/app-shared/qerko-terminal-flow"
 import {
   defaultRefundMethod,
   deriveRefundAmountText,
@@ -48,6 +51,7 @@ import {
   type NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import { useQuery } from "@tanstack/react-query"
+import { router } from "expo-router"
 import { useAtomValue } from "jotai"
 import Minus from "lucide-react-native/icons/minus"
 import Plus from "lucide-react-native/icons/plus"
@@ -791,10 +795,17 @@ function QerkoRefundAttempt({
     queryFn: async () => {
       await using run = appRun()
       const result = await run(syncQerkoTerminalRefund(attempt.id))
-      return result.ok ? result.value : null
+      return result.ok
+        ? result.value
+        : {
+            status: "error" as const,
+            keyRejected: isQerkoKeyRejected(result.error),
+          }
     },
   })
   const step = poll.data?.status === "pending" ? poll.data.step : "connecting"
+  // A refused key leaves the attempt pending; pairing anew lets the poll go on.
+  const keyRejected = poll.data?.status === "error" && poll.data.keyRejected
 
   const dismiss = () =>
     runToast(async (run) => {
@@ -829,6 +840,25 @@ function QerkoRefundAttempt({
             {t(qerkoStepKeys[step])}
           </Text>
         </XStack>
+      ) : null}
+      {isPending && keyRejected ? (
+        <>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+            color="destructive"
+          >
+            {t("paymentWait.qerko.error.keyRejected")}
+          </Text>
+          <Button
+            variant="link"
+            label={t("paymentWait.qerko.error.keyRejected.link")}
+            onPress={() => {
+              router.push("/settings/payment-accounts/qerko-terminal")
+            }}
+          />
+        </>
       ) : null}
       {attempt.status === "failed" ? (
         <>

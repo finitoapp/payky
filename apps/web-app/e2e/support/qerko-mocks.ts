@@ -37,6 +37,8 @@ export interface FakeQerko {
   refundOutcome: "approved" | "declined"
   /** While set, Qerko lists no terminal for the company. */
   noTerminals: boolean
+  /** While set, a started refund stays pending (waiting for the card). */
+  holdRefund: boolean
   /** While set, Qerko refuses the API key on every call but the pairing (401). */
   rejectKey: boolean
 }
@@ -96,6 +98,7 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
     paymentOutcome: "approved",
     refundOutcome: "approved",
     noTerminals: false,
+    holdRefund: false,
     rejectKey: false,
   }
 
@@ -178,8 +181,9 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
         return refunds.has(transactionId)
           ? {
               type: "found",
-              refund:
-                fake.refundOutcome === "approved"
+              refund: fake.holdRefund
+                ? { status: "pending", transactionId, step: "waitingForCard" }
+                : fake.refundOutcome === "approved"
                   ? { status: "approved", transactionId }
                   : { status: "failed", transactionId, reason: "declined" },
             }

@@ -138,6 +138,12 @@ assertions.
   `__e2eCashuPayQuotes` and prints how many quotes it paid; a web link
   reloads the page and loses the mint, so flows use `cashu=autopay` instead,
   which pays open quotes every 4 s by itself.
+- `offline` is web's `context.setOffline(true)` for the restore sync screen
+  only (`e2e-network.ts`: that screen reads the device as offline, requests
+  still go out) until the app restarts, so move on with `next=`;
+  `unregisteredMnemonic` prints a fresh phrase no relay knows (web's
+  `createUnregisteredMnemonic`). `subflows/restore-offline.yaml` combines
+  them into web's offline restore up to "Couldn't sync".
 
 ## Mock server
 

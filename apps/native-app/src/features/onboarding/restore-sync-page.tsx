@@ -46,6 +46,7 @@ import {
 } from "../../components/ui/card.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { nativeRun } from "../../core/native-runtime.ts"
+import { isE2eOffline } from "../../e2e/e2e-network.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
@@ -95,7 +96,9 @@ function useInitialSyncOutcome(hasSettings: boolean) {
   const network = useNetworkState()
   // Unknown (undefined) counts as online, as the browser's `onLine` does.
   const online =
-    network.isConnected !== false && network.isInternetReachable !== false
+    network.isConnected !== false &&
+    network.isInternetReachable !== false &&
+    !isE2eOffline()
   const syncing = relays?.some(isRelaySyncing) === true
   const [idle, setIdle] = useState(() => ({ syncing, since: Date.now() }))
   if (idle.syncing !== syncing) setIdle({ syncing, since: Date.now() })

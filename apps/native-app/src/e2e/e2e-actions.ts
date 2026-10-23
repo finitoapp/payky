@@ -58,6 +58,10 @@ import {
   createRowId,
   runMutationWithCompletion,
 } from "@payky/core/modules/shared/evolu-utils"
+import {
+  createMasterKey,
+  masterKeyToMnemonic,
+} from "@payky/core/modules/shared/key-derivation"
 import { createTestInvoice } from "@payky/core/modules/shared/lightning-invoice-test-fixtures"
 import {
   BankAccountInputIbanSchema,
@@ -80,6 +84,7 @@ import {
   holdE2eMigrations,
   releaseE2eMigrations,
 } from "./e2e-hold-migration.ts"
+import { setE2eOffline } from "./e2e-network.ts"
 import { e2eSparkPresetNames, setE2eSparkPreset } from "./e2e-spark-presets.ts"
 
 /**
@@ -205,6 +210,15 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
   },
 
   /**
+   * Web's `context.setOffline(true)` for the restore sync screen
+   * (e2e-network.ts). Lasts until the app restarts: pass `next=`.
+   */
+  offline: async () => {
+    setE2eOffline(true)
+    return undefined
+  },
+
+  /**
    * Web's `holdMigrations`: arms the `e2e-hold` migration for every later
    * start, so the popup's running state can be caught (the real migrations
    * finish in milliseconds). Persisted, so restart the app after it (web's
@@ -231,6 +245,12 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
    * fake mint; prints how many it paid.
    */
   cashuPayQuotes: async () => String(payE2eCashuQuotes()),
+
+  /**
+   * web's `createUnregisteredMnemonic`: a fresh recovery phrase no relay
+   * knows, printed for `subflows/restore-offline.yaml` to copy.
+   */
+  unregisteredMnemonic: async () => masterKeyToMnemonic(createMasterKey()),
 
   /**
    * One warning through the run's console (a release build keeps warnings and

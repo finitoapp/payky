@@ -139,6 +139,26 @@ export const selectableQerkoLocations = (
         ]
   })
 
+export interface QerkoTerminalsFailure {
+  readonly key: TranslationKey
+  /** Qerko refuses the key itself: trying again is pointless, pairing anew is not. */
+  readonly keyRejected: boolean
+}
+
+/**
+ * How a failed terminal list reads: a key Qerko no longer accepts (revoked
+ * in its dashboard) needs a new pairing, anything else (offline, Qerko down)
+ * is worth another try.
+ */
+export const describeQerkoTerminalsFailure = (error: {
+  readonly type: string
+  readonly status?: number
+}): QerkoTerminalsFailure =>
+  error.type === "QerkoHttpError" &&
+  (error.status === 401 || error.status === 403)
+    ? { key: "settings.qerkoTerminal.terminals.keyRejected", keyRejected: true }
+    : { key: "settings.qerkoTerminal.terminals.failed", keyRejected: false }
+
 const qerkoTerminalStatusKeys = {
   status: "settings.qerkoTerminal.test.connected",
   terminalBusy: "settings.qerkoTerminal.test.busy",

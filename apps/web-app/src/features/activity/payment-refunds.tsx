@@ -18,7 +18,6 @@ import {
   stepRefundQuantity,
   tipRefundErrorKeys,
 } from "@payky/app-shared/refund-form"
-import { qerkoTerminalSelectionQuery } from "@payky/core/evolu/device-qerko"
 import type { EetDeliveryOutcome } from "@payky/core/integrations/eet/eet-client"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
 import {
@@ -58,7 +57,6 @@ import {
 import {
   type FiatCurrency,
   Integer,
-  NonEmptyString255Schema,
   type NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import { useQuery } from "@tanstack/react-query"
@@ -108,7 +106,6 @@ import {
 import { RefundBadge } from "@/features/shared/refund-badge.tsx"
 import { useRequirePermission } from "@/hooks/use-access.ts"
 import { useAppRun } from "@/hooks/use-app-run.ts"
-import { useDeviceEvoluQuery } from "@/hooks/use-device-evolu-query.ts"
 import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useRunToast } from "@/hooks/use-run-toast.ts"
@@ -136,7 +133,6 @@ export function PaymentDetailRefunds({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const account = useAtomValue(accountAtom)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [tipDialogOpen, setTipDialogOpen] = useState(false)
   const { data: refunds } = useEvoluQuery(refundsByPaymentIdQuery(payment.id))
@@ -158,18 +154,16 @@ export function PaymentDetailRefunds({
   const { data: qerkoAttempts } = useEvoluQuery(
     qerkoTerminalRefundAttemptsByPaymentIdQuery(payment.id)
   )
-  const { data: terminalData } = useDeviceEvoluQuery(
-    qerkoTerminalSelectionQuery(account.id)
-  )
-  // A refund to the card needs the id Qerko's receipt handed out, and a
-  // terminal this device can ask (qerko/0004).
-  const qerkoRefundId = qerkoPaymentData[0]?.qerkoRefundId
-  const qerkoTerminalId =
-    qerkoRefundId === undefined || qerkoRefundId === null
-      ? null
-      : (terminalData[0]?.terminalId ?? null)
+  // A refund to the card needs the id Qerko's receipt handed out and the
+  // terminal the payment was taken on, whichever terminal this device uses
+  // now (qerko/0006).
+  const [qerkoPayment] = qerkoPaymentData
+  const qerkoRefundable =
+    qerkoPayment !== undefined &&
+    qerkoPayment.qerkoRefundId !== null &&
+    qerkoPayment.terminalId !== null
   const defaultMethod = defaultRefundMethod(paymentMethodKinds, {
-    qerkoRefundable: qerkoTerminalId !== null,
+    qerkoRefundable,
   })
   const {
     refundableAmount,
@@ -308,7 +302,7 @@ export function PaymentDetailRefunds({
           refundableLines={refundableLines}
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
-          qerkoTerminalId={qerkoTerminalId}
+          qerkoRefundable={qerkoRefundable}
           onClose={() => setDialogOpen(false)}
         />
       ) : null}
@@ -318,7 +312,7 @@ export function PaymentDetailRefunds({
           currency={payment.currency}
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
-          qerkoTerminalId={qerkoTerminalId}
+          qerkoRefundable={qerkoRefundable}
           onClose={() => setTipDialogOpen(false)}
         />
       ) : null}
@@ -334,7 +328,7 @@ function RefundDialog({
   refundableLines,
   tipAmount,
   defaultMethod,
-  qerkoTerminalId,
+  qerkoRefundable,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -345,7 +339,7 @@ function RefundDialog({
   readonly tipAmount: NonNegativeInteger
   readonly defaultMethod: RefundMethod
   /** Set when the card can be refunded from this device. */
-  readonly qerkoTerminalId: string | null
+  readonly qerkoRefundable: boolean
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -395,12 +389,10 @@ function RefundDialog({
         quantity,
       }))
       if (method === "qerkoTerminal") {
-        const terminalId = NonEmptyString255Schema.safeParse(qerkoTerminalId)
-        if (!terminalId.success) return "refund.qerko.error.notAvailable"
+        if (!qerkoRefundable) return "refund.qerko.error.notAvailable"
         const result = await run(
           startQerkoTerminalRefund({
             paymentId,
-            terminalId: terminalId.data,
             deviceId: device.id,
             ...(mode === "amount" ? { amount: refundAmount } : { lines }),
           })
@@ -558,7 +550,7 @@ function RefundDialog({
           <RefundMethodField
             method={method}
             disabled={pending}
-            qerkoAvailable={qerkoTerminalId !== null}
+            qerkoAvailable={qerkoRefundable}
             onChange={setMethod}
           />
         </div>
@@ -594,7 +586,7 @@ function TipRefundDialog({
   currency,
   tipAmount,
   defaultMethod,
-  qerkoTerminalId,
+  qerkoRefundable,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -602,7 +594,7 @@ function TipRefundDialog({
   readonly tipAmount: NonNegativeInteger
   readonly defaultMethod: RefundMethod
   /** Set when the card can be refunded from this device. */
-  readonly qerkoTerminalId: string | null
+  readonly qerkoRefundable: boolean
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -622,12 +614,10 @@ function TipRefundDialog({
     const { device } = await jotaiStore.get(accountAtom)
     const refunded = await runToast(async (run) => {
       if (method === "qerkoTerminal") {
-        const terminalId = NonEmptyString255Schema.safeParse(qerkoTerminalId)
-        if (!terminalId.success) return "refund.qerko.error.notAvailable"
+        if (!qerkoRefundable) return "refund.qerko.error.notAvailable"
         const result = await run(
           startQerkoTerminalRefund({
             paymentId,
-            terminalId: terminalId.data,
             deviceId: device.id,
             tip: true,
           })
@@ -671,7 +661,7 @@ function TipRefundDialog({
         <RefundMethodField
           method={method}
           disabled={pending}
-          qerkoAvailable={qerkoTerminalId !== null}
+          qerkoAvailable={qerkoRefundable}
           onChange={setMethod}
         />
 

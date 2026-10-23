@@ -323,8 +323,8 @@ const applyQerkoRefund =
   }
 
 /**
- * Starts refunding to the card on the terminal this device chose, for an
- * amount (or goods lines), or the payment's tip. The same checks as any
+ * Starts refunding to the card on the terminal that took the payment (qerko/0006),
+ * for an amount (or goods lines), or the payment's tip. The same checks as any
  * refund decide what may be asked for; on top, the payment must have been
  * taken through Qerko, which hands out the id its refund needs.
  *
@@ -334,12 +334,10 @@ const applyQerkoRefund =
 export const startQerkoTerminalRefund =
   ({
     paymentId,
-    terminalId,
     deviceId,
     ...what
   }: {
     readonly paymentId: PaymentId
-    readonly terminalId: NonEmptyString255
     readonly deviceId: DeviceId | null
   } & (
     | { readonly tip: true }
@@ -387,7 +385,8 @@ export const startQerkoTerminalRefund =
     if (
       qerkoPayment === undefined ||
       qerkoPayment.qerkoRefundId === null ||
-      qerkoPayment.transactionId === null
+      qerkoPayment.transactionId === null ||
+      qerkoPayment.terminalId === null
     ) {
       return err(createQerkoRefundNotAvailableError({ paymentId }))
     }
@@ -404,6 +403,8 @@ export const startQerkoTerminalRefund =
     const credentials = await run(loadQerkoCredentials())
     if (!credentials.ok) return credentials
 
+    // The terminal that took the money, not the one this device pays on now.
+    const { terminalId } = qerkoPayment
     const transactionId = NonEmptyString255(run.deps.uuid.create())
     await runMutationWithCompletion((options) => {
       const mutationOptions = { ...options, owner: evoluOwner }

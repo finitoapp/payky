@@ -300,7 +300,6 @@ describe("qerko terminal sync job", () => {
       run(
         startQerkoTerminalRefund({
           paymentId: test.paymentId,
-          terminalId,
           deviceId: null,
           amount: NonNegativeInteger(5_000),
         })

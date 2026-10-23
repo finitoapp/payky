@@ -65,8 +65,8 @@ query performance.
   way — it only silences a separate, additive warning about the *amount*.
 - `payment.expiresAt: timestamp | null` — set at creation time from the
   payment method's own expiry (e.g. a Lightning invoice's `expirySeconds`).
-  `null` means the payment never expires on its own (cash, card terminal,
-  IBAN transfer — there is no natural "too late" for those; staff waits as
+  `null` means the payment never expires on its own (cash, card terminal
+  — Switchio or Qerko —, IBAN transfer — there is no natural "too late" for those; staff waits as
   long as it takes, or explicitly cancels — see ["Editing
   lock"](#editing-lock)). It describes the payment as a whole, and payment
   methods are not mutually exclusive, so it is only non-`null` while *every*
@@ -188,7 +188,8 @@ to the other's field.
 
 A `refund` row (the `refund` module) records money returned to a customer
 for a payment that is Paid: an amount, how it went back (cash from the cash
-register, or outside Payky such as on the card terminal) and when. A refund
+register, back to the card through the Qerko terminal, or outside Payky such
+as on another card terminal) and when. A refund
 by items adds one `refundLine` per returned `paymentLine` of the payment's
 frozen lines, with the quantity returned, and is offered only while no other
 payment of its bill has a claim. A refund by amount or by items returns
@@ -209,6 +210,13 @@ a refund with `isTip` set, once per payment (its id is
 derived from the payment), in cash or outside Payky, whoever the tip belongs
 to. A refund without `isTip` is a refund of goods, which covers every refund
 recorded before the flag existed.
+
+A refund back to the card through the Qerko terminal is not a `refund` row
+until the terminal approved it: a `qerkoTerminalRefundAttempt` carries it
+meanwhile, and the refund, its lines and the money leaving the Qerko account
+are written together on approval ([`qerko/0004`](decisions/qerko/0004-a-card-refund-is-recorded-only-once-the-terminal-approved-it.md)).
+It is offered only for a payment taken through Qerko, and `refundPayment`
+does not accept that method.
 
 A refund is not a state. It never touches `canceledAt`, `confirmedPaidAt` or
 any claim, so the payment stays Paid, and coverage still sums the claimed

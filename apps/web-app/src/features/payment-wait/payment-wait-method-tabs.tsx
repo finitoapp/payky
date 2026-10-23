@@ -6,12 +6,14 @@ import { CardPaymentTab } from "@/features/payment-wait/payment-wait-card-tab.ts
 import { CashPaymentTab } from "@/features/payment-wait/payment-wait-cash-tab.tsx"
 import { CashuPaymentTab } from "@/features/payment-wait/payment-wait-cashu-tab.tsx"
 import { IbanPaymentTab } from "@/features/payment-wait/payment-wait-iban-tab.tsx"
+import { QerkoPaymentTab } from "@/features/payment-wait/payment-wait-qerko-tab.tsx"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type {
   CardPaymentTabProps,
   CashPaymentTabProps,
   IbanPaidTabProps,
   PaymentMethodOption,
+  QerkoPaymentTabProps,
 } from "@/features/payment-wait/payment-wait-types.ts"
 
 export function PaymentMethodTabContent({
@@ -38,6 +40,11 @@ export function PaymentMethodTabContent({
   onMarkCashPaid,
   onMarkIbanPaid,
   onPayCard,
+  qerkoPaymentId,
+  qerkoAccountId,
+  qerkoPayable,
+  qerkoPendingTransactionId,
+  qerkoUnresolvedTransactionId,
   cashuPaymentId,
   newCashuQuotePending,
   onNewCashuQuote,
@@ -53,6 +60,7 @@ export function PaymentMethodTabContent({
   readonly onSelectIbanQrFormat: (format: BankQrFormat) => void
 } & CashPaymentTabProps &
   CardPaymentTabProps &
+  QerkoPaymentTabProps &
   IbanPaidTabProps) {
   switch (method.id) {
     case "spark":
@@ -105,6 +113,16 @@ export function PaymentMethodTabContent({
           preparingMessageKey={preparingMessageKey}
           newQuotePending={newCashuQuotePending}
           onNewQuote={onNewCashuQuote}
+        />
+      )
+    case "qerko":
+      return (
+        <QerkoPaymentTab
+          paymentId={qerkoPaymentId}
+          accountId={qerkoAccountId}
+          payable={qerkoPayable}
+          pendingTransactionId={qerkoPendingTransactionId}
+          unresolvedTransactionId={qerkoUnresolvedTransactionId}
         />
       )
     case "card":

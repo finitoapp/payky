@@ -5,13 +5,20 @@ import type {
 } from "@payky/core/modules/account/account-types"
 import type { DefaultPaymentMethod } from "@payky/core/modules/app-settings/app-settings-types"
 import type { BankQrPayload } from "@payky/core/modules/payment/payment-iban-qr-payload-utils"
+import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import type {
   FiatCurrency,
   NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import type { ReactNode } from "react"
 
-export type PaymentMethodTab = "spark" | "iban" | "cash" | "card" | "cashu"
+export type PaymentMethodTab =
+  | "spark"
+  | "iban"
+  | "cash"
+  | "card"
+  | "qerko"
+  | "cashu"
 
 export interface PaymentMethodOptionBase {
   readonly kind: DefaultPaymentMethod
@@ -32,6 +39,7 @@ export type PaymentMethodOption = PaymentMethodOptionBase &
       }
     | { readonly id: "cash"; readonly qrPayload: null }
     | { readonly id: "card"; readonly qrPayload: null }
+    | { readonly id: "qerko"; readonly qrPayload: null }
     | {
         readonly id: "cashu"
         /** The BIP-321 URI with the mint's invoice (and later a NUT-18 request). */
@@ -59,6 +67,15 @@ export interface CardPaymentTabProps {
   /** Set while the last terminal attempt's outcome is unknown. */
   readonly cardUnresolvedTransactionId: string | null | undefined
   readonly onPayCard: () => void
+}
+
+/** What the Qerko tab needs of the payment: its attempt markers live in its own row. */
+export interface QerkoPaymentTabProps {
+  readonly qerkoPaymentId: PaymentId
+  readonly qerkoAccountId: AccountId | null | undefined
+  readonly qerkoPayable: boolean
+  readonly qerkoPendingTransactionId: string | null | undefined
+  readonly qerkoUnresolvedTransactionId: string | null | undefined
 }
 
 export interface IbanPaidTabProps {

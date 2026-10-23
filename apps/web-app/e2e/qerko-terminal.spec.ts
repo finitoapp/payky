@@ -71,6 +71,10 @@ test("pair with Qerko: the wizard asks for the code and a terminal, and the meth
       page.getByText(t("settings.qerkoTerminal.paired.title"))
     ).toBeVisible()
     await expect(page.getByText(new RegExp(qerkoLegalEntityName))).toBeVisible()
+    // The chosen terminal is tested without asking.
+    await expect(
+      page.getByText(t("settings.qerkoTerminal.test.connected"))
+    ).toBeVisible()
     await gotoPage(
       page,
       "/settings/payment-accounts",

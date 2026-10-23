@@ -18,7 +18,7 @@ import { qerkoPluginQuery } from "@payky/core/modules/qerko-plugin/qerko-plugin-
 import { useAtomValue } from "jotai"
 import ChevronDown from "lucide-react-native/icons/chevron-down"
 import ChevronUp from "lucide-react-native/icons/chevron-up"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { FadeHeader } from "../../../components/fade-header.tsx"
@@ -62,6 +62,8 @@ export function QerkoTerminalSettingsPage() {
   // Pairing saves the key, which would swap the wizard for the paired view
   // before the terminal is chosen.
   const [finishingPairing, setFinishingPairing] = useState(false)
+  // The terminal the wizard ended on, which the paired view tests on arrival.
+  const [chosenTerminalId, setChosenTerminalId] = useState<string>()
 
   return (
     <Screen>
@@ -71,18 +73,28 @@ export function QerkoTerminalSettingsPage() {
           onPaired={() => {
             setFinishingPairing(true)
           }}
-          onFinished={() => {
+          onFinished={(terminalId) => {
+            setChosenTerminalId(terminalId)
             setFinishingPairing(false)
           }}
         />
       ) : (
-        <QerkoPairedView plugin={plugin} />
+        <QerkoPairedView
+          plugin={plugin}
+          initialTestTerminalId={chosenTerminalId}
+        />
       )}
     </Screen>
   )
 }
 
-function QerkoPairedView({ plugin }: { readonly plugin: QerkoPluginRow }) {
+function QerkoPairedView({
+  plugin,
+  initialTestTerminalId,
+}: {
+  readonly plugin: QerkoPluginRow
+  readonly initialTestTerminalId?: string
+}) {
   const { t } = useTranslation()
   const appRun = useAppRun()
   const runToast = useRunToast()
@@ -98,15 +110,18 @@ function QerkoPairedView({ plugin }: { readonly plugin: QerkoPluginRow }) {
     readonly ok: boolean
   } | null>(null)
 
-  const test = async () => {
-    if (selection === undefined) return
+  // A terminal is tested as soon as it is chosen, so a terminal that is not
+  // connected or activated shows now and not at the first customer's card.
+  const testedInitially = useRef(false)
+
+  const test = async (terminalId: string) => {
     setTesting(true)
     setTestResult(null)
     await using run = appRun()
     const result = await run(
       getQerkoTerminalStatus({
         credentials: { apiKey: plugin.apiKey, environment: plugin.environment },
-        terminalId: selection.terminalId,
+        terminalId,
       })
     )
     setTesting(false)
@@ -116,6 +131,12 @@ function QerkoPairedView({ plugin }: { readonly plugin: QerkoPluginRow }) {
         : { key: "settings.qerkoTerminal.error.unreachable", ok: false }
     )
   }
+
+  useEffect(() => {
+    if (initialTestTerminalId === undefined || testedInitially.current) return
+    testedInitially.current = true
+    void test(initialTestTerminalId)
+  })
 
   const unpair = async () => {
     const confirmed = await confirm({
@@ -171,9 +192,9 @@ function QerkoPairedView({ plugin }: { readonly plugin: QerkoPluginRow }) {
               onKeyRejected={() => {
                 void unpair()
               }}
-              onChosen={() => {
+              onChosen={(terminalId) => {
                 setChoosing(false)
-                setTestResult(null)
+                void test(terminalId)
               }}
             />
           ) : null}
@@ -231,7 +252,7 @@ function QerkoPairedView({ plugin }: { readonly plugin: QerkoPluginRow }) {
             pending={testing}
             disabled={selection === undefined}
             onPress={() => {
-              void test()
+              if (selection !== undefined) void test(selection.terminalId)
             }}
           />
         </CardFooter>

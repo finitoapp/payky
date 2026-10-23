@@ -1,0 +1,246 @@
+import {
+  describeQerkoPaymentError,
+  isQerkoStepCancellable,
+  qerkoStepKeys,
+} from "@payky/app-shared/qerko-terminal-flow"
+import { qerkoTerminalSelectionQuery } from "@payky/core/evolu/device-qerko"
+import type { AccountId } from "@payky/core/modules/account/account-types"
+import {
+  cancelQerkoTerminalPayment,
+  type QerkoTerminalPaymentProgress,
+  startQerkoTerminalPayment,
+  syncQerkoTerminalPayment,
+} from "@payky/core/modules/payment/payment-qerko-actions"
+import type { PaymentId } from "@payky/core/modules/payment/payment-types"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { router } from "expo-router"
+import { useAtomValue } from "jotai"
+import Nfc from "lucide-react-native/icons/nfc"
+import { useState } from "react"
+import { ActivityIndicator } from "react-native"
+import { Text, XStack, YStack } from "tamagui"
+import { accountAtom } from "../../atoms/account.ts"
+import { Button } from "../../components/ui/button.tsx"
+import { useAppRun } from "../../hooks/use-app-run.ts"
+import { useConfirm } from "../../hooks/use-confirm.ts"
+import { useDeviceEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useToast } from "../../hooks/use-toast.ts"
+import { useTranslation } from "../../hooks/use-translation.ts"
+import { fontSize, fontWeight } from "../../theme/tokens.ts"
+
+type Outcome =
+  | {
+      readonly kind: "progress"
+      readonly progress: QerkoTerminalPaymentProgress
+    }
+  | {
+      readonly kind: "error"
+      readonly error: { readonly type: string; readonly reason?: string }
+    }
+
+/**
+ * Taking the payment on the Qerko terminal this device chose, as web's
+ * `QerkoPaymentTab`. The attempt lives in the payment's own row, so this tab
+ * only draws what is there and polls while one is pending; the background job
+ * settles it too, which is why closing this screen mid-payment loses nothing.
+ */
+export function QerkoPaymentTab({
+  paymentId,
+  accountId,
+  payable,
+  pendingTransactionId,
+  unresolvedTransactionId,
+}: {
+  readonly paymentId: PaymentId
+  readonly accountId: AccountId | null | undefined
+  /** The payment is still waiting for money. */
+  readonly payable: boolean
+  readonly pendingTransactionId: string | null | undefined
+  readonly unresolvedTransactionId: string | null | undefined
+}) {
+  const { t } = useTranslation()
+  const appRun = useAppRun()
+  const confirm = useConfirm()
+  const toast = useToast()
+  const queryClient = useQueryClient()
+  const account = useAtomValue(accountAtom)
+  const selection = useDeviceEvoluQuery(qerkoTerminalSelectionQuery(account.id))
+    .data[0]
+  const [starting, setStarting] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [startErrorKey, setStartErrorKey] = useState<ReturnType<
+    typeof describeQerkoPaymentError
+  > | null>(null)
+  const pending =
+    pendingTransactionId !== null && pendingTransactionId !== undefined
+  const unresolved =
+    unresolvedTransactionId !== null && unresolvedTransactionId !== undefined
+  const pollKey = ["qerko", "payment-sync", paymentId]
+
+  // One poll a second while the attempt is pending and this screen is open.
+  const poll = useQuery({
+    queryKey: pollKey,
+    enabled: pending,
+    refetchInterval: 1000,
+    queryFn: async (): Promise<Outcome> => {
+      await using run = appRun()
+      const result = await run(
+        syncQerkoTerminalPayment({ paymentId, deviceId: account.device.id })
+      )
+      return result.ok
+        ? { kind: "progress", progress: result.value }
+        : { kind: "error", error: result.error }
+    },
+  })
+
+  const start = async () => {
+    if (accountId === null || accountId === undefined) return
+    if (selection === undefined) return
+
+    if (unresolved) {
+      const confirmed = await confirm({
+        title: t("paymentWait.qerko.retryUnresolved.title"),
+        description: t("paymentWait.qerko.retryUnresolved.description"),
+        confirmLabel: t("paymentWait.qerko.retryUnresolved.confirm"),
+        cancelLabel: t("paymentWait.qerko.retryUnresolved.cancel"),
+        variant: "destructive",
+      })
+      if (!confirmed) return
+    }
+
+    setStartErrorKey(null)
+    queryClient.removeQueries({ queryKey: pollKey })
+    setStarting(true)
+    await using run = appRun()
+    const result = await run(
+      startQerkoTerminalPayment({
+        paymentId,
+        accountId,
+        terminalId: selection.terminalId,
+        deviceId: account.device.id,
+        retryUnresolved: unresolved,
+      })
+    )
+    setStarting(false)
+    if (!result.ok) setStartErrorKey(describeQerkoPaymentError(result.error))
+  }
+
+  const cancel = async () => {
+    setCancelling(true)
+    await using run = appRun()
+    const result = await run(cancelQerkoTerminalPayment(paymentId))
+    setCancelling(false)
+    if (!result.ok) {
+      toast.error(t(describeQerkoPaymentError(result.error)))
+    } else if (result.value === "notCancellable") {
+      toast.error(t("paymentWait.qerko.cancel.notCancellable"))
+    }
+  }
+
+  const outcome = poll.data
+  const step =
+    outcome?.kind === "progress" && outcome.progress.status === "pending"
+      ? outcome.progress.step
+      : "connecting"
+  // A failure of the last poll (a decline, say) shows only once the attempt
+  // has ended; while one is pending, the step is what matters.
+  const failureKey =
+    pending || outcome?.kind !== "error"
+      ? null
+      : describeQerkoPaymentError(outcome.error)
+  const errorKey = startErrorKey ?? failureKey
+
+  if (selection === undefined) {
+    return (
+      <YStack w="100%" gap={8} items="center" py={16}>
+        <Text
+          maxW={288}
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          color="muted-foreground"
+          text="center"
+        >
+          {t("paymentWait.qerko.noTerminal")}
+        </Text>
+        <Button
+          variant="link"
+          label={t("paymentWait.qerko.noTerminal.link")}
+          onPress={() => {
+            router.push("/settings/payment-accounts/qerko-terminal")
+          }}
+        />
+      </YStack>
+    )
+  }
+
+  if (pending) {
+    return (
+      <YStack w="100%" gap={12} items="center" py={16}>
+        <XStack items="center" gap={8} aria-live="polite">
+          <ActivityIndicator />
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+          >
+            {t(qerkoStepKeys[step])}
+          </Text>
+        </XStack>
+        {isQerkoStepCancellable(step) ? (
+          <Button
+            variant="outline"
+            label={t("paymentWait.qerko.cancel")}
+            pending={cancelling}
+            onPress={() => {
+              void cancel()
+            }}
+          />
+        ) : null}
+      </YStack>
+    )
+  }
+
+  return (
+    <YStack w="100%" gap={8} items="center" py={16}>
+      <Button
+        size="lg"
+        h={56}
+        px={32}
+        iconStart={Nfc}
+        label={t(
+          unresolved ? "paymentWait.qerko.retry" : "paymentWait.qerko.action"
+        )}
+        pending={starting}
+        disabled={!payable}
+        onPress={() => {
+          void start()
+        }}
+      />
+      {unresolved ? (
+        <Text
+          maxW={288}
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          fontWeight={fontWeight.medium}
+          color="destructive"
+          text="center"
+          role="alert"
+        >
+          {t("paymentWait.qerko.unresolved")}
+        </Text>
+      ) : errorKey !== null ? (
+        <Text
+          maxW={288}
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          fontWeight={fontWeight.medium}
+          color="destructive"
+          text="center"
+          role="alert"
+        >
+          {t(errorKey)}
+        </Text>
+      ) : null}
+    </YStack>
+  )
+}

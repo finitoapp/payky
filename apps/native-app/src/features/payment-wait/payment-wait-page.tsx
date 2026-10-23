@@ -51,6 +51,7 @@ import Check from "lucide-react-native/icons/check"
 import Coins from "lucide-react-native/icons/coins"
 import CreditCard from "lucide-react-native/icons/credit-card"
 import Landmark from "lucide-react-native/icons/landmark"
+import Nfc from "lucide-react-native/icons/nfc"
 import X from "lucide-react-native/icons/x"
 import Zap from "lucide-react-native/icons/zap"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -94,11 +95,12 @@ import { BoltCardReader } from "./payment-wait-bolt-card.tsx"
 import { CardPaymentTab } from "./payment-wait-card-tab.tsx"
 import { CashuPaymentTab } from "./payment-wait-cashu-tab.tsx"
 import { IbanPaymentTab } from "./payment-wait-iban-tab.tsx"
+import { QerkoPaymentTab } from "./payment-wait-qerko-tab.tsx"
 
 // Spark/Lightning (with a Bolt Card tap under the QR), cash, bank transfer,
 // Cashu and the SwitchioPay card terminal are offered here.
 
-type MethodId = "spark" | "cash" | "iban" | "cashu" | "card"
+type MethodId = "spark" | "cash" | "iban" | "cashu" | "card" | "qerko"
 
 const methodLabelKeys = {
   spark: "paymentWait.method.lightning",
@@ -106,6 +108,7 @@ const methodLabelKeys = {
   iban: "paymentWait.method.iban",
   cashu: "paymentWait.method.cashu",
   card: "paymentWait.method.card",
+  qerko: "paymentWait.method.qerko",
 } satisfies Record<MethodId, TranslationKey>
 
 const methodIcons = {
@@ -114,6 +117,7 @@ const methodIcons = {
   iban: Landmark,
   cashu: Coins,
   card: CreditCard,
+  qerko: Nfc,
 } as const
 
 /**
@@ -232,6 +236,13 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           account.cardCurrency === payment?.currency
       )
     : undefined
+  // Qerko is plain HTTP with CORS open, so unlike the Switchio terminal it
+  // needs no module and is offered everywhere.
+  const qerkoAccount = accounts.find(
+    (account) =>
+      account.kind === "qerkoTerminal" &&
+      account.qerkoTerminalCurrency === payment?.currency
+  )
   const methods = useMemo(() => {
     const order = getPaymentMethodOrder(settings)
     const found: { id: MethodId; accountId: AccountId }[] = []
@@ -243,6 +254,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       found.push({ id: "iban", accountId: ibanAccount.id })
     if (cardAccount !== undefined)
       found.push({ id: "card", accountId: cardAccount.id })
+    if (qerkoAccount !== undefined)
+      found.push({ id: "qerko", accountId: qerkoAccount.id })
     if (cashuAccount !== undefined)
       found.push({ id: "cashu", accountId: cashuAccount.id })
     const kindOf = {
@@ -251,6 +264,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       iban: "iban",
       cashu: "cashu",
       card: "cardSwitchio",
+      qerko: "qerkoTerminal",
     } as const
     return found.toSorted(
       (a, b) => order.indexOf(kindOf[a.id]) - order.indexOf(kindOf[b.id])
@@ -262,6 +276,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     ibanAccount,
     cashuAccount,
     cardAccount,
+    qerkoAccount,
   ])
   const active = methods.find(({ id }) => id === selected) ?? methods[0]
   const preparationKey =
@@ -281,8 +296,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           : active?.id === "card"
             ? payment?.cardAccountId !== null &&
               payment?.cardAccountId !== undefined
-            : payment?.cashuLnInvoice !== null &&
-              payment?.cashuLnInvoice !== undefined
+            : active?.id === "qerko"
+              ? payment?.qerkoAccountId !== null &&
+                payment?.qerkoAccountId !== undefined
+              : payment?.cashuLnInvoice !== null &&
+                payment?.cashuLnInvoice !== undefined
   const preparationStatus =
     preparationKey === null ? undefined : preparation[preparationKey]
   // Spark invoices carry an `expiresAt` and nothing writes a row when it
@@ -410,9 +428,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                 ? { cashRegister: { accountId: method.accountId } }
                 : method.id === "card"
                   ? { card: { accountId: method.accountId } }
-                  : method.id === "spark"
-                    ? { spark: { accountId: method.accountId } }
-                    : { bank: { accountId: method.accountId } }),
+                  : method.id === "qerko"
+                    ? { qerkoTerminal: { accountId: method.accountId } }
+                    : method.id === "spark"
+                      ? { spark: { accountId: method.accountId } }
+                      : { bank: { accountId: method.accountId } }),
             })
           )
         }
@@ -809,6 +829,14 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             errorKey={ibanErrorKey}
             onMarkPaid={() => void markIbanPaid()}
           />
+        ) : active.id === "qerko" ? (
+          <QerkoPaymentTab
+            paymentId={paymentId}
+            accountId={payment.qerkoAccountId}
+            payable={status === "pending"}
+            pendingTransactionId={payment.qerkoPendingTransactionId}
+            unresolvedTransactionId={payment.qerkoUnresolvedTransactionId}
+          />
         ) : active.id === "card" ? (
           <CardPaymentTab
             canPayCard={canPayCard}
@@ -910,7 +938,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             {t(
               active?.id === "cash"
                 ? "paymentWait.cashPaid.prompt"
-                : active?.id === "card"
+                : active?.id === "card" || active?.id === "qerko"
                   ? "paymentWait.cardPaid.prompt"
                   : "paymentWait.scanOrTap"
             )}

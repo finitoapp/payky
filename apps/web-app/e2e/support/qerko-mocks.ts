@@ -35,6 +35,8 @@ export interface FakeQerko {
   paymentOutcome: "approved" | "declined" | "unknown"
   /** What a refund answers. */
   refundOutcome: "approved" | "declined"
+  /** While set, Qerko lists no terminal for the company. */
+  noTerminals: boolean
 }
 
 interface Operation {
@@ -91,6 +93,7 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
     holdPayment: false,
     paymentOutcome: "approved",
     refundOutcome: "approved",
+    noTerminals: false,
   }
 
   const answer = (path: string, body: Record<string, unknown>): unknown => {
@@ -110,26 +113,28 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
             identificationNumber: "12345678",
             country: "CZ",
           },
-          locations: [
-            {
-              id: "loc-1",
-              name: "Main street",
-              terminals: [
+          locations: fake.noTerminals
+            ? []
+            : [
                 {
-                  id: "terminal-1",
-                  tid: qerkoTerminalTid,
-                  platform: "physical",
-                  enabled: true,
-                },
-                {
-                  id: "terminal-2",
-                  tid: "TID-OFF",
-                  platform: "physical",
-                  enabled: false,
+                  id: "loc-1",
+                  name: "Main street",
+                  terminals: [
+                    {
+                      id: "terminal-1",
+                      tid: qerkoTerminalTid,
+                      platform: "physical",
+                      enabled: true,
+                    },
+                    {
+                      id: "terminal-2",
+                      tid: "TID-OFF",
+                      platform: "physical",
+                      enabled: false,
+                    },
+                  ],
                 },
               ],
-            },
-          ],
         }
       case "get-terminal-status":
         return { type: "status", authorizationServerConnection: "ok" }

@@ -429,7 +429,11 @@ export function QerkoPairingWizard({
 
       {phase === "terminal" ? (
         <CardContent>
-          <QerkoTerminalChooser enableAccount onChosen={onFinished} />
+          <QerkoTerminalChooser
+            enableAccount
+            onChosen={onFinished}
+            onSkip={onFinished}
+          />
         </CardContent>
       ) : null}
     </Card>

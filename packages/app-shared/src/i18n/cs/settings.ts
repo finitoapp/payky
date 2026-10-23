@@ -719,7 +719,9 @@ export const csSettings = {
   "settings.qerkoTerminal.terminals.description":
     "Každé zařízení platí na vlastním terminálu. Tato volba platí jen pro toto zařízení.",
   "settings.qerkoTerminal.terminals.empty":
-    "Qerko pro tuto firmu nemá žádný aktivovaný terminál.",
+    "Qerko pro tuto firmu zatím nemá žádný aktivovaný terminál.",
+  "settings.qerkoTerminal.terminals.empty.help":
+    "Dostupné terminály pro vaši firmu může nastavit jen podpora Qerko. Kontaktujte ji, požádejte o aktivaci terminálu a pak se vraťte a zkuste to znovu.",
   "settings.qerkoTerminal.terminals.failed": "Terminály se nepodařilo načíst.",
   "settings.qerkoTerminal.terminals.later": "Vybrat později",
   "settings.qerkoTerminal.terminals.platform.physical": "Terminál",

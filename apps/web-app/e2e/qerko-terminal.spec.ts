@@ -89,6 +89,67 @@ test("pair with Qerko: the wizard asks for the code and a terminal, and the meth
   })
 })
 
+test("pair with Qerko without a terminal: the wizard explains who sets one up and lets it be skipped", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  qerko.noTerminals = true
+
+  await gotoPage(
+    page,
+    "/settings/payment-accounts/qerko-terminal",
+    "en",
+    "settings.qerkoTerminal.title"
+  )
+  await page
+    .getByLabel(t("settings.qerkoTerminal.company.identificationNumber.label"))
+    .fill("12345678")
+  await page
+    .getByRole("button", { name: t("settings.qerkoTerminal.requestCode") })
+    .click()
+  await page
+    .getByLabel(t("settings.qerkoTerminal.code.label"))
+    .pressSequentially(qerkoPairingCode)
+  await page
+    .getByRole("button", { name: t("settings.qerkoTerminal.code.confirm") })
+    .click()
+
+  await test.step("the empty list points to Qerko support", async () => {
+    await expect(
+      page.getByText(t("settings.qerkoTerminal.terminals.empty"), {
+        exact: true,
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByText(t("settings.qerkoTerminal.terminals.empty.help"))
+    ).toBeVisible()
+  })
+
+  await test.step("a terminal activated meanwhile shows up on try again", async () => {
+    qerko.noTerminals = false
+    await page
+      .getByRole("button", {
+        name: t("settings.qerkoTerminal.terminals.retry"),
+      })
+      .click()
+    await expect(page.getByText(qerkoTerminalTid)).toBeVisible()
+  })
+
+  await test.step("choosing later ends the wizard without a terminal", async () => {
+    await page
+      .getByRole("button", {
+        name: t("settings.qerkoTerminal.terminals.later"),
+      })
+      .click()
+    await expect(
+      page.getByText(t("settings.qerkoTerminal.paired.title"))
+    ).toBeVisible()
+    await expect(
+      page.getByText(t("settings.qerkoTerminal.terminal.none"))
+    ).toBeVisible()
+  })
+})
+
 test("pay on the terminal: the step shows while it waits, then the payment is paid", async ({
   seededPage: page,
 }) => {

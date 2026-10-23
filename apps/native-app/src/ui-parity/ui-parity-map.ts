@@ -483,6 +483,11 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
+    native: "src/features/payment-wait/payment-wait-qerko-tab.tsx",
+    web: ["apps/web-app/src/features/payment-wait/payment-wait-qerko-tab.tsx"],
+    status: "matched",
+  },
+  {
     native: "src/features/payment-wait/payment-wait-card-tab.tsx",
     web: ["apps/web-app/src/features/payment-wait/payment-wait-card-tab.tsx"],
     status: "matched",
@@ -1182,6 +1187,32 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "src/features/settings/payment-accounts/card-switchio-settings-page.tsx",
     web: [
       "apps/web-app/src/features/settings/payment-accounts/card-switchio-settings-page.tsx",
+    ],
+    status: "matched",
+  },
+  {
+    native: "src/features/settings/payment-accounts/qerko-pairing-wizard.tsx",
+    web: [
+      "apps/web-app/src/features/settings/payment-accounts/qerko-pairing-wizard.tsx",
+    ],
+    status: "matched",
+    allowedDifferences: {
+      SelectGroup:
+        "Web groups a select's items for its popup; native's SelectContent lists its items in a sheet and has no group part.",
+    },
+  },
+  {
+    native: "src/features/settings/payment-accounts/qerko-terminal-chooser.tsx",
+    web: [
+      "apps/web-app/src/features/settings/payment-accounts/qerko-terminal-chooser.tsx",
+    ],
+    status: "matched",
+  },
+  {
+    native:
+      "src/features/settings/payment-accounts/qerko-terminal-settings-page.tsx",
+    web: [
+      "apps/web-app/src/features/settings/payment-accounts/qerko-terminal-settings-page.tsx",
     ],
     status: "matched",
   },

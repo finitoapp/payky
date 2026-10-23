@@ -110,6 +110,9 @@ describe("native route access", () => {
     expect(requiredPermission("/settings/payment-accounts/card-switchio")).toBe(
       "admin"
     )
+    expect(
+      requiredPermission("/settings/payment-accounts/qerko-terminal")
+    ).toBe("admin")
     expect(requiredPermission("/settings/payment-accounts/cashu")).toBe("admin")
   })
 

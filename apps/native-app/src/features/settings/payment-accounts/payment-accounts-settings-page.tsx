@@ -205,7 +205,7 @@ export function PaymentAccountsSettingsPage() {
         : qerkoEnabled
           ? currencyMismatch(qerko.currency)
           : null,
-      href: null,
+      href: "/settings/payment-accounts/qerko-terminal",
       saveEnabled: (enabled) =>
         runToast(async (run) => {
           await run.ok(

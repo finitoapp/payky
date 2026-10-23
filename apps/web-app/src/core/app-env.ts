@@ -9,6 +9,10 @@ export const appEnv = createEnv({
     // means the page's own origin, so every deployment calls its own /api.
     VITE_PAYKY_API_BASE_URL: z.url().optional(),
     VITE_PAYKY_EET_PRODUCTION_URL: z.url().optional(),
+    // The `Pos-Id` header of every Qerko POS API call. The sandbox accepts any
+    // value; the environment (production or sandbox) is chosen per account
+    // when pairing, not here.
+    VITE_PAYKY_QERKO_POS_ID: z.string().default("payky"),
     // Where the donations page sends sats.
     VITE_PAYKY_DONATE_LUD16_ADDRESS: z.string().default("donate@payky.me"),
     // Where the account's Nostr profile is read from and published to.

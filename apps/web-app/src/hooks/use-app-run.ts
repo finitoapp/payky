@@ -2,6 +2,7 @@ import { createRun } from "@evolu/web"
 import { createDateDep } from "@payky/core/deps"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
+import { createQerkoApiDep } from "@payky/core/integrations/qerko/qerko-client"
 import { createYadioApiDep } from "@payky/core/integrations/yadio/yadio-client"
 import { createSparkWalletDep } from "@payky/core/spark/spark-wallet"
 import { useAtomValue, useStore } from "jotai"
@@ -21,7 +22,7 @@ import { createSwitchioTerminalDep } from "@/platform/switchio.ts"
  *
  * Returns a stable factory that creates a disposable Run wired with the full
  * superset of app dependencies (console, evolu, deviceEvolu, evoluOwner,
- * date, fetch, sparkWallet, yadioApi, switchioTerminal, eetApi, nostr,
+ * date, fetch, sparkWallet, yadioApi, qerkoApi, switchioTerminal, eetApi, nostr,
  * lockManager); the Cashu wallet comes from `useCashuAppRun`. Task
  * dependency typing is structural, so Tasks that need only a subset are
  * unaffected by the extra deps.
@@ -60,6 +61,7 @@ const useAppRunDeps = () => {
       ...fetchDep,
       ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
       ...createYadioApiDep(),
+      ...createQerkoApiDep({ posId: appEnv.VITE_PAYKY_QERKO_POS_ID }),
       ...createSwitchioTerminalDep(),
       ...createEetApiDep(
         { ...dateDep, ...fetchDep },

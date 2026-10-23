@@ -19,7 +19,6 @@ import {
   stepRefundQuantity,
   tipRefundErrorKeys,
 } from "@payky/app-shared/refund-form"
-import { qerkoTerminalSelectionQuery } from "@payky/core/evolu/device-qerko"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
 import { paymentQerkoTerminalByIdQuery } from "@payky/core/modules/payment/payment-queries"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
@@ -45,10 +44,9 @@ import {
   type RefundableLine,
   sumGoodsRefundAmounts,
 } from "@payky/core/modules/refund/refund-utils"
-import {
-  type FiatCurrency,
-  NonEmptyString255Schema,
-  type NonNegativeInteger,
+import type {
+  FiatCurrency,
+  NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import { useQuery } from "@tanstack/react-query"
 import { router } from "expo-router"
@@ -90,10 +88,7 @@ import {
 } from "../../components/ui/toggle-group.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
 import { useAppRun } from "../../hooks/use-app-run.ts"
-import {
-  useDeviceEvoluQuery,
-  useEvoluQuery,
-} from "../../hooks/use-evolu-query.ts"
+import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -128,7 +123,6 @@ export function PaymentRefunds({
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
-  const account = useAtomValue(accountAtom)
   const [sheet, setSheet] = useState<"goods" | "tip" | null>(null)
   const refunds = useEvoluQuery(refundsByPaymentIdQuery(payment.id)).data
   const refundLines = useEvoluQuery(
@@ -145,17 +139,15 @@ export function PaymentRefunds({
   const qerkoAttempts = useEvoluQuery(
     qerkoTerminalRefundAttemptsByPaymentIdQuery(payment.id)
   ).data
-  const terminal = useDeviceEvoluQuery(qerkoTerminalSelectionQuery(account.id))
-    .data[0]
-  // A refund to the card needs the id Qerko's receipt handed out, and a
-  // terminal this device can ask (qerko/0004).
-  const qerkoRefundId = qerkoPayment?.qerkoRefundId
-  const qerkoTerminalId =
-    qerkoRefundId === undefined || qerkoRefundId === null
-      ? null
-      : (terminal?.terminalId ?? null)
+  // A refund to the card needs the id Qerko's receipt handed out and the
+  // terminal the payment was taken on, whichever terminal this device uses
+  // now (qerko/0006).
+  const qerkoRefundable =
+    qerkoPayment !== undefined &&
+    qerkoPayment.qerkoRefundId !== null &&
+    qerkoPayment.terminalId !== null
   const defaultMethod = defaultRefundMethod(paymentMethodKinds, {
-    qerkoRefundable: qerkoTerminalId !== null,
+    qerkoRefundable,
   })
   const {
     refundableAmount,
@@ -295,7 +287,7 @@ export function PaymentRefunds({
           refundableLines={refundableLines}
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
-          qerkoTerminalId={qerkoTerminalId}
+          qerkoRefundable={qerkoRefundable}
           onClose={() => setSheet(null)}
         />
       ) : null}
@@ -305,7 +297,7 @@ export function PaymentRefunds({
           currency={payment.currency}
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
-          qerkoTerminalId={qerkoTerminalId}
+          qerkoRefundable={qerkoRefundable}
           onClose={() => setSheet(null)}
         />
       ) : null}
@@ -361,7 +353,7 @@ function RefundSheet({
   refundableLines,
   tipAmount,
   defaultMethod,
-  qerkoTerminalId,
+  qerkoRefundable,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -372,7 +364,7 @@ function RefundSheet({
   readonly tipAmount: NonNegativeInteger
   readonly defaultMethod: RefundMethod
   /** Set when the card can be refunded from this device. */
-  readonly qerkoTerminalId: string | null
+  readonly qerkoRefundable: boolean
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -416,12 +408,10 @@ function RefundSheet({
         quantity,
       }))
       if (method === "qerkoTerminal") {
-        const terminalId = NonEmptyString255Schema.safeParse(qerkoTerminalId)
-        if (!terminalId.success) return "refund.qerko.error.notAvailable"
+        if (!qerkoRefundable) return "refund.qerko.error.notAvailable"
         const result = await run(
           startQerkoTerminalRefund({
             paymentId,
-            terminalId: terminalId.data,
             deviceId: device.id,
             ...(mode === "amount" ? { amount: refundAmount } : { lines }),
           })
@@ -549,7 +539,7 @@ function RefundSheet({
       <MethodChoice
         method={method}
         disabled={pending}
-        qerkoAvailable={qerkoTerminalId !== null}
+        qerkoAvailable={qerkoRefundable}
         onChange={setMethod}
       />
     </Sheet>
@@ -561,7 +551,7 @@ function TipRefundSheet({
   currency,
   tipAmount,
   defaultMethod,
-  qerkoTerminalId,
+  qerkoRefundable,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -569,7 +559,7 @@ function TipRefundSheet({
   readonly tipAmount: NonNegativeInteger
   readonly defaultMethod: RefundMethod
   /** Set when the card can be refunded from this device. */
-  readonly qerkoTerminalId: string | null
+  readonly qerkoRefundable: boolean
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -590,12 +580,10 @@ function TipRefundSheet({
     setPending(true)
     const refunded = await runToast(async (run) => {
       if (method === "qerkoTerminal") {
-        const terminalId = NonEmptyString255Schema.safeParse(qerkoTerminalId)
-        if (!terminalId.success) return "refund.qerko.error.notAvailable"
+        if (!qerkoRefundable) return "refund.qerko.error.notAvailable"
         const result = await run(
           startQerkoTerminalRefund({
             paymentId,
-            terminalId: terminalId.data,
             deviceId: device.id,
             tip: true,
           })
@@ -646,7 +634,7 @@ function TipRefundSheet({
       <MethodChoice
         method={method}
         disabled={pending}
-        qerkoAvailable={qerkoTerminalId !== null}
+        qerkoAvailable={qerkoRefundable}
         onChange={setMethod}
       />
     </Sheet>

@@ -230,7 +230,6 @@ const setup = async ({
       run(
         startQerkoTerminalRefund({
           paymentId,
-          terminalId,
           deviceId: null,
           amount: NonNegativeInteger(amount),
         })
@@ -350,7 +349,6 @@ describe("refund to the card through Qerko", () => {
       test.run(
         startQerkoTerminalRefund({
           paymentId: test.paymentId,
-          terminalId,
           deviceId: null,
           lines: [{ paymentLineId: beer.id, quantity: PositiveNumber(1) }],
         })
@@ -450,6 +448,35 @@ describe("refund to the card through Qerko", () => {
     await expect.poll(() => test.attempts()).toEqual([])
   }, 20_000)
 
+  test("the refund goes to the terminal that took the payment and needs one on record", async () => {
+    await using test = await setup({
+      handlers: {
+        "create-terminal-refund": (body) => ({
+          type: "started",
+          refund: refundResponse("pending", body.transactionId),
+        }),
+      },
+    })
+
+    // Nothing the device chose since the payment takes part: the action is
+    // given no terminal, so the one on the payment's row is the only source.
+    await test.startAmount(1_000)
+    expect(test.refundRequests()[0]?.body).toMatchObject({
+      terminalId: "terminal-1",
+    })
+
+    await using without = await setup({ handlers: {} })
+    without.evolu.update("paymentQerkoTerminal", {
+      id: without.paymentId,
+      terminalId: null,
+    })
+    await expect(without.startAmount(1_000)).resolves.toMatchObject({
+      ok: false,
+      error: { type: "QerkoRefundNotAvailable" },
+    })
+    expect(without.refundRequests()).toHaveLength(0)
+  }, 20_000)
+
   test("a payment that was not taken through Qerko cannot be refunded to the card", async () => {
     await using testEvolu = await createEvoluTest()
     const { evolu } = testEvolu
@@ -499,7 +526,6 @@ describe("refund to the card through Qerko", () => {
       run(
         startQerkoTerminalRefund({
           paymentId,
-          terminalId,
           deviceId: null,
           amount: NonNegativeInteger(1_000),
         })

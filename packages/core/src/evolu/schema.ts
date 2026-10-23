@@ -77,6 +77,7 @@ import {
   paymentNumber,
 } from "../modules/payment-number/payment-number.ts"
 import { paymentNumberSeries } from "../modules/payment-number-series/payment-number-series.ts"
+import { qerkoPlugin } from "../modules/qerko-plugin/qerko-plugin.ts"
 import {
   reconciliationClaim,
   reconciliationClaimIndexes,
@@ -135,6 +136,7 @@ export const AppSchema = {
   fioPlugin,
   fioPluginSyncPointer,
   fioPluginToken,
+  qerkoPlugin,
   eetSettings,
   eetCertificate,
   eetSale,

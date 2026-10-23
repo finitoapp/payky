@@ -62,6 +62,12 @@ export const CashuKnownMintIdRaw = id("CashuKnownMint")
 export const CashuKnownMintId = standardSchemaToZod(CashuKnownMintIdRaw)
 export type CashuKnownMintId = typeof CashuKnownMintIdRaw.Output
 
+export const QerkoTerminalSelectionIdRaw = id("QerkoTerminalSelection")
+export const QerkoTerminalSelectionId = standardSchemaToZod(
+  QerkoTerminalSelectionIdRaw
+)
+export type QerkoTerminalSelectionId = typeof QerkoTerminalSelectionIdRaw.Output
+
 export const deviceSettingsId = createIdFromString<"DeviceSettings">(
   "payky-device-settings"
 )
@@ -184,6 +190,19 @@ const deviceEvoluSchema = {
     mint: z.string().min(1).max(1000),
     seen: SqliteBoolSchema.nullable(),
     added: SqliteBoolSchema.nullable(),
+  },
+  /**
+   * The Qerko terminal this device pays on, per account (qerko/0001): the
+   * API key syncs with the account, but which terminal sits on which counter
+   * is a fact about the device. `terminalTid` and `locationName` are what
+   * the settings screen shows without asking Qerko.
+   */
+  qerkoTerminalSelection: {
+    id: QerkoTerminalSelectionId,
+    accountId: DeviceAccountId,
+    terminalId: NonEmptyString255Schema,
+    terminalTid: NonEmptyString255Schema,
+    locationName: NonEmptyString255Schema,
   },
   deviceSettings: {
     id: DeviceSettingsId,

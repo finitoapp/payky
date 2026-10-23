@@ -1,9 +1,13 @@
+import type { InferRow } from "@evolu/common"
 import { formatDateTime } from "@payky/app-shared/format-date"
 import { formatMoney } from "@payky/app-shared/format-money"
+import { qerkoStepKeys } from "@payky/app-shared/qerko-terminal-flow"
 import {
+  defaultRefundMethod,
   deriveRefundAmountText,
   deriveRefundAvailability,
   deriveRefundForm,
+  describeQerkoRefundError,
   type RefundablePaymentLine,
   type RefundMode,
   type RefundQuantities,
@@ -12,14 +16,22 @@ import {
   stepRefundQuantity,
   tipRefundErrorKeys,
 } from "@payky/app-shared/refund-form"
+import { qerkoTerminalSelectionQuery } from "@payky/core/evolu/device-qerko"
 import type { BillId } from "@payky/core/modules/bill/bill-types"
+import { paymentQerkoTerminalByIdQuery } from "@payky/core/modules/payment/payment-queries"
 import type { PaymentId } from "@payky/core/modules/payment/payment-types"
 import {
   refundPayment,
   refundPaymentTip,
 } from "@payky/core/modules/refund/refund-actions"
 import {
+  dismissQerkoTerminalRefundAttempt,
+  startQerkoTerminalRefund,
+  syncQerkoTerminalRefund,
+} from "@payky/core/modules/refund/refund-qerko-actions"
+import {
   otherClaimedPaymentOfBillQuery,
+  qerkoTerminalRefundAttemptsByPaymentIdQuery,
   refundablePaymentLinesQuery,
   refundLinesByPaymentIdQuery,
   refundsByPaymentIdQuery,
@@ -30,15 +42,18 @@ import {
   type RefundableLine,
   sumGoodsRefundAmounts,
 } from "@payky/core/modules/refund/refund-utils"
-import type {
-  FiatCurrency,
-  NonNegativeInteger,
+import {
+  type FiatCurrency,
+  NonEmptyString255Schema,
+  type NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
+import { useQuery } from "@tanstack/react-query"
 import { useAtomValue } from "jotai"
 import Minus from "lucide-react-native/icons/minus"
 import Plus from "lucide-react-native/icons/plus"
 import Undo2 from "lucide-react-native/icons/undo-2"
 import { type ReactNode, useState } from "react"
+import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { Button } from "../../components/ui/button.tsx"
@@ -70,7 +85,11 @@ import {
   ToggleGroupItem,
 } from "../../components/ui/toggle-group.tsx"
 import { useRequirePermission } from "../../core/use-access.ts"
-import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useAppRun } from "../../hooks/use-app-run.ts"
+import {
+  useDeviceEvoluQuery,
+  useEvoluQuery,
+} from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -88,7 +107,7 @@ export function PaymentRefunds({
   payment,
   excess,
   isPaid,
-  defaultMethod,
+  paymentMethodKinds,
 }: {
   readonly payment: {
     readonly id: PaymentId
@@ -100,10 +119,12 @@ export function PaymentRefunds({
   }
   readonly excess: NonNegativeInteger
   readonly isPaid: boolean
-  readonly defaultMethod: RefundMethod
+  /** The kinds of the transactions that settled the payment. */
+  readonly paymentMethodKinds: ReadonlyArray<string>
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
+  const account = useAtomValue(accountAtom)
   const [sheet, setSheet] = useState<"goods" | "tip" | null>(null)
   const refunds = useEvoluQuery(refundsByPaymentIdQuery(payment.id)).data
   const refundLines = useEvoluQuery(
@@ -115,6 +136,23 @@ export function PaymentRefunds({
   const otherClaimedPayments = useEvoluQuery(
     otherClaimedPaymentOfBillQuery(payment.id)
   ).data
+  const qerkoPayment = useEvoluQuery(paymentQerkoTerminalByIdQuery(payment.id))
+    .data[0]
+  const qerkoAttempts = useEvoluQuery(
+    qerkoTerminalRefundAttemptsByPaymentIdQuery(payment.id)
+  ).data
+  const terminal = useDeviceEvoluQuery(qerkoTerminalSelectionQuery(account.id))
+    .data[0]
+  // A refund to the card needs the id Qerko's receipt handed out, and a
+  // terminal this device can ask (qerko/0004).
+  const qerkoRefundId = qerkoPayment?.qerkoRefundId
+  const qerkoTerminalId =
+    qerkoRefundId === undefined || qerkoRefundId === null
+      ? null
+      : (terminal?.terminalId ?? null)
+  const defaultMethod = defaultRefundMethod(paymentMethodKinds, {
+    qerkoRefundable: qerkoTerminalId !== null,
+  })
   const {
     refundableAmount,
     remainingAmount,
@@ -134,11 +172,25 @@ export function PaymentRefunds({
   const money = (value: NonNegativeInteger) =>
     formatMoney({ value, currency: payment.currency }, locale)
 
-  if (refunds.length === 0 && !canRefund && !canRefundTip) return null
+  if (
+    refunds.length === 0 &&
+    qerkoAttempts.length === 0 &&
+    !canRefund &&
+    !canRefundTip
+  ) {
+    return null
+  }
 
   const refundButtons =
-    canRefund || canRefundTip ? (
+    canRefund || canRefundTip || qerkoAttempts.length > 0 ? (
       <YStack gap={8}>
+        {qerkoAttempts.map((attempt) => (
+          <QerkoRefundAttempt
+            key={attempt.id}
+            attempt={attempt}
+            formatMinor={money}
+          />
+        ))}
         {canRefund ? (
           <Button
             variant="outline"
@@ -239,6 +291,7 @@ export function PaymentRefunds({
           refundableLines={refundableLines}
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
+          qerkoTerminalId={qerkoTerminalId}
           onClose={() => setSheet(null)}
         />
       ) : null}
@@ -248,6 +301,7 @@ export function PaymentRefunds({
           currency={payment.currency}
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
+          qerkoTerminalId={qerkoTerminalId}
           onClose={() => setSheet(null)}
         />
       ) : null}
@@ -303,6 +357,7 @@ function RefundSheet({
   refundableLines,
   tipAmount,
   defaultMethod,
+  qerkoTerminalId,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -312,6 +367,8 @@ function RefundSheet({
   readonly refundableLines: ReadonlyArray<RefundableLine<RefundablePaymentLine>>
   readonly tipAmount: NonNegativeInteger
   readonly defaultMethod: RefundMethod
+  /** Set when the card can be refunded from this device. */
+  readonly qerkoTerminalId: string | null
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -350,19 +407,28 @@ function RefundSheet({
     if (!(await require("refund", "access.action.refund"))) return
     setPending(true)
     const refunded = await runToast(async (run) => {
+      const lines = chosenLines.map(({ paymentLineId, quantity }) => ({
+        paymentLineId,
+        quantity,
+      }))
+      if (method === "qerkoTerminal") {
+        const terminalId = NonEmptyString255Schema.safeParse(qerkoTerminalId)
+        if (!terminalId.success) return "refund.qerko.error.notAvailable"
+        const result = await run(
+          startQerkoTerminalRefund({
+            paymentId,
+            terminalId: terminalId.data,
+            deviceId: device.id,
+            ...(mode === "amount" ? { amount: refundAmount } : { lines }),
+          })
+        )
+        return result.ok ? undefined : describeQerkoRefundError(result.error)
+      }
       const result = await run(
         refundPayment(
           mode === "amount"
             ? { paymentId, method, deviceId: device.id, amount: refundAmount }
-            : {
-                paymentId,
-                method,
-                deviceId: device.id,
-                lines: chosenLines.map(({ paymentLineId, quantity }) => ({
-                  paymentLineId,
-                  quantity,
-                })),
-              }
+            : { paymentId, method, deviceId: device.id, lines }
         )
       )
       if (!result.ok) return refundErrorKeys[result.error.type]
@@ -370,7 +436,11 @@ function RefundSheet({
     })
     setPending(false)
     if (refunded) {
-      toast.success(t("refund.created"))
+      toast.success(
+        t(
+          method === "qerkoTerminal" ? "refund.qerko.started" : "refund.created"
+        )
+      )
       onClose()
     }
   }
@@ -472,7 +542,12 @@ function RefundSheet({
         </FieldSet>
       )}
 
-      <MethodChoice method={method} disabled={pending} onChange={setMethod} />
+      <MethodChoice
+        method={method}
+        disabled={pending}
+        qerkoAvailable={qerkoTerminalId !== null}
+        onChange={setMethod}
+      />
     </Sheet>
   )
 }
@@ -482,12 +557,15 @@ function TipRefundSheet({
   currency,
   tipAmount,
   defaultMethod,
+  qerkoTerminalId,
   onClose,
 }: {
   readonly paymentId: PaymentId
   readonly currency: FiatCurrency
   readonly tipAmount: NonNegativeInteger
   readonly defaultMethod: RefundMethod
+  /** Set when the card can be refunded from this device. */
+  readonly qerkoTerminalId: string | null
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -507,6 +585,19 @@ function TipRefundSheet({
     if (!(await require("refund", "access.action.refund"))) return
     setPending(true)
     const refunded = await runToast(async (run) => {
+      if (method === "qerkoTerminal") {
+        const terminalId = NonEmptyString255Schema.safeParse(qerkoTerminalId)
+        if (!terminalId.success) return "refund.qerko.error.notAvailable"
+        const result = await run(
+          startQerkoTerminalRefund({
+            paymentId,
+            terminalId: terminalId.data,
+            deviceId: device.id,
+            tip: true,
+          })
+        )
+        return result.ok ? undefined : describeQerkoRefundError(result.error)
+      }
       const result = await run(
         refundPaymentTip({ paymentId, method, deviceId: device.id })
       )
@@ -515,7 +606,13 @@ function TipRefundSheet({
     })
     setPending(false)
     if (refunded) {
-      toast.success(t("refund.tipCreated"))
+      toast.success(
+        t(
+          method === "qerkoTerminal"
+            ? "refund.qerko.started"
+            : "refund.tipCreated"
+        )
+      )
       onClose()
     }
   }
@@ -542,7 +639,12 @@ function TipRefundSheet({
         </>
       }
     >
-      <MethodChoice method={method} disabled={pending} onChange={setMethod} />
+      <MethodChoice
+        method={method}
+        disabled={pending}
+        qerkoAvailable={qerkoTerminalId !== null}
+        onChange={setMethod}
+      />
     </Sheet>
   )
 }
@@ -627,10 +729,13 @@ function RefundItemRow({
 function MethodChoice({
   method,
   disabled,
+  qerkoAvailable,
   onChange,
 }: {
   readonly method: RefundMethod
   readonly disabled: boolean
+  /** The card can be refunded through the terminal from this device. */
+  readonly qerkoAvailable: boolean
   readonly onChange: (method: RefundMethod) => void
 }) {
   const { t } = useTranslation()
@@ -650,10 +755,119 @@ function MethodChoice({
         <ToggleGroupItem value="cashRegister" justify="flex-start">
           {t("refund.dialog.method.cashRegister")}
         </ToggleGroupItem>
+        {qerkoAvailable ? (
+          <ToggleGroupItem value="qerkoTerminal" justify="flex-start">
+            {t("refund.dialog.method.qerkoTerminal")}
+          </ToggleGroupItem>
+        ) : null}
         <ToggleGroupItem value="outside" justify="flex-start">
           {t("refund.dialog.method.outside")}
         </ToggleGroupItem>
       </ToggleGroup>
     </FieldSet>
+  )
+}
+
+type QerkoRefundAttemptRow = InferRow<
+  ReturnType<typeof qerkoTerminalRefundAttemptsByPaymentIdQuery>
+>
+
+/** Web's `QerkoRefundAttempt`: a card refund the terminal has not settled. */
+function QerkoRefundAttempt({
+  attempt,
+  formatMinor,
+}: {
+  readonly attempt: QerkoRefundAttemptRow
+  readonly formatMinor: (value: NonNegativeInteger) => string
+}) {
+  const { t } = useTranslation()
+  const appRun = useAppRun()
+  const runToast = useRunToast()
+  const isPending = attempt.status === "pending"
+  const poll = useQuery({
+    queryKey: ["qerko", "refund-sync", attempt.id],
+    enabled: isPending,
+    refetchInterval: 1000,
+    queryFn: async () => {
+      await using run = appRun()
+      const result = await run(syncQerkoTerminalRefund(attempt.id))
+      return result.ok ? result.value : null
+    },
+  })
+  const step = poll.data?.status === "pending" ? poll.data.step : "connecting"
+
+  const dismiss = () =>
+    runToast(async (run) => {
+      await run.ok(dismissQerkoTerminalRefundAttempt(attempt.id))
+    })
+
+  return (
+    <YStack
+      testID="payment-detail-qerko-refund"
+      gap={8}
+      borderWidth={1}
+      borderColor="border-color"
+      rounded={8}
+      px={12}
+      py={8}
+    >
+      <Text
+        fontSize={fontSize.sm}
+        lineHeight={fontSize.sm}
+        fontWeight={fontWeight.semibold}
+      >
+        {t("refund.qerko.pending")} · {formatMinor(attempt.amount)}
+      </Text>
+      {isPending ? (
+        <XStack items="center" gap={8}>
+          <ActivityIndicator />
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            color="muted-foreground"
+          >
+            {t(qerkoStepKeys[step])}
+          </Text>
+        </XStack>
+      ) : null}
+      {attempt.status === "failed" ? (
+        <>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+            color="destructive"
+          >
+            {t(
+              attempt.failureReason === "cancelled"
+                ? "refund.qerko.failed.cancelled"
+                : "refund.qerko.failed.declined"
+            )}
+          </Text>
+          <Button
+            variant="outline"
+            label={t("refund.qerko.dismiss")}
+            onPress={() => void dismiss()}
+          />
+        </>
+      ) : null}
+      {attempt.status === "unknown" ? (
+        <>
+          <Text
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.medium}
+            color="destructive"
+          >
+            {t("refund.qerko.unresolved")}
+          </Text>
+          <Button
+            variant="outline"
+            label={t("refund.qerko.dismissUnresolved")}
+            onPress={() => void dismiss()}
+          />
+        </>
+      ) : null}
+    </YStack>
   )
 }

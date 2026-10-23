@@ -58,6 +58,7 @@ export const skPayment = {
   "paymentDetail.refunds.action": "Vrátiť peniaze",
   "paymentDetail.refunds.method.cashRegister": "Z pokladne",
   "paymentDetail.refunds.method.outside": "Mimo Payky",
+  "paymentDetail.refunds.method.qerkoTerminal": "Na kartu",
   "paymentDetail.refunds.title": "Vrátenia",
   "paymentDetail.refunds.tipAction": "Vrátiť sprepitné ({amount})",
   "paymentDetail.refunds.tip": "Sprepitné",
@@ -335,6 +336,20 @@ export const skPayment = {
   "paymentWait.wakeLockUnsupported":
     "Tento prehliadač nevie automaticky udržať obrazovku zapnutú.",
   "refund.created": "Vrátenie je zaznamenané.",
+  "refund.dialog.method.qerkoTerminal": "Späť na kartu cez terminál",
+  "refund.qerko.dismiss": "Zavrieť",
+  "refund.qerko.dismissUnresolved": "Skontroloval(a) som, zavrieť",
+  "refund.qerko.error.notAvailable":
+    "Táto platba nebola prijatá na termináli Qerko, takže ju nie je možné vrátiť na kartu.",
+  "refund.qerko.error.running":
+    "Ďalšie vrátenie tejto platby na kartu stále čaká na terminál.",
+  "refund.qerko.failed.cancelled":
+    "Vrátenie na kartu bolo zrušené na termináli.",
+  "refund.qerko.failed.declined": "Terminál vrátenie na kartu zamietol.",
+  "refund.qerko.pending": "Vraciam na kartu",
+  "refund.qerko.started": "Vrátenie bolo odoslané na terminál.",
+  "refund.qerko.unresolved":
+    "Výsledok vrátenia na kartu nie je známy, karta teda mohla byť vrátená. Pred ďalším vrátením skontrolujte terminál a Qerko.",
   "refund.tipDialog.title": "Vrátiť sprepitné",
   "refund.tipDialog.description":
     "Vráti celé sprepitné {amount}. Vrátenie tovaru ho nikdy nezahŕňa.",

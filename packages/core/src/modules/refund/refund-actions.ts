@@ -111,7 +111,7 @@ export interface RefundLineInput {
   readonly quantity: PositiveNumber
 }
 
-interface RefundLineValues extends RefundLineInput {
+export interface RefundLineValues extends RefundLineInput {
   readonly amount: NonNegativeInteger
 }
 
@@ -233,24 +233,39 @@ const prepareCashRefund =
     )
   }
 
-export const refundPayment =
+export interface GoodsRefundPlan {
+  readonly payment: InferRow<ReturnType<typeof paymentDetailQuery>>
+  readonly refundLines: ReadonlyArray<RefundLineValues>
+  readonly refundAmount: NonNegativeInteger
+}
+
+/**
+ * What a refund of goods may be: the paid payment, the lines asked for and
+ * the amount they come to, checked against what is still refundable. Shared
+ * by the refunds that are recorded at once and the one the card terminal
+ * must approve first, so neither can ask for more than the other would allow.
+ */
+export const loadGoodsRefundPlan =
   ({
     paymentId,
-    method,
-    deviceId,
     amount,
     lines,
   }: {
     readonly paymentId: PaymentId
-    readonly method: RefundMethod
-    readonly deviceId: DeviceId | null
-  } & RequireExactlyOne<{
-    readonly amount: NonNegativeInteger
-    readonly lines: ReadonlyArray<RefundLineInput>
-  }>): Task<RefundId, RefundPaymentError, EvoluDep & EvoluOwnerDep & DateDep> =>
+    /** Exactly one of the two is given: the callers' types say so. */
+    readonly amount: NonNegativeInteger | undefined
+    readonly lines: ReadonlyArray<RefundLineInput> | undefined
+  }): Task<
+    GoodsRefundPlan,
+    | PaymentNotFoundError
+    | RefundPaymentNotPaidError
+    | RefundAmountInvalidError
+    | RefundItemsUnavailableError
+    | RefundLineUnavailableError,
+    EvoluDep & DateDep
+  > =>
   async (run) => {
-    const { evolu, evoluOwner } = run.deps
-    const now = run.deps.date.now()
+    const { evolu } = run.deps
     const paymentResult = await run(loadPaidPayment(paymentId))
     if (!paymentResult.ok) return paymentResult
     const payment = paymentResult.value
@@ -291,6 +306,69 @@ export const refundPayment =
         })
       )
     }
+
+    return ok({ payment, refundLines, refundAmount })
+  }
+
+export type TipRefundPlan = {
+  readonly payment: InferRow<ReturnType<typeof paymentDetailQuery>>
+  readonly tipAmount: NonNegativeInteger
+}
+
+/** The tip a payment may still give back, `RefundTipUnavailable` when none. */
+export const loadTipRefundPlan =
+  (
+    paymentId: PaymentId
+  ): Task<
+    TipRefundPlan,
+    | PaymentNotFoundError
+    | RefundPaymentNotPaidError
+    | RefundTipUnavailableError,
+    EvoluDep & DateDep
+  > =>
+  async (run) => {
+    const paymentResult = await run(loadPaidPayment(paymentId))
+    if (!paymentResult.ok) return paymentResult
+    const payment = paymentResult.value
+
+    const refunds = await run.deps.evolu.loadQuery(
+      refundsByPaymentIdQuery(paymentId)
+    )
+    const tipAmount = deriveRefundableTipAmount({ ...payment, refunds })
+    if (tipAmount === 0) {
+      return err(createRefundTipUnavailableError({ paymentId }))
+    }
+    return ok({ payment, tipAmount })
+  }
+
+/**
+ * What a refund recorded without the terminal can be: a refund `method` of
+ * `qerkoTerminal` is written only once the terminal approved it
+ * (`settleQerkoTerminalRefund`), never on someone's word.
+ */
+export type RecordedRefundMethod = Exclude<RefundMethod, "qerkoTerminal">
+
+export const refundPayment =
+  ({
+    paymentId,
+    method,
+    deviceId,
+    amount,
+    lines,
+  }: {
+    readonly paymentId: PaymentId
+    readonly method: RecordedRefundMethod
+    readonly deviceId: DeviceId | null
+  } & RequireExactlyOne<{
+    readonly amount: NonNegativeInteger
+    readonly lines: ReadonlyArray<RefundLineInput>
+  }>): Task<RefundId, RefundPaymentError, EvoluDep & EvoluOwnerDep & DateDep> =>
+  async (run) => {
+    const { evolu, evoluOwner } = run.deps
+    const now = run.deps.date.now()
+    const plan = await run(loadGoodsRefundPlan({ paymentId, amount, lines }))
+    if (!plan.ok) return plan
+    const { payment, refundLines, refundAmount } = plan.value
 
     const id = createRowId<"Refund">()
     const refundedAt = TimestampMs(now.getTime())
@@ -364,7 +442,7 @@ export const refundPaymentTip =
     deviceId,
   }: {
     readonly paymentId: PaymentId
-    readonly method: RefundMethod
+    readonly method: RecordedRefundMethod
     readonly deviceId: DeviceId | null
   }): Task<
     RefundId,
@@ -374,15 +452,9 @@ export const refundPaymentTip =
   async (run) => {
     const { evolu, evoluOwner } = run.deps
     const now = run.deps.date.now()
-    const paymentResult = await run(loadPaidPayment(paymentId))
-    if (!paymentResult.ok) return paymentResult
-    const payment = paymentResult.value
-
-    const refunds = await evolu.loadQuery(refundsByPaymentIdQuery(paymentId))
-    const tipAmount = deriveRefundableTipAmount({ ...payment, refunds })
-    if (tipAmount === 0) {
-      return err(createRefundTipUnavailableError({ paymentId }))
-    }
+    const plan = await run(loadTipRefundPlan(paymentId))
+    if (!plan.ok) return plan
+    const { payment, tipAmount } = plan.value
 
     const id = createIdFromString<"Refund">(`refund:tip:${paymentId}`)
     const refundedAt = TimestampMs(now.getTime())

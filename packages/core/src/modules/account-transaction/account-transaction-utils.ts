@@ -46,6 +46,14 @@ export const deriveCashRefundAccountTransactionId = (
     `accountTransaction:cashRegister:refund:${refundId}`
   )
 
+/** The id the money a card refund took back through Qerko is recorded under. */
+export const deriveQerkoRefundAccountTransactionId = (
+  refundId: RefundId
+): AccountTransactionId =>
+  createIdFromString<"AccountTransaction">(
+    `accountTransaction:qerkoTerminal:refund:${refundId}`
+  )
+
 /**
  * The id a Spark transfer's movement is recorded under. Exported because a
  * Lightning withdrawal records, before it sends, the id the Spark sync job

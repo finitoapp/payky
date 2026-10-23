@@ -10,7 +10,15 @@ export const RefundLineIdRaw = id("RefundLine")
 export const RefundLineId = standardSchemaToZod(RefundLineIdRaw)
 export type RefundLineId = typeof RefundLineIdRaw.Output
 
-export const RefundMethodSchema = z.enum(["cashRegister", "outside"])
+/**
+ * Where a refund's money went: out of the drawer, back to the card through
+ * the Qerko terminal (qerko/0004), or `outside` Payky, which only records it.
+ */
+export const RefundMethodSchema = z.enum([
+  "cashRegister",
+  "qerkoTerminal",
+  "outside",
+])
 export type RefundMethod = z.output<typeof RefundMethodSchema>
 
 export type RefundState = "none" | "partial" | "full"

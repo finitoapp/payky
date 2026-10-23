@@ -84,7 +84,12 @@ import {
   reconciliationClaim,
   reconciliationClaimIndexes,
 } from "../modules/reconciliation-claim/reconciliation-claim.ts"
-import { refund, refundIndexes, refundLine } from "../modules/refund/refund.ts"
+import {
+  qerkoTerminalRefundAttempt,
+  refund,
+  refundIndexes,
+  refundLine,
+} from "../modules/refund/refund.ts"
 import { table } from "../modules/table/table.ts"
 import { taxRate, taxRateIndexes } from "../modules/tax-rate/tax-rate.ts"
 import {
@@ -149,6 +154,7 @@ export const AppSchema = {
   eetReversalConfirmation,
   refund,
   refundLine,
+  qerkoTerminalRefundAttempt,
   withdrawal,
   withdrawalOnchain,
   withdrawalLightning,

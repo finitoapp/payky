@@ -46,7 +46,10 @@ function useAppRunDeps() {
       ...fetchDep,
       ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
       ...createYadioApiDep({ baseUrl: nativeEnv.EXPO_PUBLIC_PAYKY_YADIO_URL }),
-      ...createQerkoApiDep({ posId: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_POS_ID }),
+      ...createQerkoApiDep({
+        posId: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_POS_ID,
+        baseUrl: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_BASE_URL,
+      }),
       uuid: { create: () => Crypto.randomUUID() },
       ...createSwitchioTerminalDep(),
       ...createEetApiDep(

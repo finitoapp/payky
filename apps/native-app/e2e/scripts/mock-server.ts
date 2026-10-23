@@ -11,6 +11,7 @@ import { eetMock } from "./mocks/eet.ts"
 import type { MockHandler } from "./mocks/mock-handler.ts"
 import { nostrRelay } from "./mocks/nostr.ts"
 import { openFactsMock } from "./mocks/open-facts.ts"
+import { qerkoMock } from "./mocks/qerko.ts"
 import { yadioMock } from "./mocks/yadio.ts"
 
 const handlers: ReadonlyArray<MockHandler> = [
@@ -19,6 +20,7 @@ const handlers: ReadonlyArray<MockHandler> = [
   assistantMock,
   eetMock,
   openFactsMock,
+  qerkoMock,
 ]
 
 export function serveMocks(port: number) {

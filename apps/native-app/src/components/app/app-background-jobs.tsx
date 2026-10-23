@@ -58,7 +58,10 @@ const createJobDeps = ({
         native: eetNativeCrypto,
       }
     ),
-    ...createQerkoApiDep({ posId: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_POS_ID }),
+    ...createQerkoApiDep({
+      posId: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_POS_ID,
+      baseUrl: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_BASE_URL,
+    }),
     // The one lock authority of this JS runtime, shared with `nativeRun`.
     lockManager,
     console: nativeConsole,

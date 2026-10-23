@@ -1,0 +1,72 @@
+# web qerko-terminal.spec.ts: "pair with Qerko: the wizard asks for the code
+# and a terminal, and the method turns on" and "pay on the terminal: the step
+# shows while it waits, then the payment is paid" (the mock approves at once,
+# so the pending step is not shown). The e2e build points Qerko at the mock
+# (scripts/mocks/qerko.ts).
+appId: ${APP_ID}
+tags: [qerko]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts/qerko-terminal
+      TEXT: ${output.t["settings.qerkoTerminal.unpaired.title"]}
+- tapOn:
+    id: ${output.re(output.t["settings.qerkoTerminal.company.identificationNumber.label"])}
+    point: 30%,50%
+- inputText: "12345678"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.qerkoTerminal.requestCode"]}
+# The code input has focus on its own; the mock takes 1234.
+- extendedWaitUntil:
+    visible: ${output.t["settings.qerkoTerminal.code.title"]}
+    timeout: 15000
+- inputText: "1234"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.qerkoTerminal.code.confirm"]}
+- extendedWaitUntil:
+    visible: TID-0001
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.qerkoTerminal.terminals.choose"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.qerkoTerminal.paired.title"]}
+    timeout: 15000
+# Pay on the terminal from the payment screen.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.qerko"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.qerko.action"]}
+- extendedWaitUntil:
+    visible:
+      id: payment-paid-panel
+    timeout: 20000
+- assertVisible: ${output.t["paymentWait.paid"]}

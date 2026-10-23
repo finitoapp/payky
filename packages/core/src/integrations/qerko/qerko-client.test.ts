@@ -122,6 +122,32 @@ describe("qerko client", () => {
     )
   })
 
+  test("a base URL override replaces the host of every environment", async () => {
+    const requests: string[] = []
+    const deps = {
+      ...createQerkoApiDep({
+        posId: "pos-1",
+        baseUrl: "http://mock.test/qerko",
+      }),
+      fetch: async (input) => {
+        requests.push(String(input))
+        return Response.json({ type: "codeExpired" })
+      },
+    } satisfies QerkoApiDep & FetchDep
+    await using run = testCreateRun(deps)
+
+    await run(
+      confirmQerkoPairing({
+        environment: "production",
+        pairingRequestId: "p-1",
+        code: "1234",
+        name: "Payky",
+      })
+    )
+
+    expect(requests).toEqual(["http://mock.test/qerko/confirm-pairing"])
+  })
+
   test("returns pairing outcomes as data", async () => {
     const { deps } = setup({ type: "invalidCode", remainingAttempts: 2 })
     await using run = testCreateRun(deps)

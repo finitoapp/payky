@@ -1,0 +1,240 @@
+import { expect, test } from "./support/fixtures.ts"
+import { translate } from "./support/i18n.ts"
+import { gotoPage, waitForLocalWriteToSettle } from "./support/navigation.ts"
+import { createPayment, getPaymentIdFromUrl } from "./support/payment.ts"
+import {
+  pairQerko,
+  qerkoLegalEntityName,
+  qerkoPairingCode,
+  qerkoTerminalTid,
+  routeFakeQerko,
+} from "./support/qerko-mocks.ts"
+
+const t = (key: Parameters<typeof translate>[1]) => translate("en", key)
+
+// Every test pairs through the wizard first, and the suite runs its workers in
+// parallel: the default 30 s is tight for that under load.
+test.describe.configure({ timeout: 90_000 })
+
+test("pair with Qerko: the wizard asks for the code and a terminal, and the method turns on", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+
+  await test.step("a wrong code says how many attempts are left", async () => {
+    await gotoPage(
+      page,
+      "/settings/payment-accounts/qerko-terminal",
+      "en",
+      "settings.qerkoTerminal.title"
+    )
+    await page
+      .getByLabel(
+        t("settings.qerkoTerminal.company.identificationNumber.label")
+      )
+      .fill("12345678")
+    await page
+      .getByRole("button", { name: t("settings.qerkoTerminal.requestCode") })
+      .click()
+    await page
+      .getByLabel(t("settings.qerkoTerminal.code.label"))
+      .pressSequentially("0000")
+    await page
+      .getByRole("button", { name: t("settings.qerkoTerminal.code.confirm") })
+      .click()
+    await expect(
+      page.getByText(
+        t("settings.qerkoTerminal.code.invalid").replace("{count}", "2")
+      )
+    ).toBeVisible()
+  })
+
+  await test.step("the right code lists the terminals", async () => {
+    await page
+      .getByLabel(t("settings.qerkoTerminal.code.label"))
+      .pressSequentially(qerkoPairingCode)
+    await page
+      .getByRole("button", { name: t("settings.qerkoTerminal.code.confirm") })
+      .click()
+    await expect(page.getByText(qerkoTerminalTid)).toBeVisible()
+    // Only activated terminals are offered.
+    await expect(page.getByText("TID-OFF")).toHaveCount(0)
+  })
+
+  await test.step("choosing one shows the paired view and turns the method on", async () => {
+    await page
+      .getByRole("button", {
+        name: t("settings.qerkoTerminal.terminals.choose"),
+      })
+      .click()
+    await expect(
+      page.getByText(t("settings.qerkoTerminal.paired.title"))
+    ).toBeVisible()
+    await expect(page.getByText(new RegExp(qerkoLegalEntityName))).toBeVisible()
+    await gotoPage(
+      page,
+      "/settings/payment-accounts",
+      "en",
+      "settings.paymentAccounts.title"
+    )
+    await expect(
+      page.getByRole("switch", {
+        name: t("settings.qerkoTerminal.enabled.label"),
+      })
+    ).toBeChecked()
+  })
+
+  await test.step("the pairing asked for a terminal-payments key in the sandbox", () => {
+    expect(qerko.requests.map(({ path }) => path)).toContain("request-pairing")
+  })
+})
+
+test("pay on the terminal: the step shows while it waits, then the payment is paid", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  qerko.holdPayment = true
+
+  await test.step("start the payment on the terminal", async () => {
+    await createPayment(page, "en", "5.9")
+    await page.getByRole("tab", { name: t("paymentWait.method.qerko") }).click()
+    await page
+      .getByRole("button", { name: t("paymentWait.qerko.action") })
+      .click()
+    await expect(
+      page.getByText(t("paymentWait.qerko.step.waitingForCard"))
+    ).toBeVisible()
+  })
+
+  await test.step("the card is approved", async () => {
+    qerko.holdPayment = false
+    await expect(
+      page.getByTestId("payment-paid-panel").getByText(t("paymentWait.paid"))
+    ).toBeVisible()
+  })
+})
+
+test("pay on the terminal: a declined card says so and the payment can be tried again", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  qerko.holdPayment = true
+  qerko.paymentOutcome = "declined"
+
+  await createPayment(page, "en", "5.9")
+  await page.getByRole("tab", { name: t("paymentWait.method.qerko") }).click()
+  await page
+    .getByRole("button", { name: t("paymentWait.qerko.action") })
+    .click()
+  await expect(
+    page.getByText(t("paymentWait.qerko.step.waitingForCard"))
+  ).toBeVisible()
+
+  qerko.holdPayment = false
+  await expect(
+    page.getByText(t("paymentWait.qerko.failed.declined"))
+  ).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: t("paymentWait.qerko.action") })
+  ).toBeEnabled()
+})
+
+test("pay on the terminal: cancelling a waiting payment frees it", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  qerko.holdPayment = true
+
+  await createPayment(page, "en", "5.9")
+  await page.getByRole("tab", { name: t("paymentWait.method.qerko") }).click()
+  await page
+    .getByRole("button", { name: t("paymentWait.qerko.action") })
+    .click()
+  await page
+    .getByRole("button", { name: t("paymentWait.qerko.cancel") })
+    .click()
+
+  await expect(
+    page.getByText(t("paymentWait.qerko.failed.cancelled"))
+  ).toBeVisible()
+  expect(qerko.requests.map(({ path }) => path)).toContain(
+    "cancel-terminal-payment"
+  )
+})
+
+test("an unknown result asks staff to check before paying again", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+  qerko.paymentOutcome = "unknown"
+  qerko.holdPayment = true
+
+  await createPayment(page, "en", "5.9")
+  await page.getByRole("tab", { name: t("paymentWait.method.qerko") }).click()
+  await page
+    .getByRole("button", { name: t("paymentWait.qerko.action") })
+    .click()
+  qerko.holdPayment = false
+
+  await expect(page.getByText(t("paymentWait.qerko.unresolved"))).toBeVisible()
+  await page.getByRole("button", { name: t("paymentWait.qerko.retry") }).click()
+  await expect(
+    page
+      .getByRole("alertdialog")
+      .getByText(t("paymentWait.qerko.retryUnresolved.title"))
+  ).toBeVisible()
+})
+
+test("refund a card payment back to the card through the terminal", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+
+  await createPayment(page, "en", "5.9")
+  await page.getByRole("tab", { name: t("paymentWait.method.qerko") }).click()
+  const paymentId = getPaymentIdFromUrl(page)
+  await page
+    .getByRole("button", { name: t("paymentWait.qerko.action") })
+    .click()
+  await expect(
+    page.getByTestId("payment-paid-panel").getByText(t("paymentWait.paid"))
+  ).toBeVisible()
+
+  await test.step("the refund goes back to the card by default", async () => {
+    await waitForLocalWriteToSettle(page)
+    await gotoPage(page, `/activity/${paymentId}`, "en", "paymentDetail.title")
+    await page
+      .getByRole("button", { name: t("paymentDetail.refunds.action") })
+      .click()
+    const dialog = page.getByRole("dialog")
+    await expect(
+      dialog.getByRole("button", {
+        name: t("refund.dialog.method.qerkoTerminal"),
+      })
+    ).toHaveAttribute("aria-pressed", "true")
+    const [confirmPrefix = ""] = t("refund.dialog.confirm").split("{amount}")
+    await dialog
+      .getByRole("button", { name: new RegExp(`^${confirmPrefix}.+`, "u") })
+      .click()
+    await dialog.waitFor({ state: "hidden" })
+  })
+
+  await test.step("the terminal's approval is recorded as a refund to the card", async () => {
+    await expect(page.getByTestId("payment-detail-refund")).toContainText(
+      t("paymentDetail.refunds.method.qerkoTerminal")
+    )
+    expect(
+      qerko.requests.find(({ path }) => path === "create-terminal-refund")?.body
+    ).toMatchObject({ refundId: "e2e-refund-id", terminalId: "terminal-1" })
+  })
+})

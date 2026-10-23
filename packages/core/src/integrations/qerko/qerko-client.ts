@@ -38,14 +38,20 @@ export type QerkoCountry = z.output<typeof QerkoCountrySchema>
 export interface QerkoApiDep {
   readonly qerkoApi: {
     readonly posId: string
+    /** Replaces the host of both environments; set only by the e2e builds. */
+    readonly baseUrl?: string
   }
 }
 
 export const createQerkoApiDep = ({
   posId,
+  baseUrl,
 }: {
   readonly posId: string
-}): QerkoApiDep => ({ qerkoApi: { posId } })
+  readonly baseUrl?: string | undefined
+}): QerkoApiDep => ({
+  qerkoApi: { posId, ...(baseUrl === undefined ? {} : { baseUrl }) },
+})
 
 export interface QerkoCredentials {
   readonly apiKey: string
@@ -238,8 +244,6 @@ export const QerkoNotStartedReasonSchema = z.enum([
 ])
 export type QerkoNotStartedReason = z.output<typeof QerkoNotStartedReasonSchema>
 
-const baseUrl = (environment: QerkoEnvironment) => qerkoBaseUrls[environment]
-
 const post =
   <TSchema extends z.ZodType>({
     environment,
@@ -259,7 +263,7 @@ const post =
   async (run) =>
     run(
       fetchAndValidateJson({
-        url: `${baseUrl(environment)}/${path}`,
+        url: `${run.deps.qerkoApi.baseUrl ?? qerkoBaseUrls[environment]}/${path}`,
         init: {
           method: "POST",
           headers: {

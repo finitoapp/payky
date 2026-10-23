@@ -4,6 +4,7 @@ import {
   saveCashRegisterAccount,
   saveCashuAccount,
   saveFiatBankAccount,
+  saveQerkoTerminalAccount,
   saveSparkAccount,
 } from "@payky/core/modules/account/account-actions"
 import {
@@ -11,6 +12,7 @@ import {
   cashRegisterAccountQuery,
   cashuAccountQuery,
   fiatBankAccountQuery,
+  qerkoTerminalAccountQuery,
   sparkAccountQuery,
 } from "@payky/core/modules/account/account-queries"
 import { setPaymentMethodOrder } from "@payky/core/modules/app-settings/app-settings-actions"
@@ -20,6 +22,7 @@ import {
   getFiatCurrency,
   getPaymentMethodOrder,
 } from "@payky/core/modules/app-settings/app-settings-utils"
+import { qerkoPluginQuery } from "@payky/core/modules/qerko-plugin/qerko-plugin-queries"
 import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import type { LucideIcon } from "lucide-react-native"
@@ -30,6 +33,7 @@ import ChevronUp from "lucide-react-native/icons/chevron-up"
 import Coins from "lucide-react-native/icons/coins"
 import CreditCard from "lucide-react-native/icons/credit-card"
 import Landmark from "lucide-react-native/icons/landmark"
+import Nfc from "lucide-react-native/icons/nfc"
 import Zap from "lucide-react-native/icons/zap"
 import { Pressable } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
@@ -83,6 +87,8 @@ export function PaymentAccountsSettingsPage() {
   const [spark] = useEvoluQuery(sparkAccountQuery).data
   const [cash] = useEvoluQuery(cashRegisterAccountQuery).data
   const [card] = useEvoluQuery(cardSwitchioAccountQuery).data
+  const [qerko] = useEvoluQuery(qerkoTerminalAccountQuery).data
+  const qerkoPaired = useEvoluQuery(qerkoPluginQuery).data.length > 0
   const [cashu] = useEvoluQuery(cashuAccountQuery).data
 
   const appCurrency = getFiatCurrency(settings)
@@ -90,6 +96,7 @@ export function PaymentAccountsSettingsPage() {
   const sparkEnabled = spark !== undefined && spark.isDeleted !== 1
   const cashEnabled = cash !== undefined && cash.isDeleted !== 1
   const cardEnabled = card !== undefined && card.isDeleted !== 1
+  const qerkoEnabled = qerko !== undefined && qerko.isDeleted !== 1
   const cashuEnabled = cashu !== undefined && cashu.isDeleted !== 1
 
   const currencyMismatch = (currency: FiatCurrency | undefined) =>
@@ -182,6 +189,27 @@ export function PaymentAccountsSettingsPage() {
         runToast(async (run) => {
           await run.ok(
             saveCardSwitchioAccount({ enabled, currency: appCurrency })
+          )
+        }),
+    },
+    qerkoTerminal: {
+      icon: Nfc,
+      title: "settings.paymentAccounts.method.qerkoTerminal",
+      switchLabel: "settings.qerkoTerminal.enabled.label",
+      enabled: qerkoEnabled,
+      available: qerkoPaired && qerkoEnabled && qerko.currency === appCurrency,
+      // Without a pairing there is no key to start a payment with.
+      canEnable: qerkoPaired,
+      status: !qerkoPaired
+        ? t("settings.qerkoTerminal.status.notPaired")
+        : qerkoEnabled
+          ? currencyMismatch(qerko.currency)
+          : null,
+      href: null,
+      saveEnabled: (enabled) =>
+        runToast(async (run) => {
+          await run.ok(
+            saveQerkoTerminalAccount({ enabled, currency: appCurrency })
           )
         }),
     },

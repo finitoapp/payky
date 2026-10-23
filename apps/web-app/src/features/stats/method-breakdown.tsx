@@ -35,6 +35,8 @@ const useMoney = () => {
 const methodColors = {
   cashRegister: "var(--chart-1)",
   cardSwitchio: "var(--chart-2)",
+  // A card too, so the same colour: a shop rarely takes both.
+  qerkoTerminal: "var(--chart-2)",
   iban: "var(--chart-3)",
   spark: "var(--chart-4)",
   onchain: "var(--chart-5)",

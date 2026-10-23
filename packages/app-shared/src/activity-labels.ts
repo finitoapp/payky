@@ -28,6 +28,7 @@ export const paymentMethodLabelKey = {
   iban: "paymentDetail.paymentMethod.iban",
   onchain: "paymentDetail.paymentMethod.onchain",
   cardSwitchio: "paymentDetail.paymentMethod.card",
+  qerkoTerminal: "paymentDetail.paymentMethod.qerkoTerminal",
   spark: "paymentDetail.paymentMethod.spark",
   cashu: "paymentDetail.paymentMethod.cashu",
 } satisfies Record<AccountTransactionKind, TranslationKey>

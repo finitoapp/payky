@@ -6,6 +6,7 @@ import {
   CreditCardIcon,
   LandmarkIcon,
   type LucideIcon,
+  NfcIcon,
   ZapIcon,
 } from "lucide-react"
 
@@ -19,6 +20,7 @@ export const paymentMethodIcon = {
   iban: LandmarkIcon,
   onchain: BitcoinIcon,
   cardSwitchio: CreditCardIcon,
+  qerkoTerminal: NfcIcon,
   spark: ZapIcon,
   cashu: CoinsIcon,
 } satisfies Record<AccountTransactionKind, LucideIcon>

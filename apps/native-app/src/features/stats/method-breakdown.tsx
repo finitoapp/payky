@@ -50,6 +50,7 @@ export function MethodBreakdown({
   const methodColors = {
     cashRegister: theme["chart-1"]?.val ?? "#e36b2c",
     cardSwitchio: theme["chart-2"]?.val ?? "#27ae60",
+    qerkoTerminal: theme["chart-2"]?.val ?? "#27ae60",
     iban: theme["chart-3"]?.val ?? "#3daee9",
     spark: theme["chart-4"]?.val ?? "#da4453",
     onchain: theme["chart-5"]?.val ?? "#2980b9",

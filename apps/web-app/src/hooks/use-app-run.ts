@@ -62,6 +62,7 @@ const useAppRunDeps = () => {
       ...(createE2eSparkWalletDep() ?? createSparkWalletDep()),
       ...createYadioApiDep(),
       ...createQerkoApiDep({ posId: appEnv.VITE_PAYKY_QERKO_POS_ID }),
+      uuid: { create: () => crypto.randomUUID() },
       ...createSwitchioTerminalDep(),
       ...createEetApiDep(
         { ...dateDep, ...fetchDep },

@@ -201,6 +201,13 @@ export const fetchAndValidateJson =
     })
   }
 
+/**
+ * Random UUIDs, for ids another service demands in that shape (Qerko's
+ * transaction ids). A dep rather than `crypto.randomUUID()` because the
+ * native runtime has its own source and tests want a fixed one.
+ */
+export type UuidDep = { readonly uuid: { readonly create: () => string } }
+
 export type EvoluOwnerDep = { readonly evoluOwner: AppOwner }
 
 export type MasterKeyDep = { readonly masterKey: MasterKey }

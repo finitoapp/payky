@@ -33,6 +33,11 @@ export const createCardSwitchioAccountId = (
 ): AccountId =>
   createIdFromString<"Account">(`account:cardSwitchio:${currency}`)
 
+export const createQerkoTerminalAccountId = (
+  currency: FiatCurrency
+): AccountId =>
+  createIdFromString<"Account">(`account:qerkoTerminal:${currency}`)
+
 /** Derived from Linky's app owner: one Cashu account per shared wallet. */
 export const createCashuAccountId = (linkyAppOwnerId: OwnerId): AccountId =>
   createIdFromString<"Account">(`account:cashu:${linkyAppOwnerId}`)

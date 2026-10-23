@@ -11,6 +11,7 @@ export const DefaultPaymentMethodSchema = z.enum([
   "spark",
   "iban",
   "cardSwitchio",
+  "qerkoTerminal",
   "cashu",
 ])
 export type DefaultPaymentMethod = z.output<typeof DefaultPaymentMethodSchema>

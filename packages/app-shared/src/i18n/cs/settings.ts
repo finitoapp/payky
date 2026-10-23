@@ -60,6 +60,8 @@ export const csSettings = {
   "settings.appearance": "VZHLED A JAZYK",
   "settings.cashRegisterAccount.enabled.label": "Povolit pokladnu",
   "settings.cardSwitchioAccount.enabled.label": "Zapnout platební terminál",
+  "settings.qerkoTerminal.enabled.label": "Zapnout terminál Qerko",
+  "settings.qerkoTerminal.status.notPaired": "Nespárováno s Qerkem",
   "settings.cardSwitchioAccount.info.contract":
     "uzavřenou smlouvu s poskytovatelem platebního řešení, například Comgate.",
   "settings.cardSwitchioAccount.info.description":
@@ -560,6 +562,7 @@ export const csSettings = {
   "settings.paymentAccounts.method.iban": "Bankovní převod",
   "settings.paymentAccounts.method.cashu": "Cashu",
   "settings.paymentAccounts.method.cardSwitchio": "Platební karta",
+  "settings.paymentAccounts.method.qerkoTerminal": "Platební terminál (Qerko)",
   "settings.paymentAccounts.method.spark": "Bitcoin",
   "settings.paymentAccounts.moveDown.aria": "Posunout {name} dolů",
   "settings.paymentAccounts.moveUp.aria": "Posunout {name} nahoru",

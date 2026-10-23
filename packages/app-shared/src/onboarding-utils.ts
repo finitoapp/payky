@@ -13,6 +13,7 @@ import { z } from "zod"
 export const onboardingPaymentMethodOrder = [
   "iban",
   "cardSwitchio",
+  "qerkoTerminal",
   "spark",
   "cashu",
   "cashRegister",

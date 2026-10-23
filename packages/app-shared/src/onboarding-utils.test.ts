@@ -22,6 +22,7 @@ describe("onboarding payment method order", () => {
     expect(order).toEqual([
       "iban",
       "cardSwitchio",
+      "qerkoTerminal",
       "spark",
       "cashu",
       "cashRegister",

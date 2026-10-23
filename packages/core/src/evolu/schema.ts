@@ -9,6 +9,7 @@ import {
   accountCashu,
   accountIban,
   accountIndexes,
+  accountQerkoTerminal,
   accountSpark,
   sparkAccountSyncPointer,
 } from "../modules/account/account.ts"
@@ -67,6 +68,7 @@ import {
   paymentCashu,
   paymentIban,
   paymentIndexes,
+  paymentQerkoTerminal,
 } from "../modules/payment/payment.ts"
 import {
   paymentLine,
@@ -102,6 +104,7 @@ export const AppSchema = {
   sparkAccountSyncPointer,
   accountCashRegister,
   accountCardSwitchio,
+  accountQerkoTerminal,
   accountCashu,
   accountTransaction,
   accountTransactionIban,
@@ -126,6 +129,7 @@ export const AppSchema = {
   paymentBtcSpark,
   paymentIban,
   paymentCardSwitchio,
+  paymentQerkoTerminal,
   paymentCashu,
   paymentLine,
   paymentNumber,

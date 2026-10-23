@@ -14,12 +14,14 @@ import {
   getQerkoTerminals,
   type QerkoApiDep,
   type QerkoClientError,
+  type QerkoCredentials,
   type QerkoEnvironment,
 } from "../../integrations/qerko/qerko-client.ts"
 import type { EvoluDep } from "../shared/evolu-deps.ts"
 import { runMutationWithCompletion } from "../shared/evolu-utils.ts"
 import { NonEmptyString255, NonEmptyStringSchema } from "../shared/schema.ts"
 import type { qerkoPlugin } from "./qerko-plugin.ts"
+import { qerkoPluginQuery } from "./qerko-plugin-queries.ts"
 import { qerkoPluginId } from "./qerko-plugin-utils.ts"
 
 export const createQerkoPairingInvalidCodeError = defineError(
@@ -42,6 +44,23 @@ export const createQerkoPairingMaxAttemptsReachedError = defineError(
 export type QerkoPairingMaxAttemptsReachedError = ReturnType<
   typeof createQerkoPairingMaxAttemptsReachedError
 >
+
+/** There is no Qerko pairing, so no API key to call the terminal with. */
+export const createQerkoPluginNotPairedError = defineError(
+  "QerkoPluginNotPaired"
+)()
+export type QerkoPluginNotPairedError = ReturnType<
+  typeof createQerkoPluginNotPairedError
+>
+
+/** The API key and environment of the pairing, for every terminal call. */
+export const loadQerkoCredentials =
+  (): Task<QerkoCredentials, QerkoPluginNotPairedError, EvoluDep> =>
+  async (run) => {
+    const [plugin] = await run.deps.evolu.loadQuery(qerkoPluginQuery)
+    if (plugin === undefined) return err(createQerkoPluginNotPairedError())
+    return ok({ apiKey: plugin.apiKey, environment: plugin.environment })
+  }
 
 /** Upserts the singleton `qerkoPlugin` row: the one write behind pairing. */
 export const saveQerkoPlugin =

@@ -223,3 +223,23 @@ export const requiredPermission = (pathname: string): Permission | null => {
   const access = resolveRouteAccess(pathname)
   return access === "free" ? null : access
 }
+
+/**
+ * The routes outside web's `_terminal` layout, and native's own `/pair` and
+ * `/diagnostics`: the only ones an account that is not onboarded stays on.
+ */
+const outsideTerminal: ReadonlyArray<NativeRoutePath> = [
+  "/onboarding",
+  "/restore-account",
+  "/error",
+  "/e2e/:action",
+  "/pair",
+  "/diagnostics",
+]
+
+/**
+ * Whether `pathname` belongs to the terminal, which web's `_terminal` layout
+ * shows only to an onboarded account. An unknown path counts as one.
+ */
+export const isTerminalRoute = (pathname: string): boolean =>
+  !outsideTerminal.some((pattern) => matchesPattern(pattern, pathname))

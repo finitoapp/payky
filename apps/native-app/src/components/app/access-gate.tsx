@@ -4,8 +4,15 @@ import {
 } from "@payky/app-shared/access-state"
 import { router, usePathname } from "expo-router"
 import { useAtom, useAtomValue, useSetAtom, useStore } from "jotai"
-import { type ReactNode, type SetStateAction, Suspense, useEffect } from "react"
-import { AppState, View } from "react-native"
+import {
+  type ReactNode,
+  type SetStateAction,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from "react"
+import { AppState, StyleSheet, View } from "react-native"
 import { evoluCounterAtom } from "../../atoms/evolu-counter.ts"
 import {
   endsSessionOnAppState,
@@ -29,7 +36,11 @@ const touch = (store: ReturnType<typeof useStore>) => {
  * Renders the PIN screen instead of a route the device may not open
  * (access/0001), and runs the PIN session's end rules (access/0005).
  */
-function Gate({ children }: { readonly children: ReactNode }) {
+function Gate({
+  onLockedChange,
+}: {
+  readonly onLockedChange: (locked: boolean) => void
+}) {
   const pathname = usePathname()
   const access = useAccess()
   const [sessionState, setSession] = useAtom(accessSessionAtom)
@@ -52,9 +63,11 @@ function Gate({ children }: { readonly children: ReactNode }) {
   const locked =
     access.enabled && permission !== null && !access.effective.has(permission)
 
-  // The Stack stays mounted and outside the PIN screen's Suspense: React
-  // Navigation keeps its state in the navigator, so unmounting it or hiding it
-  // behind a fallback resets the app to "/" (web's router sits above the gate).
+  // Before paint, so a route this account locks is never drawn.
+  useLayoutEffect(() => {
+    onLockedChange(locked)
+  }, [locked, onLockedChange])
+
   return (
     <>
       {access.session ? (
@@ -72,9 +85,6 @@ function Gate({ children }: { readonly children: ReactNode }) {
           </Suspense>
         </Screen>
       ) : null}
-      <View style={{ flex: 1, display: locked ? "none" : "flex" }}>
-        {children}
-      </View>
     </>
   )
 }
@@ -122,6 +132,16 @@ export function AccessGate({ children }: { readonly children: ReactNode }) {
     setSession(null)
   }, [accountVersion, setSession])
 
+  // Unknown (null) until the gate first resolves, then kept through an
+  // account switch until the next account's rules are read.
+  const [locked, setLocked] = useState<boolean | null>(null)
+
+  // The Stack stays mounted and outside every Suspense of the gate: the gate
+  // suspends on each account switch, and a navigator hidden behind a fallback
+  // unregisters, so Expo Router reseeds the navigation tree and remounts the
+  // root layout with a fresh jotai store, losing what the switch handed over
+  // (the restored account, the onboarding step). Web's router sits above its
+  // gate.
   return (
     <View
       style={{ flex: 1 }}
@@ -131,10 +151,19 @@ export function AccessGate({ children }: { readonly children: ReactNode }) {
         touch(store)
       }}
     >
+      <View style={{ flex: 1, display: locked === false ? "flex" : "none" }}>
+        {children}
+      </View>
       {/* Only an account switch shows it: the start keeps the splash on. */}
-      <Suspense fallback={<AppLoader />}>
+      <Suspense
+        fallback={
+          <View style={StyleSheet.absoluteFill}>
+            <AppLoader />
+          </View>
+        }
+      >
         <GateResolved />
-        <Gate>{children}</Gate>
+        <Gate onLockedChange={setLocked} />
       </Suspense>
     </View>
   )

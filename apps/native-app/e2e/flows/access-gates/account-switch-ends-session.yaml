@@ -1,6 +1,4 @@
-# web access-gates.spec.ts: "switching account ends the PIN session, also when switching back". Native opens the
-# terminal home after a switch (native-e2e.md, open questions), so the lock
-# shows once the accounts page is opened again.
+# web access-gates.spec.ts: "switching account ends the PIN session, also when switching back".
 appId: ${APP_ID}
 tags: [access-gates]
 ---
@@ -34,14 +32,7 @@ tags: [access-gates]
       FROM_HOME: "true"
       TITLE: ${output.t["settings.accounts.nav.title"]}
 - tapOn: ${output.t["settings.accounts.list.switch"]}
-- extendedWaitUntil:
-    visible: ${output.t["home.pay"]}
-    timeout: 30000
-- runFlow:
-    file: ../../subflows/open-settings-entry.yaml
-    env:
-      FROM_HOME: "true"
-      TITLE: ${output.t["settings.accounts.nav.title"]}
+# The accounts page stays open and locks at once, as on web.
 - extendedWaitUntil:
     visible: '${output.tv("access.pin.why.route", { permission: output.t["access.permission.admin"] })}'
-    timeout: 15000
+    timeout: 30000

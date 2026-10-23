@@ -27,20 +27,13 @@ tags: [settings]
 - assertVisible:
     text: ${output.t["settings.accounts.list.switch"]}
     above: ${output.t["settings.accounts.list.active"]}
-# Switch back to the first-created account. Native then opens the terminal
-# home, where web stays on the list (native-e2e.md, open questions).
+# Switch back to the first-created account; the list stays open.
 - tapOn: ${output.t["settings.accounts.list.switch"]}
 - extendedWaitUntil:
-    visible: ${output.t["home.pay"]}
+    visible:
+      text: ${output.t["settings.accounts.list.active"]}
+      above: ${output.t["settings.accounts.list.switch"]}
     timeout: 30000
-- runFlow:
-    file: ../../subflows/goto.yaml
-    env:
-      ROUTE: settings/accounts
-      TEXT: ${output.t["settings.accounts.title"]}
-- assertVisible:
-    text: ${output.t["settings.accounts.list.active"]}
-    above: ${output.t["settings.accounts.list.switch"]}
 # Cancelling the removal keeps the second account.
 - runFlow:
     file: ../../subflows/tap-label.yaml

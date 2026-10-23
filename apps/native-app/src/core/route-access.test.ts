@@ -1,7 +1,11 @@
 import { readdirSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
-import { requiredPermission, routeAccess } from "./route-access.ts"
+import {
+  isTerminalRoute,
+  requiredPermission,
+  routeAccess,
+} from "./route-access.ts"
 
 const appDir = join(import.meta.dirname, "../../app")
 
@@ -107,5 +111,18 @@ describe("native route access", () => {
       "admin"
     )
     expect(requiredPermission("/settings/payment-accounts/cashu")).toBe("admin")
+  })
+
+  it("keeps an account that is not onboarded off the terminal routes only", () => {
+    expect(isTerminalRoute("/")).toBe(true)
+    expect(isTerminalRoute("/settings/accounts")).toBe(true)
+    expect(isTerminalRoute("/activity/abc")).toBe(true)
+    expect(isTerminalRoute("/nope")).toBe(true)
+    expect(isTerminalRoute("/onboarding")).toBe(false)
+    expect(isTerminalRoute("/restore-account")).toBe(false)
+    expect(isTerminalRoute("/error")).toBe(false)
+    expect(isTerminalRoute("/e2e/offline")).toBe(false)
+    expect(isTerminalRoute("/pair")).toBe(false)
+    expect(isTerminalRoute("/diagnostics")).toBe(false)
   })
 })

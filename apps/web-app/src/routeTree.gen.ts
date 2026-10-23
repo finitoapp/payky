@@ -63,6 +63,7 @@ import { Route as TerminalSettingsPaymentAccountsIndexRouteImport } from './rout
 import { Route as TerminalSettingsPaymentAccountsCardSwitchioRouteImport } from './routes/_terminal.settings.payment-accounts.card-switchio'
 import { Route as TerminalSettingsPaymentAccountsCashuRouteImport } from './routes/_terminal.settings.payment-accounts.cashu'
 import { Route as TerminalSettingsPaymentAccountsIbanRouteImport } from './routes/_terminal.settings.payment-accounts.iban'
+import { Route as TerminalSettingsPaymentAccountsQerkoTerminalRouteImport } from './routes/_terminal.settings.payment-accounts.qerko-terminal'
 import { Route as TerminalSettingsPaymentAccountsSparkRouteImport } from './routes/_terminal.settings.payment-accounts.spark'
 import { Route as TerminalSettingsTablesIndexRouteImport } from './routes/_terminal.settings.tables.index'
 import { Route as TerminalSettingsTablesTableIdRouteImport } from './routes/_terminal.settings.tables.$tableId'
@@ -387,6 +388,12 @@ const TerminalSettingsPaymentAccountsIbanRoute =
     path: '/iban',
     getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
   } as any)
+const TerminalSettingsPaymentAccountsQerkoTerminalRoute =
+  TerminalSettingsPaymentAccountsQerkoTerminalRouteImport.update({
+    id: '/qerko-terminal',
+    path: '/qerko-terminal',
+    getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
+  } as any)
 const TerminalSettingsPaymentAccountsSparkRoute =
   TerminalSettingsPaymentAccountsSparkRouteImport.update({
     id: '/spark',
@@ -569,6 +576,7 @@ export interface FileRoutesByFullPath {
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/settings/payment-accounts/cashu': typeof TerminalSettingsPaymentAccountsCashuRouteWithChildren
   '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  '/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
@@ -636,6 +644,7 @@ export interface FileRoutesByTo {
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
+  '/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about': typeof TerminalSettingsAboutIndexRoute
@@ -710,6 +719,7 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/_terminal/settings/payment-accounts/cashu': typeof TerminalSettingsPaymentAccountsCashuRouteWithChildren
   '/_terminal/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  '/_terminal/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   '/_terminal/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   '/_terminal/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/_terminal/settings/tables/new': typeof TerminalSettingsTablesNewRoute
@@ -788,6 +798,7 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts/card-switchio'
     | '/settings/payment-accounts/cashu'
     | '/settings/payment-accounts/iban'
+    | '/settings/payment-accounts/qerko-terminal'
     | '/settings/payment-accounts/spark'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
@@ -855,6 +866,7 @@ export interface FileRouteTypes {
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
     | '/settings/payment-accounts/card-switchio'
+    | '/settings/payment-accounts/qerko-terminal'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
     | '/settings/about'
@@ -928,6 +940,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-accounts/card-switchio'
     | '/_terminal/settings/payment-accounts/cashu'
     | '/_terminal/settings/payment-accounts/iban'
+    | '/_terminal/settings/payment-accounts/qerko-terminal'
     | '/_terminal/settings/payment-accounts/spark'
     | '/_terminal/settings/tables/$tableId'
     | '/_terminal/settings/tables/new'
@@ -1343,6 +1356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsPaymentAccountsIbanRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsRoute
     }
+    '/_terminal/settings/payment-accounts/qerko-terminal': {
+      id: '/_terminal/settings/payment-accounts/qerko-terminal'
+      path: '/qerko-terminal'
+      fullPath: '/settings/payment-accounts/qerko-terminal'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsQerkoTerminalRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsRoute
+    }
     '/_terminal/settings/payment-accounts/spark': {
       id: '/_terminal/settings/payment-accounts/spark'
       path: '/spark'
@@ -1688,6 +1708,7 @@ interface TerminalSettingsPaymentAccountsRouteChildren {
   TerminalSettingsPaymentAccountsCardSwitchioRoute: typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   TerminalSettingsPaymentAccountsCashuRoute: typeof TerminalSettingsPaymentAccountsCashuRouteWithChildren
   TerminalSettingsPaymentAccountsIbanRoute: typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  TerminalSettingsPaymentAccountsQerkoTerminalRoute: typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   TerminalSettingsPaymentAccountsSparkRoute: typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   TerminalSettingsPaymentAccountsIndexRoute: typeof TerminalSettingsPaymentAccountsIndexRoute
 }
@@ -1700,6 +1721,8 @@ const TerminalSettingsPaymentAccountsRouteChildren: TerminalSettingsPaymentAccou
       TerminalSettingsPaymentAccountsCashuRouteWithChildren,
     TerminalSettingsPaymentAccountsIbanRoute:
       TerminalSettingsPaymentAccountsIbanRouteWithChildren,
+    TerminalSettingsPaymentAccountsQerkoTerminalRoute:
+      TerminalSettingsPaymentAccountsQerkoTerminalRoute,
     TerminalSettingsPaymentAccountsSparkRoute:
       TerminalSettingsPaymentAccountsSparkRouteWithChildren,
     TerminalSettingsPaymentAccountsIndexRoute:

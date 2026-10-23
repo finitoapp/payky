@@ -1,5 +1,6 @@
 import {
   createIdFromString,
+  type KyselyNotNull,
   type MutationOptions,
   sqliteTrue,
 } from "@evolu/common"
@@ -31,6 +32,11 @@ export const qerkoTerminalSelectionQuery = (accountId: DeviceAccountId) =>
       .where("terminalTid", "is not", null)
       .where("locationName", "is not", null)
       .where("isDeleted", "is not", sqliteTrue)
+      .$narrowType<{
+        terminalId: KyselyNotNull
+        terminalTid: KyselyNotNull
+        locationName: KyselyNotNull
+      }>()
   )
 
 export const selectQerkoTerminal = (

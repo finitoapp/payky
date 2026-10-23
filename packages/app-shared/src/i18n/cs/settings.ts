@@ -65,7 +65,7 @@ export const csSettings = {
   "settings.qerkoTerminal.code.confirm": "Potvrdit",
   "settings.qerkoTerminal.code.expired": "Kód vypršel. Vyžádejte si nový.",
   "settings.qerkoTerminal.code.instructions":
-    "Zadejte čtyřmístný kód, který Qerko poslal na e-mail firmy.",
+    "Zadejte čtyřmístný kód, který Qerko poslalo e-mailem vlastníkovi zadané firmy. Pokud e-mail nedorazil, kontaktujte technickou podporu Qerko.",
   "settings.qerkoTerminal.code.invalid":
     "Kód není správný. Zbývající pokusy: {count}.",
   "settings.qerkoTerminal.code.label": "Potvrzovací kód",

@@ -118,6 +118,8 @@ export const csPayment = {
   "paymentDetail.notFound": "Platba nebyla nalezena.",
   "paymentDetail.paymentMethod.card": "Platební kartou",
   "paymentDetail.paymentMethod.qerkoTerminal": "Platební kartou (terminál)",
+  "paymentDetail.paymentMethod.qerkoTerminalTid":
+    "Platební kartou (terminál {tid})",
   "paymentDetail.paymentMethod.cashu": "Cashu",
   "paymentDetail.paymentMethod.cash": "Hotově",
   "paymentDetail.paymentMethod.iban": "IBAN",

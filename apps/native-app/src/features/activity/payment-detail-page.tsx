@@ -33,6 +33,7 @@ import {
 } from "@payky/core/modules/eet/eet-utils"
 import {
   paymentDetailQuery,
+  paymentQerkoTerminalByIdQuery,
   paymentReconciliationsQuery,
 } from "@payky/core/modules/payment/payment-queries"
 import { PaymentId } from "@payky/core/modules/payment/payment-types"
@@ -145,6 +146,10 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const [payment] = useEvoluQuery(paymentDetailQuery(paymentId)).data
+  // The terminal's TID tells staff which one took the card (qerko/0006).
+  const qerkoTerminalTid =
+    useEvoluQuery(paymentQerkoTerminalByIdQuery(paymentId)).data[0]
+      ?.terminalTid ?? null
   const reconciliations = useEvoluQuery(
     paymentReconciliationsQuery(paymentId)
   ).data
@@ -271,7 +276,11 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
                       lineHeight={fontSize.sm}
                       fontWeight={fontWeight.medium}
                     >
-                      {t(paymentMethodLabelKey[kind])}
+                      {kind === "qerkoTerminal" && qerkoTerminalTid !== null
+                        ? t("paymentDetail.paymentMethod.qerkoTerminalTid", {
+                            tid: qerkoTerminalTid,
+                          })
+                        : t(paymentMethodLabelKey[kind])}
                     </Text>
                   </XStack>
                 ))}

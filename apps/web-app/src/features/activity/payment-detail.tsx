@@ -37,6 +37,7 @@ import {
 } from "@payky/core/modules/payment/payment-actions"
 import {
   paymentDetailQuery,
+  paymentQerkoTerminalByIdQuery,
   paymentReconciliationsQuery,
 } from "@payky/core/modules/payment/payment-queries"
 import { PaymentId } from "@payky/core/modules/payment/payment-types"
@@ -155,6 +156,11 @@ function PaymentDetailContent({
   const { data: payments } = useEvoluQuery(query)
   const { data: reconciliations } = useEvoluQuery(reconciliationsQuery)
   const { data: paymentNumbers } = useEvoluQuery(paymentNumberQuery)
+  const { data: qerkoPaymentData } = useEvoluQuery(
+    paymentQerkoTerminalByIdQuery(paymentId)
+  )
+  // The terminal's TID tells staff which one took the card (qerko/0006).
+  const qerkoTerminalTid = qerkoPaymentData[0]?.terminalTid ?? null
   const payment = payments[0]
   const paymentNumber = paymentNumbers[0]
   // Read before the early return below, so the hook order stays stable.
@@ -287,7 +293,11 @@ function PaymentDetailContent({
                   return (
                     <span key={kind} className="inline-flex items-center gap-1">
                       <Icon aria-hidden className="size-4" />
-                      {t(paymentMethodLabelKey[kind])}
+                      {kind === "qerkoTerminal" && qerkoTerminalTid !== null
+                        ? t("paymentDetail.paymentMethod.qerkoTerminalTid", {
+                            tid: qerkoTerminalTid,
+                          })
+                        : t(paymentMethodLabelKey[kind])}
                     </span>
                   )
                 })}

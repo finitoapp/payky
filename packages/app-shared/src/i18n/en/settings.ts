@@ -723,6 +723,9 @@ export const enSettings = {
     "Only Qerko support can set up the terminals available to your company. Contact them, ask them to activate a terminal, then come back and try again.",
   "settings.qerkoTerminal.terminals.failed":
     "The terminals could not be loaded.",
+  "settings.qerkoTerminal.terminals.keyRejected":
+    "Qerko no longer accepts this pairing. It may have been revoked in Qerko. Pair again to continue.",
+  "settings.qerkoTerminal.terminals.keyRejected.action": "Pair again",
   "settings.qerkoTerminal.terminals.later": "Choose later",
   "settings.qerkoTerminal.terminals.platform.physical": "Terminal",
   "settings.qerkoTerminal.terminals.platform.softPos": "SoftPOS",

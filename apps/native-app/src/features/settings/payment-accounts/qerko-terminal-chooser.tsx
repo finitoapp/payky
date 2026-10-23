@@ -1,4 +1,5 @@
 import {
+  describeQerkoTerminalsFailure,
   type QerkoTerminalChoice,
   selectableQerkoLocations,
 } from "@payky/app-shared/qerko-terminal-flow"
@@ -31,12 +32,15 @@ export function QerkoTerminalChooser({
   enableAccount = false,
   onChosen,
   onSkip,
+  onKeyRejected,
 }: {
   /** Also turns the payment method on, as the end of first-time pairing does. */
   readonly enableAccount?: boolean
   readonly onChosen: () => void
   /** Offers to leave without a terminal; pairing does, so it never dead-ends. */
   readonly onSkip?: () => void
+  /** Starts pairing anew when Qerko no longer accepts the key. */
+  readonly onKeyRejected?: () => void
 }) {
   const { t } = useTranslation()
   const appRun = useAppRun()
@@ -52,7 +56,7 @@ export function QerkoTerminalChooser({
     // A terminal activated in Qerko a moment ago must show up on reopening.
     gcTime: 0,
     queryFn: async () => {
-      if (plugin === undefined) return []
+      if (plugin === undefined) return { locations: [], failure: null }
       await using run = appRun()
       const result = await run(
         getQerkoTerminals({
@@ -60,8 +64,16 @@ export function QerkoTerminalChooser({
           environment: plugin.environment,
         })
       )
-      if (!result.ok) throw new Error(result.error.type)
-      return selectableQerkoLocations(result.value)
+      if (!result.ok) {
+        return {
+          locations: [],
+          failure: describeQerkoTerminalsFailure(result.error),
+        }
+      }
+      return {
+        locations: selectableQerkoLocations(result.value),
+        failure: null,
+      }
     },
   })
 
@@ -106,25 +118,37 @@ export function QerkoTerminalChooser({
 
   if (terminals.isPending) return <ActivityIndicator />
 
-  if (terminals.isError) {
+  if (terminals.isError || terminals.data.failure !== null) {
+    const failure =
+      terminals.data?.failure ??
+      describeQerkoTerminalsFailure({ type: "unknown" })
     return (
       <YStack gap={12} items="flex-start">
         <Text fontSize="sm" lineHeight="sm" color="destructive">
-          {t("settings.qerkoTerminal.terminals.failed")}
+          {t(failure.key)}
         </Text>
-        <Button
-          variant="outline"
-          label={t("settings.qerkoTerminal.terminals.retry")}
-          onPress={() => {
-            void terminals.refetch()
-          }}
-        />
-        {skip}
+        <XStack gap={8}>
+          {failure.keyRejected && onKeyRejected !== undefined ? (
+            <Button
+              label={t("settings.qerkoTerminal.terminals.keyRejected.action")}
+              onPress={onKeyRejected}
+            />
+          ) : (
+            <Button
+              variant="outline"
+              label={t("settings.qerkoTerminal.terminals.retry")}
+              onPress={() => {
+                void terminals.refetch()
+              }}
+            />
+          )}
+          {skip}
+        </XStack>
       </YStack>
     )
   }
 
-  if (terminals.data.length === 0) {
+  if (terminals.data.locations.length === 0) {
     return (
       <YStack gap={12} items="flex-start">
         <YStack gap={4}>
@@ -152,7 +176,7 @@ export function QerkoTerminalChooser({
 
   return (
     <YStack gap={16}>
-      {terminals.data.map((location) => (
+      {terminals.data.locations.map((location) => (
         <YStack key={location.locationId} gap={8}>
           <Text fontSize="sm" lineHeight="sm" fontWeight="500">
             {location.locationName}

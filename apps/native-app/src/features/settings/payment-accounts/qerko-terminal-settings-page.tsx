@@ -168,6 +168,9 @@ function QerkoPairedView({ plugin }: { readonly plugin: QerkoPluginRow }) {
 
           {choosing ? (
             <QerkoTerminalChooser
+              onKeyRejected={() => {
+                void unpair()
+              }}
               onChosen={() => {
                 setChoosing(false)
                 setTestResult(null)

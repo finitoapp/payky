@@ -726,6 +726,9 @@ export const skSettings = {
   "settings.qerkoTerminal.terminals.empty.help":
     "Dostupné terminály pre vašu firmu môže nastaviť len podpora Qerko. Kontaktujte ju, požiadajte o aktiváciu terminálu a potom sa vráťte a skúste to znova.",
   "settings.qerkoTerminal.terminals.failed": "Terminály sa nepodarilo načítať.",
+  "settings.qerkoTerminal.terminals.keyRejected":
+    "Qerko už toto spárovanie neprijíma. Možno bolo v Qerku zrušené. Na pokračovanie spárujte znova.",
+  "settings.qerkoTerminal.terminals.keyRejected.action": "Spárovať znova",
   "settings.qerkoTerminal.terminals.later": "Vybrať neskôr",
   "settings.qerkoTerminal.terminals.platform.physical": "Terminál",
   "settings.qerkoTerminal.terminals.platform.softPos": "SoftPOS",

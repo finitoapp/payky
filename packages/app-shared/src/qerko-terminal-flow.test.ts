@@ -4,6 +4,7 @@ import {
   describeQerkoPairingFailure,
   describeQerkoPaymentError,
   describeQerkoTerminalStatus,
+  describeQerkoTerminalsFailure,
   isQerkoCodeComplete,
   isQerkoStepCancellable,
   parseQerkoIdentificationNumber,
@@ -169,5 +170,29 @@ describe("isQerkoStepCancellable", () => {
     expect(isQerkoStepCancellable("waitingForCard")).toBe(true)
     expect(isQerkoStepCancellable("authorizing")).toBe(false)
     expect(isQerkoStepCancellable("finishing")).toBe(false)
+  })
+})
+
+describe("describeQerkoTerminalsFailure", () => {
+  test("a key Qerko refuses needs a new pairing", () => {
+    for (const status of [401, 403]) {
+      expect(
+        describeQerkoTerminalsFailure({ type: "QerkoHttpError", status })
+      ).toEqual({
+        key: "settings.qerkoTerminal.terminals.keyRejected",
+        keyRejected: true,
+      })
+    }
+  })
+
+  test("a server error or no connection is worth another try", () => {
+    expect(
+      describeQerkoTerminalsFailure({ type: "QerkoHttpError", status: 503 })
+        .keyRejected
+    ).toBe(false)
+    expect(describeQerkoTerminalsFailure({ type: "FetchError" })).toEqual({
+      key: "settings.qerkoTerminal.terminals.failed",
+      keyRejected: false,
+    })
   })
 })

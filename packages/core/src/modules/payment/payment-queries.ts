@@ -230,6 +230,7 @@ export const paymentQerkoTerminalByIdQuery = (idValue: PaymentId) =>
         "pendingSince",
         "unresolvedTransactionId",
         "terminalId",
+        "terminalTid",
         "qerkoRefundId",
       ])
       .where("id", "=", idValue)

@@ -146,6 +146,7 @@ export function PaymentRefunds({
     qerkoPayment !== undefined &&
     qerkoPayment.qerkoRefundId !== null &&
     qerkoPayment.terminalId !== null
+  const qerkoTerminalTid = qerkoPayment?.terminalTid ?? null
   const defaultMethod = defaultRefundMethod(paymentMethodKinds, {
     qerkoRefundable,
   })
@@ -288,6 +289,7 @@ export function PaymentRefunds({
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
           qerkoRefundable={qerkoRefundable}
+          qerkoTerminalTid={qerkoTerminalTid}
           onClose={() => setSheet(null)}
         />
       ) : null}
@@ -298,6 +300,7 @@ export function PaymentRefunds({
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
           qerkoRefundable={qerkoRefundable}
+          qerkoTerminalTid={qerkoTerminalTid}
           onClose={() => setSheet(null)}
         />
       ) : null}
@@ -354,6 +357,7 @@ function RefundSheet({
   tipAmount,
   defaultMethod,
   qerkoRefundable,
+  qerkoTerminalTid,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -365,6 +369,7 @@ function RefundSheet({
   readonly defaultMethod: RefundMethod
   /** Set when the card can be refunded from this device. */
   readonly qerkoRefundable: boolean
+  readonly qerkoTerminalTid: string | null
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -540,6 +545,7 @@ function RefundSheet({
         method={method}
         disabled={pending}
         qerkoAvailable={qerkoRefundable}
+        qerkoTerminalTid={qerkoTerminalTid}
         onChange={setMethod}
       />
     </Sheet>
@@ -552,6 +558,7 @@ function TipRefundSheet({
   tipAmount,
   defaultMethod,
   qerkoRefundable,
+  qerkoTerminalTid,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -560,6 +567,7 @@ function TipRefundSheet({
   readonly defaultMethod: RefundMethod
   /** Set when the card can be refunded from this device. */
   readonly qerkoRefundable: boolean
+  readonly qerkoTerminalTid: string | null
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -635,6 +643,7 @@ function TipRefundSheet({
         method={method}
         disabled={pending}
         qerkoAvailable={qerkoRefundable}
+        qerkoTerminalTid={qerkoTerminalTid}
         onChange={setMethod}
       />
     </Sheet>
@@ -722,12 +731,15 @@ function MethodChoice({
   method,
   disabled,
   qerkoAvailable,
+  qerkoTerminalTid,
   onChange,
 }: {
   readonly method: RefundMethod
   readonly disabled: boolean
   /** The card can be refunded through the terminal from this device. */
   readonly qerkoAvailable: boolean
+  /** Names the terminal the refund must go to, when the payment recorded it. */
+  readonly qerkoTerminalTid: string | null
   readonly onChange: (method: RefundMethod) => void
 }) {
   const { t } = useTranslation()
@@ -749,7 +761,11 @@ function MethodChoice({
         </ToggleGroupItem>
         {qerkoAvailable ? (
           <ToggleGroupItem value="qerkoTerminal" justify="flex-start">
-            {t("refund.dialog.method.qerkoTerminal")}
+            {qerkoTerminalTid === null
+              ? t("refund.dialog.method.qerkoTerminal")
+              : t("refund.dialog.method.qerkoTerminalTid", {
+                  tid: qerkoTerminalTid,
+                })}
           </ToggleGroupItem>
         ) : null}
         <ToggleGroupItem value="outside" justify="flex-start">

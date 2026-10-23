@@ -178,4 +178,25 @@ describe("describeQerkoRefundError", () => {
       })
     ).toBe("paymentWait.qerko.notStarted.busy")
   })
+
+  test("a terminal that cannot take the refund is not one to choose again", () => {
+    expect(
+      describeQerkoRefundError({
+        type: "QerkoTerminalRefundNotStarted",
+        reason: "terminalNotActivated",
+      })
+    ).toBe("refund.qerko.error.terminalNotActivated")
+    expect(
+      describeQerkoRefundError({
+        type: "QerkoTerminalRefundNotStarted",
+        reason: "unknownTerminal",
+      })
+    ).toBe("refund.qerko.error.unknownTerminal")
+    expect(
+      describeQerkoRefundError({
+        type: "QerkoTerminalRefundNotStarted",
+        reason: "terminalNotConnected",
+      })
+    ).toBe("refund.qerko.error.terminalNotConnected")
+  })
 })

@@ -162,6 +162,7 @@ export function PaymentDetailRefunds({
     qerkoPayment !== undefined &&
     qerkoPayment.qerkoRefundId !== null &&
     qerkoPayment.terminalId !== null
+  const qerkoTerminalTid = qerkoPayment?.terminalTid ?? null
   const defaultMethod = defaultRefundMethod(paymentMethodKinds, {
     qerkoRefundable,
   })
@@ -303,6 +304,7 @@ export function PaymentDetailRefunds({
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
           qerkoRefundable={qerkoRefundable}
+          qerkoTerminalTid={qerkoTerminalTid}
           onClose={() => setDialogOpen(false)}
         />
       ) : null}
@@ -313,6 +315,7 @@ export function PaymentDetailRefunds({
           tipAmount={refundableTipAmount}
           defaultMethod={defaultMethod}
           qerkoRefundable={qerkoRefundable}
+          qerkoTerminalTid={qerkoTerminalTid}
           onClose={() => setTipDialogOpen(false)}
         />
       ) : null}
@@ -329,6 +332,7 @@ function RefundDialog({
   tipAmount,
   defaultMethod,
   qerkoRefundable,
+  qerkoTerminalTid,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -340,6 +344,7 @@ function RefundDialog({
   readonly defaultMethod: RefundMethod
   /** Set when the card can be refunded from this device. */
   readonly qerkoRefundable: boolean
+  readonly qerkoTerminalTid: string | null
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -551,6 +556,7 @@ function RefundDialog({
             method={method}
             disabled={pending}
             qerkoAvailable={qerkoRefundable}
+            qerkoTerminalTid={qerkoTerminalTid}
             onChange={setMethod}
           />
         </div>
@@ -587,6 +593,7 @@ function TipRefundDialog({
   tipAmount,
   defaultMethod,
   qerkoRefundable,
+  qerkoTerminalTid,
   onClose,
 }: {
   readonly paymentId: PaymentId
@@ -595,6 +602,7 @@ function TipRefundDialog({
   readonly defaultMethod: RefundMethod
   /** Set when the card can be refunded from this device. */
   readonly qerkoRefundable: boolean
+  readonly qerkoTerminalTid: string | null
   readonly onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -662,6 +670,7 @@ function TipRefundDialog({
           method={method}
           disabled={pending}
           qerkoAvailable={qerkoRefundable}
+          qerkoTerminalTid={qerkoTerminalTid}
           onChange={setMethod}
         />
 
@@ -691,12 +700,15 @@ function RefundMethodField({
   method,
   disabled,
   qerkoAvailable,
+  qerkoTerminalTid,
   onChange,
 }: {
   readonly method: RefundMethod
   readonly disabled: boolean
   /** The card can be refunded through the terminal from this device. */
   readonly qerkoAvailable: boolean
+  /** Names the terminal the refund must go to, when the payment recorded it. */
+  readonly qerkoTerminalTid: string | null
   readonly onChange: (method: RefundMethod) => void
 }) {
   const { t } = useTranslation()
@@ -728,7 +740,11 @@ function RefundMethodField({
         </ToggleGroupItem>
         {qerkoAvailable ? (
           <ToggleGroupItem value="qerkoTerminal" className="justify-start">
-            {t("refund.dialog.method.qerkoTerminal")}
+            {qerkoTerminalTid === null
+              ? t("refund.dialog.method.qerkoTerminal")
+              : t("refund.dialog.method.qerkoTerminalTid", {
+                  tid: qerkoTerminalTid,
+                })}
           </ToggleGroupItem>
         ) : null}
         <ToggleGroupItem value="outside" className="justify-start">

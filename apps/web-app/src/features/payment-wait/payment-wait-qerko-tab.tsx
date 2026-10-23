@@ -124,6 +124,7 @@ export function QerkoPaymentTab({
         paymentId,
         accountId,
         terminalId: selection.terminalId,
+        terminalTid: selection.terminalTid,
         deviceId: account.device.id,
         retryUnresolved: unresolved,
       })

@@ -33,6 +33,7 @@ import {
   startQerkoTerminalPayment,
   syncQerkoTerminalPayment,
 } from "./payment-qerko-actions.ts"
+import { paymentQerkoTerminalByIdQuery } from "./payment-queries.ts"
 import {
   accountTransactionsByPaymentIdQuery,
   reconciliationClaimsByPaymentIdQuery,
@@ -141,6 +142,7 @@ const setup = async (handlers: Record<string, Handler>) => {
           paymentId,
           accountId,
           terminalId,
+          terminalTid: NonEmptyString255("TID-0001"),
           ...input,
         })
       ),
@@ -174,6 +176,12 @@ describe("qerko terminal payment", () => {
       ok: true,
       value: { status: "pending", step: "waitingForCard" },
     })
+    // The payment keeps which terminal took it, and its TID for staff to read.
+    await expect(
+      test.evolu.loadQuery(paymentQerkoTerminalByIdQuery(test.paymentId))
+    ).resolves.toMatchObject([
+      { terminalId: "terminal-1", terminalTid: "TID-0001" },
+    ])
     // Qerko takes the total with the tip in it, and the tip on its own.
     expect(test.requests[0]).toEqual({
       path: "create-terminal-payment",

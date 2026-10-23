@@ -37,6 +37,8 @@ export interface FakeQerko {
   refundOutcome: "approved" | "declined"
   /** While set, Qerko lists no terminal for the company. */
   noTerminals: boolean
+  /** When set, a refund is refused to start for this reason. */
+  refundNotStarted: "terminalNotActivated" | "unknownTerminal" | null
   /** While set, a started refund stays pending (waiting for the card). */
   holdRefund: boolean
   /** While set, Qerko refuses the API key on every call but the pairing (401). */
@@ -98,6 +100,7 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
     paymentOutcome: "approved",
     refundOutcome: "approved",
     noTerminals: false,
+    refundNotStarted: null,
     holdRefund: false,
     rejectKey: false,
   }
@@ -168,6 +171,9 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
         return { type: "cancelling" }
       }
       case "create-terminal-refund": {
+        if (fake.refundNotStarted !== null) {
+          return { type: fake.refundNotStarted }
+        }
         refunds.set(transactionId, {
           amount: String(body.amount),
           cancelled: false,

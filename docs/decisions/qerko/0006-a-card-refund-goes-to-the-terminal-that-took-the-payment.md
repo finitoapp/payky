@@ -27,8 +27,15 @@ terminal after a change, and offers no card refund on a device that has none.
 ## Consequences
 
 The refund screens do not read the device's terminal choice. The terminal the
-payment used must stay activated in Qerko for its refund to succeed.
+payment used must stay activated in Qerko for its refund to succeed. The
+payment also keeps the terminal's TID (`terminalTid`), and the refund dialog
+names it, so staff know which terminal to bring the card to. When Qerko
+refuses to start the refund because that terminal is not activated, not known
+or not connected, the message says only that terminal can take it and sends
+staff to Qerko support rather than to choose another terminal.
 
 ## Enforced by
 
 - `packages/core/src/modules/refund/refund-qerko-actions.test.ts > refund to the card through Qerko > the refund goes to the terminal that took the payment and needs one on record`
+- `apps/web-app/e2e/qerko-terminal.spec.ts > a card refund when the original terminal is no longer activated: the message says only that terminal can take it`
+- `apps/web-app/e2e/qerko-terminal.spec.ts > refund a card payment back to the card through the terminal`

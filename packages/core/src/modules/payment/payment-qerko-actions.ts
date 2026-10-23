@@ -230,12 +230,14 @@ export const startQerkoTerminalPayment =
     paymentId,
     accountId,
     terminalId,
+    terminalTid,
     deviceId,
     retryUnresolved = false,
   }: {
     readonly paymentId: PaymentId
     readonly accountId: AccountId
     readonly terminalId: NonEmptyString255Value
+    readonly terminalTid?: NonEmptyString255Value
     readonly deviceId?: DeviceId | null
     readonly retryUnresolved?: boolean
   }): Task<
@@ -304,6 +306,7 @@ export const startQerkoTerminalPayment =
           // Staff confirmed the retry, so the old attempt no longer blocks.
           unresolvedTransactionId: null,
           terminalId,
+          terminalTid: terminalTid ?? null,
         },
         { ...options, owner: evoluOwner }
       )

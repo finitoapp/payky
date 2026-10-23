@@ -343,12 +343,19 @@ export const enPayment = {
     "This browser cannot keep the screen awake automatically.",
   "refund.created": "Refund recorded.",
   "refund.dialog.method.qerkoTerminal": "Back to the card on the terminal",
+  "refund.dialog.method.qerkoTerminalTid": "Back to the card on terminal {tid}",
   "refund.qerko.dismiss": "Dismiss",
   "refund.qerko.dismissUnresolved": "I have checked, dismiss",
   "refund.qerko.error.notAvailable":
     "This payment was not taken on the Qerko terminal, so it cannot be refunded to the card.",
   "refund.qerko.error.running":
     "Another refund of this payment to the card is still waiting for the terminal.",
+  "refund.qerko.error.terminalNotActivated":
+    "The terminal that took this payment is not activated in Qerko. A card refund can only go to that terminal, so ask Qerko support to activate it again.",
+  "refund.qerko.error.terminalNotConnected":
+    "The terminal that took this payment is not connected. A card refund can only go to that terminal, so connect it and try again.",
+  "refund.qerko.error.unknownTerminal":
+    "Qerko does not know the terminal that took this payment. A card refund can only go to that terminal, so contact Qerko support.",
   "refund.qerko.failed.cancelled":
     "The refund to the card was cancelled on the terminal.",
   "refund.qerko.failed.declined":

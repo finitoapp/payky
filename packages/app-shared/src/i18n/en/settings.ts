@@ -65,7 +65,7 @@ export const enSettings = {
   "settings.qerkoTerminal.code.expired":
     "The code has expired. Request a new one.",
   "settings.qerkoTerminal.code.instructions":
-    "Enter the 4-digit code Qerko sent to the company's e-mail.",
+    "Enter the 4-digit code that Qerko e-mailed to the owner of the company you entered. If the e-mail did not arrive, contact Qerko technical support.",
   "settings.qerkoTerminal.code.invalid":
     "That code is wrong. Attempts left: {count}.",
   "settings.qerkoTerminal.code.label": "Confirmation code",

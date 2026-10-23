@@ -1,4 +1,5 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import type { QerkoPaymentFailureReason } from "@payky/core/integrations/qerko/qerko-client"
 import type {
   AccountId,
   BankQrFormat,
@@ -76,6 +77,7 @@ export interface QerkoPaymentTabProps {
   readonly qerkoPayable: boolean
   readonly qerkoPendingTransactionId: string | null | undefined
   readonly qerkoUnresolvedTransactionId: string | null | undefined
+  readonly qerkoFailureReason: QerkoPaymentFailureReason | null | undefined
 }
 
 export interface IbanPaidTabProps {

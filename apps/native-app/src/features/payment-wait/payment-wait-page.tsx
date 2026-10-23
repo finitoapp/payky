@@ -836,6 +836,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             payable={status === "pending"}
             pendingTransactionId={payment.qerkoPendingTransactionId}
             unresolvedTransactionId={payment.qerkoUnresolvedTransactionId}
+            failureReason={payment.qerkoFailureReason}
           />
         ) : active.id === "card" ? (
           <CardPaymentTab

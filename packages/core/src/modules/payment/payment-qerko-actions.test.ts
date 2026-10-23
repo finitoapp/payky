@@ -251,12 +251,21 @@ describe("qerko terminal payment", () => {
     await expect(
       test.evolu.loadQuery(accountTransactionsByPaymentIdQuery(test.paymentId))
     ).resolves.toEqual([])
+    // The reason stays on the row, so any device can say why.
     await expect
       .poll(() => test.evolu.loadQuery(rowQuery(test.paymentId)))
       .toMatchObject([
-        { pendingTransactionId: null, unresolvedTransactionId: null },
+        {
+          pendingTransactionId: null,
+          unresolvedTransactionId: null,
+          failureReason: "declined",
+        },
       ])
     await expect(test.start()).resolves.toMatchObject({ ok: true })
+    // A new attempt starts without the old reason.
+    await expect
+      .poll(() => test.evolu.loadQuery(rowQuery(test.paymentId)))
+      .toMatchObject([{ failureReason: null }])
   }, 15_000)
 
   test("an unknown result is unresolved and needs a confirmed retry", async () => {

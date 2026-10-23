@@ -149,7 +149,7 @@ const applyQerkoPayment =
     }
 
     if (operation.status === "failed") {
-      await updateAttempt({})
+      await updateAttempt({ trace: { failureReason: operation.reason } })
       return err(
         createQerkoTerminalPaymentFailedError({
           id: paymentId,
@@ -192,6 +192,7 @@ const applyQerkoPayment =
     await updateAttempt({
       trace: {
         transactionId: attemptId,
+        failureReason: null,
         qerkoRefundId: optionalNonEmptyString255(operation.refundId),
         authorizationCode: optionalNonEmptyString255(
           operation.authorizationCode
@@ -299,6 +300,7 @@ export const startQerkoTerminalPayment =
           transactionId,
           pendingTransactionId: transactionId,
           pendingSince: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+          failureReason: null,
           // Staff confirmed the retry, so the old attempt no longer blocks.
           unresolvedTransactionId: null,
           terminalId,

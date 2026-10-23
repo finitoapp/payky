@@ -139,6 +139,12 @@ export const paymentQerkoTerminal = {
   /** When the pending attempt started: see `qerkoUnknownAttemptGraceMs`. */
   pendingSince: TimestampMsSchema.nullable(),
   unresolvedTransactionId: NonEmptyString255Schema.nullable(),
+  /**
+   * Why the last attempt ended without money, kept on the row so every
+   * device can say so, whichever one polled the answer; cleared when the
+   * next attempt starts.
+   */
+  failureReason: z.enum(["declined", "cancelled", "reversed"]).nullable(),
   terminalId: NonEmptyString255Schema.nullable(),
   qerkoRefundId: NonEmptyString255Schema.nullable(),
   authorizationCode: NonEmptyString255Schema.nullable(),

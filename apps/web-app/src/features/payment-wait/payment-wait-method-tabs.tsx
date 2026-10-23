@@ -45,6 +45,7 @@ export function PaymentMethodTabContent({
   qerkoPayable,
   qerkoPendingTransactionId,
   qerkoUnresolvedTransactionId,
+  qerkoFailureReason,
   cashuPaymentId,
   newCashuQuotePending,
   onNewCashuQuote,
@@ -123,6 +124,7 @@ export function PaymentMethodTabContent({
           payable={qerkoPayable}
           pendingTransactionId={qerkoPendingTransactionId}
           unresolvedTransactionId={qerkoUnresolvedTransactionId}
+          failureReason={qerkoFailureReason}
         />
       )
     case "card":

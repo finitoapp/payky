@@ -4,6 +4,7 @@ import {
   qerkoStepKeys,
 } from "@payky/app-shared/qerko-terminal-flow"
 import { qerkoTerminalSelectionQuery } from "@payky/core/evolu/device-qerko"
+import type { QerkoPaymentFailureReason } from "@payky/core/integrations/qerko/qerko-client"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import {
   cancelQerkoTerminalPayment,
@@ -50,6 +51,7 @@ export function QerkoPaymentTab({
   payable,
   pendingTransactionId,
   unresolvedTransactionId,
+  failureReason,
 }: {
   readonly paymentId: PaymentId
   readonly accountId: AccountId | null | undefined
@@ -57,6 +59,8 @@ export function QerkoPaymentTab({
   readonly payable: boolean
   readonly pendingTransactionId: string | null | undefined
   readonly unresolvedTransactionId: string | null | undefined
+  /** Why the last attempt ended without money, when it did. */
+  readonly failureReason: QerkoPaymentFailureReason | null | undefined
 }) {
   const { t } = useTranslation()
   const appRun = useAppRun()
@@ -71,6 +75,9 @@ export function QerkoPaymentTab({
   const [startErrorKey, setStartErrorKey] = useState<ReturnType<
     typeof describeQerkoPaymentError
   > | null>(null)
+  // The method is prepared when its tab opens; until then there is no
+  // account to start the payment with.
+  const prepared = accountId !== null && accountId !== undefined
   const pending =
     pendingTransactionId !== null && pendingTransactionId !== undefined
   const unresolved =
@@ -142,12 +149,15 @@ export function QerkoPaymentTab({
     outcome?.kind === "progress" && outcome.progress.status === "pending"
       ? outcome.progress.step
       : "connecting"
-  // A failure of the last poll (a decline, say) shows only once the attempt
-  // has ended; while one is pending, the step is what matters.
+  // The last attempt's failure is on the payment's row, not in this poll's
+  // answer: the background job may have been the one to read it.
   const failureKey =
-    pending || outcome?.kind !== "error"
+    failureReason === null || failureReason === undefined
       ? null
-      : describeQerkoPaymentError(outcome.error)
+      : describeQerkoPaymentError({
+          type: "QerkoTerminalPaymentFailed",
+          reason: failureReason,
+        })
   const errorKey = startErrorKey ?? failureKey
 
   if (selection === undefined) {
@@ -211,7 +221,7 @@ export function QerkoPaymentTab({
           unresolved ? "paymentWait.qerko.retry" : "paymentWait.qerko.action"
         )}
         pending={starting}
-        disabled={!payable}
+        disabled={!payable || !prepared}
         onPress={() => {
           void start()
         }}

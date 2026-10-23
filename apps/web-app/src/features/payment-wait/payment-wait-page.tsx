@@ -901,6 +901,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               qerkoUnresolvedTransactionId={
                 payment.qerkoUnresolvedTransactionId
               }
+              qerkoFailureReason={payment.qerkoFailureReason}
               cashuPaymentId={paymentId}
               newCashuQuotePending={newCashuQuotePending}
               onNewCashuQuote={() => void handleNewCashuQuote()}

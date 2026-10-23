@@ -743,6 +743,7 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentQerkoTerminal.accountId as qerkoAccountId",
         "paymentQerkoTerminal.pendingTransactionId as qerkoPendingTransactionId",
         "paymentQerkoTerminal.unresolvedTransactionId as qerkoUnresolvedTransactionId",
+        "paymentQerkoTerminal.failureReason as qerkoFailureReason",
         "paymentQerkoTerminal.terminalId as qerkoTerminalId",
         "paymentCashu.accountId as cashuAccountId",
         "paymentCashu.amountSats as cashuAmountSats",

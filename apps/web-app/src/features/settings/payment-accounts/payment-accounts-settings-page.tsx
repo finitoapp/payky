@@ -214,7 +214,7 @@ export function PaymentAccountsSettingsPage() {
         : qerkoEnabled
           ? currencyMismatch(qerko.currency)
           : null,
-      to: null,
+      to: "/settings/payment-accounts/qerko-terminal",
       saveEnabled: async (enabled) => {
         await using run = appRun()
         await run.ok(

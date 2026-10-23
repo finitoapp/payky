@@ -60,7 +60,42 @@ export const skSettings = {
   "settings.appearance": "VZHĽAD A JAZYK",
   "settings.cashRegisterAccount.enabled.label": "Povoliť pokladnicu",
   "settings.cardSwitchioAccount.enabled.label": "Zapnúť platobný terminál",
+  "settings.qerkoTerminal.advanced": "Ďalšie možnosti",
+  "settings.qerkoTerminal.code.back": "Späť",
+  "settings.qerkoTerminal.code.confirm": "Potvrdiť",
+  "settings.qerkoTerminal.code.expired": "Kód vypršal. Vyžiadajte si nový.",
+  "settings.qerkoTerminal.code.instructions":
+    "Zadajte štvormiestny kód, ktorý Qerko poslal na e-mail firmy.",
+  "settings.qerkoTerminal.code.invalid":
+    "Kód nie je správny. Zostávajúce pokusy: {count}.",
+  "settings.qerkoTerminal.code.label": "Potvrdzovací kód",
+  "settings.qerkoTerminal.code.maxAttempts":
+    "Príliš veľa chybných kódov. Vyžiadajte si nový.",
+  "settings.qerkoTerminal.code.resend": "Poslať kód znova",
+  "settings.qerkoTerminal.code.resendIn": "Kód môžete poslať znova o {time}.",
+  "settings.qerkoTerminal.code.title": "Zadajte kód",
+  "settings.qerkoTerminal.company.country.label": "Krajina",
+  "settings.qerkoTerminal.company.identificationNumber.invalid":
+    "Zadajte IČO firmy.",
+  "settings.qerkoTerminal.company.identificationNumber.label": "IČO",
   "settings.qerkoTerminal.enabled.label": "Zapnúť terminál Qerko",
+  "settings.qerkoTerminal.environment.description":
+    "Sandbox pracuje s testovacími údajmi a nestrháva peniaze zo žiadnej skutočnej karty. Vyberte ho len na vyskúšanie prepojenia.",
+  "settings.qerkoTerminal.environment.label": "Prostredie Qerko",
+  "settings.qerkoTerminal.environment.production": "Produkcia",
+  "settings.qerkoTerminal.environment.sandbox": "Sandbox (testovanie)",
+  "settings.qerkoTerminal.error.unreachable":
+    "Qerko sa nepodarilo zastihnúť. Skontrolujte pripojenie a skúste to znova.",
+  "settings.qerkoTerminal.paired.company": "Firma",
+  "settings.qerkoTerminal.paired.description":
+    "Platby kartou na tomto zariadení pôjdu na terminál vybraný nižšie.",
+  "settings.qerkoTerminal.paired.environmentReadOnly":
+    "Ak chcete prostredie zmeniť, zrušte párovanie a spárujte znova.",
+  "settings.qerkoTerminal.paired.keyName": "Názov prepojenia",
+  "settings.qerkoTerminal.paired.title": "Prepojené s Qerkom",
+  "settings.qerkoTerminal.requestCode": "Poslať kód",
+  "settings.qerkoTerminal.status.noTerminal":
+    "Na tomto zariadení nie je vybraný terminál",
   "settings.qerkoTerminal.status.notPaired": "Nespárované s Qerkom",
   "settings.cardSwitchioAccount.info.contract":
     "uzavretú zmluvu s poskytovateľom platobného riešenia, napríklad Comgate.",
@@ -678,6 +713,46 @@ export const skSettings = {
     "Žiadny Nostr relay profil neprijal. Skúste to neskôr.",
   "settings.profile.setName": "Nastavte svoje meno",
   "settings.profile.title": "Profil",
+  "settings.qerkoTerminal.terminal.change": "Zmeniť terminál",
+  "settings.qerkoTerminal.terminal.choose": "Vybrať terminál",
+  "settings.qerkoTerminal.terminal.label": "Terminál na tomto zariadení",
+  "settings.qerkoTerminal.terminal.none":
+    "Na tomto zariadení nie je vybraný terminál",
+  "settings.qerkoTerminal.terminals.choose": "Použiť tento terminál",
+  "settings.qerkoTerminal.terminals.description":
+    "Každé zariadenie platí na vlastnom termináli. Táto voľba platí len pre toto zariadenie.",
+  "settings.qerkoTerminal.terminals.empty":
+    "Qerko pre túto firmu nemá žiadny aktivovaný terminál.",
+  "settings.qerkoTerminal.terminals.failed": "Terminály sa nepodarilo načítať.",
+  "settings.qerkoTerminal.terminals.later": "Vybrať neskôr",
+  "settings.qerkoTerminal.terminals.platform.physical": "Terminál",
+  "settings.qerkoTerminal.terminals.platform.softPos": "SoftPOS",
+  "settings.qerkoTerminal.terminals.retry": "Skúsiť znova",
+  "settings.qerkoTerminal.terminals.title": "Vyberte terminál",
+  "settings.qerkoTerminal.test.action": "Otestovať spojenie",
+  "settings.qerkoTerminal.test.bankUnreachable":
+    "Terminál je pripojený, ale nedovolá sa spracovateľovi platieb.",
+  "settings.qerkoTerminal.test.busy": "Terminál práve spracúva inú operáciu.",
+  "settings.qerkoTerminal.test.connected": "Terminál je pripojený.",
+  "settings.qerkoTerminal.test.notActivated":
+    "Terminál nie je v Qerku aktivovaný.",
+  "settings.qerkoTerminal.test.notConnected": "Terminál nie je pripojený.",
+  "settings.qerkoTerminal.test.running": "Testujem…",
+  "settings.qerkoTerminal.test.unknownTerminal":
+    "Qerko tento terminál nepozná. Vyberte ho znova.",
+  "settings.qerkoTerminal.test.upstreamError":
+    "Qerko sa k terminálu nepodarilo dovolať.",
+  "settings.qerkoTerminal.test.upstreamTimeout": "Terminál neodpovedal včas.",
+  "settings.qerkoTerminal.title": "Terminál Qerko",
+  "settings.qerkoTerminal.unpair.action": "Zrušiť párovanie",
+  "settings.qerkoTerminal.unpair.confirm.cancel": "Späť",
+  "settings.qerkoTerminal.unpair.confirm.confirm": "Zrušiť párovanie",
+  "settings.qerkoTerminal.unpair.confirm.description":
+    "Platby kartou na termináli Qerko sa vypnú na všetkých zariadeniach. Už prijaté platby zostanú, ako sú.",
+  "settings.qerkoTerminal.unpair.confirm.title": "Zrušiť párovanie s Qerkom?",
+  "settings.qerkoTerminal.unpaired.description":
+    "Prepojte účet svojej firmy v Qerku a prijímajte platby kartou na jeho platobných termináloch. Qerko pošle potvrdzovací kód na e-mail firmy.",
+  "settings.qerkoTerminal.unpaired.title": "Spárovať s Qerkom",
   "settings.security.description": "Správa synchronizácie a obnovy účtu",
   "settings.security.mnemonic.copied": "Recovery phrase skopírovaná.",
   "settings.security.mnemonic.copy": "Kopírovať",

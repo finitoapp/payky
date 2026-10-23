@@ -59,7 +59,44 @@ export const enSettings = {
   "settings.appearance": "APPEARANCE & LANGUAGE",
   "settings.cashRegisterAccount.enabled.label": "Enable cash register",
   "settings.cardSwitchioAccount.enabled.label": "Enable card terminal",
+  "settings.qerkoTerminal.advanced": "Additional options",
+  "settings.qerkoTerminal.code.back": "Back",
+  "settings.qerkoTerminal.code.confirm": "Confirm",
+  "settings.qerkoTerminal.code.expired":
+    "The code has expired. Request a new one.",
+  "settings.qerkoTerminal.code.instructions":
+    "Enter the 4-digit code Qerko sent to the company's e-mail.",
+  "settings.qerkoTerminal.code.invalid":
+    "That code is wrong. Attempts left: {count}.",
+  "settings.qerkoTerminal.code.label": "Confirmation code",
+  "settings.qerkoTerminal.code.maxAttempts":
+    "Too many wrong codes. Request a new one.",
+  "settings.qerkoTerminal.code.resend": "Send the code again",
+  "settings.qerkoTerminal.code.resendIn":
+    "You can send the code again in {time}.",
+  "settings.qerkoTerminal.code.title": "Enter the code",
+  "settings.qerkoTerminal.company.country.label": "Country",
+  "settings.qerkoTerminal.company.identificationNumber.invalid":
+    "Enter the company ID.",
+  "settings.qerkoTerminal.company.identificationNumber.label": "Company ID",
   "settings.qerkoTerminal.enabled.label": "Enable Qerko terminal",
+  "settings.qerkoTerminal.environment.description":
+    "The sandbox works with test data and charges no real card. Choose it only to try the connection.",
+  "settings.qerkoTerminal.environment.label": "Qerko environment",
+  "settings.qerkoTerminal.environment.production": "Production",
+  "settings.qerkoTerminal.environment.sandbox": "Sandbox (testing)",
+  "settings.qerkoTerminal.error.unreachable":
+    "Qerko could not be reached. Check the connection and try again.",
+  "settings.qerkoTerminal.paired.company": "Company",
+  "settings.qerkoTerminal.paired.description":
+    "Card payments on this device go to the terminal chosen below.",
+  "settings.qerkoTerminal.paired.environmentReadOnly":
+    "To change the environment, unpair and pair again.",
+  "settings.qerkoTerminal.paired.keyName": "Connection name",
+  "settings.qerkoTerminal.paired.title": "Connected to Qerko",
+  "settings.qerkoTerminal.requestCode": "Send the code",
+  "settings.qerkoTerminal.status.noTerminal":
+    "No terminal chosen on this device",
   "settings.qerkoTerminal.status.notPaired": "Not paired with Qerko",
   "settings.cardSwitchioAccount.info.contract":
     "a signed contract with a payment solution provider, for example Comgate.",
@@ -673,6 +710,48 @@ export const enSettings = {
     "No Nostr relay accepted the profile. Try again later.",
   "settings.profile.setName": "Set your name",
   "settings.profile.title": "Profile",
+  "settings.qerkoTerminal.terminal.change": "Change terminal",
+  "settings.qerkoTerminal.terminal.choose": "Choose a terminal",
+  "settings.qerkoTerminal.terminal.label": "Terminal on this device",
+  "settings.qerkoTerminal.terminal.none": "No terminal chosen on this device",
+  "settings.qerkoTerminal.terminals.choose": "Use this terminal",
+  "settings.qerkoTerminal.terminals.description":
+    "Every device pays on its own terminal. This choice applies to this device only.",
+  "settings.qerkoTerminal.terminals.empty":
+    "Qerko has no activated terminal for this company.",
+  "settings.qerkoTerminal.terminals.failed":
+    "The terminals could not be loaded.",
+  "settings.qerkoTerminal.terminals.later": "Choose later",
+  "settings.qerkoTerminal.terminals.platform.physical": "Terminal",
+  "settings.qerkoTerminal.terminals.platform.softPos": "SoftPOS",
+  "settings.qerkoTerminal.terminals.retry": "Try again",
+  "settings.qerkoTerminal.terminals.title": "Choose a terminal",
+  "settings.qerkoTerminal.test.action": "Test the connection",
+  "settings.qerkoTerminal.test.bankUnreachable":
+    "The terminal is connected but cannot reach the payment processor.",
+  "settings.qerkoTerminal.test.busy":
+    "The terminal is busy with another operation.",
+  "settings.qerkoTerminal.test.connected": "The terminal is connected.",
+  "settings.qerkoTerminal.test.notActivated":
+    "The terminal is not activated in Qerko.",
+  "settings.qerkoTerminal.test.notConnected": "The terminal is not connected.",
+  "settings.qerkoTerminal.test.running": "Testing…",
+  "settings.qerkoTerminal.test.unknownTerminal":
+    "Qerko does not know this terminal. Choose it again.",
+  "settings.qerkoTerminal.test.upstreamError":
+    "Qerko could not reach the terminal.",
+  "settings.qerkoTerminal.test.upstreamTimeout":
+    "The terminal did not answer in time.",
+  "settings.qerkoTerminal.title": "Qerko terminal",
+  "settings.qerkoTerminal.unpair.action": "Unpair",
+  "settings.qerkoTerminal.unpair.confirm.cancel": "Cancel",
+  "settings.qerkoTerminal.unpair.confirm.confirm": "Unpair",
+  "settings.qerkoTerminal.unpair.confirm.description":
+    "Card payments on the Qerko terminal stop on every device. Payments already taken stay as they are.",
+  "settings.qerkoTerminal.unpair.confirm.title": "Unpair from Qerko?",
+  "settings.qerkoTerminal.unpaired.description":
+    "Connect your company's Qerko account to take card payments on its payment terminals. Qerko sends a confirmation code to the company's e-mail.",
+  "settings.qerkoTerminal.unpaired.title": "Pair with Qerko",
   "settings.security.description": "Manage sync transports and recovery access",
   "settings.security.mnemonic.copied": "Recovery phrase copied.",
   "settings.security.mnemonic.copy": "Copy",

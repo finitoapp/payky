@@ -37,6 +37,8 @@ export interface FakeQerko {
   refundOutcome: "approved" | "declined"
   /** While set, Qerko lists no terminal for the company. */
   noTerminals: boolean
+  /** While set, Qerko refuses the API key on the terminal list (401). */
+  rejectKey: boolean
 }
 
 interface Operation {
@@ -94,6 +96,7 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
     paymentOutcome: "approved",
     refundOutcome: "approved",
     noTerminals: false,
+    rejectKey: false,
   }
 
   const answer = (path: string, body: Record<string, unknown>): unknown => {
@@ -195,10 +198,13 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
     const path = new URL(request.url()).pathname.split("/").at(-1) ?? ""
     const body: Record<string, unknown> = request.postDataJSON() ?? {}
     requests.push({ path, body })
+    const rejected = fake.rejectKey && path === "get-terminals"
     await route.fulfill({
-      status: 200,
+      status: rejected ? 401 : 200,
       headers: { ...corsHeaders, "content-type": "application/json" },
-      body: JSON.stringify(answer(path, body)),
+      body: JSON.stringify(
+        rejected ? { error: "unauthorized" } : answer(path, body)
+      ),
     })
   })
 

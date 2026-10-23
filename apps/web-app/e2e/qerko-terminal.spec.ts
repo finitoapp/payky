@@ -154,6 +154,49 @@ test("pair with Qerko without a terminal: the wizard explains who sets one up an
   })
 })
 
+test("a key Qerko no longer accepts: the terminal list offers to pair again", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  qerko.rejectKey = true
+
+  await test.step("changing the terminal says the pairing is refused", async () => {
+    await page
+      .getByRole("button", {
+        name: t("settings.qerkoTerminal.terminal.change"),
+      })
+      .click()
+    await expect(
+      page.getByText(t("settings.qerkoTerminal.terminals.keyRejected"))
+    ).toBeVisible()
+    // Trying again would be pointless.
+    await expect(
+      page.getByRole("button", {
+        name: t("settings.qerkoTerminal.terminals.retry"),
+      })
+    ).toHaveCount(0)
+  })
+
+  await test.step("pairing again unpairs and returns to the wizard", async () => {
+    await page
+      .getByRole("button", {
+        name: t("settings.qerkoTerminal.terminals.keyRejected.action"),
+      })
+      .click()
+    await page
+      .getByRole("button", {
+        name: t("settings.qerkoTerminal.unpair.confirm.confirm"),
+      })
+      .click()
+    await expect(
+      page.getByLabel(
+        t("settings.qerkoTerminal.company.identificationNumber.label")
+      )
+    ).toBeVisible()
+  })
+})
+
 test("pay on the terminal: the step shows while it waits, then the payment is paid", async ({
   seededPage: page,
 }) => {

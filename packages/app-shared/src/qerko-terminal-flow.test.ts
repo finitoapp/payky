@@ -137,6 +137,15 @@ describe("describeQerkoTerminalStatus", () => {
 })
 
 describe("describeQerkoPaymentError", () => {
+  test("a key Qerko refuses says to pair again, not that Qerko is unreachable", () => {
+    expect(
+      describeQerkoPaymentError({ type: "QerkoHttpError", status: 401 })
+    ).toBe("paymentWait.qerko.error.keyRejected")
+    expect(
+      describeQerkoPaymentError({ type: "QerkoHttpError", status: 502 })
+    ).toBe("paymentWait.qerko.error.unreachable")
+  })
+
   test("a refusal to start names its reason", () => {
     expect(
       describeQerkoPaymentError({

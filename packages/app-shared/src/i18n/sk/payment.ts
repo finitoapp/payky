@@ -291,6 +291,9 @@ export const skPayment = {
   "paymentWait.qerko.error.attemptRunning": "Na termináli už platba beží.",
   "paymentWait.qerko.error.generic":
     "Platbu sa nepodarilo uskutočniť. Skúste to znova.",
+  "paymentWait.qerko.error.keyRejected":
+    "Qerko už spárovanie neprijíma. Spárujte terminál znova v nastaveniach.",
+  "paymentWait.qerko.error.keyRejected.link": "Otvoriť nastavenia Qerko",
   "paymentWait.qerko.error.notPaired": "Terminál Qerko nie je spárovaný.",
   "paymentWait.qerko.error.notPayable": "Túto platbu už nie je možné zaplatiť.",
   "paymentWait.qerko.error.unreachable":

@@ -139,6 +139,14 @@ export const selectableQerkoLocations = (
         ]
   })
 
+/** Qerko refuses the API key itself (revoked there): only pairing anew helps. */
+export const isQerkoKeyRejected = (error: {
+  readonly type: string
+  readonly status?: unknown
+}): boolean =>
+  error.type === "QerkoHttpError" &&
+  (error.status === 401 || error.status === 403)
+
 export interface QerkoTerminalsFailure {
   readonly key: TranslationKey
   /** Qerko refuses the key itself: trying again is pointless, pairing anew is not. */
@@ -152,10 +160,9 @@ export interface QerkoTerminalsFailure {
  */
 export const describeQerkoTerminalsFailure = (error: {
   readonly type: string
-  readonly status?: number
+  readonly status?: unknown
 }): QerkoTerminalsFailure =>
-  error.type === "QerkoHttpError" &&
-  (error.status === 401 || error.status === 403)
+  isQerkoKeyRejected(error)
     ? { key: "settings.qerkoTerminal.terminals.keyRejected", keyRejected: true }
     : { key: "settings.qerkoTerminal.terminals.failed", keyRejected: false }
 
@@ -240,7 +247,9 @@ const qerkoPaymentErrorKeys = {
 export const describeQerkoPaymentError = (error: {
   readonly type: string
   readonly reason?: string
+  readonly status?: unknown
 }): TranslationKey => {
+  if (isQerkoKeyRejected(error)) return "paymentWait.qerko.error.keyRejected"
   if (
     error.type === "QerkoTerminalNotStarted" ||
     error.type === "QerkoTerminalRefundNotStarted"

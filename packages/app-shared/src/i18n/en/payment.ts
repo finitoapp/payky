@@ -294,6 +294,9 @@ export const enPayment = {
     "A payment is already running on the terminal.",
   "paymentWait.qerko.error.generic":
     "The payment could not be taken. Try again.",
+  "paymentWait.qerko.error.keyRejected":
+    "Qerko no longer accepts the pairing. Pair the terminal again in settings.",
+  "paymentWait.qerko.error.keyRejected.link": "Open Qerko settings",
   "paymentWait.qerko.error.notPaired": "The Qerko terminal is not paired.",
   "paymentWait.qerko.error.notPayable": "This payment can no longer be paid.",
   "paymentWait.qerko.error.unreachable":

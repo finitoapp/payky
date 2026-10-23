@@ -37,7 +37,7 @@ export interface FakeQerko {
   refundOutcome: "approved" | "declined"
   /** While set, Qerko lists no terminal for the company. */
   noTerminals: boolean
-  /** While set, Qerko refuses the API key on the terminal list (401). */
+  /** While set, Qerko refuses the API key on every call but the pairing (401). */
   rejectKey: boolean
 }
 
@@ -198,7 +198,7 @@ export async function routeFakeQerko(page: Page): Promise<FakeQerko> {
     const path = new URL(request.url()).pathname.split("/").at(-1) ?? ""
     const body: Record<string, unknown> = request.postDataJSON() ?? {}
     requests.push({ path, body })
-    const rejected = fake.rejectKey && path === "get-terminals"
+    const rejected = fake.rejectKey && !path.endsWith("-pairing")
     await route.fulfill({
       status: rejected ? 401 : 200,
       headers: { ...corsHeaders, "content-type": "application/json" },

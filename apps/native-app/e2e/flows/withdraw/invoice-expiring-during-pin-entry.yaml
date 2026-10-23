@@ -51,10 +51,14 @@ tags: [withdraw]
     file: ../../subflows/assert-prompt.yaml
     env:
       ACTION: ${output.t["access.action.withdraw"]}
-# The review under the prompt shows the expiry as it happens.
+# The review under the prompt shows the expiry as it happens. Web sees it
+# there; Android does not (the prompt is a window of its own, hiding what is
+# under it from Maestro), so the wait is optional and there it runs out —
+# the invoice has expired by then, and the checks after the PIN hold either way.
 - extendedWaitUntil:
     visible: ${output.t["withdraw.error.lightningInvoiceExpired"]}
     timeout: 60000
+    optional: true
 - runFlow:
     file: ../../subflows/type-pin.yaml
     env:

@@ -44,6 +44,12 @@ tags: [withdraw]
     env:
       LABEL: ${output.t["withdraw.destination.label"]}
 - inputText: ${output.invoice}
+# On Android the keyboard covers Continue.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
 - runFlow:
     file: ../../subflows/tap-label.yaml
     env:

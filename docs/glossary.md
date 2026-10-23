@@ -8,7 +8,8 @@ where it is specified; the specification wins over this page.
 
 - **Terminal** — the app shell: the `_terminal` layout route that wraps
   settings, activity, bills and payments alike (hence `useTerminalHomeMode`,
-  `useCreateTerminalPayment`). Not a card terminal; that is **Switchio**.
+  `useCreateTerminalPayment`). Not a card terminal; that is **Switchio** or
+  **Qerko**.
 - **Home** — the index screen inside the terminal (`_terminal.index.tsx`, the
   `home.*` keys).
 - **Pos** / **numpad** — the two modes home toggles between: `nav.pos`
@@ -115,3 +116,8 @@ The word "account" means two unrelated things here.
 - **EET** — Czech electronic registration of sales (`docs/eet.md`).
 - **Switchio** — the SwitchioPay card terminal app, driven through Android
   intents (`apps/web-app/src/platform/switchio.ts`).
+- **Qerko** — the service that drives a card payment terminal remotely over
+  HTTP, so it works in the PWA as well (`docs/qerko.md`). Its account kind is
+  `qerkoTerminal`, its pairing the synced `qerkoPlugin` singleton, and the
+  terminal a device pays on `qerkoTerminalSelection` in the device database.
+  Not the same as **Switchio**: Qerko needs no Android intent.

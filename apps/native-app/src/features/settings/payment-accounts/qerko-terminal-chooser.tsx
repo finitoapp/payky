@@ -30,10 +30,13 @@ import { useTranslation } from "../../../hooks/use-translation.ts"
 export function QerkoTerminalChooser({
   enableAccount = false,
   onChosen,
+  onSkip,
 }: {
   /** Also turns the payment method on, as the end of first-time pairing does. */
   readonly enableAccount?: boolean
   readonly onChosen: () => void
+  /** Offers to leave without a terminal; pairing does, so it never dead-ends. */
+  readonly onSkip?: () => void
 }) {
   const { t } = useTranslation()
   const appRun = useAppRun()
@@ -92,6 +95,15 @@ export function QerkoTerminalChooser({
     onChosen()
   }
 
+  const skip =
+    onSkip === undefined ? null : (
+      <Button
+        variant="ghost"
+        label={t("settings.qerkoTerminal.terminals.later")}
+        onPress={onSkip}
+      />
+    )
+
   if (terminals.isPending) return <ActivityIndicator />
 
   if (terminals.isError) {
@@ -107,15 +119,34 @@ export function QerkoTerminalChooser({
             void terminals.refetch()
           }}
         />
+        {skip}
       </YStack>
     )
   }
 
   if (terminals.data.length === 0) {
     return (
-      <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
-        {t("settings.qerkoTerminal.terminals.empty")}
-      </Text>
+      <YStack gap={12} items="flex-start">
+        <YStack gap={4}>
+          <Text fontSize="sm" lineHeight="sm" fontWeight="500">
+            {t("settings.qerkoTerminal.terminals.empty")}
+          </Text>
+          <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
+            {t("settings.qerkoTerminal.terminals.empty.help")}
+          </Text>
+        </YStack>
+        <XStack gap={8}>
+          <Button
+            variant="outline"
+            label={t("settings.qerkoTerminal.terminals.retry")}
+            pending={terminals.isFetching}
+            onPress={() => {
+              void terminals.refetch()
+            }}
+          />
+          {skip}
+        </XStack>
+      </YStack>
     )
   }
 
@@ -162,6 +193,7 @@ export function QerkoTerminalChooser({
           ))}
         </YStack>
       ))}
+      {skip}
     </YStack>
   )
 }

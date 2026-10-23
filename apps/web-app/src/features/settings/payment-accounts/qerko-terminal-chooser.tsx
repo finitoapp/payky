@@ -29,10 +29,13 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 export function QerkoTerminalChooser({
   enableAccount = false,
   onChosen,
+  onSkip,
 }: {
   /** Also turns the payment method on, as the end of first-time pairing does. */
   readonly enableAccount?: boolean
   readonly onChosen: () => void
+  /** Offers to leave without a terminal; pairing does, so it never dead-ends. */
+  readonly onSkip?: () => void
 }) {
   const { t } = useTranslation()
   const appRun = useAppRun()
@@ -93,6 +96,13 @@ export function QerkoTerminalChooser({
     onChosen()
   }
 
+  const skip =
+    onSkip === undefined ? null : (
+      <Button type="button" variant="ghost" onClick={onSkip}>
+        {t("settings.qerkoTerminal.terminals.later")}
+      </Button>
+    )
+
   if (terminals.isPending) {
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -116,15 +126,39 @@ export function QerkoTerminalChooser({
         >
           {t("settings.qerkoTerminal.terminals.retry")}
         </Button>
+        {skip}
       </div>
     )
   }
 
   if (terminals.data.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        {t("settings.qerkoTerminal.terminals.empty")}
-      </p>
+      <div className="flex flex-col items-start gap-3">
+        <div className="flex flex-col gap-1 text-sm">
+          <p className="font-medium">
+            {t("settings.qerkoTerminal.terminals.empty")}
+          </p>
+          <p className="text-muted-foreground">
+            {t("settings.qerkoTerminal.terminals.empty.help")}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={terminals.isFetching}
+            onClick={() => {
+              void terminals.refetch()
+            }}
+          >
+            {terminals.isFetching ? (
+              <LoaderCircle className="animate-spin" />
+            ) : null}
+            {t("settings.qerkoTerminal.terminals.retry")}
+          </Button>
+          {skip}
+        </div>
+      </div>
     )
   }
 
@@ -163,6 +197,7 @@ export function QerkoTerminalChooser({
           </ul>
         </section>
       ))}
+      {skip}
     </div>
   )
 }

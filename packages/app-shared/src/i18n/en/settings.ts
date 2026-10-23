@@ -718,7 +718,9 @@ export const enSettings = {
   "settings.qerkoTerminal.terminals.description":
     "Every device pays on its own terminal. This choice applies to this device only.",
   "settings.qerkoTerminal.terminals.empty":
-    "Qerko has no activated terminal for this company.",
+    "Qerko has no activated terminal for this company yet.",
+  "settings.qerkoTerminal.terminals.empty.help":
+    "Only Qerko support can set up the terminals available to your company. Contact them, ask them to activate a terminal, then come back and try again.",
   "settings.qerkoTerminal.terminals.failed":
     "The terminals could not be loaded.",
   "settings.qerkoTerminal.terminals.later": "Choose later",

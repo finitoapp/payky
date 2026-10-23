@@ -1,0 +1,17 @@
+# web onboarding.spec.ts: "an offline restore fails, and another phrase
+# returns to the restore step".
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- runFlow: ../../subflows/restore-offline.yaml
+# Another phrase: back on the restore step with an empty field.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["accountRestore.action.otherPhrase"]}
+- runFlow:
+    file: ../../subflows/assert-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.restore.action"]}
+- assertVisible: ${output.t["settings.accounts.restore.mnemonic.placeholder"]}

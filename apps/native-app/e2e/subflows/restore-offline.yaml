@@ -1,0 +1,41 @@
+# web onboarding's "submit a recovery phrase and go offline": from a fresh
+# start, a phrase no relay knows (the `unregisteredMnemonic` action, kept as
+# output.phrase), the device read as offline (the `offline` action: Maestro
+# cannot take web offline), then Restore on onboarding, which lands on the
+# failed restore sync with the offline explanation.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: e2e-action.yaml
+    env:
+      ACTION: unregisteredMnemonic
+- copyTextFrom:
+    id: e2e-result
+- evalScript: '${output.phrase = maestro.copiedText.replace(/^E2E OK unregisteredMnemonic /, "")}'
+# In-app after the action: on web a link would reload and forget it.
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: e2e/offline?next=/onboarding
+      TEXT: ${output.t["onboarding.title"]}
+- tapOn: ${output.t["accountChoice.restore.title"]}
+- runFlow:
+    file: tap-input.yaml
+    env:
+      LABEL: ${output.t["settings.accounts.restore.mnemonic.label"]}
+      # Its show/hide eye sits at the right end.
+      BUTTONS: "true"
+- inputText: ${output.phrase}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.restore.action"]}
+- extendedWaitUntil:
+    visible: ${output.t["accountRestore.failed.title"]}
+    timeout: 30000
+- assertVisible: ${output.t["accountRestore.failed.offline"]}

@@ -1,0 +1,44 @@
+# web onboarding.spec.ts: "setting up a phrase whose sync failed warns, then
+# goes straight to payments". The offline override only touches the restore
+# sync screen, so nothing needs to go back online.
+appId: ${APP_ID}
+tags: [onboarding]
+---
+- runFlow: ../../subflows/start.yaml
+- runFlow: ../../subflows/restore-offline.yaml
+# Confirm the overwrite warning.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["accountRestore.action.setupNew"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["accountRestore.setupNew.confirm.confirm"]}
+# Straight to payments.
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["onboarding.payments.iban.title"]}
+      VALUE: CZ6508000000192000145399
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.finish"]}
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 30000
+# The empty account from the first start is gone.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/accounts
+      TEXT: ${output.t["settings.accounts.title"]}
+# One account: the active one, none to switch to.
+- assertVisible: ${output.t["settings.accounts.list.active"]}
+- assertNotVisible: ${output.t["settings.accounts.list.switch"]}

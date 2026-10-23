@@ -227,6 +227,7 @@ export const paymentQerkoTerminalByIdQuery = (idValue: PaymentId) =>
         "accountId",
         "transactionId",
         "pendingTransactionId",
+        "pendingSince",
         "unresolvedTransactionId",
         "terminalId",
         "qerkoRefundId",

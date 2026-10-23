@@ -29,6 +29,7 @@ import { cancelPayment, createPayment, loadPayment } from "./payment-actions.ts"
 import { preparePaymentMethod } from "./payment-preparation-actions.ts"
 import {
   cancelQerkoTerminalPayment,
+  qerkoUnknownAttemptGraceMs,
   startQerkoTerminalPayment,
   syncQerkoTerminalPayment,
 } from "./payment-qerko-actions.ts"
@@ -133,6 +134,7 @@ const setup = async (handlers: Record<string, Handler>) => {
     run,
     requests,
     paymentId,
+    advance: deps.advance,
     start: (input: { retryUnresolved?: boolean } = {}) =>
       run(
         startQerkoTerminalPayment({
@@ -327,6 +329,19 @@ describe("qerko terminal payment", () => {
     })
 
     reachable = true
+    // Within the grace period the starting request may still be on its way,
+    // so a device that polls first leaves the attempt alone.
+    await expect(test.sync()).resolves.toEqual({
+      ok: true,
+      value: { status: "pending", step: "connecting" },
+    })
+    await expect(
+      test.evolu.loadQuery(rowQuery(test.paymentId))
+    ).resolves.toMatchObject([
+      { pendingTransactionId: "00000000-0000-4000-8000-000000000001" },
+    ])
+
+    test.advance(qerkoUnknownAttemptGraceMs)
     await expect(test.sync()).resolves.toEqual({
       ok: true,
       value: { status: "idle" },

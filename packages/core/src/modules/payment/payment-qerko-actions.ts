@@ -25,6 +25,7 @@ import {
   NonEmptyString255,
   type NonEmptyString255 as NonEmptyString255Value,
   NonNegativeInteger,
+  TimestampMsSchema,
 } from "../shared/schema.ts"
 import type { paymentQerkoTerminal } from "./payment.ts"
 import {
@@ -59,6 +60,15 @@ import type { PaymentId } from "./payment-types.ts"
  * (the screen, or the background job on any device) settles it from Qerko's
  * answer.
  */
+
+/**
+ * How long a pending attempt Qerko has never heard of is still believed. The
+ * attempt is stored before the request leaves, and the row syncs at once, so
+ * another device polling in that window gets `unknownTransaction` for a
+ * payment that is only about to reach the terminal. Ending it then would
+ * orphan a live payment; after this long the request is taken as lost.
+ */
+export const qerkoUnknownAttemptGraceMs = 3 * 60 * 1000
 
 /** Where a payment's Qerko attempt stands after one start or poll. */
 export type QerkoTerminalPaymentProgress =
@@ -125,7 +135,7 @@ const applyQerkoPayment =
             id: paymentId,
             ...trace,
             ...(row.pendingTransactionId === attemptId
-              ? { pendingTransactionId: null }
+              ? { pendingTransactionId: null, pendingSince: null }
               : {}),
             ...(unresolve
               ? { unresolvedTransactionId: attemptId }
@@ -288,6 +298,7 @@ export const startQerkoTerminalPayment =
           accountId,
           transactionId,
           pendingTransactionId: transactionId,
+          pendingSince: TimestampMsSchema.decode(run.deps.date.now().getTime()),
           // Staff confirmed the retry, so the old attempt no longer blocks.
           unresolvedTransactionId: null,
           terminalId,
@@ -326,6 +337,7 @@ export const startQerkoTerminalPayment =
           {
             id: paymentId,
             pendingTransactionId: null,
+            pendingSince: null,
             ...(reason === "upstreamTimeout"
               ? { unresolvedTransactionId: transactionId }
               : {}),
@@ -387,12 +399,20 @@ export const syncQerkoTerminalPayment =
     if (!polled.ok) return polled
 
     if (polled.value.type === "unknownTransaction") {
+      const age =
+        row.pendingSince === null
+          ? Number.POSITIVE_INFINITY
+          : run.deps.date.now().getTime() - row.pendingSince
+      if (age < qerkoUnknownAttemptGraceMs) {
+        // The starting device's request may still be on its way.
+        return ok({ status: "pending", step: "connecting" })
+      }
       // Qerko never saw the attempt (the request did not get through), so no
       // money moved: the attempt ends and the payment can be tried again.
       await runMutationWithCompletion((options) =>
         run.deps.evolu.update(
           "paymentQerkoTerminal",
-          { id: paymentId, pendingTransactionId: null },
+          { id: paymentId, pendingTransactionId: null, pendingSince: null },
           { ...options, owner: evoluOwner }
         )
       )

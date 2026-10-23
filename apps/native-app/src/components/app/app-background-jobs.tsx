@@ -7,6 +7,7 @@ import { createDateDep } from "@payky/core/deps"
 import type { Evolu } from "@payky/core/evolu/schema"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
+import { createQerkoApiDep } from "@payky/core/integrations/qerko/qerko-client"
 import type { DeviceId } from "@payky/core/modules/device/device-types"
 import { useAtomValue } from "jotai"
 import {
@@ -57,6 +58,7 @@ const createJobDeps = ({
         native: eetNativeCrypto,
       }
     ),
+    ...createQerkoApiDep({ posId: nativeEnv.EXPO_PUBLIC_PAYKY_QERKO_POS_ID }),
     // The one lock authority of this JS runtime, shared with `nativeRun`.
     lockManager,
     console: nativeConsole,

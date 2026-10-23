@@ -369,3 +369,48 @@ test("refund a card payment back to the card through the terminal", async ({
     ).toMatchObject({ refundId: "e2e-refund-id", terminalId: "terminal-1" })
   })
 })
+
+test("a card refund waiting on a key Qerko refuses: the attempt says to pair again", async ({
+  seededPage: page,
+}) => {
+  const qerko = await routeFakeQerko(page)
+  await pairQerko(page)
+  await page.goto("/", { waitUntil: "domcontentloaded" })
+
+  await createPayment(page, "en", "5.9")
+  await page.getByRole("tab", { name: t("paymentWait.method.qerko") }).click()
+  const paymentId = getPaymentIdFromUrl(page)
+  await page
+    .getByRole("button", { name: t("paymentWait.qerko.action") })
+    .click()
+  await expect(
+    page.getByTestId("payment-paid-panel").getByText(t("paymentWait.paid"))
+  ).toBeVisible()
+  await waitForLocalWriteToSettle(page)
+  await gotoPage(page, `/activity/${paymentId}`, "en", "paymentDetail.title")
+
+  qerko.holdRefund = true
+  await page
+    .getByRole("button", { name: t("paymentDetail.refunds.action") })
+    .click()
+  const dialog = page.getByRole("dialog")
+  const [confirmPrefix = ""] = t("refund.dialog.confirm").split("{amount}")
+  await dialog
+    .getByRole("button", { name: new RegExp(`^${confirmPrefix}.+`, "u") })
+    .click()
+  await dialog.waitFor({ state: "hidden" })
+  const attempt = page.getByTestId("payment-detail-qerko-refund")
+  await expect(
+    attempt.getByText(t("paymentWait.qerko.step.waitingForCard"))
+  ).toBeVisible()
+
+  qerko.rejectKey = true
+  await expect(
+    attempt.getByText(t("paymentWait.qerko.error.keyRejected"))
+  ).toBeVisible()
+  await expect(
+    attempt.getByRole("link", {
+      name: t("paymentWait.qerko.error.keyRejected.link"),
+    })
+  ).toBeVisible()
+})

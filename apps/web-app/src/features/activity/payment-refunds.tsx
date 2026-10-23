@@ -1,6 +1,9 @@
 import type { InferRow } from "@evolu/common"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
-import { qerkoStepKeys } from "@payky/app-shared/qerko-terminal-flow"
+import {
+  isQerkoKeyRejected,
+  qerkoStepKeys,
+} from "@payky/app-shared/qerko-terminal-flow"
 import {
   defaultRefundMethod,
   deriveRefundAmountText,
@@ -59,6 +62,7 @@ import {
   type NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { parseISO } from "date-fns"
 import { useAtomValue, useStore } from "jotai"
 import {
@@ -772,10 +776,17 @@ function QerkoRefundAttempt({
     queryFn: async () => {
       await using run = appRun()
       const result = await run(syncQerkoTerminalRefund(attempt.id))
-      return result.ok ? result.value : null
+      return result.ok
+        ? result.value
+        : {
+            status: "error" as const,
+            keyRejected: isQerkoKeyRejected(result.error),
+          }
     },
   })
   const step = poll.data?.status === "pending" ? poll.data.step : "connecting"
+  // A refused key leaves the attempt pending; pairing anew lets the poll go on.
+  const keyRejected = poll.data?.status === "error" && poll.data.keyRejected
 
   const dismiss = () =>
     runToast(async (run) => {
@@ -795,6 +806,19 @@ function QerkoRefundAttempt({
           <LoaderCircleIcon className="size-4 animate-spin" />
           {t(qerkoStepKeys[step])}
         </span>
+      ) : null}
+      {isPending && keyRejected ? (
+        <>
+          <span className="font-medium text-destructive">
+            {t("paymentWait.qerko.error.keyRejected")}
+          </span>
+          <Link
+            to="/settings/payment-accounts/qerko-terminal"
+            className="font-medium underline"
+          >
+            {t("paymentWait.qerko.error.keyRejected.link")}
+          </Link>
+        </>
       ) : null}
       {attempt.status === "failed" ? (
         <>

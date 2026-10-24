@@ -1737,7 +1737,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/withdraw/cashu-withdraw-page.tsx",
     web: ["apps/web-app/src/features/withdraw/cashu-withdraw-page.tsx"],
     status: "matched",
-    note: "Native uses the web-aligned no-account Card; the payment-account CTA remains a documented navigation gap.",
   },
   {
     native: "src/features/withdraw/cashu-withdraw-review-step.tsx",
@@ -1767,24 +1766,16 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/withdraw/withdraw-history-page.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-history-page.tsx"],
     status: "matched",
-    note: "Native uses the web-aligned no-account Card; the payment-account CTA remains a documented navigation gap.",
   },
   {
     native: "src/features/withdraw/withdraw-no-account-card.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-account.tsx"],
     status: "matched",
-    allowedDifferences: {
-      Button:
-        "Native omits the web Payment Accounts CTA; this existing navigation gap remains.",
-      CardFooter:
-        "Native omits the web Payment Accounts CTA; this existing navigation gap remains.",
-    },
   },
   {
     native: "src/features/withdraw/withdraw-page.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-page.tsx"],
     status: "matched",
-    note: "Native uses the web-aligned no-account Card; the payment-account CTA remains a documented navigation gap.",
   },
   {
     native: "src/features/withdraw/withdraw-parts.tsx",

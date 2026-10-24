@@ -1,8 +1,12 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import type { WithdrawMethod } from "@payky/app-shared/withdraw-flow"
+import { router } from "expo-router"
+import { XStack } from "tamagui"
+import { Button } from "../../components/ui/button.tsx"
 import {
   Card,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "../../components/ui/card.tsx"
@@ -38,6 +42,14 @@ export function WithdrawNoAccountCard({
           {t(noAccountKeys[method].description)}
         </CardDescription>
       </CardHeader>
+      <CardFooter>
+        <XStack>
+          <Button
+            label={t("withdraw.noAccount.action")}
+            onPress={() => router.push("/settings/payment-accounts")}
+          />
+        </XStack>
+      </CardFooter>
     </Card>
   )
 }

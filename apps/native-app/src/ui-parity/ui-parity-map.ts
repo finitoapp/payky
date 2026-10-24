@@ -860,12 +860,18 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     },
   },
   {
+    native: "src/features/settings/debug-console/cashu-shard-debug-card.tsx",
+    web: [
+      "apps/web-app/src/features/settings/debug-console/cashu-shard-debug-card.tsx",
+    ],
+    status: "matched",
+  },
+  {
     native: "src/features/settings/debug-console/debug-console-page.tsx",
     web: [
       "apps/web-app/src/features/settings/debug-console/debug-console-settings-page.tsx",
     ],
     status: "matched",
-    note: "Native currently has no Cashu shard debug card; adding it requires the debug data flow beyond this presentation migration.",
     allowedDifferences: {
       Badge:
         "Native uses the existing Badge for console method labels; web styles those labels as inline spans.",

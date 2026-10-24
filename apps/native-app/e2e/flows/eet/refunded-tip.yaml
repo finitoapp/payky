@@ -1,6 +1,5 @@
 # web eet.spec.ts: "a refunded tip reaches EET only while tips belong to the
-# business". What reaches EET is read off the mock; native shows no EET
-# reversal card (native-e2e.md 3.3), which this test does not check anyway.
+# business". What reaches EET is read off the mock, as web does.
 appId: ${APP_ID}
 tags: [eet]
 ---

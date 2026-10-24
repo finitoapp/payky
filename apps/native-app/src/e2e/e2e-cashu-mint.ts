@@ -24,15 +24,36 @@ export const payE2eCashuQuotes = (): number => {
   return payQuotes()
 }
 
-/** The fake mint's fetch, with `payE2eCashuQuotes` wired to it. */
+/**
+ * A second fake mint, for moving funds between mints: added by URL like any
+ * mint, and paid by a melt at the main one (and back), as the core tests'
+ * `extraMints` are.
+ */
+export const E2E_SECOND_MINT_URL = "https://second-mint.e2e.test"
+
+/** The fake mints' fetch, with `payE2eCashuQuotes` wired to the main one. */
 export const createE2eCashuMintFetch = async (): Promise<
   typeof globalThis.fetch
 > => {
-  const [{ createFakeCashuMint }, { MAIN_MINT_URL }] = await Promise.all([
-    import("@payky/core/cashu/fake-cashu-mint"),
-    import("@payky/core/cashu/cashu-mints"),
-  ])
-  const mint = createFakeCashuMint({ url: MAIN_MINT_URL })
+  const [{ createFakeCashuMint, createFakeMintsFetch }, { MAIN_MINT_URL }] =
+    await Promise.all([
+      import("@payky/core/cashu/fake-cashu-mint"),
+      import("@payky/core/cashu/cashu-mints"),
+    ])
+  // A melt at either mint pays the invoice wherever it was issued.
+  const payInvoice = (invoice: string) => {
+    mint.payInvoice(invoice)
+    second.payInvoice(invoice)
+  }
+  const mint = createFakeCashuMint({
+    url: MAIN_MINT_URL,
+    onInvoicePaid: payInvoice,
+  })
+  const second = createFakeCashuMint({
+    url: E2E_SECOND_MINT_URL,
+    name: "Second e2e mint",
+    onInvoicePaid: payInvoice,
+  })
   payQuotes = () => {
     const ids = mint.mintQuoteIds()
     for (const id of ids) mint.payMintQuote(id)
@@ -40,5 +61,5 @@ export const createE2eCashuMintFetch = async (): Promise<
   }
   // ponytail: a fixed poll, long enough for a flow to see the QR first
   if (active === "autopay") setInterval(payQuotes, 4000)
-  return mint.fetch
+  return createFakeMintsFetch([mint, second])
 }

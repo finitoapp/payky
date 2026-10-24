@@ -1236,18 +1236,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/settings/cashu/cashu-mint-detail-page.tsx",
     ],
     status: "matched",
-    allowedDifferences: {
-      Field:
-        "the web-only move-between-mints panel is not implemented in the native screen",
-      FieldDescription:
-        "the web-only move-between-mints panel is not implemented in the native screen",
-      FieldError:
-        "the web-only move-between-mints panel is not implemented in the native screen",
-      FieldLabel:
-        "the web-only move-between-mints panel is not implemented in the native screen",
-      Input:
-        "the web-only move-between-mints panel is not implemented in the native screen",
-    },
   },
   {
     native: "src/features/settings/payment-accounts/cashu-mint-new-page.tsx",

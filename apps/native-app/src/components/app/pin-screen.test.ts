@@ -23,14 +23,11 @@ it("takes the recovery phrase with every keyboard aid off", () => {
     source.indexOf("function PhraseForm"),
     source.indexOf("function FailedAttempts")
   )
-  for (const prop of [
-    "secureTextEntry",
-    'autoComplete="off"',
-    "autoCorrect={false}",
-    "spellCheck={false}",
-  ]) {
-    expect(form).toContain(prop)
-  }
+  // PasswordTextarea masks the phrase and forces every aid off
+  // (password-textarea.test.ts); the form adds no copy or paste menu.
+  expect(form).toContain("<PasswordTextarea")
+  expect(form).toContain("contextMenuHidden")
+  expect(form).not.toMatch(/<Input\b|<TextInput\b/u)
 })
 
 it("keeps the one-time code out of the clipboard, suggestions and autofill", () => {

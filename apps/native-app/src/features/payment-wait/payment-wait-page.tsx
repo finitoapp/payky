@@ -90,6 +90,7 @@ import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { isSwitchioSupported } from "../../platform/switchio.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
+import { useEetSettings } from "../shared/use-eet-settings.ts"
 import { readCashReceived } from "./cash-received.ts"
 import { BoltCardReader } from "./payment-wait-bolt-card.tsx"
 import { CardPaymentTab } from "./payment-wait-card-tab.tsx"
@@ -964,6 +965,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
 /** Shown from the derived status alone, so a reopened paid payment shows it too. */
 function Paid({ paymentId }: { readonly paymentId: PaymentId }) {
   const { t } = useTranslation()
+  const { isSandboxActive: isEetSandboxActive } = useEetSettings()
   return (
     <Screen>
       <YStack
@@ -974,6 +976,9 @@ function Paid({ paymentId }: { readonly paymentId: PaymentId }) {
       >
         <SuccessPanel
           title={t("paymentWait.paid")}
+          description={
+            isEetSandboxActive ? t("paymentWait.eetSandbox") : undefined
+          }
           actions={
             <YStack items="center" gap={32} pt={64} w={320} maxW="100%">
               <Button

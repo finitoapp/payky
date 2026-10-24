@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar"
 import { createStore, Provider } from "jotai"
 import { Suspense, useEffect, useState } from "react"
 import { useColorScheme } from "react-native"
-import { TamaguiProvider, Theme, useTheme } from "tamagui"
+import { TamaguiProvider, Theme, useTheme, View } from "tamagui"
 import { AccessGate } from "../src/components/app/access-gate.tsx"
 import {
   AppEvoluConsumers,
@@ -32,6 +32,7 @@ import {
 import { queryClient } from "../src/core/query-client.ts"
 import { resolveTheme } from "../src/core/theme-preference.ts"
 import { removeStaleExportFolders } from "../src/features/settings/evolu-export/evolu-export-io"
+import { EetSandboxBanner } from "../src/features/shared/eet-sandbox-banner.tsx"
 import { useThemePreference } from "../src/hooks/use-theme-preference.ts"
 import { tamaguiConfig } from "../tamagui.config.ts"
 
@@ -159,7 +160,15 @@ function ThemedStack({ dark }: { readonly dark: boolean }) {
       }}
     >
       <WebColumn>
-        <Stack screenOptions={{ headerShown: false }} />
+        <View flex={1}>
+          {/* Its own boundary: the EET settings query suspends on an account switch. */}
+          <Suspense fallback={null}>
+            <EetSandboxBanner />
+          </Suspense>
+          <View flex={1}>
+            <Stack screenOptions={{ headerShown: false }} />
+          </View>
+        </View>
       </WebColumn>
     </ThemeProvider>
   )

@@ -1,0 +1,50 @@
+# web settings-accounts.spec.ts: "canceling setup from onboarding discards
+# the new account and switches back". One account left shows as no Switch
+# button beside the active one (web counts the list's items).
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+# Create a second account.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/accounts
+      TEXT: ${output.t["settings.accounts.title"]}
+- scrollUntilVisible:
+    element: ${output.t["accountChoice.new.title"]}
+- tapOn: ${output.t["accountChoice.new.title"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.accounts.create.confirm.confirm"]}
+- extendedWaitUntil:
+    visible: ${output.t["onboarding.title"]}
+    timeout: 15000
+# Cancel setup instead of completing onboarding.
+- scrollUntilVisible:
+    element: ${output.t["onboarding.cancelSetup"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.cancelSetup"]}
+- extendedWaitUntil:
+    visible: ${output.t["onboarding.cancelSetup.confirm.title"]}
+    timeout: 10000
+# The confirm button shares its copy with the page's button behind the
+# dialog, which sits lower: take the one above the dialog's other button.
+- tapOn:
+    text: ${output.t["onboarding.cancelSetup.confirm.confirm"]}
+    above: ${output.t["onboarding.cancelSetup.confirm.cancel"]}
+# Lands back on the terminal home screen for the original account.
+- extendedWaitUntil:
+    visible: ${output.t["home.pay"]}
+    timeout: 15000
+# The discarded account no longer appears in the account list.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/accounts
+      TEXT: ${output.t["settings.accounts.title"]}
+- assertVisible: ${output.t["settings.accounts.list.active"]}
+- assertNotVisible: ${output.t["settings.accounts.list.switch"]}

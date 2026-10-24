@@ -1325,6 +1325,14 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   },
   {
     native:
+      "src/features/settings/payment-accounts/spark-transactions-page.tsx",
+    web: [
+      "apps/web-app/src/features/settings/payment-accounts/spark-transactions-page.tsx",
+    ],
+    status: "matched",
+  },
+  {
+    native:
       "src/features/settings/payment-number-series/payment-number-series-settings-page.tsx",
     web: [
       "apps/web-app/src/features/settings/payment-number-series/payment-number-series-settings-page.tsx",
@@ -1758,7 +1766,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/withdraw/withdraw-history-page.tsx",
     web: ["apps/web-app/src/features/withdraw/withdraw-history-page.tsx"],
     status: "matched",
-    note: "Native uses the web-aligned no-account Card; the payment-account CTA and Spark older-transactions link remain documented navigation gaps.",
+    note: "Native uses the web-aligned no-account Card; the payment-account CTA remains a documented navigation gap.",
   },
   {
     native: "src/features/withdraw/withdraw-no-account-card.tsx",

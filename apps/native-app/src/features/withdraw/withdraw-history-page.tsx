@@ -203,7 +203,29 @@ function WithdrawHistory({
           />
         }
         ListFooterComponent={
-          hasMore && isPending ? <ListSkeleton rows={5} /> : undefined
+          <>
+            {hasMore && isPending ? <ListSkeleton rows={5} /> : null}
+            {method === "spark" ? (
+              // The link is its own element, not nested in the note as on
+              // web: a nested Text is no separate TalkBack or tap target.
+              <YStack gap="1" items="flex-start">
+                <Text fontSize="sm" lineHeight="sm" color="muted-foreground">
+                  {t("withdraw.history.olderNote")}
+                </Text>
+                <Text
+                  fontSize="sm"
+                  lineHeight="sm"
+                  textDecorationLine="underline"
+                  role="link"
+                  onPress={() =>
+                    router.push("/settings/payment-accounts/spark/transactions")
+                  }
+                >
+                  {t("withdraw.history.transactionsLink")}
+                </Text>
+              </YStack>
+            ) : null}
+          </>
         }
         renderItem={({ item }) => <WithdrawalDay group={item} />}
       />

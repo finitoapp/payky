@@ -9,6 +9,11 @@ import {
   createFinishOnboardingInput,
   validateOnboardingForm,
 } from "@payky/app-shared/onboarding-utils"
+import {
+  accountListQuery,
+  removeDeviceAccount,
+  selectAccount,
+} from "@payky/core/evolu/device-account"
 import { getDeviceLocaleForLanguage } from "@payky/core/evolu/device-client"
 import { publishNostrProfileName } from "@payky/core/integrations/nostr/nostr-client"
 import {
@@ -17,11 +22,14 @@ import {
 } from "@payky/core/modules/app-settings/app-settings-actions"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
 import { router } from "expo-router"
-import { useAtom } from "jotai"
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import ChevronLeft from "lucide-react-native/icons/chevron-left"
 import { useEffect, useRef, useState } from "react"
 import { BackHandler, Platform } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import { accountAtom } from "../../atoms/account.ts"
+import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { reloadAppEvoluAtom } from "../../atoms/evolu-counter.ts"
 import { Screen, screenPaddingX } from "../../components/screen.tsx"
 import {
   Alert,
@@ -37,7 +45,11 @@ import {
   FieldLabel,
 } from "../../components/ui/field.tsx"
 import { Input } from "../../components/ui/input.tsx"
-import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
+import { useConfirm } from "../../hooks/use-confirm.ts"
+import {
+  useDeviceEvoluQuery,
+  useEvoluQuery,
+} from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useSetLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { maxWidth } from "../../theme/tokens.ts"
@@ -85,6 +97,18 @@ export function OnboardingPage() {
     restore,
   } = useRestoreAccount("onboarding")
   const [profilePublishFailed, setProfilePublishFailed] = useState(false)
+  const [cancelingSetup, setCancelingSetup] = useState(false)
+  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const activeAccount = useAtomValue(accountAtom)
+  const reloadAppEvolu = useSetAtom(reloadAppEvoluAtom)
+  const confirm = useConfirm()
+  const deviceAccounts = useDeviceEvoluQuery(accountListQuery).data
+  // Set when this account was added from Settings > Accounts (not this
+  // device's very first one): onboarding offers the way back to it instead
+  // of being a one-way trap, as on web. `undefined` on a first-run device.
+  const fallbackAccount = deviceAccounts
+    .filter((account) => account.id !== activeAccount.id)
+    .sort((a, b) => b.lastUseAt - a.lastUseAt)[0]
   const validation = validateOnboardingForm({ iban, businessName })
   const ibanError: TranslationKey | null =
     submitAttempted && validation.ibanInvalid
@@ -92,7 +116,7 @@ export function OnboardingPage() {
       : null
   const steps = getOnboardingSteps(accountType)
   const stepIndex = steps.indexOf(step)
-  const pending = finishing || restoring
+  const pending = finishing || restoring || cancelingSetup
 
   // The appSettings row marks the account as onboarded (same as web): leave
   // so a finished or synced account never finishes again.
@@ -136,6 +160,32 @@ export function OnboardingPage() {
     })
     finishingRef.current = false
     setFinishing(false)
+  }
+
+  const cancelSetup = async () => {
+    if (fallbackAccount === undefined) return
+    setCancelingSetup(true)
+    try {
+      const confirmed = await confirm({
+        title: t("onboarding.cancelSetup.confirm.title"),
+        description: t("onboarding.cancelSetup.confirm.description", {
+          name: fallbackAccount.name,
+        }),
+        confirmLabel: t("onboarding.cancelSetup.confirm.confirm"),
+        cancelLabel: t("onboarding.cancelSetup.confirm.cancel"),
+      })
+      if (!confirmed) return
+      // The account being onboarded has no data of its own yet, so
+      // discarding it loses nothing. Reloading the app Evolu reads the
+      // fallback account's settings, and the effect above leaves for home
+      // once it sees that account is onboarded.
+      removeDeviceAccount(deviceEvolu, activeAccount.id)
+      selectAccount(deviceEvolu, fallbackAccount.id)
+      setForm(initialOnboardingFormState)
+      reloadAppEvolu()
+    } finally {
+      setCancelingSetup(false)
+    }
   }
 
   const goBack = () => {
@@ -319,7 +369,7 @@ export function OnboardingPage() {
           {step === "transfer" ? (
             <AccountTransferTarget
               source="onboarding"
-              confirmBeforeAdding={false}
+              confirmBeforeAdding={fallbackAccount !== undefined}
               onRestoreWithPhrase={() =>
                 setForm((current) => ({
                   ...current,
@@ -330,6 +380,18 @@ export function OnboardingPage() {
             />
           ) : null}
         </YStack>
+
+        {fallbackAccount === undefined ? null : (
+          <XStack>
+            <Button
+              variant="ghost"
+              size="sm"
+              label={t("onboarding.cancelSetup")}
+              disabled={pending}
+              onPress={() => void cancelSetup()}
+            />
+          </XStack>
+        )}
       </YStack>
     </Screen>
   )

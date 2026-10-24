@@ -441,12 +441,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/onboarding/onboarding-page.tsx",
     web: ["apps/web-app/src/features/onboarding/onboarding-page.tsx"],
     status: "matched",
-    allowedDifferences: {
-      AccountTransferTarget:
-        "native keeps its existing no-confirm transfer path; fallback-account lookup and confirmation are a separate behavior gap",
-      CancelSetup:
-        "native does not look up a fallback device account, so it cannot offer web's cancel-setup action",
-    },
   },
   {
     native: "src/features/onboarding/payments-step.tsx",

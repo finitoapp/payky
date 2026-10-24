@@ -7,3 +7,9 @@ appId: ${APP_ID}
     id: ${output.re(output.t["settings.sparkAccount.mnemonic.label"])}
     below: ${output.t["settings.sparkAccount.wallet.changeDialog.description"]}
 - inputText: ${MNEMONIC}
+# The keyboard covers the dialog's Cancel and Switch buttons.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard

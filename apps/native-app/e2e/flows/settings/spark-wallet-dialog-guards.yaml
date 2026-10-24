@@ -37,10 +37,21 @@ tags: [settings]
 - eraseText: 100
 - inputText: legal winner thank year wave sausage worth useful legal winner thank thank
 - assertVisible: ${output.t["settings.sparkAccount.wallet.changeDialog.invalid"]}
+# The keyboard comes back with the typing and covers Cancel and Switch.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
 - runFlow: ../../subflows/assert-spark-switch-disabled.yaml
 # Cancel keeps the current wallet.
 - eraseText: 100
 - inputText: legal winner thank year wave sausage worth useful legal winner thank yellow
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
 - tapOn: ${output.t["settings.sparkAccount.wallet.cancel"]}
 - assertNotVisible: ${output.t["settings.sparkAccount.wallet.changeDialog.title"]}
 - runFlow:

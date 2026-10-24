@@ -123,6 +123,16 @@ tags: [bill]
     text: ${output.t["bill.scan.create.save"]}
     below:
       id: ${output.re(output.t["settings.items.form.taxRate.label"])}
+# The search field takes the focus back from the closed dialog, and its
+# keyboard covers the bill's footer.
+- extendedWaitUntil:
+    visible: '${output.tv("bill.brick.remove.aria", { name: "Coca-Cola Original" })}'
+    timeout: 15000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
 - extendedWaitUntil:
     visible: '${output.tv("bill.itemsCount", { value: 1 })}'
     timeout: 15000

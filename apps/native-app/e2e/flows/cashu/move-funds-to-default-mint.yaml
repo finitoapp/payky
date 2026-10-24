@@ -1,0 +1,113 @@
+# Native-only (web has no spec for it): moving funds from a mint to the
+# default one (cashu/0010). The in-app fake mints are linked, so the melt at
+# the main mint pays the second one's quote (e2e-cashu-mint.ts). Taps only
+# from enable-cashu on: a link would reload web and lose the fake mints.
+appId: ${APP_ID}
+tags: [cashu]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow: ../../subflows/enable-cashu.yaml
+# A Cashu payment leaves ecash at the main mint.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- runFlow: ../../subflows/to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cashu"]}
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.paid"]}
+    timeout: 45000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.back"]}
+# Add the second mint and make it the default.
+- runFlow:
+    file: ../../subflows/open-settings-entry.yaml
+    env:
+      FROM_HOME: "true"
+      TITLE: ${output.t["settings.paymentAccounts.title"]}
+- tapOn: ${output.re(output.t["settings.paymentAccounts.method.cashu"])}
+- tapOn: ${output.re(output.t["settings.cashuAccount.mints"])}
+- extendedWaitUntil:
+    visible: ${output.t["settings.cashuMints.title"]}
+    timeout: 15000
+- scrollUntilVisible:
+    element: ${output.t["settings.cashuMints.add"]}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.cashuMints.add"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.cashuMints.url"]}
+      VALUE: https://second-mint.e2e.test
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- tapOn:
+    text: ${output.t["settings.cashuMints.add"]}
+    below: ${output.t["settings.cashuMints.url"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.cashuMints.setDefault"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.cashuMints.setDefault"]}
+- extendedWaitUntil:
+    notVisible: ${output.t["settings.cashuMints.setDefault"]}
+    timeout: 15000
+# The main mint now offers to move its funds there.
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- extendedWaitUntil:
+    visible: cashu.cz
+    timeout: 15000
+- tapOn: cashu.cz
+- scrollUntilVisible:
+    element: ${output.t["settings.cashuMints.move.estimate"]}
+- runFlow:
+    file: ../../subflows/fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.cashuMints.move.amount"]}
+      VALUE: "100"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.cashuMints.move.estimate"]}
+- extendedWaitUntil:
+    visible: '.*${output.re(output.t["settings.cashuMints.move.estimateResult"].split("{total}")[1])}'
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.cashuMints.move.confirm"]}
+# Done: the estimate is gone and the second mint holds the 100 sats.
+- extendedWaitUntil:
+    visible: ${output.t["settings.cashuMints.move.estimate"]}
+    timeout: 30000
+- assertNotVisible: ${output.re(output.t["settings.cashuMints.moveError.rejected"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["nav.back"]}
+- extendedWaitUntil:
+    visible:
+      text: '${output.tv("withdraw.sats", { amount: "100" })}'
+      rightOf: second-mint.e2e.test
+    timeout: 15000

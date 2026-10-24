@@ -274,6 +274,12 @@ export const generateDemoData =
         )
       ] ?? 2_300_000
 
+    // `Response.json` is missing from React Native's `Response`.
+    const jsonResponse = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        headers: { "content-type": "application/json" },
+      })
+
     const fakeServices: SparkWalletDep &
       YadioApiDep &
       QerkoApiDep &
@@ -283,7 +289,7 @@ export const generateDemoData =
         const url =
           input instanceof Request ? input.url : new URL(String(input)).href
         if (url.includes("/exrates/")) {
-          return Response.json({ BTC: btcRate(), timestamp: simulatedNow })
+          return jsonResponse({ BTC: btcRate(), timestamp: simulatedNow })
         }
         // The Qerko terminal approves every payment for the amount asked.
         if (url.endsWith("/create-terminal-payment")) {
@@ -291,7 +297,7 @@ export const generateDemoData =
             readonly transactionId: string
             readonly amount: string
           }
-          return Response.json({
+          return jsonResponse({
             type: "started",
             payment: {
               status: "approved",

@@ -1,0 +1,106 @@
+# web eet.spec.ts: "the sandbox asks first, warns on every terminal screen,
+# and marks the paid screen". The paid screen is checked before read-ids
+# leaves it, so the cash payment is taken here rather than through
+# take-cash-payment.
+appId: ${APP_ID}
+tags: [eet]
+---
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: fiatCurrency=CZK
+- runFlow:
+    file: ../../subflows/eet-mock.yaml
+    env:
+      PATH: /__mock/eet/reset
+# Production shows no sandbox warning.
+- runFlow: ../../subflows/enable-eet.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings
+      TEXT: ${output.t["settings.title"]}
+- assertNotVisible:
+    id: eet-sandbox-banner
+# Canceling the confirmation keeps production.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/eet
+      TEXT: ${output.t["settings.eet.title"]}
+- runFlow:
+    file: ../../subflows/select-eet-sandbox.yaml
+    env:
+      CONFIRM: "false"
+- assertNotVisible:
+    id: eet-sandbox-banner
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.eet.environment.production.title"]}
+      BY_TEXT: "true"
+# Confirming turns the sandbox on.
+- runFlow:
+    file: ../../subflows/select-eet-sandbox.yaml
+    env:
+      CONFIRM: "true"
+- extendedWaitUntil:
+    visible:
+      id: eet-sandbox-banner
+    timeout: 10000
+# The warning is on home, activity, bill and settings.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity
+      TEXT: ${output.t["activity.title"]}
+- assertVisible:
+    id: eet-sandbox-banner
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings
+      TEXT: ${output.t["settings.title"]}
+- assertVisible:
+    id: eet-sandbox-banner
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: bill
+      TEXT: ${output.t["bill.title"]}
+- assertVisible:
+    id: eet-sandbox-banner
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- assertVisible:
+    id: eet-sandbox-banner
+# The paid screen says the sale went to the test environment.
+- runFlow:
+    file: ../../subflows/enter-amount.yaml
+    env:
+      AMOUNT: "5.9"
+- tapOn: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible: ${output.re(output.t["paymentTip.none"])}
+    timeout: 15000
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: ../../subflows/tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.cash"]}
+- runFlow: ../../subflows/mark-cash-paid.yaml
+- assertVisible: ${output.re(output.t["paymentWait.eetSandbox"])}
+# Tapping the warning opens the EET settings.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- tapOn:
+    id: eet-sandbox-banner
+- extendedWaitUntil:
+    visible: ${output.t["settings.eet.title"]}
+    timeout: 10000

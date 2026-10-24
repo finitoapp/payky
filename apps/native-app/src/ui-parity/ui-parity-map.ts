@@ -1573,7 +1573,12 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     native: "src/features/shared/eet-sale-status.tsx",
     web: ["apps/web-app/src/features/shared/eet-sale-status.tsx"],
     status: "matched",
-    note: "Native activity/payment detail still lacks the web EET sale status blocks; this shared status component remains used in EET settings only.",
+  },
+  {
+    native: "src/features/shared/eet-sandbox-banner.tsx",
+    web: ["apps/web-app/src/features/shared/eet-sandbox-banner.tsx"],
+    status: "matched",
+    note: "Web overlays the banner and pads the viewport by its height; native lays it out above the navigator from the root layout.",
   },
   {
     native: "src/features/shared/refund-badge.tsx",

@@ -30,6 +30,8 @@ tags: [access]
     file: ../../subflows/tap-input.yaml
     env:
       LABEL: ${output.t["access.phrase.label"]}
+      # Its show/hide eye sits at the right end.
+      BUTTONS: "true"
 - inputText: ${output.phrase}
 - runFlow:
     when:

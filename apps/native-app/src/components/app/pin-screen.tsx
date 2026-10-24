@@ -30,6 +30,7 @@ import { useDeviceEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useRunToast } from "../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
+import { PasswordTextarea } from "../password-textarea.tsx"
 import { Button } from "../ui/button.tsx"
 import {
   Field,
@@ -38,7 +39,6 @@ import {
   FieldLabel,
 } from "../ui/field.tsx"
 import { Icon } from "../ui/icon.tsx"
-import { Input } from "../ui/input.tsx"
 
 interface PinScreenProps {
   /** The permission the screen or action needs; `null` when it always asks. */
@@ -410,14 +410,13 @@ function PhraseForm({
        */}
       <Field>
         <FieldLabel>{t("access.phrase.label")}</FieldLabel>
-        <Input
+        {/* PasswordTextarea keeps every keyboard aid off whatever is passed. */}
+        <PasswordTextarea
           value={phrase}
           onChangeText={setPhrase}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-          autoComplete="off"
-          spellCheck={false}
+          hideLabel={t("passwordTextarea.hide")}
+          showLabel={t("passwordTextarea.show")}
+          contextMenuHidden
           disabled={pending}
           invalid={wrong}
         />

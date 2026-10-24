@@ -1757,6 +1757,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/withdraw/withdraw-all-field.tsx",
     ],
     status: "matched",
+    note: "Native has Paste but no 'Use from clipboard' suggestion: web reads the clipboard on open only when the browser grants it without asking, and Android announces every read (iOS and the web build prompt), so native reads it on Paste only.",
     allowedDifferences: {
       ScanCodeScanner:
         "Native adds QR scanning to fill the same destination field before review.",

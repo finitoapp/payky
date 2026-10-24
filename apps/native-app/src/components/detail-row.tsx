@@ -69,18 +69,27 @@ export function DetailRow({
     )
   }
 
+  // Plain text as children (web's `<DetailRow>{text}</DetailRow>`) is drawn
+  // like `value`: a string outside a Text is dropped on native.
+  const text =
+    typeof children === "string" || typeof children === "number"
+      ? String(children)
+      : children === undefined
+        ? value
+        : undefined
   const content =
-    children ??
-    (value === undefined ? null : (
+    text === undefined ? (
+      (children ?? null)
+    ) : (
       <Text
         fontSize={fontSize.sm}
         lineHeight={fontSize.sm}
         fontWeight={weight}
         text={stacked ? undefined : "right"}
       >
-        {value}
+        {text}
       </Text>
-    ))
+    )
   return stacked ? (
     <View gap={4}>
       <Text

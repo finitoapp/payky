@@ -107,6 +107,9 @@ describe("native route access", () => {
       requiredPermission("/settings/payment-accounts/iban/fio-plugin")
     ).toBe("admin")
     expect(requiredPermission("/settings/payment-accounts/spark")).toBe("admin")
+    expect(
+      requiredPermission("/settings/payment-accounts/spark/transactions")
+    ).toBe("admin")
     expect(requiredPermission("/settings/payment-accounts/card-switchio")).toBe(
       "admin"
     )

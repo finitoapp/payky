@@ -66,6 +66,7 @@ export type NativeRoutePath =
   | "/settings/payment-accounts/cashu/mints/new"
   | "/settings/payment-accounts/cashu/mints/:mint"
   | "/settings/payment-accounts/spark"
+  | "/settings/payment-accounts/spark/transactions"
   | "/settings/payment-accounts/card-switchio"
   | "/settings/payment-accounts/qerko-terminal"
 
@@ -186,6 +187,8 @@ export const routeAccess = {
   "/settings/payment-accounts/cashu/mints/:mint": "admin",
   // Like web's `_terminal/settings/payment-accounts/spark` (owner-only).
   "/settings/payment-accounts/spark": "admin",
+  // Like web's `_terminal/settings/payment-accounts/spark/transactions` (owner-only).
+  "/settings/payment-accounts/spark/transactions": "admin",
   // Like web's `_terminal/settings/payment-accounts/card-switchio` (owner-only).
   "/settings/payment-accounts/card-switchio": "admin",
   // Like web's `_terminal/settings/payment-accounts/qerko-terminal` (owner-only).

@@ -18,13 +18,13 @@ import { useTranslation } from "../../../hooks/use-translation.ts"
 import { TransportSyncStatus } from "./transport-sync-status.tsx"
 
 /** The account's transports with an on/off switch; a change reopens the app database. */
-export function TransportList({
+export function TransportToggleList({
   accountId,
-  disabled,
+  disabled = false,
 }: {
   readonly accountId: DeviceAccountId
   /** A demo account never syncs, so its relays cannot be switched on. */
-  readonly disabled: boolean
+  readonly disabled?: boolean
 }) {
   const { t } = useTranslation()
   const deviceEvolu = useAtomValue(deviceEvoluAtom)

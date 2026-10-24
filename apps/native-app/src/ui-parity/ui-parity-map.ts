@@ -456,10 +456,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     allowedDifferences: {
       ActivityIndicator:
         "the native page uses React Native's platform spinner while sync is in progress",
-      TransportAddForm:
-        "native restore sync only reports relay status; adding transports remains in settings",
-      TransportToggleList:
-        "native restore sync only reports relay status; toggling transports remains in settings",
     },
   },
   {
@@ -1403,21 +1399,21 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
-    native: "src/features/settings/security/transport-add-form.tsx",
+    native: "src/features/shared/evolu-transports/transport-add-form.tsx",
     web: [
       "apps/web-app/src/features/shared/evolu-transports/transport-add-form.tsx",
     ],
     status: "matched",
   },
   {
-    native: "src/features/settings/security/transport-list.tsx",
+    native: "src/features/shared/evolu-transports/transport-toggle-list.tsx",
     web: [
       "apps/web-app/src/features/shared/evolu-transports/transport-toggle-list.tsx",
     ],
     status: "matched",
   },
   {
-    native: "src/features/settings/security/transport-sync-status.tsx",
+    native: "src/features/shared/evolu-transports/transport-sync-status.tsx",
     web: [
       "apps/web-app/src/features/shared/evolu-transports/transport-sync-status.tsx",
     ],

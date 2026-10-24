@@ -6,7 +6,7 @@ import { format } from "date-fns"
 import Pause from "lucide-react-native/icons/pause"
 import Play from "lucide-react-native/icons/play"
 import Trash from "lucide-react-native/icons/trash"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { ScrollView } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
@@ -22,6 +22,7 @@ import {
 } from "../../../components/ui/card.tsx"
 import { nativeConsoleHistory } from "../../../core/native-runtime.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { CashuShardDebugCard } from "./cashu-shard-debug-card.tsx"
 
 const methodColors = {
   trace: "info",
@@ -60,6 +61,11 @@ export function DebugConsolePage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.debugConsole.title")} />
+      {__DEV__ ? (
+        <Suspense fallback={null}>
+          <CashuShardDebugCard />
+        </Suspense>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>{t("settings.debugConsole.history.title")}</CardTitle>

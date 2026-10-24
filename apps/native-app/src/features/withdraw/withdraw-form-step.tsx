@@ -18,6 +18,9 @@ import {
 } from "@payky/core/modules/withdraw/withdraw-actions"
 import { parseWithdrawDestination } from "@payky/core/modules/withdraw/withdraw-destination-utils"
 import { ONCHAIN_WITHDRAWAL_MIN_SATS } from "@payky/core/modules/withdraw/withdraw-utils"
+import * as Clipboard from "expo-clipboard"
+import ClipboardPaste from "lucide-react-native/icons/clipboard-paste"
+import ScanLine from "lucide-react-native/icons/scan-line"
 import { type ReactNode, useRef, useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { Field } from "../../components/field.tsx"
@@ -51,6 +54,7 @@ import {
 import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useBtcFiat, useLnurlPayMetadata } from "../../hooks/use-btc-fiat.ts"
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts"
+import { useToast } from "../../hooks/use-toast.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { Collapsible, LightningAddress } from "./withdraw-parts.tsx"
 
@@ -153,12 +157,23 @@ export function WithdrawFormFields({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const toast = useToast()
   // `pending` lags a render behind: a second tap must not quote twice.
   const pendingRef = useRef(false)
 
   const update = (patch: Partial<WithdrawDraft>) => {
     setSubmitError(null)
     onDraftChange({ ...draft, ...patch })
+  }
+
+  const pasteDestination = async () => {
+    try {
+      update(
+        draftWithDestination(draft, (await Clipboard.getStringAsync()).trim())
+      )
+    } catch {
+      toast.error(t("withdraw.destination.pasteError"))
+    }
   }
 
   const state = useWithdrawDestination(draft.destination, method)
@@ -229,7 +244,11 @@ export function WithdrawFormFields({
             <Field
               label={t("withdraw.destination.label")}
               value={draft.destination}
-              placeholder={t("withdraw.destination.placeholder")}
+              placeholder={t(
+                method === "spark"
+                  ? "withdraw.destination.placeholder"
+                  : "withdraw.cashu.destinationPlaceholder"
+              )}
               autoCapitalize="none"
               autoCorrect={false}
               error={state.error === null ? undefined : t(state.error)}
@@ -238,12 +257,24 @@ export function WithdrawFormFields({
                 onDraftChange(draftWithDestination(draft, value))
               }}
             />
-            <Button
-              size="default"
-              variant="outline"
-              label={t("withdraw.destination.scan")}
-              onPress={() => setScanning((on) => !on)}
-            />
+            <XStack gap="2">
+              <Button
+                flex={1}
+                size="default"
+                variant="outline"
+                iconStart={ClipboardPaste}
+                label={t("withdraw.destination.paste")}
+                onPress={() => void pasteDestination()}
+              />
+              <Button
+                flex={1}
+                size="default"
+                variant="outline"
+                iconStart={ScanLine}
+                label={t("withdraw.destination.scan")}
+                onPress={() => setScanning((on) => !on)}
+              />
+            </XStack>
             {scanning ? (
               // A scan only fills the field: parsing, review and PIN run as usual.
               <ScanCodeScanner

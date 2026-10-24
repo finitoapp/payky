@@ -16,8 +16,10 @@ appId: ${APP_ID}
     when:
       platform: Android
     commands:
+      # The field's label has the button's copy: the button is the one below it.
       - tapOn:
           text: ${output.re(output.t["settings.eet.certificate.file.label"])}
+          below: ${output.re(output.t["settings.eet.certificate.file.label"])}
           above: ${output.re(output.t["settings.eet.certificate.file.description"])}
 - extendedWaitUntil:
     visible: CZ1234567890.p12

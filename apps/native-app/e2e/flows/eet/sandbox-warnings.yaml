@@ -19,7 +19,8 @@ tags: [eet]
     file: ../../subflows/goto.yaml
     env:
       ROUTE: settings
-      TEXT: ${output.t["settings.title"]}
+      # The list keeps the scroll that opened EET, so its title may be off screen.
+      TEXT: ${output.t["settings.eet.title"]}
 - assertNotVisible:
     id: eet-sandbox-banner
 # Canceling the confirmation keeps production.

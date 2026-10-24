@@ -42,8 +42,9 @@ tags: [eet]
     file: ../../subflows/tap-label.yaml
     env:
       LABEL: ${output.t["settings.eet.test.sale"]}
-- extendedWaitUntil:
-    visible:
+# The answer lands below the buttons, off the screen.
+- scrollUntilVisible:
+    element:
       id: eet-test-pok
       text: .*-ff
     timeout: 20000
@@ -54,7 +55,9 @@ tags: [eet]
 - scrollUntilVisible:
     element: ${output.t["settings.eet.test.rawResponse"]}
 - tapOn: ${output.t["settings.eet.test.rawResponse"]}
-- assertVisible: (?s).*Potvrzeni.*
+# The open request above it pushes the answer off the screen.
+- scrollUntilVisible:
+    element: (?s).*Potvrzeni.*
 # No sale record was created (a fresh screen: the open raw messages are
 # scroll views of their own).
 - runFlow:

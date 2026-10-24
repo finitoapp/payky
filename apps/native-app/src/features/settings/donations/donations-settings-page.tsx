@@ -97,7 +97,7 @@ export function DonationsSettingsPage() {
   const { t } = useTranslation()
   const [settings] = useEvoluQuery(settingsQuery).data
   const currency = getFiatCurrency(settings)
-  const { rate: exchangeRate } = useBtcFiat()
+  const { rate: exchangeRate, rateFailed } = useBtcFiat()
   const metadataState = useLnurlPayMetadata(
     nativeEnv.EXPO_PUBLIC_PAYKY_DONATE_LUD16_ADDRESS
   )
@@ -108,8 +108,10 @@ export function DonationsSettingsPage() {
   const [creating, setCreating] = useState(false)
   const [invoiceFailed, setInvoiceFailed] = useState(false)
 
-  const loadErrorKey: TranslationKey | null =
-    exchangeRate === null && !metadataState.loading && metadataState.failed
+  // As web: the rate's error first, then the address's.
+  const loadErrorKey: TranslationKey | null = rateFailed
+    ? "settings.donations.rate.error"
+    : metadataState.failed
       ? "settings.donations.metadata.error"
       : null
   const isLoading = exchangeRate === null || metadata === null

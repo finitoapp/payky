@@ -23,21 +23,26 @@ export function useBtcFiat() {
   const appRun = useAppRun()
   const [settings] = useEvoluQuery(settingsQuery).data
   const currency = getFiatCurrency(settings)
-  const { data: rate } = useAsyncValue(`rate:${currency}`, async () => {
-    const cached = rates.get(currency)
-    if (cached !== undefined && Date.now() - cached.at < RATE_TTL_MS) {
-      return cached.rate
+  const { data: rate, failed: rateFailed } = useAsyncValue(
+    `rate:${currency}`,
+    async () => {
+      const cached = rates.get(currency)
+      if (cached !== undefined && Date.now() - cached.at < RATE_TTL_MS) {
+        return cached.rate
+      }
+      await using run = appRun()
+      const result = await run(fetchYadioBtcExchangeRate(currency))
+      if (!result.ok) throw new Error("Failed to load the BTC exchange rate")
+      rates.set(currency, { at: Date.now(), rate: result.value.exchangeRate })
+      return result.value.exchangeRate
     }
-    await using run = appRun()
-    const result = await run(fetchYadioBtcExchangeRate(currency))
-    if (!result.ok) throw new Error("Failed to load the BTC exchange rate")
-    rates.set(currency, { at: Date.now(), rate: result.value.exchangeRate })
-    return result.value.exchangeRate
-  })
+  )
 
   return {
     currency,
     rate,
+    /** The rate could not be loaded (Yadio unreachable or refused). */
+    rateFailed,
     /** "≈ 12.30 CZK" for `sats`, or `null` without a rate. */
     approx: (sats: number): string | null =>
       rate === null

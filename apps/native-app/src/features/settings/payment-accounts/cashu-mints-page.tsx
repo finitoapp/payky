@@ -94,8 +94,10 @@ export function CashuMintsPage() {
             },
             accessibilityLabel: formatMintLabel(mint),
             label: (
-              <XStack flex={1} items="center" gap="2">
-                <Text flex={1} flexShrink={1} numberOfLines={1}>
+              // Not flex={1}: the row's label slot is a column, where it
+              // would size the label to no height (settings-page.tsx).
+              <XStack w="100%" items="center" gap="2">
+                <Text flexShrink={1} numberOfLines={1}>
                   {formatMintLabel(mint)}
                 </Text>
                 {mint === snapshot.defaultMint ? (
@@ -122,11 +124,7 @@ export function CashuMintsPage() {
                 params: { mint },
               },
               accessibilityLabel: formatMintLabel(mint),
-              label: (
-                <Text flex={1} numberOfLines={1}>
-                  {formatMintLabel(mint)}
-                </Text>
-              ),
+              label: <Text numberOfLines={1}>{formatMintLabel(mint)}</Text>,
               action: balanceAction(mint),
             }))}
           />

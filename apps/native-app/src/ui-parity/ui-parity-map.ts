@@ -42,7 +42,7 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
     allowedDifferences: {
       Button:
-        "Web uses kit buttons for copy, repair, and retry; native keeps a plain React Native retry button in its root error boundary.",
+        "Web uses kit buttons for copy, repair, and retry; native draws plain React Native copy and retry buttons in its root error boundary and has no repair (no service worker or cache to clear).",
       Card: "Web renders a rich error card; native uses plain React Native because Expo Router mounts this boundary outside the app providers.",
       CardContent:
         "Web renders a rich error card; native uses plain React Native because Expo Router mounts this boundary outside the app providers.",

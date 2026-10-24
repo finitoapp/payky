@@ -3,8 +3,9 @@ import {
   type TranslationKey,
 } from "@payky/app-shared/i18n/resources"
 import { getPreferredDeviceLanguage } from "@payky/core/modules/device/device-utils"
+import * as Clipboard from "expo-clipboard"
 import Constants from "expo-constants"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import {
   Pressable,
   ScrollView,
@@ -30,6 +31,31 @@ function t(key: TranslationKey): string {
   }
 }
 
+type CopyState = "idle" | "copied" | "failed"
+
+const copyLabelKeys = {
+  idle: "appError.copy",
+  copied: "appError.copied",
+  failed: "appError.copyFailed",
+} satisfies Record<CopyState, TranslationKey>
+
+/** Web's `formatErrorDetail`, without the component stack native's boundary lacks. */
+function formatErrorDetail(error: unknown): string {
+  if (error instanceof Error) {
+    return (
+      [error.stack, error.message, error.name].find(
+        (value) => value !== undefined && value.trim().length > 0
+      ) ?? ""
+    )
+  }
+  if (typeof error === "string") return error
+  try {
+    return JSON.stringify(error, null, 2) ?? String(error)
+  } catch {
+    return String(error)
+  }
+}
+
 export function AppErrorScreen({
   error,
   retry,
@@ -39,6 +65,7 @@ export function AppErrorScreen({
 }) {
   const dark = useColorScheme() === "dark"
   const fg = dark ? "#fafafa" : "#0a0a0a"
+  const [copyState, setCopyState] = useState<CopyState>("idle")
 
   useEffect(() => {
     captureReportedError(error)
@@ -51,6 +78,18 @@ export function AppErrorScreen({
   const name = error instanceof Error ? error.name : t("appError.unknown")
   const message =
     error instanceof Error ? error.message : t("appError.nonError")
+  const version = Constants.expoConfig?.version
+
+  const copyDetail = async () => {
+    try {
+      await Clipboard.setStringAsync(
+        `Payky ${version ?? ""}\n${name}: ${message}\n\n${formatErrorDetail(error)}`
+      )
+      setCopyState("copied")
+    } catch {
+      setCopyState("failed")
+    }
+  }
 
   return (
     <ScrollView
@@ -68,8 +107,17 @@ export function AppErrorScreen({
         {t("appError.message")}: {message}
       </Text>
       <Text style={{ color: fg }}>
-        {t("appError.version")}: {Constants.expoConfig?.version}
+        {t("appError.version")}: {version}
       </Text>
+      <Pressable
+        role="button"
+        onPress={() => void copyDetail()}
+        style={styles.linkButton}
+      >
+        <Text style={{ color: fg, textDecorationLine: "underline" }}>
+          {t(copyLabelKeys[copyState])}
+        </Text>
+      </Pressable>
       <Pressable
         role="button"
         onPress={retry}
@@ -86,6 +134,7 @@ export function AppErrorScreen({
 const styles = StyleSheet.create({
   content: { flexGrow: 1, justifyContent: "center", gap: 12, padding: 24 },
   title: { fontSize: 22, fontWeight: "700" },
+  linkButton: { alignSelf: "flex-start", paddingVertical: 10 },
   button: {
     alignSelf: "flex-start",
     borderRadius: 8,

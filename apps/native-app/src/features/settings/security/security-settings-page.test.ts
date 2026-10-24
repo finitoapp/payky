@@ -4,20 +4,27 @@ import { requiredPermission } from "../../../core/route-access.ts"
 
 const read = (name: string) =>
   readFileSync(new URL(`./${name}`, import.meta.url), "utf8")
+const readTransport = (name: string) =>
+  readFileSync(
+    new URL(`../../shared/evolu-transports/${name}`, import.meta.url),
+    "utf8"
+  )
 
 it("keeps the security screen owner-only", () => {
   expect(requiredPermission("/settings/security")).toBe("admin")
 })
 
 it("changes transports only through the core device-account writes, then reloads", () => {
-  for (const name of ["transport-list.tsx", "transport-add-form.tsx"]) {
-    const source = read(name)
+  for (const name of ["transport-toggle-list.tsx", "transport-add-form.tsx"]) {
+    const source = readTransport(name)
     expect(source).not.toMatch(/deviceEvolu\.(upsert|update|insert)/u)
     expect(source).toMatch(/runMutationWithCompletion/)
     expect(source).toMatch(/reloadAppEvolu\(\)/)
   }
-  expect(read("transport-list.tsx")).toMatch(/setAccountEvoluTransportActive\(/)
-  const add = read("transport-add-form.tsx")
+  expect(readTransport("transport-toggle-list.tsx")).toMatch(
+    /setAccountEvoluTransportActive\(/
+  )
+  const add = readTransport("transport-add-form.tsx")
   expect(add).toMatch(/WssUrlSchema\.safeParse\(url\.trim\(\)\)/)
   expect(add.indexOf("WssUrlSchema.safeParse")).toBeLessThan(
     add.indexOf("upsertAccountEvoluWebsocketTransport(")

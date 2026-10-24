@@ -1,7 +1,3 @@
-import {
-  type RelaySyncStatus,
-  relaySyncStateToStatus,
-} from "@evolu/common/local-first"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import {
   initialOnboardingFormState,
@@ -26,11 +22,12 @@ import { useNetworkState } from "expo-network"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import KeyRound from "lucide-react-native/icons/key-round"
+import Plus from "lucide-react-native/icons/plus"
 import RefreshCw from "lucide-react-native/icons/refresh-cw"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useEffect, useState, useSyncExternalStore } from "react"
 import { ActivityIndicator } from "react-native"
-import { Text, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { z } from "zod"
 import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
@@ -50,6 +47,8 @@ import { isE2eOffline } from "../../e2e/e2e-network.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
+import { TransportAddForm } from "../shared/evolu-transports/transport-add-form.tsx"
+import { TransportToggleList } from "../shared/evolu-transports/transport-toggle-list.tsx"
 
 // Falls back instead of throwing, and only `source` is read from the route:
 // which account to remove or select never comes from it (account/0005).
@@ -76,13 +75,6 @@ const outcomePresentation = {
   InitialSyncOutcome,
   { readonly title: TranslationKey; readonly description: TranslationKey }
 >
-
-const statusKeys = {
-  Synced: "settings.security.transports.status.synced",
-  Syncing: "settings.security.transports.status.syncing",
-  Offline: "settings.security.transports.status.offline",
-  Error: "settings.security.transports.status.error",
-} satisfies Record<RelaySyncStatus["type"], TranslationKey>
 
 const SYNC_TICK_MS = 1000
 const SETTLE_MS = 400
@@ -125,7 +117,6 @@ function useInitialSyncOutcome(hasSettings: boolean) {
   return {
     outcome,
     online,
-    relays,
     restart: () => setIdle({ syncing, since: Date.now() }),
   }
 }
@@ -133,8 +124,8 @@ function useInitialSyncOutcome(hasSettings: boolean) {
 /**
  * Waits for a restored account's first sync and decides what it found: the
  * account's settings (go home), relays that synced but hold nothing, or
- * relays that could not be synced with. Mirrors web's RestoreSyncPage; adding
- * a relay is left to a later settings task.
+ * relays that could not be synced with. Mirrors web's RestoreSyncPage,
+ * including adding a relay once the wait has settled.
  */
 export function RestoreSyncPage() {
   const { t } = useTranslation()
@@ -146,8 +137,8 @@ export function RestoreSyncPage() {
   const setOnboardingForm = useSetAtom(onboardingFormAtom)
   const { data } = useEvoluQuery(settingsQuery)
   const hasSettings = data[0] !== undefined
-  const { outcome, online, relays, restart } =
-    useInitialSyncOutcome(hasSettings)
+  const { outcome, online, restart } = useInitialSyncOutcome(hasSettings)
+  const [addingRelay, setAddingRelay] = useState(false)
   const settled = outcome === "empty" || outcome === "failed"
 
   // Taken once and the atom emptied, so the restore is cleaned up after at
@@ -254,12 +245,20 @@ export function RestoreSyncPage() {
           </CardHeader>
           <CardContent>
             <YStack gap="4">
-              {(relays ?? []).map((relay) => (
-                <Text key={relay.transport.label} fontSize="sm" lineHeight="sm">
-                  {relay.transport.label}:{" "}
-                  {t(statusKeys[relaySyncStateToStatus(relay).type])}
-                </Text>
-              ))}
+              <TransportToggleList accountId={account.id} />
+              {settled && addingRelay ? (
+                <TransportAddForm accountId={account.id} />
+              ) : null}
+              {settled && !addingRelay ? (
+                <XStack>
+                  <Button
+                    variant="outline"
+                    iconStart={Plus}
+                    label={t("accountRestore.action.addRelay")}
+                    onPress={() => setAddingRelay(true)}
+                  />
+                </XStack>
+              ) : null}
             </YStack>
           </CardContent>
         </Card>

@@ -12,9 +12,9 @@ import {
   CardTitle,
 } from "../../../components/ui/card.tsx"
 import { useTranslation } from "../../../hooks/use-translation.ts"
+import { TransportAddForm } from "../../shared/evolu-transports/transport-add-form.tsx"
+import { TransportToggleList } from "../../shared/evolu-transports/transport-toggle-list.tsx"
 import { RecoveryPhraseCard } from "./recovery-phrase-card.tsx"
-import { TransportAddForm } from "./transport-add-form.tsx"
-import { TransportList } from "./transport-list.tsx"
 
 /** Recovery phrase and Evolu sync transports of the active account, like web's Security & Sync. */
 export function SecuritySettingsPage() {
@@ -41,7 +41,7 @@ export function SecuritySettingsPage() {
                   {t("settings.security.transports.demo")}
                 </Text>
               ) : null}
-              <TransportList
+              <TransportToggleList
                 key={account.id}
                 accountId={account.id}
                 disabled={isDemo}

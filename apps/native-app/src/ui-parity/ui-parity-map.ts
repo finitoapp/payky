@@ -1566,9 +1566,18 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
   },
   {
     native: "src/features/shared/restore-account-step.tsx",
-    web: ["apps/web-app/src/features/shared/account/restore-account-form.tsx"],
+    web: [
+      "apps/web-app/src/features/shared/account/restore-account-form.tsx",
+      "apps/web-app/src/features/shared/account/restore-words-grid.tsx",
+    ],
     status: "matched",
-    note: "The submit button matches the onboarding full-width/min-height-44 wrapper and the Settings default-size/end-aligned layout; native hitSlop retains the touch target.",
+    allowedDifferences: {
+      Badge:
+        "native badges are never pressable, so the word suggestions are small outline Buttons",
+      Label:
+        "web wraps the switch in a Label; native has no label-for, so the switch carries an aria-label and a Text sits beside it",
+    },
+    note: "Native reads the clipboard through expo-clipboard and draws the word-grid inside the step. The submit button matches the onboarding full-width/min-height-44 wrapper and the Settings default-size/end-aligned layout; native hitSlop retains the touch target.",
   },
   {
     native: "src/features/shared/tax-recap.tsx",

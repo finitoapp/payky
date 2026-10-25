@@ -19,12 +19,10 @@ appId: ${APP_ID}
       ROUTE: e2e/offline?next=/onboarding
       TEXT: ${output.t["onboarding.title"]}
 - tapOn: ${output.t["accountChoice.restore.title"]}
-- runFlow:
-    file: tap-input.yaml
-    env:
-      LABEL: ${output.t["settings.accounts.restore.mnemonic.label"]}
-      # Its show/hide eye sits at the right end.
-      BUTTONS: "true"
+# The phrase goes into the first word field; a space after a word moves on to
+# the next one, so typing the whole phrase fills the grid.
+- tapOn:
+    id: '${output.t["onboarding.restore.wordLabel"].replace("{index}", "1")}'
 - inputText: ${output.phrase}
 - runFlow:
     when:

@@ -82,10 +82,10 @@ export function OnboardingPage({
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [cancelingSetup, setCancelingSetup] = useState(false)
   const {
-    mnemonic,
+    words: restoreWords,
     pending: restoring,
     error: restoreError,
-    setMnemonic,
+    setWords: setRestoreWords,
     restore,
   } = useRestoreAccount()
   const ibanInputId = useId()
@@ -388,9 +388,12 @@ export function OnboardingPage({
           {step === "restore" ? (
             <RestoreAccountStep
               error={restoreError}
-              mnemonic={mnemonic}
+              words={restoreWords}
               pending={pending}
-              onMnemonicChange={setMnemonic}
+              onWordsChange={setRestoreWords}
+              onTransfer={() => {
+                setForm((current) => ({ ...current, step: "transfer" }))
+              }}
               onRestore={() => {
                 void restoreExistingAccount()
               }}

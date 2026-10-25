@@ -242,6 +242,7 @@ export function AccountsSettingsPage() {
           <RestoreAccountStep
             error={restoring.error}
             pending={restoring.pending}
+            onTransfer={() => router.push("/pair")}
             onRestore={(phrase) => {
               if (stale()) return
               void restoring.restore(phrase)

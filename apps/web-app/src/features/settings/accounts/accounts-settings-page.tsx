@@ -62,11 +62,11 @@ export function AccountsSettingsPage() {
   const [dialog, setDialog] = useState<"restore" | "transfer">("restore")
   const [dialogOpen, setDialogOpen] = useState(false)
   const {
-    mnemonic,
+    words,
     pending: restoring,
     error,
     clearError,
-    setMnemonic,
+    setWords,
     restore,
   } = useRestoreAccount()
   const pending = busy || restoring
@@ -265,9 +265,10 @@ export function AccountsSettingsPage() {
               </DialogHeader>
               <RestoreAccountForm
                 error={error}
-                mnemonic={mnemonic}
+                words={words}
                 pending={restoring}
-                onMnemonicChange={setMnemonic}
+                onWordsChange={setWords}
+                onTransfer={() => setDialog("transfer")}
                 onRestore={() => {
                   void restoreAccount()
                 }}

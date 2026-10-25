@@ -1,71 +1,232 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { checkRestorePhrase } from "@payky/app-shared/restore-phrase"
+import {
+  analyzeRestoreWords,
+  emptyRestoreWords,
+  fillRestoreWords,
+  RESTORE_WORD_COUNT,
+  restoreFixedWords,
+  restoreWordsToPhrase,
+} from "@payky/app-shared/restore-words"
+import * as Clipboard from "expo-clipboard"
+import ClipboardPaste from "lucide-react-native/icons/clipboard-paste"
 import KeyRound from "lucide-react-native/icons/key-round"
-import { useState } from "react"
-import { YStack } from "tamagui"
-import { PasswordTextarea } from "../../components/password-textarea.tsx"
+import { useRef, useState } from "react"
+import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
 import {
-  Field,
   FieldDescription,
   FieldError,
   FieldGroup,
-  FieldLabel,
 } from "../../components/ui/field.tsx"
+import { Input } from "../../components/ui/input.tsx"
+import { Switch } from "../../components/ui/switch.tsx"
 import { useTranslation } from "../../hooks/use-translation.ts"
 
 /**
- * The recovery-phrase form. The phrase lives only in this component's state
- * (gone on unmount), never in a query key, a persisted atom or a log. Hidden
- * (secure, single line) until shown, as web's PasswordTextarea; shown, it is a
- * multiline field. Keyboard learning, suggestions and autofill are off.
+ * The recovery-phrase form: a paste button and 20 numbered word fields, hidden
+ * until shown. The phrase lives only in this component's state (gone on
+ * unmount), never in a query key, a persisted atom or a log. A pasted phrase
+ * fans out over the fields; unknown words and completions of the field being
+ * typed in show under the grid. Keyboard learning, suggestions and autofill
+ * are off.
  */
 export function RestoreAccountStep({
   error,
   pending,
   onRestore,
+  onTransfer,
   submitFullWidth = false,
 }: {
   readonly error: TranslationKey | null
   readonly pending: boolean
   readonly onRestore: (mnemonic: string) => void
+  readonly onTransfer: () => void
   /** Web's onboarding wrapper makes this submit full-width and 44px high. */
   readonly submitFullWidth?: boolean
 }) {
   const { t } = useTranslation()
-  const [mnemonic, setMnemonic] = useState("")
+  const [words, setWords] = useState(emptyRestoreWords)
   const [shown, setShown] = useState(false)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [pasteFailed, setPasteFailed] = useState(false)
   const [dirtyError, setDirtyError] = useState(true)
-  const visibleError = dirtyError ? error : null
+  const inputs = useRef<Array<{ focus: () => void } | null>>([])
+
+  const analysis = analyzeRestoreWords(words, activeIndex)
+  const phrase = restoreWordsToPhrase(words)
+  const unknownWords = analysis.invalidIndexes.flatMap((index) => {
+    const word = words[index]
+    return word === undefined || word === "" ? [] : [word]
+  })
+  // Twenty known words that still fail are a checksum problem; a foreign seed
+  // is named as soon as it is in.
+  const checked =
+    analysis.isComplete || analysis.filledCount > 0
+      ? checkRestorePhrase(phrase)
+      : null
+  const liveError =
+    checked !== null &&
+    !checked.ok &&
+    (analysis.isComplete ||
+      checked.error === "settings.accounts.restore.mnemonic.foreign")
+      ? checked.error
+      : null
+  const visibleError = (dirtyError ? error : null) ?? liveError
+
+  const focusSlot = (index: number) => {
+    inputs.current[index]?.focus()
+  }
+
+  const write = (index: number, value: string) => {
+    const fill = fillRestoreWords(words, index, value)
+    setWords(fill.words)
+    setDirtyError(false)
+    setPasteFailed(false)
+    if (fill.nextIndex !== index) focusSlot(fill.nextIndex)
+  }
+
+  const complete = (word: string) => {
+    if (activeIndex === null) return
+    const fill = fillRestoreWords(words, activeIndex, `${word} `)
+    setWords(fill.words)
+    focusSlot(fill.nextIndex)
+  }
+
+  const paste = async () => {
+    setPasteFailed(false)
+    try {
+      const text = await Clipboard.getStringAsync()
+      if (text.trim() === "") {
+        setPasteFailed(true)
+        return
+      }
+      setWords(fillRestoreWords(emptyRestoreWords(), 0, text).words)
+      setDirtyError(false)
+    } catch {
+      setPasteFailed(true)
+    }
+  }
 
   return (
     <YStack gap="4">
       <FieldGroup>
-        <Field>
-          <FieldLabel>
-            {t("settings.accounts.restore.mnemonic.label")}
-          </FieldLabel>
-          <PasswordTextarea
-            placeholder={t("settings.accounts.restore.mnemonic.placeholder")}
-            value={mnemonic}
-            disabled={pending}
-            shown={shown}
-            onShownChange={setShown}
-            invalid={visibleError !== null}
-            contextMenuHidden
-            onChangeText={(next) => {
-              setMnemonic(next)
-              setDirtyError(false)
-            }}
-            hideLabel={t("passwordTextarea.hide")}
-            showLabel={t("passwordTextarea.show")}
-          />
-          <FieldDescription>
-            {t("settings.accounts.restore.mnemonic.description")}
-          </FieldDescription>
-          <FieldError>
-            {visibleError === null ? undefined : t(visibleError)}
-          </FieldError>
-        </Field>
+        <FieldDescription>{t("onboarding.restore.subtitle")}</FieldDescription>
+        <Button
+          variant="outline"
+          label={t("onboarding.restore.paste")}
+          iconStart={ClipboardPaste}
+          disabled={pending}
+          onPress={() => void paste()}
+        />
+        {pasteFailed ? (
+          <FieldError>{t("onboarding.restore.pasteFailed")}</FieldError>
+        ) : null}
+        <YStack gap="3">
+          <XStack items="center" justify="space-between" gap="3">
+            <XStack items="center" gap="2">
+              <Switch
+                checked={shown}
+                onCheckedChange={setShown}
+                aria-label={t("onboarding.restore.showWords")}
+              />
+              <Text fontSize="sm" fontWeight="500">
+                {t("onboarding.restore.showWords")}
+              </Text>
+            </XStack>
+            <Text fontSize="xs" color="muted-foreground">
+              {t("onboarding.restore.counter", {
+                count: analysis.filledCount,
+                total: RESTORE_WORD_COUNT,
+              })}
+            </Text>
+          </XStack>
+          <XStack flexWrap="wrap" gap="2">
+            {words.map((word, index) => (
+              <XStack
+                // biome-ignore lint/suspicious/noArrayIndexKey: the slots are fixed positions
+                key={index}
+                width="48%"
+                items="center"
+                gap="2"
+              >
+                <Text
+                  width={20}
+                  fontSize="xs"
+                  color="muted-foreground"
+                  style={{ textAlign: "right" }}
+                >
+                  {index + 1}
+                </Text>
+                <Input
+                  ref={(element) => {
+                    inputs.current[index] = element
+                  }}
+                  flex={1}
+                  value={word}
+                  disabled={pending}
+                  aria-label={t("onboarding.restore.wordLabel", {
+                    index: index + 1,
+                  })}
+                  placeholder={restoreFixedWords[index]}
+                  invalid={
+                    visibleError !== null ||
+                    analysis.invalidIndexes.includes(index)
+                  }
+                  secureTextEntry={!shown}
+                  autoComplete={index === 0 ? "current-password" : "off"}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  contextMenuHidden
+                  returnKeyType="next"
+                  onFocus={() => setActiveIndex(index)}
+                  onBlur={() =>
+                    setActiveIndex((current) =>
+                      current === index ? null : current
+                    )
+                  }
+                  onChangeText={(next) => write(index, next)}
+                  onKeyPress={(event) => {
+                    if (
+                      event.nativeEvent.key === "Backspace" &&
+                      word === "" &&
+                      index > 0
+                    ) {
+                      focusSlot(index - 1)
+                    }
+                  }}
+                  onSubmitEditing={() =>
+                    focusSlot(Math.min(index + 1, RESTORE_WORD_COUNT - 1))
+                  }
+                />
+              </XStack>
+            ))}
+          </XStack>
+          {analysis.suggestions.length > 0 ? (
+            <XStack flexWrap="wrap" gap="2">
+              {analysis.suggestions.map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  variant="outline"
+                  size="sm"
+                  label={suggestion}
+                  onPress={() => complete(suggestion)}
+                />
+              ))}
+            </XStack>
+          ) : null}
+          {unknownWords.length > 0 ? (
+            <FieldError>
+              {t("onboarding.restore.unknownWords", {
+                words: unknownWords.join(", "),
+              })}
+            </FieldError>
+          ) : null}
+        </YStack>
+        <FieldError>
+          {visibleError === null ? undefined : t(visibleError)}
+        </FieldError>
       </FieldGroup>
       <Button
         w={submitFullWidth ? "100%" : undefined}
@@ -74,10 +235,17 @@ export function RestoreAccountStep({
         label={t("onboarding.restore.action")}
         iconStart={KeyRound}
         pending={pending}
+        disabled={!analysis.isComplete}
         onPress={() => {
           setDirtyError(true)
-          onRestore(mnemonic)
+          onRestore(phrase)
         }}
+      />
+      <Button
+        variant="link"
+        self="center"
+        label={t("onboarding.restore.transferLink")}
+        onPress={onTransfer}
       />
     </YStack>
   )

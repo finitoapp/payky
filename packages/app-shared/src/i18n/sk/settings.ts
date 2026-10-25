@@ -46,14 +46,15 @@ export const skSettings = {
   "settings.accounts.remove.confirm.title": "Odobrať účet {name}?",
   "settings.accounts.restore.failed":
     "Účet sa nepodarilo obnoviť. Skúste to prosím znova.",
-  "settings.accounts.restore.mnemonic.description":
-    "Medzery sa pred validáciou zjednotia.",
+  "settings.accounts.restore.mnemonic.checksum":
+    "Slová sú platné, ale fráza nesedí. Skontrolujte poradie a preklepy.",
+  "settings.accounts.restore.mnemonic.foreign":
+    "Toto vyzerá ako seed z inej peňaženky. Payky obnovuje len svoje 20-slovné frázy.",
   "settings.accounts.restore.mnemonic.invalid":
-    "Zadajte platnú SLIP-39 recovery phrase.",
+    "Zadajte 20 slov z recovery phrase v Payky.",
   "settings.accounts.restore.mnemonic.label": "Recovery phrase",
-  "settings.accounts.restore.mnemonic.placeholder":
-    "academic acid academic agency ...",
   "settings.accounts.restore.mnemonic.required": "Recovery phrase je povinná.",
+  "settings.accounts.restore.mnemonic.wordCount": "Recovery phrase má 20 slov.",
   "settings.accounts.title": "Účet aplikácie",
   "settings.appVersion": "Verzia aplikácie:",
   "settings.appVersionCode": "Kód verzie:",

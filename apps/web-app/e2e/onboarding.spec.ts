@@ -7,6 +7,7 @@ import { mockNostrProfileRelays } from "./support/nostr-profile.ts"
 import {
   completeOnboarding,
   createUnregisteredMnemonic,
+  fillRestorePhrase,
   submitRestorePhrase,
 } from "./support/onboarding.ts"
 
@@ -312,7 +313,66 @@ test("an offline restore fails, and another phrase returns to the restore step",
         name: translate("en", "onboarding.restore.action"),
       })
     ).toBeVisible()
-    await expect(page.getByRole("textbox")).toHaveValue("")
+    await expect(
+      page.getByRole("textbox", {
+        name: translate("en", "onboarding.restore.wordLabel").replace(
+          "{index}",
+          "1"
+        ),
+        exact: true,
+      })
+    ).toHaveValue("")
+  })
+})
+
+test("the restore button stays off until all 20 words are known, and a foreign seed is named", async ({
+  page,
+}) => {
+  const restoreButton = page.getByRole("button", {
+    name: translate("en", "onboarding.restore.action"),
+  })
+
+  await test.step("open the restore step", async () => {
+    await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
+    await page
+      .getByRole("heading", { name: translate("en", "onboarding.title") })
+      .waitFor()
+    await page
+      .getByRole("button", {
+        name: translate("en", "accountChoice.restore.title"),
+      })
+      .click()
+    await expect(restoreButton).toBeDisabled()
+  })
+
+  await test.step("a partial phrase keeps it off and shows the count", async () => {
+    await fillRestorePhrase(page, "en", "academic acid acne")
+    await expect(restoreButton).toBeDisabled()
+    await expect(page.getByText("3/20 words")).toBeVisible()
+  })
+
+  await test.step("an unknown word is named", async () => {
+    await fillRestorePhrase(page, "en", "academic zzzz")
+    await expect(page.getByText("Unknown word: zzzz")).toBeVisible()
+  })
+
+  await test.step("a 12-word seed from another wallet is explained", async () => {
+    await fillRestorePhrase(
+      page,
+      "en",
+      Array.from({ length: 12 }, () => "abandon").join(" ")
+    )
+    await expect(
+      page.getByText(
+        translate("en", "settings.accounts.restore.mnemonic.foreign")
+      )
+    ).toBeVisible()
+    await expect(restoreButton).toBeDisabled()
+  })
+
+  await test.step("a valid phrase turns the button on", async () => {
+    await fillRestorePhrase(page, "en", await createUnregisteredMnemonic())
+    await expect(restoreButton).toBeEnabled()
   })
 })
 

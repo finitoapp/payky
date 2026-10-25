@@ -1,5 +1,9 @@
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { checkRestorePhrase } from "@payky/app-shared/restore-phrase"
+import {
+  emptyRestoreWords,
+  restoreWordsToPhrase,
+} from "@payky/app-shared/restore-words"
 import { restoredAccountAtom } from "@payky/app-shared/restored-account"
 import { createOrSelectAccount } from "@payky/core/evolu/device-account"
 import { mnemonicToMasterKey } from "@payky/core/modules/shared/key-derivation"
@@ -11,11 +15,11 @@ import { useReloadAppEvolu } from "@/hooks/use-reload-app-evolu.ts"
 import { useSettingsForm } from "@/hooks/use-settings-form.ts"
 
 interface RestoreAccount {
-  readonly mnemonic: string
+  readonly words: ReadonlyArray<string>
   readonly pending: boolean
   readonly error: TranslationKey | null
   readonly clearError: () => void
-  readonly setMnemonic: (mnemonic: string) => void
+  readonly setWords: (words: ReadonlyArray<string>) => void
   /**
    * Resolves to false when the phrase was rejected or the restore failed. On
    * success it leaves what `/restore-account` cleans up after in
@@ -33,18 +37,18 @@ export function useRestoreAccount(): RestoreAccount {
   const activeAccount = useAtomValue(accountAtom)
   const reloadAppEvolu = useReloadAppEvolu()
   const setRestoredAccount = useSetAtom(restoredAccountAtom)
-  const [mnemonic, setMnemonicValue] = useState("")
+  const [words, setWordsValue] = useState(emptyRestoreWords)
   const { pending, error, setError, submit } = useSettingsForm()
 
-  const setMnemonic = (nextMnemonic: string) => {
-    setMnemonicValue(nextMnemonic)
+  const setWords = (nextWords: ReadonlyArray<string>) => {
+    setWordsValue(nextWords)
     setError(null)
   }
 
   const restore = async (): Promise<boolean> => {
     setError(null)
 
-    const checked = checkRestorePhrase(mnemonic)
+    const checked = checkRestorePhrase(restoreWordsToPhrase(words))
 
     if (!checked.ok) {
       setError(checked.error)
@@ -70,13 +74,13 @@ export function useRestoreAccount(): RestoreAccount {
   }
 
   return {
-    mnemonic,
+    words,
     pending,
     error,
     clearError: () => {
       setError(null)
     },
-    setMnemonic,
+    setWords,
     restore,
   }
 }

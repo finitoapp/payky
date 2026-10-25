@@ -3,25 +3,28 @@ import { RestoreAccountForm } from "@/features/shared/account/restore-account-fo
 
 export function RestoreAccountStep({
   error,
-  mnemonic,
+  words,
   pending,
-  onMnemonicChange,
+  onWordsChange,
   onRestore,
+  onTransfer,
 }: {
   readonly error: TranslationKey | null
-  readonly mnemonic: string
+  readonly words: ReadonlyArray<string>
   readonly pending: boolean
-  readonly onMnemonicChange: (mnemonic: string) => void
+  readonly onWordsChange: (words: ReadonlyArray<string>) => void
   readonly onRestore: () => void
+  readonly onTransfer: () => void
 }) {
   return (
     <div className="[&_button[type=submit]]:w-full [&_button[type=submit]]:min-h-11">
       <RestoreAccountForm
         error={error}
-        mnemonic={mnemonic}
+        words={words}
         pending={pending}
-        onMnemonicChange={onMnemonicChange}
+        onWordsChange={onWordsChange}
         onRestore={onRestore}
+        onTransfer={onTransfer}
       />
     </div>
   )

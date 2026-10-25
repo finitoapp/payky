@@ -4,6 +4,12 @@ import {
   RecoveryMnemonicSchema,
 } from "@payky/core/modules/shared/key-derivation"
 import type { TranslationKey } from "./i18n/resources.ts"
+import {
+  analyzeRestoreWords,
+  detectForeignSeed,
+  RESTORE_WORD_COUNT,
+  splitPhraseInput,
+} from "./restore-words.ts"
 
 type RestorePhraseCheck =
   | { readonly ok: true; readonly mnemonic: RecoveryMnemonic }
@@ -16,7 +22,20 @@ export function checkRestorePhrase(input: string): RestorePhraseCheck {
     return { ok: false, error: "settings.accounts.restore.mnemonic.required" }
   }
   const parsed = RecoveryMnemonicSchema.safeParse(normalized)
-  return parsed.success
-    ? { ok: true, mnemonic: parsed.data }
-    : { ok: false, error: "settings.accounts.restore.mnemonic.invalid" }
+  if (parsed.success) return { ok: true, mnemonic: parsed.data }
+
+  const words = splitPhraseInput(normalized)
+  if (detectForeignSeed(words)) {
+    return { ok: false, error: "settings.accounts.restore.mnemonic.foreign" }
+  }
+  if (words.length !== RESTORE_WORD_COUNT) {
+    return { ok: false, error: "settings.accounts.restore.mnemonic.wordCount" }
+  }
+  const allKnown = analyzeRestoreWords(words, null).isComplete
+  return {
+    ok: false,
+    error: allKnown
+      ? "settings.accounts.restore.mnemonic.checksum"
+      : "settings.accounts.restore.mnemonic.invalid",
+  }
 }

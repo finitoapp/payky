@@ -10,7 +10,8 @@
     "@payky/core": "workspace:*",
     "ai": "7.0.142",
     "date-fns": "4.4.0",
-    "nostr-tools": "2.25.2"
+    "nostr-tools": "2.25.2",
+    "@scure/bip39": "2.4.0"
   },
   "peerDependencies": {
     "react": "^19.3.0",

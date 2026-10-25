@@ -83,6 +83,23 @@ export async function seedOnboarding(
 export const createUnregisteredMnemonic = (): Promise<string> =>
   masterKeyToMnemonic(createMasterKey())
 
+/** Pastes `phrase` into the first word field, which fans it out over the grid. */
+export async function fillRestorePhrase(
+  page: Page,
+  language: Language,
+  phrase: string
+): Promise<void> {
+  await page
+    .getByRole("textbox", {
+      name: translate(language, "onboarding.restore.wordLabel").replace(
+        "{index}",
+        "1"
+      ),
+      exact: true,
+    })
+    .fill(phrase)
+}
+
 /**
  * Picks "restore" on the onboarding page already open and submits
  * `mnemonic`, leaving the page on the restore sync screen. Navigates nowhere
@@ -98,7 +115,7 @@ export async function submitRestorePhrase(
       name: translate(language, "accountChoice.restore.title"),
     })
     .click()
-  await page.getByRole("textbox").fill(mnemonic)
+  await fillRestorePhrase(page, language, mnemonic)
   await page
     .getByRole("button", {
       name: translate(language, "onboarding.restore.action"),

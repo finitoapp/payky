@@ -13,10 +13,39 @@ describe("checkRestorePhrase", () => {
     }
   })
 
-  test("rejects a phrase that is not a valid mnemonic", () => {
-    expect(checkRestorePhrase("not a real phrase")).toEqual({
+  test("rejects a word count other than 20", () => {
+    expect(checkRestorePhrase("academic acid acne")).toEqual({
+      ok: false,
+      error: "settings.accounts.restore.mnemonic.wordCount",
+    })
+  })
+
+  test("rejects a seed from another wallet", () => {
+    const twelve = Array.from({ length: 12 }, () => "abandon").join(" ")
+    for (const input of [twelve, "abandon ability able"]) {
+      expect(checkRestorePhrase(input)).toEqual({
+        ok: false,
+        error: "settings.accounts.restore.mnemonic.foreign",
+      })
+    }
+  })
+
+  test("rejects 20 unknown words as invalid", () => {
+    expect(
+      checkRestorePhrase(Array.from({ length: 20 }, () => "zzzz").join(" "))
+    ).toEqual({
       ok: false,
       error: "settings.accounts.restore.mnemonic.invalid",
+    })
+  })
+
+  test("rejects 20 valid words with a bad checksum", async () => {
+    const phrase = await masterKeyToMnemonic(createAccountMasterKey())
+    const words = phrase.split(" ")
+    words[19] = words[19] === "academic" ? "acid" : "academic"
+    expect(checkRestorePhrase(words.join(" "))).toEqual({
+      ok: false,
+      error: "settings.accounts.restore.mnemonic.checksum",
     })
   })
 

@@ -14,4 +14,5 @@ tags: [onboarding]
     file: ../../subflows/assert-label.yaml
     env:
       LABEL: ${output.t["onboarding.restore.action"]}
-- assertVisible: ${output.t["settings.accounts.restore.mnemonic.placeholder"]}
+# The grid is empty again.
+- assertVisible: '${output.t["onboarding.restore.counter"].replace("{count}", "0").replace("{total}", "20")}'

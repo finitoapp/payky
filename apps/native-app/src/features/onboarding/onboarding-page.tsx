@@ -358,6 +358,9 @@ export function OnboardingPage() {
               error={restoreError}
               pending={restoring}
               submitFullWidth
+              onTransfer={() =>
+                setForm((current) => ({ ...current, step: "transfer" }))
+              }
               onRestore={(phrase) => {
                 void restore(phrase).then((started) => {
                   if (started) setForm(initialOnboardingFormState)

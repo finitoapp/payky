@@ -127,7 +127,7 @@ export const enOnboarding = {
     "Generate a new recovery phrase and start with an empty account.",
   "accountChoice.new.title": "Create a new account",
   "accountChoice.restore.description":
-    "Use a recovery phrase to open your existing account data.",
+    "Use the 20 words from Payky to open your existing account data.",
   "accountChoice.restore.title": "Restore an existing account",
   "accountChoice.transfer.description":
     "Scan a QR code on a device where you already use Payky.",
@@ -161,8 +161,20 @@ export const enOnboarding = {
   "onboarding.payments.iban.title": "Bank account (optional)",
   "onboarding.payments.title": "Business setup",
   "onboarding.restore.action": "Restore account",
-  "onboarding.restore.description":
-    "Enter the SLIP-39 recovery phrase for the account you want to restore.",
+  "onboarding.restore.counter": "{count}/{total} words",
+  "onboarding.restore.description": "Enter the 20 words from Payky",
+  "onboarding.restore.fixedWordHint": "usually {word}",
+  "onboarding.restore.paste": "Paste from clipboard",
+  "onboarding.restore.pasteFailed":
+    "Could not read the clipboard. Paste into the first field instead.",
+  "onboarding.restore.showWords": "Show words",
+  "onboarding.restore.subtitle":
+    "The phrase from Settings → Security. A seed from another wallet (Spark, Trezor, 12 or 24 words) does not work here.",
+  "onboarding.restore.suggestions": "Word suggestions",
   "onboarding.restore.title": "Restore existing account",
+  "onboarding.restore.transferLink":
+    "Have Payky on another device? Transfer by scanning a QR code",
+  "onboarding.restore.unknownWords": "Unknown word: {words}",
+  "onboarding.restore.wordLabel": "Word {index}",
   "onboarding.title": "Welcome to Payky",
 } as const

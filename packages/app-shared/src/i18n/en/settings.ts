@@ -45,14 +45,16 @@ export const enSettings = {
   "settings.accounts.remove.confirm.title": "Remove {name}?",
   "settings.accounts.restore.failed":
     "Could not restore the account. Please try again.",
-  "settings.accounts.restore.mnemonic.description":
-    "Whitespace is normalized before validation.",
+  "settings.accounts.restore.mnemonic.checksum":
+    "The words are valid, but the phrase is not. Check the order and any typos.",
+  "settings.accounts.restore.mnemonic.foreign":
+    "This looks like a seed from another wallet. Payky only restores its own 20-word phrases.",
   "settings.accounts.restore.mnemonic.invalid":
-    "Enter a valid SLIP-39 recovery phrase.",
+    "Enter 20 words from the Payky recovery phrase.",
   "settings.accounts.restore.mnemonic.label": "Recovery phrase",
-  "settings.accounts.restore.mnemonic.placeholder":
-    "academic acid academic agency ...",
   "settings.accounts.restore.mnemonic.required": "Recovery phrase is required.",
+  "settings.accounts.restore.mnemonic.wordCount":
+    "The recovery phrase has 20 words.",
   "settings.accounts.title": "App Account",
   "settings.appVersion": "App version:",
   "settings.appVersionCode": "Version code:",

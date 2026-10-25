@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react"
 import { type GetProps, styled, Input as TamaguiInput } from "tamagui"
 import { fontSize, radius } from "../../theme/tokens.ts"
 import { useFieldLabelId, useFieldLabelText } from "./field.tsx"
@@ -42,13 +43,16 @@ const InputFrame = styled(TamaguiInput, {
 
 export type InputProps = GetProps<typeof InputFrame>
 
+/** The field itself, for a screen that moves focus between fields. */
+export type InputHandle = ComponentProps<typeof InputFrame>["ref"]
+
 /**
  * Inside a `ui/field` `Field`, TalkBack names it after the `FieldLabel`. Its
  * name is also its `testID`, so an e2e flow finds the input by its label with
  * one `id:` on both platforms (on Android the label's own text matches a text
  * selector too).
  */
-export function Input(props: InputProps) {
+export function Input(props: InputProps & { readonly ref?: InputHandle }) {
   const fieldLabel = useFieldLabelText()
   const name = props["aria-label"] ?? fieldLabel
   // The disabled look is applied here, not as a variant, so `disabled`

@@ -129,7 +129,7 @@ export const csOnboarding = {
     "Vygenerujte novou recovery phrase a začněte s prázdným účtem.",
   "accountChoice.new.title": "Založit nový účet",
   "accountChoice.restore.description":
-    "Pomocí recovery phrase otevřete data svého existujícího účtu.",
+    "Pomocí 20 slov z Payky otevřete data svého existujícího účtu.",
   "accountChoice.restore.title": "Obnovit existující účet",
   "accountChoice.transfer.description":
     "Naskenujte QR kód na zařízení, kde už Payky používáte.",
@@ -162,8 +162,20 @@ export const csOnboarding = {
   "onboarding.payments.iban.title": "Bankovní účet (volitelné)",
   "onboarding.payments.title": "Nastavení podniku",
   "onboarding.restore.action": "Obnovit účet",
-  "onboarding.restore.description":
-    "Zadejte SLIP-39 recovery phrase účtu, který chcete obnovit.",
+  "onboarding.restore.counter": "{count}/{total} slov",
+  "onboarding.restore.description": "Zadejte 20 slov z Payky",
+  "onboarding.restore.fixedWordHint": "obvykle {word}",
+  "onboarding.restore.paste": "Vložit ze schránky",
+  "onboarding.restore.pasteFailed":
+    "Schránku se nepodařilo přečíst. Vložte frázi přímo do prvního políčka.",
+  "onboarding.restore.showWords": "Zobrazit slova",
+  "onboarding.restore.subtitle":
+    "Fráze ze Settings → Security. Seed z jiné peněženky (Spark, Trezor, 12 nebo 24 slov) tady nefunguje.",
+  "onboarding.restore.suggestions": "Návrhy slov",
   "onboarding.restore.title": "Obnovení existujícího účtu",
+  "onboarding.restore.transferLink":
+    "Máte Payky na jiném zařízení? Přenést naskenováním QR",
+  "onboarding.restore.unknownWords": "Neznámé slovo: {words}",
+  "onboarding.restore.wordLabel": "Slovo {index}",
   "onboarding.title": "Vítejte v Payky",
 } satisfies Record<keyof typeof enOnboarding, string>

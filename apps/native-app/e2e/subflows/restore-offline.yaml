@@ -19,16 +19,29 @@ appId: ${APP_ID}
       ROUTE: e2e/offline?next=/onboarding
       TEXT: ${output.t["onboarding.title"]}
 - tapOn: ${output.t["accountChoice.restore.title"]}
-# The phrase goes into the first word field; a space after a word moves on to
-# the next one, so typing the whole phrase fills the grid.
-- tapOn:
-    id: '${output.t["onboarding.restore.wordLabel"].replace("{index}", "1")}'
-- inputText: ${output.phrase}
+# One word per field: Maestro types into the element it tapped, so a space
+# would not move on to the next field as it does for a person.
+- evalScript: '${output.words = output.phrase.split(" "); output.slot = 0}'
+- repeat:
+    times: 20
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: '${output.t["onboarding.restore.wordLabel"].replace("{index}", String(output.slot + 1))}'
+      - tapOn:
+          id: '${output.t["onboarding.restore.wordLabel"].replace("{index}", String(output.slot + 1))}'
+      - inputText: '${output.words[output.slot]}'
+      - evalScript: '${output.slot = output.slot + 1}'
 - runFlow:
     when:
       platform: Android
     commands:
       - hideKeyboard
+# The button sits below the 20 word fields.
+- runFlow:
+    file: scroll-to-label.yaml
+    env:
+      LABEL: ${output.t["onboarding.restore.action"]}
 - runFlow:
     file: tap-label.yaml
     env:

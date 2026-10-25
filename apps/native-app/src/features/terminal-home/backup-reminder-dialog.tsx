@@ -1,4 +1,4 @@
-import { router } from "expo-router"
+import { router, useIsFocused } from "expo-router"
 import ShieldCheck from "lucide-react-native/icons/shield-check"
 import { View, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
@@ -18,15 +18,18 @@ import { useBackupReminder } from "./use-backup-reminder.ts"
 /**
  * Web's `BackupReminderDialog`: on home after a paid payment, asks to back up
  * the recovery phrase (account/0006). Closing it any way is "remind me next
- * time".
+ * time". Only while home is the screen on top: the stack keeps home mounted
+ * under the payment screen, and a dialog opened there would cover its paid
+ * panel the moment the claim lands.
  */
 export function BackupReminderDialog() {
   const { t } = useTranslation()
   const { visible, dismiss } = useBackupReminder()
+  const focused = useIsFocused()
 
   return (
     <Dialog
-      open={visible}
+      open={visible && focused}
       dismissOnOverlayPress={false}
       onOpenChange={(open) => {
         if (!open) dismiss()

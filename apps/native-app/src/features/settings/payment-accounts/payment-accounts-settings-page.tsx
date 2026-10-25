@@ -4,6 +4,7 @@ import {
   saveCashRegisterAccount,
   saveCashuAccount,
   saveFiatBankAccount,
+  saveLightningAddressAccount,
   saveQerkoTerminalAccount,
   saveSparkAccount,
 } from "@payky/core/modules/account/account-actions"
@@ -12,6 +13,7 @@ import {
   cashRegisterAccountQuery,
   cashuAccountQuery,
   fiatBankAccountQuery,
+  lightningAddressAccountQuery,
   qerkoTerminalAccountQuery,
   sparkAccountQuery,
 } from "@payky/core/modules/account/account-queries"
@@ -26,6 +28,7 @@ import { qerkoPluginQuery } from "@payky/core/modules/qerko-plugin/qerko-plugin-
 import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import type { LucideIcon } from "lucide-react-native"
+import AtSign from "lucide-react-native/icons/at-sign"
 import Banknote from "lucide-react-native/icons/banknote"
 import ChevronDown from "lucide-react-native/icons/chevron-down"
 import ChevronRight from "lucide-react-native/icons/chevron-right"
@@ -90,6 +93,7 @@ export function PaymentAccountsSettingsPage() {
   const [qerko] = useEvoluQuery(qerkoTerminalAccountQuery).data
   const qerkoPaired = useEvoluQuery(qerkoPluginQuery).data.length > 0
   const [cashu] = useEvoluQuery(cashuAccountQuery).data
+  const [lightningAddress] = useEvoluQuery(lightningAddressAccountQuery).data
 
   const appCurrency = getFiatCurrency(settings)
   const bankEnabled = bank !== undefined && bank.isDeleted !== 1
@@ -98,6 +102,8 @@ export function PaymentAccountsSettingsPage() {
   const cardEnabled = card !== undefined && card.isDeleted !== 1
   const qerkoEnabled = qerko !== undefined && qerko.isDeleted !== 1
   const cashuEnabled = cashu !== undefined && cashu.isDeleted !== 1
+  const lightningAddressEnabled =
+    lightningAddress !== undefined && lightningAddress.isDeleted !== 1
 
   const currencyMismatch = (currency: FiatCurrency | undefined) =>
     currency === undefined || currency === appCurrency
@@ -227,6 +233,24 @@ export function PaymentAccountsSettingsPage() {
       saveEnabled: (enabled) =>
         cashuRunToast(async (run) => {
           await run.ok(saveCashuAccount({ enabled }))
+        }),
+    },
+    lightningAddress: {
+      icon: AtSign,
+      title: "settings.paymentAccounts.method.lightningAddress",
+      switchLabel: "settings.lightningAddress.enabled.label",
+      enabled: lightningAddressEnabled,
+      available: lightningAddressEnabled,
+      // The address is entered on its own page, as on web.
+      canEnable: lightningAddress !== undefined,
+      status:
+        lightningAddress === undefined
+          ? t("settings.paymentAccounts.status.missingLightningAddress")
+          : lightningAddress.address,
+      href: "/settings/payment-accounts/lightning-address",
+      saveEnabled: (enabled) =>
+        runToast(async (run) => {
+          await run.ok(saveLightningAddressAccount({ enabled }))
         }),
     },
   } satisfies Record<DefaultPaymentMethod, PaymentMethodRowState>

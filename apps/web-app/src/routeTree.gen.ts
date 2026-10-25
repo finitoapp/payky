@@ -63,6 +63,7 @@ import { Route as TerminalSettingsPaymentAccountsIndexRouteImport } from './rout
 import { Route as TerminalSettingsPaymentAccountsCardSwitchioRouteImport } from './routes/_terminal.settings.payment-accounts.card-switchio'
 import { Route as TerminalSettingsPaymentAccountsCashuRouteImport } from './routes/_terminal.settings.payment-accounts.cashu'
 import { Route as TerminalSettingsPaymentAccountsIbanRouteImport } from './routes/_terminal.settings.payment-accounts.iban'
+import { Route as TerminalSettingsPaymentAccountsLightningAddressRouteImport } from './routes/_terminal.settings.payment-accounts.lightning-address'
 import { Route as TerminalSettingsPaymentAccountsQerkoTerminalRouteImport } from './routes/_terminal.settings.payment-accounts.qerko-terminal'
 import { Route as TerminalSettingsPaymentAccountsSparkRouteImport } from './routes/_terminal.settings.payment-accounts.spark'
 import { Route as TerminalSettingsSecurityBackupRouteImport } from './routes/_terminal.settings.security_.backup'
@@ -389,6 +390,12 @@ const TerminalSettingsPaymentAccountsIbanRoute =
     path: '/iban',
     getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
   } as any)
+const TerminalSettingsPaymentAccountsLightningAddressRoute =
+  TerminalSettingsPaymentAccountsLightningAddressRouteImport.update({
+    id: '/lightning-address',
+    path: '/lightning-address',
+    getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
+  } as any)
 const TerminalSettingsPaymentAccountsQerkoTerminalRoute =
   TerminalSettingsPaymentAccountsQerkoTerminalRouteImport.update({
     id: '/qerko-terminal',
@@ -583,6 +590,7 @@ export interface FileRoutesByFullPath {
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/settings/payment-accounts/cashu': typeof TerminalSettingsPaymentAccountsCashuRouteWithChildren
   '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  '/settings/payment-accounts/lightning-address': typeof TerminalSettingsPaymentAccountsLightningAddressRoute
   '/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   '/settings/security/backup': typeof TerminalSettingsSecurityBackupRoute
@@ -652,6 +660,7 @@ export interface FileRoutesByTo {
   '/settings/items/$catalogItemId': typeof TerminalSettingsItemsCatalogItemIdRoute
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
+  '/settings/payment-accounts/lightning-address': typeof TerminalSettingsPaymentAccountsLightningAddressRoute
   '/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   '/settings/security/backup': typeof TerminalSettingsSecurityBackupRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
@@ -728,6 +737,7 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/_terminal/settings/payment-accounts/cashu': typeof TerminalSettingsPaymentAccountsCashuRouteWithChildren
   '/_terminal/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  '/_terminal/settings/payment-accounts/lightning-address': typeof TerminalSettingsPaymentAccountsLightningAddressRoute
   '/_terminal/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   '/_terminal/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   '/_terminal/settings/security_/backup': typeof TerminalSettingsSecurityBackupRoute
@@ -808,6 +818,7 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts/card-switchio'
     | '/settings/payment-accounts/cashu'
     | '/settings/payment-accounts/iban'
+    | '/settings/payment-accounts/lightning-address'
     | '/settings/payment-accounts/qerko-terminal'
     | '/settings/payment-accounts/spark'
     | '/settings/security/backup'
@@ -877,6 +888,7 @@ export interface FileRouteTypes {
     | '/settings/items/$catalogItemId'
     | '/settings/items/new'
     | '/settings/payment-accounts/card-switchio'
+    | '/settings/payment-accounts/lightning-address'
     | '/settings/payment-accounts/qerko-terminal'
     | '/settings/security/backup'
     | '/settings/tables/$tableId'
@@ -952,6 +964,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-accounts/card-switchio'
     | '/_terminal/settings/payment-accounts/cashu'
     | '/_terminal/settings/payment-accounts/iban'
+    | '/_terminal/settings/payment-accounts/lightning-address'
     | '/_terminal/settings/payment-accounts/qerko-terminal'
     | '/_terminal/settings/payment-accounts/spark'
     | '/_terminal/settings/security_/backup'
@@ -1369,6 +1382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsPaymentAccountsIbanRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsRoute
     }
+    '/_terminal/settings/payment-accounts/lightning-address': {
+      id: '/_terminal/settings/payment-accounts/lightning-address'
+      path: '/lightning-address'
+      fullPath: '/settings/payment-accounts/lightning-address'
+      preLoaderRoute: typeof TerminalSettingsPaymentAccountsLightningAddressRouteImport
+      parentRoute: typeof TerminalSettingsPaymentAccountsRoute
+    }
     '/_terminal/settings/payment-accounts/qerko-terminal': {
       id: '/_terminal/settings/payment-accounts/qerko-terminal'
       path: '/qerko-terminal'
@@ -1728,6 +1748,7 @@ interface TerminalSettingsPaymentAccountsRouteChildren {
   TerminalSettingsPaymentAccountsCardSwitchioRoute: typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   TerminalSettingsPaymentAccountsCashuRoute: typeof TerminalSettingsPaymentAccountsCashuRouteWithChildren
   TerminalSettingsPaymentAccountsIbanRoute: typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
+  TerminalSettingsPaymentAccountsLightningAddressRoute: typeof TerminalSettingsPaymentAccountsLightningAddressRoute
   TerminalSettingsPaymentAccountsQerkoTerminalRoute: typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   TerminalSettingsPaymentAccountsSparkRoute: typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
   TerminalSettingsPaymentAccountsIndexRoute: typeof TerminalSettingsPaymentAccountsIndexRoute
@@ -1741,6 +1762,8 @@ const TerminalSettingsPaymentAccountsRouteChildren: TerminalSettingsPaymentAccou
       TerminalSettingsPaymentAccountsCashuRouteWithChildren,
     TerminalSettingsPaymentAccountsIbanRoute:
       TerminalSettingsPaymentAccountsIbanRouteWithChildren,
+    TerminalSettingsPaymentAccountsLightningAddressRoute:
+      TerminalSettingsPaymentAccountsLightningAddressRoute,
     TerminalSettingsPaymentAccountsQerkoTerminalRoute:
       TerminalSettingsPaymentAccountsQerkoTerminalRoute,
     TerminalSettingsPaymentAccountsSparkRoute:

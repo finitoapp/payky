@@ -5,6 +5,7 @@ import {
   saveCashRegisterAccount,
   saveCashuAccount,
   saveFiatBankAccount,
+  saveLightningAddressAccount,
   saveQerkoTerminalAccount,
   saveSparkAccount,
 } from "@payky/core/modules/account/account-actions"
@@ -13,6 +14,7 @@ import {
   cashRegisterAccountQuery,
   cashuAccountQuery,
   fiatBankAccountQuery,
+  lightningAddressAccountQuery,
   qerkoTerminalAccountQuery,
   sparkAccountQuery,
 } from "@payky/core/modules/account/account-queries"
@@ -28,6 +30,7 @@ import type { FiatCurrency } from "@payky/core/modules/shared/schema"
 import { useQuery } from "@tanstack/react-query"
 import { Link, type LinkProps } from "@tanstack/react-router"
 import {
+  AtSignIcon,
   BanknoteIcon,
   ChevronDown,
   ChevronRight,
@@ -83,6 +86,9 @@ export function PaymentAccountsSettingsPage() {
   const { data: qerkoData } = useEvoluQuery(qerkoTerminalAccountQuery)
   const { data: qerkoPluginData } = useEvoluQuery(qerkoPluginQuery)
   const { data: cashuData } = useEvoluQuery(cashuAccountQuery)
+  const { data: lightningAddressData } = useEvoluQuery(
+    lightningAddressAccountQuery
+  )
   const [settings] = settingsData
   const [bank] = bankData
   const [spark] = sparkData
@@ -90,6 +96,7 @@ export function PaymentAccountsSettingsPage() {
   const [card] = cardData
   const [qerko] = qerkoData
   const [cashu] = cashuData
+  const [lightningAddress] = lightningAddressData
 
   const appCurrency = getFiatCurrency(settings)
   const bankEnabled = bank !== undefined && bank.isDeleted !== 1
@@ -99,6 +106,8 @@ export function PaymentAccountsSettingsPage() {
   const qerkoEnabled = qerko !== undefined && qerko.isDeleted !== 1
   const qerkoPaired = qerkoPluginData.length > 0
   const cashuEnabled = cashu !== undefined && cashu.isDeleted !== 1
+  const lightningAddressEnabled =
+    lightningAddress !== undefined && lightningAddress.isDeleted !== 1
   // The SwitchioPay terminal is driven through Android intents, so only the
   // native app can offer it. The account is plain synced data, though, so it
   // stays configurable here for the devices that can.
@@ -235,6 +244,25 @@ export function PaymentAccountsSettingsPage() {
       saveEnabled: async (enabled) => {
         await using run = await cashuAppRun()
         await run.ok(saveCashuAccount({ enabled }))
+      },
+    },
+    lightningAddress: {
+      icon: AtSignIcon,
+      title: "settings.paymentAccounts.method.lightningAddress",
+      switchLabel: "settings.lightningAddress.enabled.label",
+      enabled: lightningAddressEnabled,
+      available: lightningAddressEnabled,
+      // Enabling without an address would offer a method with nowhere to
+      // ask for an invoice; the address is entered on its own page.
+      canEnable: lightningAddress !== undefined,
+      status:
+        lightningAddress === undefined
+          ? t("settings.paymentAccounts.status.missingLightningAddress")
+          : lightningAddress.address,
+      to: "/settings/payment-accounts/lightning-address",
+      saveEnabled: async (enabled) => {
+        await using run = appRun()
+        await run.ok(saveLightningAddressAccount({ enabled }))
       },
     },
   } satisfies Record<DefaultPaymentMethod, PaymentMethodRowState>

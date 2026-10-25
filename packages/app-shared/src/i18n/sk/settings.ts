@@ -1185,4 +1185,29 @@ export const skSettings = {
   "access.wizard.pin.description":
     "PIN majiteľa odomkne všetko. Mal by ho poznať len majiteľ.",
   "access.wizard.pin.title": "PIN majiteľa",
+  "settings.paymentAccounts.method.lightningAddress": "Lightning adresa",
+  "settings.paymentAccounts.status.missingLightningAddress":
+    "Lightning adresa nie je nastavená",
+  "settings.lightningAddress.enabled.label":
+    "Prijímať platby na Lightning adresu",
+  "settings.lightningAddress.form.title": "Vlastná peňaženka",
+  "settings.lightningAddress.form.description":
+    "Platby idú rovno do peňaženky za adresou. Payky si od nej len vyžiada invoice a sleduje, či je zaplatený; nedrží žiadne kľúče ani peniaze.",
+  "settings.lightningAddress.address.label": "Lightning adresa",
+  "settings.lightningAddress.address.placeholder": "meno@penazenka.sk",
+  "settings.lightningAddress.address.description":
+    "Peňaženka musí podporovať LUD-21 verify a prezradiť dôkaz platby (preimage). Inak Payky nespozná, že je platba zaplatená.",
+  "settings.lightningAddress.address.required": "Zadajte Lightning adresu.",
+  "settings.lightningAddress.address.invalid":
+    "Toto nie je Lightning adresa. Vyzerá ako meno@penazenka.sk.",
+  "settings.lightningAddress.submit": "Overiť a uložiť",
+  "settings.lightningAddress.saved": "Uložené.",
+  "settings.lightningAddress.error.verifyUnsupported":
+    "Táto peňaženka Payky neumožní overiť, či je invoice zaplatený (LUD-21 verify). Použite inú peňaženku.",
+  "settings.lightningAddress.error.rejected":
+    "Peňaženka požiadavku odmietla. Skontrolujte adresu.",
+  "settings.lightningAddress.error.unreachable":
+    "Peňaženka nie je dostupná. Skontrolujte adresu a pripojenie.",
+  "settings.lightningAddress.error.invalid":
+    "Peňaženka odpovedala niečím, s čím Payky nevie pracovať.",
 } satisfies Record<keyof typeof enSettings, string>

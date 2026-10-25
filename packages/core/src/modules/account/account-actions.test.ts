@@ -32,6 +32,7 @@ import {
   loadAccount,
   saveCashRegisterAccount,
   saveFiatBankAccount,
+  saveLightningAddressAccount,
   saveSparkAccount,
   selectCustomSparkWallet,
   selectDefaultSparkWallet,
@@ -42,12 +43,14 @@ import {
   accountByIdQuery,
   cashRegisterAccountQuery,
   fiatBankAccountQuery,
+  lightningAddressAccountQuery,
   sparkAccountQuery,
 } from "./account-queries.ts"
 import type { AccountId } from "./account-types.ts"
 import {
   createCashRegisterAccountId,
   createIbanAccountId,
+  createLightningAddressAccountId,
   createSparkAccountId,
   legacyFiatBankAccountId,
 } from "./account-utils.ts"
@@ -486,6 +489,58 @@ describe("account actions", () => {
       .poll(() => evolu.loadQuery(cashRegisterAccountQuery))
       .toMatchObject([
         { id: createCashRegisterAccountId("CZK"), isDeleted: sqliteTrue },
+      ])
+  }, 15_000)
+
+  test("saves a new account when the Lightning address changes and keeps the old one for its history", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps = {
+      ...evoluTestDeps(evolu),
+    } satisfies EvoluDep & EvoluOwnerDep
+    await using run = testCreateRun(deps)
+    const alby = NonEmptyString255("shop@getalby.com")
+    const blink = NonEmptyString255("shop@blink.sv")
+
+    await expect(
+      run(saveLightningAddressAccount({ enabled: true }))
+    ).resolves.toEqual({ ok: true, value: null })
+    await expect(
+      run(saveLightningAddressAccount({ enabled: true, address: alby }))
+    ).resolves.toEqual({
+      ok: true,
+      value: createLightningAddressAccountId(alby),
+    })
+    await expect(
+      run(saveLightningAddressAccount({ enabled: true, address: blink }))
+    ).resolves.toEqual({
+      ok: true,
+      value: createLightningAddressAccountId(blink),
+    })
+
+    await expect
+      .poll(() => evolu.loadQuery(lightningAddressAccountQuery))
+      .toMatchObject([
+        {
+          id: createLightningAddressAccountId(blink),
+          isDeleted: sqliteFalse,
+          name: blink,
+          kind: "lightningAddress",
+          address: blink,
+        },
+      ])
+    await expect
+      .poll(() =>
+        evolu.loadQuery(accountByIdQuery(createLightningAddressAccountId(alby)))
+      )
+      .toMatchObject([{ isDeleted: sqliteTrue, name: alby }])
+
+    // The switch on the overview disables the address it already has.
+    await run.ok(saveLightningAddressAccount({ enabled: false }))
+    await expect
+      .poll(() => evolu.loadQuery(lightningAddressAccountQuery))
+      .toMatchObject([
+        { id: createLightningAddressAccountId(blink), isDeleted: sqliteTrue },
       ])
   }, 15_000)
 

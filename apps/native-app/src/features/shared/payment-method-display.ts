@@ -1,5 +1,6 @@
 import type { AccountTransactionKind } from "@payky/core/modules/account-transaction/account-transaction-types"
 import type { LucideIcon } from "lucide-react-native"
+import AtSign from "lucide-react-native/icons/at-sign"
 import Banknote from "lucide-react-native/icons/banknote"
 import Bitcoin from "lucide-react-native/icons/bitcoin"
 import Coins from "lucide-react-native/icons/coins"
@@ -21,4 +22,5 @@ export const paymentMethodIcon = {
   qerkoTerminal: Nfc,
   spark: Zap,
   cashu: Coins,
+  lightningAddress: AtSign,
 } satisfies Record<AccountTransactionKind, LucideIcon>

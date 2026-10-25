@@ -299,9 +299,67 @@ export const activeCashuAccountByIdQuery = (idValue: AccountId) =>
       .where("accountCashu.isDeleted", "is not", sqliteTrue)
   )
 
+/** Picked the same way as `fiatBankAccountQuery`. */
+export const lightningAddressAccountQuery = createQuery((db) =>
+  db
+    .selectFrom("account")
+    .innerJoin(
+      "accountLightningAddress",
+      "accountLightningAddress.id",
+      "account.id"
+    )
+    .select([
+      "account.id",
+      "account.name",
+      "account.kind",
+      "account.isDeleted",
+      "accountLightningAddress.address",
+    ])
+    .where("account.kind", "=", "lightningAddress")
+    .where("accountLightningAddress.isDeleted", "is not", sqliteTrue)
+    .where("account.name", "is not", null)
+    .where("account.kind", "is not", null)
+    .where("accountLightningAddress.address", "is not", null)
+    .orderBy("account.isDeleted")
+    .orderBy("account.createdAt", "desc")
+    .orderBy("account.id")
+    .limit(1)
+    .$narrowType<{
+      name: KyselyNotNull
+      kind: KyselyNotNull
+      address: KyselyNotNull
+    }>()
+)
+
+/**
+ * A Lightning address account by id, deleted or not: a payment prepared
+ * before the address changed still settles to the account it was asked of.
+ */
+export const lightningAddressAccountByIdQuery = (idValue: AccountId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("account")
+      .innerJoin(
+        "accountLightningAddress",
+        "accountLightningAddress.id",
+        "account.id"
+      )
+      .select([
+        "account.id",
+        "account.isDeleted",
+        "accountLightningAddress.address",
+      ])
+      .where("account.id", "=", idValue)
+      .where("account.kind", "=", "lightningAddress")
+      .where("accountLightningAddress.isDeleted", "is not", sqliteTrue)
+      .where("accountLightningAddress.address", "is not", null)
+      .$narrowType<{ address: KyselyNotNull }>()
+  )
+
 /**
  * Every non-deleted account with the method-specific columns the payment
- * waiting screen needs to offer a Spark, IBAN, cash-register, or card tab.
+ * waiting screen needs to offer a Spark, IBAN, cash-register, card or
+ * Lightning address tab.
  *
  * Newest first, so the screen's first match per kind is the same account
  * `fiatBankAccountQuery` and its siblings pick.
@@ -334,6 +392,11 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
         .onRef("accountQerkoTerminal.id", "=", "account.id")
         .on("accountQerkoTerminal.isDeleted", "is not", sqliteTrue)
     )
+    .leftJoin("accountLightningAddress", (join) =>
+      join
+        .onRef("accountLightningAddress.id", "=", "account.id")
+        .on("accountLightningAddress.isDeleted", "is not", sqliteTrue)
+    )
     .select([
       "account.id",
       "account.kind",
@@ -345,6 +408,7 @@ export const enabledPaymentMethodAccountsQuery = createQuery((db) =>
       "accountCashRegister.currency as cashRegisterCurrency",
       "accountCardSwitchio.currency as cardCurrency",
       "accountQerkoTerminal.currency as qerkoTerminalCurrency",
+      "accountLightningAddress.address as lightningAddress",
     ])
     .where("account.isDeleted", "is not", sqliteTrue)
     .where("account.id", "is not", null)

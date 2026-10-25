@@ -55,6 +55,7 @@ export function MethodBreakdown({
     spark: theme["chart-4"]?.val ?? "#da4453",
     onchain: theme["chart-5"]?.val ?? "#2980b9",
     cashu: theme["chart-6"]?.val ?? "#ad80dd",
+    lightningAddress: theme["chart-4"]?.val ?? "#da4453",
     unknown: theme["muted-foreground"]?.val ?? "#888",
   } satisfies Record<MethodShare["method"], string>
   const excess = methods.filter((row) => row.excess > 0)

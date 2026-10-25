@@ -70,6 +70,7 @@ export type NativeRoutePath =
   | "/settings/payment-accounts/spark/transactions"
   | "/settings/payment-accounts/card-switchio"
   | "/settings/payment-accounts/qerko-terminal"
+  | "/settings/payment-accounts/lightning-address"
 
 /**
  * What each Expo Router path needs (access/0003); `route-access.test.ts`
@@ -196,6 +197,8 @@ export const routeAccess = {
   "/settings/payment-accounts/card-switchio": "admin",
   // Like web's `_terminal/settings/payment-accounts/qerko-terminal` (owner-only).
   "/settings/payment-accounts/qerko-terminal": "admin",
+  // Like web's `_terminal/settings/payment-accounts/lightning-address` (owner-only).
+  "/settings/payment-accounts/lightning-address": "admin",
   // Like web's /error: a deliberate crash with no gate in front of it.
   "/error": "free",
   // The e2e bridge (src/e2e); it only redirects home outside an e2e build.

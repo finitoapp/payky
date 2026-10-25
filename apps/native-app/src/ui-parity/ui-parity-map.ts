@@ -1182,6 +1182,29 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
+    native:
+      "src/features/settings/payment-accounts/lightning-address-settings-page.tsx",
+    web: [
+      "apps/web-app/src/features/settings/payment-accounts/lightning-address-settings-page.tsx",
+    ],
+    status: "matched",
+    allowedDifferences: {
+      Button:
+        "the web SettingsFormCard feature helper composes the card and its submit Button; native composes them directly",
+      Card: "the web SettingsFormCard feature helper composes the card and its submit Button; native composes them directly",
+      CardContent:
+        "the web SettingsFormCard feature helper composes the card and its submit Button; native composes them directly",
+      CardDescription:
+        "the web SettingsFormCard feature helper composes the card and its submit Button; native composes them directly",
+      CardFooter:
+        "the web SettingsFormCard feature helper composes the card and its submit Button; native composes them directly",
+      CardHeader:
+        "the web SettingsFormCard feature helper composes the card and its submit Button; native composes them directly",
+      CardTitle:
+        "the web SettingsFormCard feature helper composes the card and its submit Button; native composes them directly",
+    },
+  },
+  {
     native: "src/features/settings/payment-accounts/qerko-pairing-wizard.tsx",
     web: [
       "apps/web-app/src/features/settings/payment-accounts/qerko-pairing-wizard.tsx",

@@ -1,5 +1,6 @@
 import type { AccountTransactionKind } from "@payky/core/modules/account-transaction/account-transaction-types"
 import {
+  AtSignIcon,
   BanknoteIcon,
   BitcoinIcon,
   CoinsIcon,
@@ -23,4 +24,5 @@ export const paymentMethodIcon = {
   qerkoTerminal: NfcIcon,
   spark: ZapIcon,
   cashu: CoinsIcon,
+  lightningAddress: AtSignIcon,
 } satisfies Record<AccountTransactionKind, LucideIcon>

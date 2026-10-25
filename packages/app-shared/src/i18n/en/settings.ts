@@ -1183,4 +1183,29 @@ export const enSettings = {
   "access.wizard.pin.description":
     "The owner PIN unlocks everything. Only the owner should know it.",
   "access.wizard.pin.title": "Owner PIN",
+  "settings.paymentAccounts.method.lightningAddress": "Lightning address",
+  "settings.paymentAccounts.status.missingLightningAddress":
+    "No Lightning address set",
+  "settings.lightningAddress.enabled.label":
+    "Accept payments to a Lightning address",
+  "settings.lightningAddress.form.title": "Your own wallet",
+  "settings.lightningAddress.form.description":
+    "Payments go straight to the wallet behind the address. Payky only asks it for an invoice and watches whether it is paid; it holds no keys and no money.",
+  "settings.lightningAddress.address.label": "Lightning address",
+  "settings.lightningAddress.address.placeholder": "name@wallet.com",
+  "settings.lightningAddress.address.description":
+    "The wallet must support LUD-21 verify and reveal the proof of payment (preimage). Otherwise Payky cannot tell that a payment is paid.",
+  "settings.lightningAddress.address.required": "Enter a Lightning address.",
+  "settings.lightningAddress.address.invalid":
+    "This is not a Lightning address. It looks like name@wallet.com.",
+  "settings.lightningAddress.submit": "Check and save",
+  "settings.lightningAddress.saved": "Saved.",
+  "settings.lightningAddress.error.verifyUnsupported":
+    "This wallet does not let Payky check whether an invoice is paid (LUD-21 verify). Use another wallet.",
+  "settings.lightningAddress.error.rejected":
+    "The wallet refused the request. Check the address.",
+  "settings.lightningAddress.error.unreachable":
+    "The wallet could not be reached. Check the address and your connection.",
+  "settings.lightningAddress.error.invalid":
+    "The wallet answered with something Payky cannot use.",
 } as const

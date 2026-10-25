@@ -14,6 +14,7 @@ export const AccountKindSchema = z.enum([
   "cardSwitchio",
   "qerkoTerminal",
   "cashu",
+  "lightningAddress",
 ])
 
 export type AccountKind = z.output<typeof AccountKindSchema>

@@ -398,4 +398,5 @@ export const enPayment = {
   "refund.error.notPaid": "Only a paid payment can be refunded.",
   "refund.state.full": "Refunded {amount}",
   "refund.state.partial": "Partly refunded {amount}",
+  "paymentDetail.paymentMethod.lightningAddress": "Lightning address",
 } as const

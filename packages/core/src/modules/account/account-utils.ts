@@ -43,6 +43,16 @@ export const createCashuAccountId = (linkyAppOwnerId: OwnerId): AccountId =>
   createIdFromString<"Account">(`account:cashu:${linkyAppOwnerId}`)
 
 /**
+ * Derived from the lowercased address, so a different address is a different
+ * account and past transactions keep the one their money went to
+ * (lightning-address/0006).
+ */
+export const createLightningAddressAccountId = (address: string): AccountId =>
+  createIdFromString<"Account">(
+    `account:lightningAddress:${address.toLowerCase()}`
+  )
+
+/**
  * The fixed id the fiat bank account had before ids were derived from its
  * IBAN and currency. `fioPluginFixedIdMigration` matches the legacy plugin rows
  * that still point at it, and the Fio plugin is saved against it while no

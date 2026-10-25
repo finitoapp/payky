@@ -389,4 +389,5 @@ export const csPayment = {
   "refund.error.notPaid": "Vrátit jde jen zaplacenou platbu.",
   "refund.state.full": "Vráceno {amount}",
   "refund.state.partial": "Částečně vráceno {amount}",
+  "paymentDetail.paymentMethod.lightningAddress": "Lightning adresa",
 } satisfies Record<keyof typeof enPayment, string>

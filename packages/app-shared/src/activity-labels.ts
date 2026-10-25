@@ -31,6 +31,7 @@ export const paymentMethodLabelKey = {
   qerkoTerminal: "paymentDetail.paymentMethod.qerkoTerminal",
   spark: "paymentDetail.paymentMethod.spark",
   cashu: "paymentDetail.paymentMethod.cashu",
+  lightningAddress: "paymentDetail.paymentMethod.lightningAddress",
 } satisfies Record<AccountTransactionKind, TranslationKey>
 
 export const refundStateLabelKey = {

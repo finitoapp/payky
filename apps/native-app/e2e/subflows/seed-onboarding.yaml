@@ -1,6 +1,7 @@
 # web's `seededPage`: a fresh app, onboarded by the bridge (cash + IBAN, USD,
-# English), on the terminal home. Optional env QUERY: "spark=true",
-# "fiatCurrency=CZK".
+# English, recovery phrase verified), on the terminal home. Optional env
+# QUERY: "spark=true", "fiatCurrency=CZK", "unverifiedBackup=true" (keeps the
+# backup reminder, for a flow that tests it).
 appId: ${APP_ID}
 ---
 - runFlow: start.yaml

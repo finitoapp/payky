@@ -102,6 +102,10 @@ const preparingPaymentMethodKeys = {
   lightningAddress: "paymentWait.preparing.lightningAddress",
 } satisfies Record<PaymentMethodTab, TranslationKey>
 
+/** Read off the exhaustive table above, so a new tab cannot be left out. */
+const isPaymentMethodTab = (value: unknown): value is PaymentMethodTab =>
+  typeof value === "string" && Object.hasOwn(preparingPaymentMethodKeys, value)
+
 /**
  * A card decline and an unreadable terminal result must never read the
  * same: after an unreadable result the card may well have been charged, so
@@ -802,16 +806,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               <Tabs
                 value={activePaymentMethod.id}
                 onValueChange={(value) => {
-                  if (
-                    value === "spark" ||
-                    value === "iban" ||
-                    value === "cash" ||
-                    value === "card" ||
-                    value === "qerko" ||
-                    value === "cashu"
-                  ) {
-                    setSelectedPaymentMethod(value)
-                  }
+                  if (isPaymentMethodTab(value)) setSelectedPaymentMethod(value)
                 }}
                 className="w-fit items-center gap-4"
               >

@@ -8,6 +8,7 @@ import {
 import { startCashuAccountSyncJob } from "./jobs/cashu-account-sync-job.ts"
 import { startEetReportingJob } from "./jobs/eet-reporting-job.ts"
 import { startFioAccountTransactionSyncJob } from "./jobs/fio-account-transaction-sync-job.ts"
+import { startLightningAddressVerifyJob } from "./jobs/lightning-address-verify-job.ts"
 import { startQerkoTerminalSyncJob } from "./jobs/qerko-terminal-sync-job.ts"
 import { startSparkAccountTransactionSyncJob } from "./jobs/spark-account-transaction-sync-job.ts"
 
@@ -17,6 +18,7 @@ describe("getBackgroundJobsForRuntime", () => {
       startSparkAccountTransactionSyncJob,
       startEetReportingJob,
       startQerkoTerminalSyncJob,
+      startLightningAddressVerifyJob,
     ])
   })
 
@@ -26,6 +28,7 @@ describe("getBackgroundJobsForRuntime", () => {
       startSparkAccountTransactionSyncJob,
       startEetReportingJob,
       startQerkoTerminalSyncJob,
+      startLightningAddressVerifyJob,
     ])
   })
 

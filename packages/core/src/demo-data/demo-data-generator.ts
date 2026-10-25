@@ -18,6 +18,7 @@ import {
 import { createFakeCashuMint } from "../cashu/fake-cashu-mint.ts"
 import type { EvoluOwnerDep, MasterKeyDep, UuidDep } from "../deps.ts"
 import type { DeviceLanguage } from "../evolu/device-client.ts"
+import { createFakeLightningAddressWallet } from "../integrations/lnurl/fake-lightning-address-wallet.ts"
 import {
   createQerkoApiDep,
   type QerkoApiDep,
@@ -28,6 +29,7 @@ import {
   saveCashRegisterAccount,
   saveCashuAccount,
   saveFiatBankAccount,
+  saveLightningAddressAccount,
   saveQerkoTerminalAccount,
   saveSparkAccount,
 } from "../modules/account/account-actions.ts"
@@ -57,13 +59,17 @@ import {
   payPaymentWithSwitchioCard,
 } from "../modules/payment/payment-actions.ts"
 import { roundCashAmount } from "../modules/payment/payment-cash-utils.ts"
+import { syncLightningAddressPayment } from "../modules/payment/payment-lightning-address-actions.ts"
 import {
   createPreparedPayment,
   prepareCashuPaymentMethod,
   preparePaymentMethod,
 } from "../modules/payment/payment-preparation-actions.ts"
 import { startQerkoTerminalPayment } from "../modules/payment/payment-qerko-actions.ts"
-import { paymentSparkDetailsByIdQuery } from "../modules/payment/payment-queries.ts"
+import {
+  paymentLightningAddressByIdQuery,
+  paymentSparkDetailsByIdQuery,
+} from "../modules/payment/payment-queries.ts"
 import type { PaymentId } from "../modules/payment/payment-types.ts"
 import { saveQerkoPlugin } from "../modules/qerko-plugin/qerko-plugin-actions.ts"
 import { reconcileAccountTransaction } from "../modules/reconciliation-claim/reconciliation-claim-actions.ts"
@@ -169,16 +175,27 @@ const closingMinute = 21 * 60 + 30
 const dayPartOf = (minuteOfDay: number) =>
   minuteOfDay < 11 * 60 ? "morning" : minuteOfDay < 15 * 60 ? "noon" : "evening"
 
-type PaymentMethod = "cash" | "card" | "qerko" | "iban" | "spark" | "cashu"
+type PaymentMethod =
+  | "cash"
+  | "card"
+  | "qerko"
+  | "iban"
+  | "spark"
+  | "cashu"
+  | "lightningAddress"
 
 const paymentMethodWeights = {
-  cash: 0.45,
+  cash: 0.43,
   card: 0.2,
   qerko: 0.15,
   iban: 0.1,
   spark: 0.06,
   cashu: 0.04,
+  lightningAddress: 0.02,
 } satisfies Record<PaymentMethod, number>
+
+/** The café's own wallet: `wallet.example` is a reserved, unreachable domain. */
+const demoLightningAddress = NonEmptyString255("cafe@wallet.example")
 
 interface CatalogEntry {
   readonly id: CatalogItemId
@@ -280,6 +297,11 @@ export const generateDemoData =
         headers: { "content-type": "application/json" },
       })
 
+    const demoWallet = createFakeLightningAddressWallet({
+      address: demoLightningAddress,
+      now: () => simulatedNow,
+    })
+
     const fakeServices: SparkWalletDep &
       YadioApiDep &
       QerkoApiDep &
@@ -291,6 +313,8 @@ export const generateDemoData =
         if (url.includes("/exrates/")) {
           return jsonResponse({ BTC: btcRate(), timestamp: simulatedNow })
         }
+        const walletResponse = await demoWallet.fetch(url)
+        if (walletResponse !== null) return walletResponse
         // The Qerko terminal approves every payment for the amount asked.
         if (url.endsWith("/create-terminal-payment")) {
           const body = JSON.parse(String(init?.body)) as {
@@ -455,6 +479,15 @@ export const generateDemoData =
         "the Cashu account"
       )
       await writeCashuDefaultMint(run.deps.cashuShardStore, MAIN_MINT_URL)
+      const lightningAddressAccount = required(
+        await demoRun.ok(
+          saveLightningAddressAccount({
+            enabled: true,
+            address: demoLightningAddress,
+          })
+        ),
+        "the Lightning address account"
+      )
       await demoRun.orThrow(
         completeOnboarding({
           fiatCurrency: currency,
@@ -466,6 +499,7 @@ export const generateDemoData =
             "iban",
             "spark",
             "cashu",
+            "lightningAddress",
           ]),
         })
       )
@@ -629,7 +663,36 @@ export const generateDemoData =
             await settleCashu(paymentId)
             return
           }
+          case "lightningAddress": {
+            await settleLightningAddress(paymentId, deviceId)
+            return
+          }
         }
+      }
+
+      /** The customer pays the café's wallet; the verify poll's half follows. */
+      const settleLightningAddress = async (
+        paymentId: PaymentId,
+        deviceId: DeviceId
+      ) => {
+        await demoRun.orThrow(
+          preparePaymentMethod({
+            paymentId,
+            lightningAddress: { accountId: lightningAddressAccount },
+          })
+        )
+        advance(random.int(15, 45) * second)
+        const [detail] = await evolu.loadQuery(
+          paymentLightningAddressByIdQuery(paymentId)
+        )
+        if (detail === undefined || !demoWallet.pay(detail.lnInvoice)) {
+          throw new Error(
+            `Demo Lightning address payment ${paymentId} was not prepared.`
+          )
+        }
+        await demoRun.orThrow(
+          syncLightningAddressPayment({ paymentId, deviceId })
+        )
       }
 
       /** The customer pays the mint's invoice; the Cashu job's half follows. */

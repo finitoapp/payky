@@ -117,6 +117,7 @@ import {
   paymentByIdQuery,
   paymentCardSwitchioByIdQuery,
   paymentCardSwitchioByTransactionIdQuery,
+  paymentLightningAddressByIdQuery,
   paymentSparkDetailsByIdQuery,
 } from "./payment-queries.ts"
 import { createVariableSymbolFromSerialNumber } from "./payment-symbol-utils.ts"
@@ -875,9 +876,15 @@ export const payPaymentWithBoltCard =
   ({
     paymentId,
     uri,
+    method = "spark",
   }: {
     readonly paymentId: PaymentId
     readonly uri: string
+    /**
+     * Whose invoice the card pays: the tab it was tapped on. The other
+     * method's invoice stands in when this one has none.
+     */
+    readonly method?: "spark" | "lightningAddress"
   }): Task<void, PayPaymentWithBoltCardError, EvoluDep & DateDep & FetchDep> =>
   async (run) => {
     const paymentResult = await run(loadPayment(paymentId))
@@ -887,22 +894,30 @@ export const payPaymentWithBoltCard =
     const payable = await run(requirePayablePayment(payment))
     if (!payable.ok) return payable
 
-    const sparkRows = await run.deps.evolu.loadQuery(
-      paymentSparkDetailsByIdQuery(paymentId)
-    )
-
-    const spark = sparkRows[0]
-    if (spark?.lnInvoice === null || spark?.lnInvoice === undefined) {
+    const [[spark], [lightningAddress]] = await Promise.all([
+      run.deps.evolu.loadQuery(paymentSparkDetailsByIdQuery(paymentId)),
+      run.deps.evolu.loadQuery(paymentLightningAddressByIdQuery(paymentId)),
+    ])
+    const sparkInvoice =
+      spark?.lnInvoice === null || spark?.lnInvoice === undefined
+        ? null
+        : { invoice: spark.lnInvoice, amountSats: spark.amountSats }
+    const lightningAddressInvoice =
+      lightningAddress === undefined
+        ? null
+        : {
+            invoice: lightningAddress.lnInvoice,
+            amountSats: lightningAddress.amountSats,
+          }
+    const invoice =
+      method === "lightningAddress"
+        ? (lightningAddressInvoice ?? sparkInvoice)
+        : (sparkInvoice ?? lightningAddressInvoice)
+    if (invoice === null) {
       return err(createPaymentLightningInvoiceNotFoundError({ id: paymentId }))
     }
 
-    return run(
-      redeemLnurlWithdraw({
-        uri,
-        invoice: spark.lnInvoice,
-        amountSats: spark.amountSats,
-      })
-    )
+    return run(redeemLnurlWithdraw({ uri, ...invoice }))
   }
 
 /**

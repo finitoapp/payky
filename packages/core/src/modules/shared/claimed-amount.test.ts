@@ -191,10 +191,11 @@ describe("calculatePaymentExcess", () => {
 })
 
 describe("quotedAmountSats", () => {
-  // Spark and Cashu prepared on one payment, quoted at different rates.
+  // Three Lightning methods prepared on one payment, quoted at different rates.
   const quotes = {
     btc: NonNegativeInteger(8_600),
     cashu: NonNegativeInteger(8_640),
+    lightningAddress: NonNegativeInteger(8_590),
   }
 
   test("measures a Cashu settlement by the Cashu quote", () => {
@@ -203,6 +204,10 @@ describe("quotedAmountSats", () => {
 
   test("measures a Spark settlement by the Spark quote", () => {
     expect(quotedAmountSats("spark", quotes)).toBe(8_600)
+  })
+
+  test("measures a Lightning address settlement by its own quote", () => {
+    expect(quotedAmountSats("lightningAddress", quotes)).toBe(8_590)
   })
 
   test("gives no quote for a Cashu payment that never quoted Cashu", () => {

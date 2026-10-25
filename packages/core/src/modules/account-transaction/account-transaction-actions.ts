@@ -36,6 +36,7 @@ import type {
 import type { AccountTransactionId } from "./account-transaction-types.ts"
 import {
   deriveCashuAccountTransactionId,
+  deriveLightningAddressAccountTransactionId,
   deriveSparkAccountTransactionId,
 } from "./account-transaction-utils.ts"
 
@@ -93,10 +94,17 @@ const deriveAccountTransactionId = (
       InsertValues<typeof accountTransactionCashu>,
       "cashuOperationId"
     >
+    readonly lightning?: { readonly paymentHash: NonEmptyString }
   }
 ): AccountTransactionId | undefined => {
-  const { iban, spark, onchain, cashu } = detail
+  const { iban, spark, onchain, cashu, lightning } = detail
   if (cashu) return deriveCashuAccountTransactionId(cashu.cashuOperationId)
+  if (lightning) {
+    return deriveLightningAddressAccountTransactionId({
+      accountId,
+      paymentHash: lightning.paymentHash,
+    })
+  }
 
   if (iban) {
     if (iban.bankReference === null || iban.bankReference === undefined) {
@@ -139,8 +147,10 @@ const deriveAccountTransactionKind = (detail: {
   readonly spark?: unknown
   readonly onchain?: unknown
   readonly cashu?: unknown
+  readonly lightning?: unknown
 }): AccountTransactionRow["kind"] | undefined => {
   if (detail.cashu) return "cashu"
+  if (detail.lightning) return "lightningAddress"
   if (detail.iban) return "iban"
   if (detail.spark) return "spark"
   if (detail.onchain) return "onchain"
@@ -175,6 +185,15 @@ export type CreateAccountTransactionInput = Simplify<
       spark: AccountTransactionSparkInput
       onchain: AccountTransactionOnchainInput
       cashu: Omit<InsertValues<typeof accountTransactionCashu>, "id">
+      /**
+       * A payment settled to the merchant's Lightning address, proved by
+       * its preimage (lightning-address/0002). Spark's own Lightning leg
+       * goes under `spark.lightning`.
+       */
+      lightning: Omit<
+        InsertValues<typeof accountTransactionLightning>,
+        "id" | "paymentHash"
+      > & { readonly paymentHash: NonEmptyString }
     }>
 >
 
@@ -195,6 +214,7 @@ export const computeAccountTransactionRows = (
     spark,
     onchain,
     cashu,
+    lightning,
     source,
     ...input
   }: CreateAccountTransactionInput,
@@ -210,6 +230,7 @@ export const computeAccountTransactionRows = (
       spark,
       onchain,
       cashu,
+      lightning,
     }) ??
     createRowId<"AccountTransaction">()
   const sourceId = createIdFromString<"AccountTransactionSource">(
@@ -217,7 +238,7 @@ export const computeAccountTransactionRows = (
   )
   // No detail row means the caller's kind, or a cash-drawer movement.
   const kind =
-    deriveAccountTransactionKind({ iban, spark, onchain, cashu }) ??
+    deriveAccountTransactionKind({ iban, spark, onchain, cashu, lightning }) ??
     providedKind ??
     "cashRegister"
 
@@ -232,6 +253,7 @@ export const computeAccountTransactionRows = (
     spark,
     onchain,
     cashu,
+    lightning,
   }
 }
 
@@ -256,6 +278,7 @@ export const upsertAccountTransactionRows = (
     spark,
     onchain,
     cashu,
+    lightning,
   } = computed
 
   if (cashu) {
@@ -307,6 +330,14 @@ export const upsertAccountTransactionRows = (
         options
       )
     }
+  }
+
+  if (lightning) {
+    evolu.upsert(
+      "accountTransactionLightning",
+      removeUndefinedValues({ ...lightning, id }),
+      options
+    )
   }
 
   if (onchain) {

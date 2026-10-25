@@ -1,5 +1,10 @@
 import type { FetchError } from "../../deps.ts"
 import { defineError } from "../../error.ts"
+import type { LnurlError } from "../../integrations/lnurl/lnurl-client.ts"
+import type {
+  LightningAddressInvoiceMismatchError,
+  LightningAddressVerifyUnsupportedError,
+} from "../../integrations/lnurl/lnurl-pay-client.ts"
 import type { RedeemLnurlWithdrawError } from "../../integrations/lnurl/lnurl-withdraw-client.ts"
 import type {
   QerkoClientError,
@@ -281,7 +286,58 @@ export type CashuWalletNotSyncedError = ReturnType<
   typeof createCashuWalletNotSyncedError
 >
 
+export const createLightningAddressAccountNotFoundError = defineError(
+  "LightningAddressAccountNotFound"
+)<{ readonly id: AccountId }>()
+export type LightningAddressAccountNotFoundError = ReturnType<
+  typeof createLightningAddressAccountNotFoundError
+>
+
+/** The wallet takes no payment of this many sats (LUD-06 min/maxSendable). */
+export const createLightningAddressAmountOutOfRangeError = defineError(
+  "LightningAddressAmountOutOfRange"
+)<{
+  readonly amountSats: number
+  readonly minSendableSats: number
+  readonly maxSendableSats: number
+}>()
+export type LightningAddressAmountOutOfRangeError = ReturnType<
+  typeof createLightningAddressAmountOutOfRangeError
+>
+
+/**
+ * The verify URL answered for another invoice than the one Payky stored, so
+ * its `settled` says nothing about this payment (lightning-address/0002).
+ */
+export const createLightningAddressVerifyMismatchError = defineError(
+  "LightningAddressVerifyMismatch"
+)<{ readonly id: PaymentId }>()
+export type LightningAddressVerifyMismatchError = ReturnType<
+  typeof createLightningAddressVerifyMismatchError
+>
+
+export const createPaymentLightningAddressNotFoundError = defineError(
+  "PaymentLightningAddressNotFound"
+)<{ readonly id: PaymentId }>()
+export type PaymentLightningAddressNotFoundError = ReturnType<
+  typeof createPaymentLightningAddressNotFoundError
+>
+
+export type SyncLightningAddressPaymentError =
+  | PaymentLightningAddressNotFoundError
+  | LightningAddressVerifyMismatchError
+  | LightningAddressInvoiceMismatchError
+  | LnurlError
+
+export type PrepareLightningAddressMethodError =
+  | LightningAddressAccountNotFoundError
+  | LightningAddressAmountOutOfRangeError
+  | LightningAddressVerifyUnsupportedError
+  | LightningAddressInvoiceMismatchError
+  | LnurlError
+
 export type PreparePaymentMethodError =
+  | PrepareLightningAddressMethodError
   | PaymentNotFoundError
   | ZeroAmountNotPayableError
   | CashRegisterAccountNotFoundError

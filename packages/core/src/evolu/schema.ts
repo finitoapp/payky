@@ -69,6 +69,7 @@ import {
   paymentCashu,
   paymentIban,
   paymentIndexes,
+  paymentLightningAddress,
   paymentQerkoTerminal,
 } from "../modules/payment/payment.ts"
 import {
@@ -138,6 +139,7 @@ export const AppSchema = {
   paymentCardSwitchio,
   paymentQerkoTerminal,
   paymentCashu,
+  paymentLightningAddress,
   paymentLine,
   paymentNumber,
   paymentLastNumber,

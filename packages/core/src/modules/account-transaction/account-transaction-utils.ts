@@ -76,3 +76,19 @@ export const deriveCashuAccountTransactionId = (
   createIdFromString<"AccountTransaction">(
     `accountTransaction:cashu:${cashuOperationId}`
   )
+
+/**
+ * The id a payment settled to a Lightning address is recorded under: the
+ * account and the invoice's payment hash, so two devices that saw the same
+ * preimage write one row (lightning-address/0002).
+ */
+export const deriveLightningAddressAccountTransactionId = ({
+  accountId,
+  paymentHash,
+}: {
+  readonly accountId: AccountId
+  readonly paymentHash: NonEmptyString
+}): AccountTransactionId =>
+  createIdFromString<"AccountTransaction">(
+    `accountTransaction:lightningAddress:${accountId}:${paymentHash}`
+  )

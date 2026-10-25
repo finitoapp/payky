@@ -376,6 +376,7 @@ export const loadBillClosedAtIfCovered =
       /** The quotes `quotedAmountSats` picks from; see `calculateClaimedSum`. */
       readonly btcAmountSats: NonNegativeInteger | null
       readonly cashuAmountSats: NonNegativeInteger | null
+      readonly lightningAddressAmountSats: NonNegativeInteger | null
     },
     claimedTransaction: {
       readonly id: AccountTransactionId
@@ -422,6 +423,7 @@ export const loadBillClosedAtIfCovered =
         paymentAmountSats: quotedAmountSats(claimedTransaction.kind, {
           btc: payment.btcAmountSats,
           cashu: payment.cashuAmountSats,
+          lightningAddress: payment.lightningAddressAmountSats,
         }),
       },
     ])

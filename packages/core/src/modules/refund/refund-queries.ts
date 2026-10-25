@@ -7,6 +7,7 @@ import {
 import { createQuery } from "../../evolu/schema.ts"
 import type { BillId } from "../bill/bill-types.ts"
 import type { PaymentId } from "../payment/payment-types.ts"
+import { quotedAmountSatsSql } from "../shared/claimed-amount.ts"
 import type { RefundId } from "./refund-types.ts"
 
 const refundColumns = [
@@ -61,6 +62,11 @@ const selectRefundSummaries = (
         .onRef("paymentBtc.id", "=", "payment.id")
         .on("paymentBtc.isDeleted", "is not", sqliteTrue)
     )
+    .leftJoin("paymentCashu", (join) =>
+      join
+        .onRef("paymentCashu.id", "=", "payment.id")
+        .on("paymentCashu.isDeleted", "is not", sqliteTrue)
+    )
     .select((eb) => [
       "refund.paymentId",
       "refund.amount",
@@ -70,7 +76,6 @@ const selectRefundSummaries = (
       "payment.amount as paymentAmount",
       "payment.tipAmount as paymentTipAmount",
       "payment.currency as paymentCurrency",
-      "paymentBtc.amountSats as paymentAmountSats",
       "paymentCashRegister.receivedAmount as cashReceivedAmount",
       evoluJsonArrayFrom(
         eb
@@ -84,6 +89,11 @@ const selectRefundSummaries = (
             "reconciliationClaim.accountTransactionId",
             "accountTransaction.amount",
             "accountTransaction.currency",
+            quotedAmountSatsSql({
+              kind: "accountTransaction.kind",
+              btc: "paymentBtc.amountSats",
+              cashu: "paymentCashu.amountSats",
+            }).as("paymentAmountSats"),
           ])
           .whereRef("reconciliationClaim.paymentId", "=", "payment.id")
           .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)

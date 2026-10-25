@@ -4,6 +4,7 @@ import type { AccountTransactionId } from "../account-transaction/account-transa
 import {
   type ClaimedAmount,
   calculatePaymentExcess,
+  quotedAmountSats,
   sumDistinctClaimedAmounts,
 } from "./claimed-amount.ts"
 import type { Currency } from "./schema.ts"
@@ -186,5 +187,25 @@ describe("calculatePaymentExcess", () => {
     expect(
       calculatePaymentExcess({ claims, amount: NonNegativeInteger(amount) })
     ).toBe(excess)
+  })
+})
+
+describe("quotedAmountSats", () => {
+  // Spark and Cashu prepared on one payment, quoted at different rates.
+  const quotes = {
+    btc: NonNegativeInteger(8_600),
+    cashu: NonNegativeInteger(8_640),
+  }
+
+  test("measures a Cashu settlement by the Cashu quote", () => {
+    expect(quotedAmountSats("cashu", quotes)).toBe(8_640)
+  })
+
+  test("measures a Spark settlement by the Spark quote", () => {
+    expect(quotedAmountSats("spark", quotes)).toBe(8_600)
+  })
+
+  test("gives no quote for a Cashu payment that never quoted Cashu", () => {
+    expect(quotedAmountSats("cashu", { ...quotes, cashu: null })).toBeNull()
   })
 })

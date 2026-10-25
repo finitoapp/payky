@@ -197,12 +197,12 @@ describe("summarizeRefundsByPayment", () => {
     paymentAmount: NonNegativeInteger(25_000),
     paymentTipAmount: NonNegativeInteger(tipAmount),
     paymentCurrency: "CZK" as const,
-    paymentAmountSats: null,
     cashReceivedAmount: null,
     paymentClaims: claimAmounts.map((claimAmount, index) => ({
       accountTransactionId: `tx-${index}` as AccountTransactionId,
       amount: claimAmount,
       currency: "CZK" as const,
+      paymentAmountSats: null,
     })),
   })
 

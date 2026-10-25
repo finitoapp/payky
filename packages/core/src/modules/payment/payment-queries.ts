@@ -5,15 +5,16 @@ import {
 } from "@evolu/common"
 import { createQuery } from "../../evolu/schema.ts"
 import type { BillId } from "../bill/bill-types.ts"
+import { quotedAmountSatsSql } from "../shared/claimed-amount.ts"
 import type { NonEmptyString, NonEmptyString255 } from "../shared/schema.ts"
 import type { PaymentId } from "./payment-types.ts"
 
 /**
- * Just the payment fields bill coverage needs, plus the satoshi amount a
- * BTC payment was created for. `paymentByIdQuery` cannot carry the last
- * one — `amountSats` lives on `paymentBtc` — and without it a satoshi
- * settlement has no rate to convert back to fiat with. See
- * `calculateClaimedSum`.
+ * Just the payment fields bill coverage needs, plus the satoshis each
+ * Lightning method was quoted for. `paymentByIdQuery` cannot carry those —
+ * they live on the method rows — and without them a satoshi settlement has
+ * no rate to convert back to fiat with. See `calculateClaimedSum` and
+ * `quotedAmountSats`.
  */
 export const paymentBillCoverageByIdQuery = (idValue: PaymentId) =>
   createQuery((db) =>
@@ -24,13 +25,19 @@ export const paymentBillCoverageByIdQuery = (idValue: PaymentId) =>
           .onRef("paymentBtc.id", "=", "payment.id")
           .on("paymentBtc.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentCashu", (join) =>
+        join
+          .onRef("paymentCashu.id", "=", "payment.id")
+          .on("paymentCashu.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "payment.id",
         "payment.billId",
         "payment.amount",
         "payment.currency",
         "payment.tipAmount",
-        "paymentBtc.amountSats",
+        "paymentBtc.amountSats as btcAmountSats",
+        "paymentCashu.amountSats as cashuAmountSats",
       ])
       .where("payment.id", "=", idValue)
       .where("payment.amount", "is not", null)
@@ -399,6 +406,17 @@ export const paymentReconciliationsQuery = (paymentId: PaymentId) =>
           .onRef("accountTransactionLightning.id", "=", "accountTransaction.id")
           .on("accountTransactionLightning.isDeleted", "is not", sqliteTrue)
       )
+      // The quote each claim is measured against (`quotedAmountSats`).
+      .leftJoin("paymentBtc", (join) =>
+        join
+          .onRef("paymentBtc.id", "=", "reconciliationClaim.paymentId")
+          .on("paymentBtc.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("paymentCashu", (join) =>
+        join
+          .onRef("paymentCashu.id", "=", "reconciliationClaim.paymentId")
+          .on("paymentCashu.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "reconciliationClaim.id",
         "reconciliationClaim.source",
@@ -417,6 +435,11 @@ export const paymentReconciliationsQuery = (paymentId: PaymentId) =>
         "accountTransactionIban.bankReference",
         "accountTransactionSpark.sparkTransferId",
         "accountTransactionLightning.paymentHash",
+        quotedAmountSatsSql({
+          kind: "accountTransaction.kind",
+          btc: "paymentBtc.amountSats",
+          cashu: "paymentCashu.amountSats",
+        }).as("paymentAmountSats"),
       ])
       .where("reconciliationClaim.paymentId", "=", paymentId)
       .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
@@ -520,12 +543,21 @@ export const latestPaymentsQuery = (limit: number) =>
                 .onRef("ownPaymentBtc.id", "=", "ownClaim.paymentId")
                 .on("ownPaymentBtc.isDeleted", "is not", sqliteTrue)
             )
+            .leftJoin("paymentCashu as ownPaymentCashu", (join) =>
+              join
+                .onRef("ownPaymentCashu.id", "=", "ownClaim.paymentId")
+                .on("ownPaymentCashu.isDeleted", "is not", sqliteTrue)
+            )
             .select([
               "ownClaim.accountTransactionId",
               "ownClaimTx.kind as transactionKind",
               "ownClaimTx.amount",
               "ownClaimTx.currency",
-              "ownPaymentBtc.amountSats as paymentAmountSats",
+              quotedAmountSatsSql({
+                kind: "ownClaimTx.kind",
+                btc: "ownPaymentBtc.amountSats",
+                cashu: "ownPaymentCashu.amountSats",
+              }).as("paymentAmountSats"),
             ])
             // The claim's payment is this row's payment (see the `whereRef`
             // below), so its amount and currency come from the outer query
@@ -635,12 +667,21 @@ export const latestPaymentsQuery = (limit: number) =>
                 .onRef("billPaymentBtc.id", "=", "billPayment.id")
                 .on("billPaymentBtc.isDeleted", "is not", sqliteTrue)
             )
+            .leftJoin("paymentCashu as billPaymentCashu", (join) =>
+              join
+                .onRef("billPaymentCashu.id", "=", "billPayment.id")
+                .on("billPaymentCashu.isDeleted", "is not", sqliteTrue)
+            )
             .select([
               "billPayment.id as paymentId",
               "billPayment.tipAmount",
               "billPayment.amount as paymentAmount",
               "billPayment.currency as paymentCurrency",
-              "billPaymentBtc.amountSats as paymentAmountSats",
+              quotedAmountSatsSql({
+                kind: "billClaimTx.kind",
+                btc: "billPaymentBtc.amountSats",
+                cashu: "billPaymentCashu.amountSats",
+              }).as("paymentAmountSats"),
               "billClaim.accountTransactionId",
               "billClaimTx.amount",
               "billClaimTx.currency",

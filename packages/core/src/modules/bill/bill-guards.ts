@@ -18,10 +18,14 @@ import { err, ok, type Result, type Task } from "@evolu/common"
 
 import type { DateDep } from "../../deps.ts"
 import { defineError } from "../../error.ts"
-import type { AccountTransactionId } from "../account-transaction/account-transaction-types.ts"
+import type {
+  AccountTransactionId,
+  AccountTransactionKind,
+} from "../account-transaction/account-transaction-types.ts"
 import { loadCalculatedBillLineSummaries } from "../bill-line/bill-line-actions.ts"
 import type { BillLineSummary } from "../bill-line/bill-line-summary.ts"
 import type { PaymentId } from "../payment/payment-types.ts"
+import { quotedAmountSats } from "../shared/claimed-amount.ts"
 import type { EvoluDep } from "../shared/evolu-deps.ts"
 import { getFirstOr } from "../shared/result.ts"
 import {
@@ -369,11 +373,13 @@ export const loadBillClosedAtIfCovered =
       readonly amount: NonNegativeInteger
       readonly currency: FiatCurrency
       readonly tipAmount: NonNegativeInteger
-      /** Only a BTC payment has one; see `calculateClaimedSum`. */
-      readonly amountSats: NonNegativeInteger | null
+      /** The quotes `quotedAmountSats` picks from; see `calculateClaimedSum`. */
+      readonly btcAmountSats: NonNegativeInteger | null
+      readonly cashuAmountSats: NonNegativeInteger | null
     },
     claimedTransaction: {
       readonly id: AccountTransactionId
+      readonly kind: AccountTransactionKind
       readonly amount: number
       readonly currency: Currency
     }
@@ -413,7 +419,10 @@ export const loadBillClosedAtIfCovered =
         tipAmount: payment.tipAmount,
         paymentAmount: payment.amount,
         paymentCurrency: payment.currency,
-        paymentAmountSats: payment.amountSats,
+        paymentAmountSats: quotedAmountSats(claimedTransaction.kind, {
+          btc: payment.btcAmountSats,
+          cashu: payment.cashuAmountSats,
+        }),
       },
     ])
 

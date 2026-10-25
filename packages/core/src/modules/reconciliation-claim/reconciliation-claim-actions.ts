@@ -3,7 +3,10 @@ import { type MutationOptions, ok, type Task } from "@evolu/common"
 import type { DateDep, EvoluOwnerDep } from "../../deps.ts"
 import type { CreateAccountTransactionInput } from "../account-transaction/account-transaction-actions.ts"
 import { accountTransactionAmountByIdQuery } from "../account-transaction/account-transaction-queries.ts"
-import type { AccountTransactionId } from "../account-transaction/account-transaction-types.ts"
+import type {
+  AccountTransactionId,
+  AccountTransactionKind,
+} from "../account-transaction/account-transaction-types.ts"
 import { upsertBillClosedAt } from "../bill/bill-actions.ts"
 import { loadBillClosedAtIfCovered } from "../bill/bill-guards.ts"
 import type { BillId } from "../bill/bill-types.ts"
@@ -62,6 +65,7 @@ export const loadBillClosedAtForPayment =
      */
     claimedTransaction: {
       readonly id: AccountTransactionId
+      readonly kind: AccountTransactionKind
       readonly amount: number
       readonly currency: Currency
     }
@@ -213,6 +217,7 @@ const writeClaimAndCloseBillIfCovered =
         : await run.ok(
             loadBillClosedAtForPayment(claim.paymentId, {
               id: claim.accountTransactionId,
+              kind: claimedTransaction.kind,
               amount: claimedTransaction.amount,
               currency: claimedTransaction.currency,
             })

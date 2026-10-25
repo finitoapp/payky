@@ -32,12 +32,18 @@ export const accountTransactionAmountByIdQuery = (id: AccountTransactionId) =>
   createQuery((db) =>
     db
       .selectFrom("accountTransaction")
-      .select(["accountTransaction.amount", "accountTransaction.currency"])
+      .select([
+        "accountTransaction.kind",
+        "accountTransaction.amount",
+        "accountTransaction.currency",
+      ])
       .where("accountTransaction.id", "=", id)
       .where("accountTransaction.isDeleted", "is not", sqliteTrue)
       .where("accountTransaction.amount", "is not", null)
       .where("accountTransaction.currency", "is not", null)
+      .where("accountTransaction.kind", "is not", null)
       .$narrowType<{
+        kind: KyselyNotNull
         amount: KyselyNotNull
         currency: KyselyNotNull
       }>()

@@ -13,6 +13,8 @@ import {
   holdCashuReceive,
 } from "../modules/payment/payment-actions.ts"
 import { prepareCashuPaymentMethod } from "../modules/payment/payment-preparation-actions.ts"
+import { activeClaimedTransactionsByPaymentIdQuery } from "../modules/reconciliation-claim/reconciliation-claim-queries.ts"
+import { sumDistinctClaimedAmounts } from "../modules/shared/claimed-amount.ts"
 import { NonNegativeInteger } from "../modules/shared/schema.ts"
 import {
   createCashuTest,
@@ -128,6 +130,22 @@ describe("bookCashuOperations", () => {
         paymentId,
       }),
     ])
+  })
+
+  test("counts a settled topup as the payment's amount in its own currency", async () => {
+    const s = await setup()
+    await using _ = s.t
+    const { paymentId, operation } = await newPayment(s)
+    s.t.mint.payMintQuote(operation.quoteId ?? "")
+    await using run = testCreateRun(s.deps)
+    await run.orThrow(claimCashuTopup(operation.id))
+    await book(s.deps)
+
+    const claims = await s.deps.evolu.loadQuery(
+      activeClaimedTransactionsByPaymentIdQuery(paymentId)
+    )
+    expect(claims).toHaveLength(1)
+    expect(sumDistinctClaimedAmounts(claims)).toBe(12_900)
   })
 
   test("never rewrites what it booked", async () => {

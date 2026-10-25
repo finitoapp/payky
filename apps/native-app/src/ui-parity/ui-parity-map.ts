@@ -486,6 +486,14 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
+    native: "src/features/payment-wait/payment-wait-lightning-address-tab.tsx",
+    web: [
+      "apps/web-app/src/features/payment-wait/payment-wait-lightning-address-tab.tsx",
+      "apps/web-app/src/features/payment-wait/payment-wait-qr-request.tsx",
+    ],
+    status: "matched",
+  },
+  {
     native: "src/features/payment-wait/payment-wait-iban-tab.tsx",
     web: [
       "apps/web-app/src/features/payment-wait/payment-wait-iban-tab.tsx",

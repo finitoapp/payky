@@ -476,6 +476,11 @@ function PaymentDetail({ paymentId }: { readonly paymentId: PaymentId }) {
                         />
                         <OptionalRow
                           mono
+                          label={t("paymentDetail.transaction.preimage")}
+                          value={reconciliation.preimage}
+                        />
+                        <OptionalRow
+                          mono
                           label={t("paymentDetail.reconciliation.id")}
                           value={reconciliation.id}
                         />

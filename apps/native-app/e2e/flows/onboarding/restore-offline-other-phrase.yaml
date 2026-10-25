@@ -10,9 +10,9 @@ tags: [onboarding]
     file: ../../subflows/tap-label.yaml
     env:
       LABEL: ${output.t["accountRestore.action.otherPhrase"]}
+# The grid is empty again, with the restore button below it.
+- assertVisible: '${output.t["onboarding.restore.counter"].replace("{count}", "0").replace("{total}", "20")}'
 - runFlow:
-    file: ../../subflows/assert-label.yaml
+    file: ../../subflows/scroll-to-label.yaml
     env:
       LABEL: ${output.t["onboarding.restore.action"]}
-# The grid is empty again.
-- assertVisible: '${output.t["onboarding.restore.counter"].replace("{count}", "0").replace("{total}", "20")}'

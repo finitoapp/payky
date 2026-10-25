@@ -8,15 +8,6 @@ const slip39WordSet = new Set(Slip39WordList)
 const bip39WordSet = new Set(bip39WordList)
 const foreignSeedWordCounts = new Set([12, 15, 18, 21, 24])
 
-/**
- * Payky's share parameters fix the third and fourth word of every phrase it
- * generates, so a typing aid can name them (zero-based slot -> word).
- */
-export const restoreFixedWords: Readonly<Record<number, string>> = {
-  2: "academic",
-  3: "academic",
-}
-
 export interface RestoreWordsFill {
   /** The slot to focus next: after the last word written, or the same slot while its word is still being typed. */
   readonly nextIndex: number

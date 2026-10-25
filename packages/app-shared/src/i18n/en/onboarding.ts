@@ -163,7 +163,6 @@ export const enOnboarding = {
   "onboarding.restore.action": "Restore account",
   "onboarding.restore.counter": "{count}/{total} words",
   "onboarding.restore.description": "Enter the 20 words from Payky",
-  "onboarding.restore.fixedWordHint": "usually {word}",
   "onboarding.restore.paste": "Paste from clipboard",
   "onboarding.restore.pasteFailed":
     "Could not read the clipboard. Paste into the first field instead.",

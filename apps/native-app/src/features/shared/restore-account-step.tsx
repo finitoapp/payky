@@ -6,7 +6,6 @@ import {
   emptyRestoreWords,
   fillRestoreWords,
   RESTORE_WORD_COUNT,
-  restoreFixedWords,
   restoreWordsToPhrase,
 } from "@payky/app-shared/restore-words"
 import * as Clipboard from "expo-clipboard"
@@ -171,7 +170,6 @@ export function RestoreAccountStep({
                   aria-label={t("onboarding.restore.wordLabel", {
                     index: index + 1,
                   })}
-                  placeholder={restoreFixedWords[index]}
                   invalid={
                     visibleError !== null || invalidIndexes.includes(index)
                   }

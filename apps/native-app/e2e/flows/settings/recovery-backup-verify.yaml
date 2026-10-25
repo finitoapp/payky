@@ -12,11 +12,12 @@ tags: [settings]
 - assertNotVisible:
     id: backup-reminder
 - runFlow: ../../subflows/take-cash-payment.yaml
+# Home opens covered by the reminder, so wait for it, not for home's Pay.
 - runFlow:
     file: ../../subflows/goto.yaml
     env:
       ROUTE: ""
-      TEXT: ${output.t["home.pay"]}
+      TEXT: ${output.re(output.t["settings.security.reminder.text"])}
 - extendedWaitUntil:
     visible:
       id: backup-reminder

@@ -112,7 +112,12 @@ export function RestoreAccountForm({
         </Button>
       </div>
       <div className="mt-4 text-center">
-        <Button type="button" variant="link" onClick={onTransfer}>
+        <Button
+          type="button"
+          variant="link"
+          className="h-auto whitespace-normal text-center"
+          onClick={onTransfer}
+        >
           {t("onboarding.restore.transferLink")}
         </Button>
       </div>

@@ -10,7 +10,10 @@ import {
   legacyFiatBankAccountId,
 } from "@payky/core/modules/account/account-utils"
 import { createAccountTransaction } from "@payky/core/modules/account-transaction/account-transaction-actions"
-import { completeOnboarding } from "@payky/core/modules/app-settings/app-settings-actions"
+import {
+  completeOnboarding,
+  markRecoveryPhraseVerified,
+} from "@payky/core/modules/app-settings/app-settings-actions"
 import { PaymentMethodOrderJson } from "@payky/core/modules/app-settings/app-settings-utils"
 import { cancelBill } from "@payky/core/modules/bill/bill-actions"
 import { billByIdQuery } from "@payky/core/modules/bill/bill-queries"
@@ -71,6 +74,7 @@ declare global {
     __e2eSeedOnboarding?: (options?: {
       readonly spark?: boolean
       readonly fiatCurrency?: FiatCurrency
+      readonly unverifiedBackup?: boolean
     }) => Promise<void>
     __e2eMarkSparkPaid?: (paymentId: string) => Promise<void>
     __e2eMarkIbanPaid?: (paymentId: string) => Promise<void>
@@ -104,6 +108,9 @@ declare global {
  * rows the onboarding UI would (cash + IBAN enabled, USD, tips on defaults;
  * pass `{ spark: true }` to also enable Spark, `{ fiatCurrency }` to seed a
  * different currency), so e2e specs can skip clicking through onboarding.
+ * It also marks the recovery phrase verified, so the backup reminder
+ * (account/0006) does not cover home after the first payment; pass
+ * `{ unverifiedBackup: true }` for a spec that tests the reminder.
  *
  * Also exposes `window.__e2eMarkSparkPaid`/`window.__e2eMarkIbanPaid`, which
  * simulate an incoming Spark transfer/bank transaction settling a prepared
@@ -229,6 +236,9 @@ export function E2eTestBridge() {
           ),
         })
       )
+      if (!options?.unverifiedBackup) {
+        await run.ok(markRecoveryPhraseVerified())
+      }
     }
 
     window.__e2eSeedLegacyFioPlugin = async () => {

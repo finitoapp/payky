@@ -4,6 +4,8 @@ import { translate } from "./support/i18n.ts"
 import { gotoPage } from "./support/navigation.ts"
 import { createPayment, markCashPaidAndSettle } from "./support/payment.ts"
 
+test.use({ unverifiedBackup: true })
+
 const homeReady = (page: import("@playwright/test").Page) =>
   expect(
     page.getByRole("button", { name: translate("en", "home.pay") })

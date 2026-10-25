@@ -3,12 +3,13 @@ appId: ${APP_ID}
 tags: [settings]
 ---
 - runFlow: ../../subflows/seed-onboarding.yaml
+# Straight to the backup screen, as web's openRecoveryWords: Security's
+# button reads differently once the backup is verified.
 - runFlow:
     file: ../../subflows/goto.yaml
     env:
-      ROUTE: settings/security
-      TEXT: ${output.t["settings.security.title"]}
-- tapOn: ${output.t["settings.security.backup.open"]}
+      ROUTE: settings/security/backup
+      TEXT: ${output.t["settings.security.mnemonic.title"]}
 - tapOn: ${output.t["settings.security.backup.start"]}
 # A plausible phrase: at least twelve words.
 - assertVisible:

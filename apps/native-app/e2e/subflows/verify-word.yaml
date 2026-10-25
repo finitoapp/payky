@@ -2,6 +2,10 @@
 # (env N): the word from output.phrase when MODE is "right", else a wrong one.
 appId: ${APP_ID}
 ---
-- tapOn: 'Word ${N}'
+# The field's label is its aria-label: an `id:` on web, as tap-input taps it.
+- runFlow:
+    file: tap-input.yaml
+    env:
+      LABEL: Word ${N}
 - eraseText
 - inputText: '${MODE == "right" ? output.phrase.split(" ")[N - 1] : "zzz"}'

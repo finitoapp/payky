@@ -1,4 +1,4 @@
-# Payment sync (FIO, Spark & Cashu)
+# Payment sync (FIO, Spark, Cashu & LNURL verify)
 
 How the FIO (bank IBAN) and Spark (Bitcoin/Lightning) background jobs turn
 external activity into local data. Complements `docs/bill-payment-states.md`,
@@ -84,6 +84,7 @@ most one winner) and claim the first match, ties broken by `payment.id`:
 | `spark` | account + `BTC` + amount(sats) + Lightning or Spark invoice match | yes |
 | `cashRegister` | account + amount + currency | no — only `markPaymentPaidCash` creates this kind |
 | `cashu` | account + mint + the payment's quote id, or the receive id it holds; never the amount | yes — the Cashu job |
+| `lightningAddress` | not matched: the verify poll knows its payment and claims it directly | yes — the LNURL verify job, below |
 
 No match = transaction stays unclaimed; not an error. A claim also refreshes
 the bill's `closedAt` cache in the same batch (see `bill-payment-states.md`).
@@ -106,6 +107,35 @@ Multi-device safety comes from Linky's rules, not locks: operation ids derive
 from the mint and quote (or the token text), the claim stops when someone else
 got there first (`cashu/0004`), and the booked transaction's id derives from
 the operation id.
+
+## LNURL verify
+
+`background-jobs/jobs/lightning-address-verify-job.ts` settles payments
+taken into the merchant's own wallet through a Lightning address (the
+`lightning-address/` decisions). Nothing arrives from the wallet: Payky
+asks. It runs on native and browser (the wallets answer cross-origin), not
+in the CLI.
+
+| Part | What it does |
+|---|---|
+| Work | `unsettledLightningAddressPaymentsQuery`: every `paymentLightningAddress` row without a preimage, on a payment not deleted and not claimed another way. A row is dropped a day after its invoice expired. |
+| Poll | `syncLightningAddressPayment` asks the invoice's LUD-21 verify URL: first after 2 s, then doubling up to a minute, and at once on reconnect. The wait screen polls every 2 s besides. |
+| Proof | Paid only when verify answers for the stored invoice with a preimage whose SHA-256 is its payment hash (`lightning-address/0002`); `settled` without one writes nothing and the wait screen warns. |
+| Record | One batch: `accountTransaction` (kind `lightningAddress`, sats) + `accountTransactionLightning` (invoice, hash, preimage), the automatic claim and bill `closedAt`, and `paymentLightningAddress.preimage`. |
+
+Multi-device safety comes from the ids, not locks: the transaction's id
+derives from the account and the payment hash, the claim's from the payment
+and the transaction, so two devices that saw the same preimage write the
+same rows.
+
+Which wallets reveal the preimage is known only from real payments. From
+research before the implementation: Alby's callback
+returns `verify` and allows any origin; Blink, Breez and Minibits answer
+their metadata to any origin, Coinos echoes the origin. ZEUS Pay's verify
+carries no preimage, so its payments never settle; Wallet of Satoshi is
+expected to return no `verify` and be refused on save. None of these has
+been tried against a real payment yet: record each one that is, here, not
+in the UI.
 
 ## Known limitations
 

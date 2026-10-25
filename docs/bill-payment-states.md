@@ -64,7 +64,9 @@ query performance.
   `derivePaymentStatus` returns — the payment is unambiguously Paid either
   way — it only silences a separate, additive warning about the *amount*.
 - `payment.expiresAt: timestamp | null` — set at creation time from the
-  payment method's own expiry (e.g. a Lightning invoice's `expirySeconds`).
+  payment method's own expiry (e.g. a Lightning invoice's `expirySeconds`,
+  or the expiry of the invoice the merchant's Lightning address issued,
+  `lightning-address/0004`; with both prepared at once, the earlier one).
   `null` means the payment never expires on its own (cash, card terminal
   — Switchio or Qerko —, IBAN transfer — there is no natural "too late" for those; staff waits as
   long as it takes, or explicitly cancels — see ["Editing

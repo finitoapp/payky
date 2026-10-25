@@ -1,0 +1,14 @@
+# web payment-lightning-address.spec.ts: "take a payment into the merchant's
+# wallet and see it settle". The mock's shop@ wallet pays its invoice some
+# seconds after issuing it, where web's spec pays it itself.
+appId: ${APP_ID}
+tags: [payment-lightning-address]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/lightning-address-payment.yaml
+    env:
+      ADDRESS: shop@wallet.e2e.test
+- extendedWaitUntil:
+    visible: ${output.t["paymentWait.paid"]}
+    timeout: 30000

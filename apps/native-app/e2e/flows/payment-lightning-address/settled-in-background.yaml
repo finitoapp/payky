@@ -1,0 +1,20 @@
+# web payment-lightning-address.spec.ts: "a payment made after the screen
+# closed is settled in the background". The flow leaves the wait screen
+# before the mock's shop@ wallet pays the invoice; the verify job settles it.
+appId: ${APP_ID}
+tags: [payment-lightning-address]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/lightning-address-payment.yaml
+    env:
+      ADDRESS: shop@wallet.e2e.test
+- runFlow: ../../subflows/read-ids.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: activity/${output.paymentId}
+      TEXT: ${output.t["paymentDetail.title"]}
+- extendedWaitUntil:
+    visible: ${output.t["payment.status.paid"]}
+    timeout: 45000

@@ -1,0 +1,25 @@
+# web payment-lightning-address.spec.ts's `saveAddress`: opens the Lightning
+# address settings, enters ADDRESS and submits it. The wallet is probed, so
+# the caller waits for the outcome.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: settings/payment-accounts/lightning-address
+      TEXT: ${output.t["settings.lightningAddress.form.title"]}
+- runFlow:
+    file: fill-input.yaml
+    env:
+      LABEL: ${output.t["settings.lightningAddress.address.label"]}
+      VALUE: ${ADDRESS}
+      PLACEHOLDER: ${output.t["settings.lightningAddress.address.placeholder"]}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["settings.lightningAddress.submit"]}

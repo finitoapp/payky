@@ -93,6 +93,9 @@ assertions.
   `${BASE_URL}e2e/fake?spark=funded&next=/` and wait for home (`next=`
   replaces the bridge, so there is no `E2E OK`); a later link reloads web
   and drops it, so take links (ids, invoices) before it.
+  `save-lightning-address` (`ADDRESS`) is web's `saveAddress`, leaving the
+  probe's outcome to the caller; `lightning-address-payment` (`ADDRESS`) is
+  `setUpPayment`: saved, a 5.90 payment, its Lightning address tab with the QR.
   `allow-assistant` (`OPTION`, the access option's title) is the
   assistant spec's `allowAssistant`, in-app from home (Settings > About >
   Data and privacy, then back to Settings), and `open-assistant` opens the
@@ -157,6 +160,10 @@ assertions.
   question and 400s when the tools, roles or bearer token are not what web's
   spec asserted; `mocks/donation.ts` settles an invoice some seconds after
   creating it, so a flow asserts "waiting" first, then "paid";
+  `mocks/lightning-address.ts` is the merchant's wallet on
+  `wallet.e2e.test`, deciding by the address: `shop@` pays an invoice some
+  seconds after issuing it, with the preimage, `nopreimage@` without one,
+  `noverify@` issues invoices without a verify URL;
   `mocks/nostr.ts` is the only nostr relay of an e2e build (`/nostr`,
   websocket) and decides by the business name: "Café Skip" is refused,
   "Café Retry" refused once, a profile that is not the trimmed name refused.

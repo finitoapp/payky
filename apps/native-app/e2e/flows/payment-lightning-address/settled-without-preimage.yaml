@@ -1,0 +1,23 @@
+# web payment-lightning-address.spec.ts: "a wallet that says paid without a
+# preimage does not settle the payment". The mock's nopreimage@ wallet
+# reports its invoice settled with no preimage, as ZEUS Pay does. The paid
+# panel stays mounted on web, where Maestro ignores `aria-hidden`, so its
+# absence is checked on Android only (AGENTS.md).
+appId: ${APP_ID}
+tags: [payment-lightning-address]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/lightning-address-payment.yaml
+    env:
+      ADDRESS: nopreimage@wallet.e2e.test
+# Under the QR, which fills the screen.
+- scrollUntilVisible:
+    element:
+      text: ${output.re(output.t["paymentWait.lightningAddress.unverified"])}
+    timeout: 30000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertNotVisible: ${output.t["paymentWait.paid"]}

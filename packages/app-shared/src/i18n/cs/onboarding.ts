@@ -164,7 +164,6 @@ export const csOnboarding = {
   "onboarding.restore.action": "Obnovit účet",
   "onboarding.restore.counter": "{count}/{total} slov",
   "onboarding.restore.description": "Zadejte 20 slov z Payky",
-  "onboarding.restore.fixedWordHint": "obvykle {word}",
   "onboarding.restore.paste": "Vložit ze schránky",
   "onboarding.restore.pasteFailed":
     "Schránku se nepodařilo přečíst. Vložte frázi přímo do prvního políčka.",

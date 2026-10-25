@@ -165,7 +165,6 @@ export const skOnboarding = {
   "onboarding.restore.action": "Obnoviť účet",
   "onboarding.restore.counter": "{count}/{total} slov",
   "onboarding.restore.description": "Zadajte 20 slov z Payky",
-  "onboarding.restore.fixedWordHint": "zvyčajne {word}",
   "onboarding.restore.paste": "Vložiť zo schránky",
   "onboarding.restore.pasteFailed":
     "Schránku sa nepodarilo prečítať. Vložte frázu priamo do prvého políčka.",

@@ -3,7 +3,6 @@ import {
   detectForeignSeed,
   fillRestoreWords,
   RESTORE_WORD_COUNT,
-  restoreFixedWords,
 } from "@payky/app-shared/restore-words"
 import { type KeyboardEvent, useId, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge.tsx"
@@ -97,7 +96,6 @@ export function RestoreWordsGrid({
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-2">
         {words.map((word, index) => {
-          const fixedWord = restoreFixedWords[index]
           return (
             // biome-ignore lint/suspicious/noArrayIndexKey: the slots are fixed positions
             <div key={index} className="flex items-center gap-2">
@@ -115,12 +113,6 @@ export function RestoreWordsGrid({
                   index: index + 1,
                 })}
                 aria-invalid={invalid || invalidIndexes.includes(index)}
-                placeholder={fixedWord}
-                title={
-                  fixedWord === undefined
-                    ? undefined
-                    : t("onboarding.restore.fixedWordHint", { word: fixedWord })
-                }
                 autoComplete={index === 0 ? "current-password" : "off"}
                 autoCorrect="off"
                 autoCapitalize="none"

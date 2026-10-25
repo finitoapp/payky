@@ -575,6 +575,7 @@ for (const bankTransferEnabled of [false, true]) {
         "qerkoTerminal",
         "spark",
         "cashu",
+        "lightningAddress",
         "cashRegister",
       ] as const
       const defaultMethodRow = page.getByRole("listitem").filter({

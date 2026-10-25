@@ -60,6 +60,12 @@ const accountsWithDetailsQuery = createQuery((db) =>
           .select(["accountCashRegister.currency"])
           .whereRef("accountCashRegister.id", "=", "account.id")
       ).as("cashRegister"),
+      evoluJsonObjectFrom(
+        eb
+          .selectFrom("accountLightningAddress")
+          .select(["accountLightningAddress.address"])
+          .whereRef("accountLightningAddress.id", "=", "account.id")
+      ).as("lightningAddress"),
     ])
     .where("account.name", "is not", null)
     .where("account.kind", "is not", null)
@@ -95,6 +101,12 @@ const accountWithDetailsByIdQuery = (id: AccountId) =>
             .select(["accountCashRegister.currency"])
             .whereRef("accountCashRegister.id", "=", "account.id")
         ).as("cashRegister"),
+        evoluJsonObjectFrom(
+          eb
+            .selectFrom("accountLightningAddress")
+            .select(["accountLightningAddress.address"])
+            .whereRef("accountLightningAddress.id", "=", "account.id")
+        ).as("lightningAddress"),
       ])
       .where("account.id", "=", id)
   )
@@ -222,6 +234,16 @@ export const registerAccountsCommand =
               printCliError(
                 run.deps.console,
                 "A Cashu account is enabled in the app's settings."
+              )
+              return
+            }
+
+            if (options.kind === "lightningAddress") {
+              // Saving probes the address for LUD-21 verify first
+              // (lightning-address/0003), which the settings page does.
+              printCliError(
+                run.deps.console,
+                "A Lightning address account is saved in the app's settings."
               )
               return
             }

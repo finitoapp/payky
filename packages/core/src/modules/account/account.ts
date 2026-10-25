@@ -84,6 +84,17 @@ export const accountCashu = {
   id: AccountId,
 } as const
 
+/**
+ * The merchant's own Lightning wallet, reached through its Lightning address
+ * (lightning-address/0001). Payky holds no keys and no balance: every payment
+ * asks the address for an invoice and watches its LUD-21 `verify` URL. The
+ * address is lowercased and derives the id (lightning-address/0006).
+ */
+export const accountLightningAddress = {
+  id: AccountId,
+  address: NonEmptyString255Schema,
+} as const
+
 export const accountIndexes = ((create) => [
   create("account_kind").on("account").column("kind"),
 ]) satisfies IndexesConfig
@@ -98,3 +109,6 @@ export type AccountCashRegisterRow = InferTable<typeof accountCashRegister>
 export type AccountCardSwitchioRow = InferTable<typeof accountCardSwitchio>
 export type AccountQerkoTerminalRow = InferTable<typeof accountQerkoTerminal>
 export type AccountCashuRow = InferTable<typeof accountCashu>
+export type AccountLightningAddressRow = InferTable<
+  typeof accountLightningAddress
+>

@@ -117,6 +117,9 @@ describe("native route access", () => {
       requiredPermission("/settings/payment-accounts/qerko-terminal")
     ).toBe("admin")
     expect(requiredPermission("/settings/payment-accounts/cashu")).toBe("admin")
+    expect(
+      requiredPermission("/settings/payment-accounts/lightning-address")
+    ).toBe("admin")
   })
 
   it("keeps an account that is not onboarded off the terminal routes only", () => {

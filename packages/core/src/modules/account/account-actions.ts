@@ -42,6 +42,7 @@ import {
   cashRegisterAccountQuery,
   cashuAccountQuery,
   fiatBankAccountQuery,
+  lightningAddressAccountQuery,
   qerkoTerminalAccountQuery,
   sparkAccountQuery,
 } from "./account-queries.ts"
@@ -52,6 +53,7 @@ import {
   createCashRegisterAccountId,
   createCashuAccountId,
   createIbanAccountId,
+  createLightningAddressAccountId,
   createQerkoTerminalAccountId,
   createSparkAccountId,
 } from "./account-utils.ts"
@@ -792,6 +794,65 @@ export const saveCashuAccount =
       seedCashuDefaultMint(cashuShardStore).catch(() => {
         // Best effort: without the row, payments use Linky's default anyway.
       })
+
+    return ok(id)
+  }
+
+/**
+ * Saves the merchant's Lightning address (lightning-address/0006). The id
+ * derives from the address, so a new address writes a new account and the
+ * one it replaces is retired in the same batch; its past transactions keep
+ * pointing at the address their money went to. Returns `null` when no
+ * address was ever saved and none is given. The caller probes the address
+ * first (`probeLightningAddress`): this only writes.
+ */
+export const saveLightningAddressAccount =
+  ({
+    enabled,
+    address,
+  }: {
+    readonly enabled: boolean
+    /** Lowercased, as `parseLightningAddress` gives it. */
+    readonly address?: NonEmptyString255
+  }): Task<AccountId | null, never, EvoluDep & EvoluOwnerDep> =>
+  async (run) => {
+    const { evolu, evoluOwner } = run.deps
+
+    const [current] = await evolu.loadQuery(lightningAddressAccountQuery)
+    const nextAddress = address ?? current?.address
+    if (nextAddress === undefined) return ok(null)
+
+    const id = createLightningAddressAccountId(nextAddress)
+
+    await runMutationWithCompletion((options) => {
+      const mutationOptions = { ...options, owner: evoluOwner }
+
+      evolu.upsert(
+        "accountLightningAddress",
+        { id, address: nextAddress },
+        mutationOptions
+      )
+
+      if (current !== undefined && current.id !== id) {
+        evolu.update(
+          "account",
+          { id: current.id, isDeleted: sqliteTrue },
+          mutationOptions
+        )
+      }
+
+      return evolu.upsert(
+        "account",
+        {
+          id,
+          deviceId: null,
+          name: nextAddress,
+          kind: "lightningAddress",
+          isDeleted: enabled ? sqliteFalse : sqliteTrue,
+        },
+        mutationOptions
+      )
+    })
 
     return ok(id)
   }

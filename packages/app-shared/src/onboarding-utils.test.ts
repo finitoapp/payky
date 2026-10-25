@@ -25,6 +25,7 @@ describe("onboarding payment method order", () => {
       "qerkoTerminal",
       "spark",
       "cashu",
+      "lightningAddress",
       "cashRegister",
     ])
   })

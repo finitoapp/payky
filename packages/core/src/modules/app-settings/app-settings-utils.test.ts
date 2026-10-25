@@ -44,6 +44,7 @@ describe("parsePaymentMethodOrder", () => {
       "cardSwitchio",
       "qerkoTerminal",
       "cashu",
+      "lightningAddress",
     ])
   })
 
@@ -59,6 +60,7 @@ describe("parsePaymentMethodOrder", () => {
       "cardSwitchio",
       "qerkoTerminal",
       "cashu",
+      "lightningAddress",
     ])
   })
 
@@ -84,6 +86,7 @@ describe("getPaymentMethodOrder", () => {
       "cardSwitchio",
       "qerkoTerminal",
       "cashu",
+      "lightningAddress",
     ])
   })
 
@@ -105,6 +108,7 @@ describe("getPaymentMethodOrder", () => {
       "cardSwitchio",
       "qerkoTerminal",
       "cashu",
+      "lightningAddress",
     ])
   })
 })

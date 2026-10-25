@@ -278,6 +278,11 @@ export type LightningAddressVerifyUnsupportedError = ReturnType<
   typeof createLightningAddressVerifyUnsupportedError
 >
 
+export type ProbeLightningAddressError =
+  | LnurlError
+  | LightningAddressInvoiceMismatchError
+  | LightningAddressVerifyUnsupportedError
+
 /**
  * Checks a Lightning address can take payments Payky tracks: its metadata
  * loads and an invoice for `minSendable` comes with a `verify` URL. Whether
@@ -288,13 +293,7 @@ export const probeLightningAddress =
     address,
   }: {
     readonly address: string
-  }): Task<
-    LnurlPayMetadata,
-    | LnurlError
-    | LightningAddressInvoiceMismatchError
-    | LightningAddressVerifyUnsupportedError,
-    FetchDep & DateDep
-  > =>
+  }): Task<LnurlPayMetadata, ProbeLightningAddressError, FetchDep & DateDep> =>
   async (run) => {
     const metadata = await run(fetchLnurlPayMetadata({ address }))
     if (!metadata.ok) return metadata

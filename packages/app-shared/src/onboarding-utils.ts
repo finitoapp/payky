@@ -16,6 +16,7 @@ export const onboardingPaymentMethodOrder = [
   "qerkoTerminal",
   "spark",
   "cashu",
+  "lightningAddress",
   "cashRegister",
 ] as const satisfies ReadonlyArray<DefaultPaymentMethod>
 

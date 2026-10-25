@@ -41,6 +41,8 @@ const methodColors = {
   spark: "var(--chart-4)",
   onchain: "var(--chart-5)",
   cashu: "var(--chart-6)",
+  // Lightning too, so Spark's colour: a shop rarely takes both.
+  lightningAddress: "var(--chart-4)",
   unknown: "var(--muted-foreground)",
 } satisfies Record<MethodShare["method"], string>
 

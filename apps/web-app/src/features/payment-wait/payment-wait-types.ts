@@ -20,6 +20,7 @@ export type PaymentMethodTab =
   | "card"
   | "qerko"
   | "cashu"
+  | "lightningAddress"
 
 export interface PaymentMethodOptionBase {
   readonly kind: DefaultPaymentMethod
@@ -47,6 +48,11 @@ export type PaymentMethodOption = PaymentMethodOptionBase &
         readonly qrPayload: string | null
         /** The mint quote expired: the tab offers a new one. */
         readonly quoteExpired: boolean
+      }
+    | {
+        readonly id: "lightningAddress"
+        /** The invoice the merchant's own wallet issued. */
+        readonly qrPayload: string | null
       }
   )
 

@@ -6,6 +6,7 @@ import { CardPaymentTab } from "@/features/payment-wait/payment-wait-card-tab.ts
 import { CashPaymentTab } from "@/features/payment-wait/payment-wait-cash-tab.tsx"
 import { CashuPaymentTab } from "@/features/payment-wait/payment-wait-cashu-tab.tsx"
 import { IbanPaymentTab } from "@/features/payment-wait/payment-wait-iban-tab.tsx"
+import { LightningAddressPaymentTab } from "@/features/payment-wait/payment-wait-lightning-address-tab.tsx"
 import { QerkoPaymentTab } from "@/features/payment-wait/payment-wait-qerko-tab.tsx"
 import { QrPaymentRequest } from "@/features/payment-wait/payment-wait-qr-request.tsx"
 import type {
@@ -49,11 +50,16 @@ export function PaymentMethodTabContent({
   cashuPaymentId,
   newCashuQuotePending,
   onNewCashuQuote,
+  lightningAddressPaymentId,
+  lightningAddressPayable,
 }: {
   readonly method: PaymentMethodOption
   readonly cashuPaymentId: PaymentId
   readonly newCashuQuotePending: boolean
   readonly onNewCashuQuote: () => void
+  readonly lightningAddressPaymentId: PaymentId
+  /** The payment is still waiting for money, so the tab polls its wallet. */
+  readonly lightningAddressPayable: boolean
   /** Set while a Bolt Card may pay this payment's Lightning invoice. */
   readonly boltCardPaymentId: PaymentId | null
   readonly preparingMessageKey: TranslationKey | null
@@ -114,6 +120,16 @@ export function PaymentMethodTabContent({
           preparingMessageKey={preparingMessageKey}
           newQuotePending={newCashuQuotePending}
           onNewQuote={onNewCashuQuote}
+        />
+      )
+    case "lightningAddress":
+      return (
+        <LightningAddressPaymentTab
+          paymentId={lightningAddressPaymentId}
+          qrPayload={method.qrPayload}
+          payable={lightningAddressPayable}
+          boltCardPaymentId={boltCardPaymentId}
+          preparingMessageKey={preparingMessageKey}
         />
       )
     case "qerko":

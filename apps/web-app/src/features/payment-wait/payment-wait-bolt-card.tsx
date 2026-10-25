@@ -55,8 +55,11 @@ type BoltCardState =
  */
 export function BoltCardReader({
   paymentId,
+  method = "spark",
 }: {
   readonly paymentId: PaymentId
+  /** Whose invoice the card pays: the tab it waits under. */
+  readonly method?: "spark" | "lightningAddress"
 }) {
   const { t } = useTranslation()
   const appRun = useAppRun()
@@ -99,7 +102,9 @@ export function BoltCardReader({
     setState({ step: "processing" })
     try {
       await using run = appRun()
-      const result = await run(payPaymentWithBoltCard({ paymentId, uri }))
+      const result = await run(
+        payPaymentWithBoltCard({ paymentId, uri, method })
+      )
 
       if (result.ok) {
         setState({ step: "awaitingSettlement" })

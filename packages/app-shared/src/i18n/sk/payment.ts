@@ -394,4 +394,9 @@ export const skPayment = {
   "refund.state.full": "Vrátené {amount}",
   "refund.state.partial": "Čiastočne vrátené {amount}",
   "paymentDetail.paymentMethod.lightningAddress": "Lightning adresa",
+  "paymentWait.method.lightningAddress": "Lightning",
+  "paymentWait.preparing.lightningAddress": "Žiadam peňaženku o invoice...",
+  "paymentWait.lightningAddress.unverified":
+    "Peňaženka hlási invoice zaplatený, ale neposlala dôkaz platby. Než vydáte tovar, skontrolujte peňaženku.",
+  "paymentDetail.transaction.preimage": "Dôkaz platby (preimage)",
 } satisfies Record<keyof typeof enPayment, string>

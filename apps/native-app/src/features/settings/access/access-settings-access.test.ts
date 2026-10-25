@@ -58,7 +58,7 @@ it("asks for the current PIN, awaited, before the new one reaches changePin, the
   )
 })
 
-it("asks for the current PIN before keeping it, and sets the session only after enabling", () => {
+it("asks for the current PIN before keeping it, and holds the session from before enabling, dropping it on a failure", () => {
   const wizard = read("turn-on-wizard.tsx")
   expectInOrder(
     wizard,
@@ -66,12 +66,15 @@ it("asks for the current PIN before keeping it, and sets the session only after 
     /if \(!\(await requirePin\("access\.action\.enable"\)\)\) return/,
     /setKeepPin\(true\)/
   )
+  // Started before the write: the gate must never render the saved rules
+  // without it, or it hides this page for a frame (an Android crash).
   expectInOrder(
     wizard,
     /const finish = async/,
+    /setSession\(\{ accountId \}\)/,
     /await run\(\s*enableAccessControl\(/,
     /newPin\.clear\(\)/,
-    /if \(!saved\) return/,
+    /if \(!saved\) \{\s*setSession\(session\)\s*return\s*\}/,
     /setSession\(\{ accountId \}\)/,
     /onDone\(\)/
   )

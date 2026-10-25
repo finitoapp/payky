@@ -7,7 +7,7 @@ import {
   devicesQuery,
 } from "@payky/core/modules/device/device-queries"
 import type { DeviceId } from "@payky/core/modules/device/device-types"
-import { useSetAtom } from "jotai"
+import { useAtom } from "jotai"
 import KeyRound from "lucide-react-native/icons/key-round"
 import Pencil from "lucide-react-native/icons/pencil"
 import { useState } from "react"
@@ -51,7 +51,7 @@ export function TurnOnWizard({
   const runToast = useRunToast()
   const { requirePin } = useRequirePermission()
   const { accountId, deviceId } = useAccess()
-  const setSession = useSetAtom(accessSessionAtom)
+  const [session, setSession] = useAtom(accessSessionAtom)
   const { data: devices } = useEvoluQuery(devicesQuery)
   const newPin = useNewPin()
   const [step, setStep] = useState<"pin" | "devices">("pin")
@@ -75,6 +75,14 @@ export function TurnOnWizard({
     if (!keepPin && pin === null) return
     if (pending) return
     setPending(true)
+    // Whoever just set or entered the PIN holds it: they stay on this page
+    // even when the wizard takes this device's own `admin` away. Started
+    // before the write, not after it: the gate would otherwise render the
+    // saved rules without the session once, hiding this page behind the PIN
+    // screen (`display: none`) for a frame, and Fabric on Android mounts
+    // views created under a hidden parent without a native view, then
+    // crashes removing their children ("Unable to find parentView").
+    setSession({ accountId })
     const saved = await runToast(async (run) => {
       const result = await run(
         enableAccessControl({
@@ -90,9 +98,12 @@ export function TurnOnWizard({
     })
     newPin.clear()
     setPending(false)
-    if (!saved) return
-    // Whoever just set or entered the PIN holds it: they stay on this page
-    // even when the wizard took this device's own `admin` away.
+    if (!saved) {
+      setSession(session)
+      return
+    }
+    // Again, in case the gate ended it meanwhile: the device's earlier
+    // defaults may already cover this page.
     setSession({ accountId })
     onDone()
   }

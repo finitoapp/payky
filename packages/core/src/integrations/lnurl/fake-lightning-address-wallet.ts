@@ -15,6 +15,11 @@ export interface FakeLightningAddressWallet {
   /** A customer paid `invoice`; `false` when the wallet never issued it. */
   readonly pay: (invoice: string) => boolean
   /**
+   * A customer paid the invoice issued last — the payment's, after the probe
+   * a save made; `false` when none was issued.
+   */
+  readonly payLatest: () => boolean
+  /**
    * What the wallet supports, changeable at any time: `verify` puts a LUD-21
    * URL on its invoices, `revealsPreimage` makes verify answer with the
    * preimage once paid (ZEUS Pay, for one, does not).
@@ -79,6 +84,12 @@ export const createFakeLightningAddressWallet = ({
         return true
       }
       return false
+    },
+    payLatest: () => {
+      const latest = [...invoices.values()].at(-1)
+      if (latest === undefined) return false
+      latest.paid = true
+      return true
     },
     fetch: async (input) => {
       const url = new URL(input instanceof Request ? input.url : String(input))

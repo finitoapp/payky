@@ -8,6 +8,7 @@
 import { assistantMock } from "./mocks/assistant.ts"
 import { donationMock } from "./mocks/donation.ts"
 import { eetMock } from "./mocks/eet.ts"
+import { lightningAddressMock } from "./mocks/lightning-address.ts"
 import type { MockHandler } from "./mocks/mock-handler.ts"
 import { nostrRelay } from "./mocks/nostr.ts"
 import { openFactsMock } from "./mocks/open-facts.ts"
@@ -17,6 +18,7 @@ import { yadioMock } from "./mocks/yadio.ts"
 const handlers: ReadonlyArray<MockHandler> = [
   yadioMock,
   donationMock,
+  lightningAddressMock,
   assistantMock,
   eetMock,
   openFactsMock,

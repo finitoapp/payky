@@ -1,0 +1,26 @@
+# web payment-lightning-address.spec.ts's `setUpPayment`: saves ADDRESS, takes
+# a 5.90 payment and opens its Lightning address tab with the QR.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: save-lightning-address.yaml
+    env:
+      ADDRESS: ${ADDRESS}
+- extendedWaitUntil:
+    visible: ${output.t["settings.lightningAddress.saved"]}
+    timeout: 15000
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- runFlow: to-tip-step.yaml
+- tapOn: ${output.re(output.t["paymentTip.none"])}
+- runFlow:
+    file: tap-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.method.lightningAddress"]}
+- runFlow:
+    file: assert-label.yaml
+    env:
+      LABEL: ${output.t["paymentWait.copyQr"]}

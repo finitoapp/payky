@@ -1,0 +1,24 @@
+# web payment-lightning-address.spec.ts: "save a Lightning address and offer
+# it among the payment methods".
+appId: ${APP_ID}
+tags: [payment-lightning-address]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/save-lightning-address.yaml
+    env:
+      ADDRESS: Shop@Wallet.E2E.test
+- extendedWaitUntil:
+    visible: ${output.t["settings.lightningAddress.saved"]}
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/payment-accounts
+      TEXT: ${output.t["settings.paymentAccounts.title"]}
+- assertVisible: shop@wallet.e2e.test
+- runFlow:
+    file: ../../subflows/assert-checked.yaml
+    env:
+      LABEL: ${output.t["settings.lightningAddress.enabled.label"]}
+      CHECKED: "true"

@@ -1,0 +1,15 @@
+# web payment-lightning-address.spec.ts: "refuse a wallet that cannot tell
+# whether an invoice is paid". The mock's noverify@ wallet issues invoices
+# without a LUD-21 verify URL (mocks/lightning-address.ts).
+appId: ${APP_ID}
+tags: [payment-lightning-address]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/save-lightning-address.yaml
+    env:
+      ADDRESS: noverify@wallet.e2e.test
+- extendedWaitUntil:
+    visible: ${output.re(output.t["settings.lightningAddress.error.verifyUnsupported"])}
+    timeout: 15000
+- assertNotVisible: ${output.t["settings.lightningAddress.saved"]}

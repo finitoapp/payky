@@ -117,6 +117,12 @@ The word "account" means two unrelated things here.
   `paymentCashu.mintUrl`, the mint its request and topup quote name. Payky
   receives tokens only from the **default mint** (Linky's synced
   `defaultMint`); a received token pays whatever its mint (`cashu/0011`).
+- **Lightning address account** — a `lightningAddress` account: the
+  merchant's own wallet, reached through its Lightning address (LUD-16).
+  Payky asks it for an invoice per payment and watches the invoice's LUD-21
+  verify URL; it holds no keys, no balance and offers no withdrawal
+  (`lightning-address/0001`). Not the same as **Spark**, whose wallet Payky
+  holds, nor as the Lightning address a withdrawal or a donation pays to.
 - **FIO** — the Czech bank whose API the IBAN sync job reads.
 - **EET** — Czech electronic registration of sales (`docs/eet.md`).
 - **Switchio** — the SwitchioPay card terminal app, driven through Android

@@ -38,6 +38,10 @@ it differently (LUD-18 payer data, Nostr zaps).
 Whoever controls the address's domain controls where the money goes;
 that is the recipient's choice of provider.
 
+A payment taken into the merchant's own Lightning address holds its
+invoice to the same checks, and to a LUD-21 verify URL besides
+(lightning-address/0003).
+
 ## Enforced by
 
 - `packages/core/src/integrations/lnurl/lnurl-pay-client.test.ts > lnurl pay client > rejects a callback that is not https`

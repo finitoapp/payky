@@ -240,13 +240,21 @@ export const fetchLnurlPayInvoice =
     })
   }
 
+/**
+ * One LUD-21 poll of `verifyUrl`. Like the callback, it must be `https`: its
+ * answer decides whether a payment counts as paid (lightning-address/0002).
+ */
 export const fetchLnurlVerify =
-  ({
-    verifyUrl,
-  }: {
-    readonly verifyUrl: string
-  }): Task<LnurlVerify, LnurlError, FetchDep> =>
+  ({ verifyUrl }: { readonly verifyUrl: string }): LnurlPayTask<LnurlVerify> =>
   async (run) => {
+    if (!URL.canParse(verifyUrl) || new URL(verifyUrl).protocol !== "https:") {
+      return err(
+        createLightningAddressInvoiceMismatchError({
+          message: "The LNURL verify URL is not https.",
+        })
+      )
+    }
+
     const verify = await run(
       fetchLnurlJson(verifyUrl, "LNURL verify", LnurlVerifySchema)
     )
@@ -257,4 +265,50 @@ export const fetchLnurlVerify =
       preimage: verify.value.preimage,
       pr: verify.value.pr,
     })
+  }
+
+/**
+ * The Lightning address hands out invoices without a LUD-21 `verify` URL, so
+ * Payky could never tell when one is paid (lightning-address/0003).
+ */
+export const createLightningAddressVerifyUnsupportedError = defineError(
+  "LightningAddressVerifyUnsupported"
+)()
+export type LightningAddressVerifyUnsupportedError = ReturnType<
+  typeof createLightningAddressVerifyUnsupportedError
+>
+
+/**
+ * Checks a Lightning address can take payments Payky tracks: its metadata
+ * loads and an invoice for `minSendable` comes with a `verify` URL. Whether
+ * the wallet then reveals the preimage shows only once a payment is paid.
+ */
+export const probeLightningAddress =
+  ({
+    address,
+  }: {
+    readonly address: string
+  }): Task<
+    LnurlPayMetadata,
+    | LnurlError
+    | LightningAddressInvoiceMismatchError
+    | LightningAddressVerifyUnsupportedError,
+    FetchDep & DateDep
+  > =>
+  async (run) => {
+    const metadata = await run(fetchLnurlPayMetadata({ address }))
+    if (!metadata.ok) return metadata
+
+    const invoice = await run(
+      fetchLnurlPayInvoice({
+        amountSats: metadata.value.minSendableSats,
+        metadata: metadata.value,
+      })
+    )
+    if (!invoice.ok) return invoice
+    if (invoice.value.verify === undefined) {
+      return err(createLightningAddressVerifyUnsupportedError())
+    }
+
+    return ok(metadata.value)
   }

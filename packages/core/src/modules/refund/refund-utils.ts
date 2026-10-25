@@ -135,12 +135,13 @@ export const summarizeRefundsByPayment = (
     readonly paymentAmount: NonNegativeInteger
     readonly paymentTipAmount: NonNegativeInteger
     readonly paymentCurrency: FiatCurrency
-    readonly paymentAmountSats: NonNegativeInteger | null
     readonly cashReceivedAmount: NonNegativeInteger | null
     readonly paymentClaims: ReadonlyArray<{
       readonly accountTransactionId: AccountTransactionId
       readonly amount: number
       readonly currency: Currency
+      /** The settling method's quote, as `quotedAmountSats`. */
+      readonly paymentAmountSats: NonNegativeInteger | null
     }>
   }>
 ): ReadonlyMap<PaymentId, PaymentRefundSummary> => {
@@ -151,7 +152,6 @@ export const summarizeRefundsByPayment = (
         ...claim,
         paymentAmount: refund.paymentAmount,
         paymentCurrency: refund.paymentCurrency,
-        paymentAmountSats: refund.paymentAmountSats,
       })),
       amount: refund.paymentAmount,
     })

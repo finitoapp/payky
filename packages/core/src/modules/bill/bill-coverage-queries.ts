@@ -2,6 +2,7 @@ import type { KyselyNotNull } from "@evolu/common"
 import { sqliteTrue } from "@evolu/common"
 
 import { createQuery } from "../../evolu/schema.ts"
+import { quotedAmountSatsSql } from "../shared/claimed-amount.ts"
 import type { BillId } from "./bill-types.ts"
 
 /**
@@ -72,12 +73,21 @@ export const claimedTransactionsByBillIdQuery = (billId: BillId) =>
           .onRef("paymentBtc.id", "=", "payment.id")
           .on("paymentBtc.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentCashu", (join) =>
+        join
+          .onRef("paymentCashu.id", "=", "payment.id")
+          .on("paymentCashu.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "payment.id as paymentId",
         "payment.tipAmount",
         "payment.amount as paymentAmount",
         "payment.currency as paymentCurrency",
-        "paymentBtc.amountSats as paymentAmountSats",
+        quotedAmountSatsSql({
+          kind: "accountTransaction.kind",
+          btc: "paymentBtc.amountSats",
+          cashu: "paymentCashu.amountSats",
+        }).as("paymentAmountSats"),
         "reconciliationClaim.accountTransactionId",
         "accountTransaction.amount",
         "accountTransaction.currency",

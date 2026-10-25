@@ -139,6 +139,10 @@ export type SalesByHourRow = InferRow<ReturnType<typeof salesByHourQuery>>
  */
 export const salesByMethodQuery = (range: StatsRange) =>
   createQuery((db) => {
+    // The settling method's own quote, as `quotedAmountSats`.
+    const quoted = kyselySql<
+      number | null
+    >`case "tx"."kind" when 'cashu' then "cashu"."amountSats" else "btc"."amountSats" end`
     const settlements = db
       .selectFrom(paidPayments(db, range))
       .leftJoin("reconciliationClaim as claim", (join) =>
@@ -169,6 +173,12 @@ export const salesByMethodQuery = (range: StatsRange) =>
           .onRef("btc.id", "=", "paid.id")
           .on("btc.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentCashu as cashu", (join) =>
+        join
+          .onRef("cashu.ownerId", "=", "paid.ownerId")
+          .onRef("cashu.id", "=", "paid.id")
+          .on("cashu.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "paid.id as paymentId",
         "paid.currency",
@@ -178,7 +188,7 @@ export const salesByMethodQuery = (range: StatsRange) =>
         kyselySql<number | null>`case
           when "tx"."id" is null then null
           when "tx"."currency" = "paid"."currency" then "tx"."amount"
-          when "btc"."amountSats" > 0 then cast(round("tx"."amount" * "paid"."amount" * 1.0 / "btc"."amountSats") as integer)
+          when ${quoted} > 0 then cast(round("tx"."amount" * "paid"."amount" * 1.0 / ${quoted}) as integer)
           else 0
         end`.as("claimedAmount"),
         kyselySql<number>`count("tx"."id") over (partition by "paid"."id")`.as(

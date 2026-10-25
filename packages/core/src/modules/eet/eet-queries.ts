@@ -8,6 +8,7 @@ import {
 import { createQuery } from "../../evolu/schema.ts"
 import type { BillId } from "../bill/bill-types.ts"
 import type { PaymentId } from "../payment/payment-types.ts"
+import { quotedAmountSatsSql } from "../shared/claimed-amount.ts"
 import type { EetDateTime, EetReversalId, EetSaleId } from "./eet-types.ts"
 import { eetSettingsId } from "./eet-utils.ts"
 
@@ -103,6 +104,11 @@ export const eetPaymentsToReportQuery = createQuery((db) =>
             .onRef("paymentBtc.id", "=", "payment.id")
             .on("paymentBtc.isDeleted", "is not", sqliteTrue)
         )
+        .leftJoin("paymentCashu", (join) =>
+          join
+            .onRef("paymentCashu.id", "=", "payment.id")
+            .on("paymentCashu.isDeleted", "is not", sqliteTrue)
+        )
         .select((eb) => {
           const firstActiveClaim = eb
             .selectFrom("reconciliationClaim")
@@ -129,7 +135,16 @@ export const eetPaymentsToReportQuery = createQuery((db) =>
             "payment.currency",
             "payment.deviceId as paymentDeviceId",
             "paymentCashRegister.receivedAmount as cashReceivedAmount",
-            "paymentBtc.amountSats as paymentAmountSats",
+            // The first claim's own method sets the rate (`quotedAmountSats`).
+            firstActiveClaim
+              .select(
+                quotedAmountSatsSql({
+                  kind: "accountTransaction.kind",
+                  btc: "paymentBtc.amountSats",
+                  cashu: "paymentCashu.amountSats",
+                }).as("paymentAmountSats")
+              )
+              .as("paymentAmountSats"),
             "eetSettings.enabledAt",
             firstActiveClaim
               .select("reconciliationClaim.claimedAt")
@@ -203,6 +218,11 @@ export const eetExtraClaimsQuery = createQuery((db) =>
         .onRef("paymentBtc.id", "=", "payment.id")
         .on("paymentBtc.isDeleted", "is not", sqliteTrue)
     )
+    .leftJoin("paymentCashu", (join) =>
+      join
+        .onRef("paymentCashu.id", "=", "payment.id")
+        .on("paymentCashu.isDeleted", "is not", sqliteTrue)
+    )
     .select((eb) => [
       "reconciliationClaim.id as claimId",
       "reconciliationClaim.claimedAt",
@@ -217,7 +237,11 @@ export const eetExtraClaimsQuery = createQuery((db) =>
       "payment.amount as paymentAmount",
       "payment.tipAmount as paymentTipAmount",
       "payment.currency as paymentCurrency",
-      "paymentBtc.amountSats as paymentAmountSats",
+      quotedAmountSatsSql({
+        kind: "accountTransaction.kind",
+        btc: "paymentBtc.amountSats",
+        cashu: "paymentCashu.amountSats",
+      }).as("paymentAmountSats"),
       "eetSettings.enabledAt",
       "eetSettings.tipOwner",
       evoluJsonArrayFrom(
@@ -275,7 +299,15 @@ export const eetExtraClaimsQuery = createQuery((db) =>
         ]),
         eb.and([
           eb("accountTransaction.currency", "!=", eb.ref("payment.currency")),
-          eb("accountTransaction.amount", ">", eb.ref("paymentBtc.amountSats")),
+          eb(
+            "accountTransaction.amount",
+            ">",
+            quotedAmountSatsSql({
+              kind: "accountTransaction.kind",
+              btc: "paymentBtc.amountSats",
+              cashu: "paymentCashu.amountSats",
+            })
+          ),
         ]),
       ])
     )

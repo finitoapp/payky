@@ -10,6 +10,7 @@ import type {
 } from "../account-transaction/account-transaction.ts"
 import type { AccountTransactionId } from "../account-transaction/account-transaction-types.ts"
 import type { PaymentId } from "../payment/payment-types.ts"
+import { quotedAmountSatsSql } from "../shared/claimed-amount.ts"
 import type {
   FiatCurrency,
   NonEmptyString,
@@ -69,13 +70,22 @@ export const activeClaimedTransactionsByPaymentIdQuery = (
           .onRef("paymentBtc.id", "=", "payment.id")
           .on("paymentBtc.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentCashu", (join) =>
+        join
+          .onRef("paymentCashu.id", "=", "payment.id")
+          .on("paymentCashu.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "reconciliationClaim.accountTransactionId",
         "accountTransaction.amount",
         "accountTransaction.currency",
         "payment.amount as paymentAmount",
         "payment.currency as paymentCurrency",
-        "paymentBtc.amountSats as paymentAmountSats",
+        quotedAmountSatsSql({
+          kind: "accountTransaction.kind",
+          btc: "paymentBtc.amountSats",
+          cashu: "paymentCashu.amountSats",
+        }).as("paymentAmountSats"),
       ])
       .where("reconciliationClaim.paymentId", "=", paymentId)
       .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)

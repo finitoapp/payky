@@ -1,4 +1,8 @@
-import type { AccountTransactionId } from "../account-transaction/account-transaction-types.ts"
+import { kyselySql } from "@evolu/common"
+import type {
+  AccountTransactionId,
+  AccountTransactionKind,
+} from "../account-transaction/account-transaction-types.ts"
 import type { Currency, FiatCurrency } from "./schema.ts"
 import { NonNegativeInteger } from "./schema.ts"
 
@@ -18,9 +22,41 @@ export interface ClaimedAmount {
   readonly currency: Currency
   readonly paymentAmount: NonNegativeInteger
   readonly paymentCurrency: FiatCurrency
-  /** Only a BTC payment carries one; `null` for every other method. */
+  /**
+   * The sats the settling method was quoted for (`quotedAmountSats`); `null`
+   * for a method that quotes none.
+   */
   readonly paymentAmountSats: NonNegativeInteger | null
 }
+
+/** The sats each Lightning method of one payment was quoted for, if prepared. */
+export interface QuotedAmountsSats {
+  readonly btc: NonNegativeInteger | null
+  readonly cashu: NonNegativeInteger | null
+}
+
+/**
+ * The quote a transaction of `kind` is measured against. Each Lightning
+ * method keeps its own (`paymentBtc` for Spark, `paymentCashu`, cashu/0003),
+ * and two of them prepared on one payment were quoted at different times and
+ * rates, so a Cashu settlement measured by Spark's sats would read a few
+ * minor units off. Every kind without its own quote falls back to Spark's.
+ */
+export const quotedAmountSats = (
+  kind: AccountTransactionKind,
+  quotes: QuotedAmountsSats
+): NonNegativeInteger | null => (kind === "cashu" ? quotes.cashu : quotes.btc)
+
+/**
+ * `quotedAmountSats` in SQL, over column references so it fits whatever
+ * aliases a query gives the transaction and the detail tables.
+ */
+export const quotedAmountSatsSql = (columns: {
+  readonly kind: string
+  readonly btc: string
+  readonly cashu: string
+}) =>
+  kyselySql<NonNegativeInteger | null>`case ${kyselySql.ref(columns.kind)} when 'cashu' then ${kyselySql.ref(columns.cashu)} else ${kyselySql.ref(columns.btc)} end`
 
 /**
  * A claimed transaction's value in its payment's currency. Summing raw

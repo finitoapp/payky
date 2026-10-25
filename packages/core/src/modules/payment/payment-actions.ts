@@ -520,6 +520,7 @@ export const markPaymentPaid =
     const billClosing = await run.ok(
       loadBillClosedAtForPayment(paymentId, {
         id: accountTransaction.id,
+        kind: accountTransaction.kind,
         amount: accountTransaction.input.amount,
         currency: accountTransaction.input.currency,
       })

@@ -118,6 +118,7 @@ const bookOperation = async (
       : await run.ok(
           loadBillClosedAtForPayment(claim.paymentId, {
             id: computed.id,
+            kind: computed.kind,
             amount,
             currency: "BTC",
           })

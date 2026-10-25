@@ -73,7 +73,7 @@ export const derivePaymentDetailState = ({
             currency: reconciliation.transactionCurrency,
             paymentAmount: payment.amount,
             paymentCurrency: payment.currency,
-            paymentAmountSats: payment.amountSats,
+            paymentAmountSats: reconciliation.paymentAmountSats,
           },
         ]
   )

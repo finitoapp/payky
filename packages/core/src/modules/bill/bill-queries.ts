@@ -290,6 +290,11 @@ export const latestBillsQuery = (limit: number) =>
                 .onRef("paymentCashu.id", "=", "payment.id")
                 .on("paymentCashu.isDeleted", "is not", sqliteTrue)
             )
+            .leftJoin("paymentLightningAddress", (join) =>
+              join
+                .onRef("paymentLightningAddress.id", "=", "payment.id")
+                .on("paymentLightningAddress.isDeleted", "is not", sqliteTrue)
+            )
             .select([
               "payment.id as paymentId",
               "payment.tipAmount",
@@ -299,6 +304,7 @@ export const latestBillsQuery = (limit: number) =>
                 kind: "accountTransaction.kind",
                 btc: "paymentBtc.amountSats",
                 cashu: "paymentCashu.amountSats",
+                lightningAddress: "paymentLightningAddress.amountSats",
               }).as("paymentAmountSats"),
               "reconciliationClaim.accountTransactionId",
               "accountTransaction.kind as transactionKind",

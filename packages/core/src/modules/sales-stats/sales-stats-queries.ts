@@ -142,7 +142,7 @@ export const salesByMethodQuery = (range: StatsRange) =>
     // The settling method's own quote, as `quotedAmountSats`.
     const quoted = kyselySql<
       number | null
-    >`case "tx"."kind" when 'cashu' then "cashu"."amountSats" else "btc"."amountSats" end`
+    >`case "tx"."kind" when 'cashu' then "cashu"."amountSats" when 'lightningAddress' then "lightningAddress"."amountSats" else "btc"."amountSats" end`
     const settlements = db
       .selectFrom(paidPayments(db, range))
       .leftJoin("reconciliationClaim as claim", (join) =>
@@ -178,6 +178,12 @@ export const salesByMethodQuery = (range: StatsRange) =>
           .onRef("cashu.ownerId", "=", "paid.ownerId")
           .onRef("cashu.id", "=", "paid.id")
           .on("cashu.isDeleted", "is not", sqliteTrue)
+      )
+      .leftJoin("paymentLightningAddress as lightningAddress", (join) =>
+        join
+          .onRef("lightningAddress.ownerId", "=", "paid.ownerId")
+          .onRef("lightningAddress.id", "=", "paid.id")
+          .on("lightningAddress.isDeleted", "is not", sqliteTrue)
       )
       .select([
         "paid.id as paymentId",

@@ -75,6 +75,11 @@ export const activeClaimedTransactionsByPaymentIdQuery = (
           .onRef("paymentCashu.id", "=", "payment.id")
           .on("paymentCashu.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentLightningAddress", (join) =>
+        join
+          .onRef("paymentLightningAddress.id", "=", "payment.id")
+          .on("paymentLightningAddress.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "reconciliationClaim.accountTransactionId",
         "accountTransaction.amount",
@@ -85,6 +90,7 @@ export const activeClaimedTransactionsByPaymentIdQuery = (
           kind: "accountTransaction.kind",
           btc: "paymentBtc.amountSats",
           cashu: "paymentCashu.amountSats",
+          lightningAddress: "paymentLightningAddress.amountSats",
         }).as("paymentAmountSats"),
       ])
       .where("reconciliationClaim.paymentId", "=", paymentId)

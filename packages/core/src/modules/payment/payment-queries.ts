@@ -30,6 +30,11 @@ export const paymentBillCoverageByIdQuery = (idValue: PaymentId) =>
           .onRef("paymentCashu.id", "=", "payment.id")
           .on("paymentCashu.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentLightningAddress", (join) =>
+        join
+          .onRef("paymentLightningAddress.id", "=", "payment.id")
+          .on("paymentLightningAddress.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "payment.id",
         "payment.billId",
@@ -38,6 +43,7 @@ export const paymentBillCoverageByIdQuery = (idValue: PaymentId) =>
         "payment.tipAmount",
         "paymentBtc.amountSats as btcAmountSats",
         "paymentCashu.amountSats as cashuAmountSats",
+        "paymentLightningAddress.amountSats as lightningAddressAmountSats",
       ])
       .where("payment.id", "=", idValue)
       .where("payment.amount", "is not", null)
@@ -264,6 +270,81 @@ export const pendingQerkoTerminalPaymentsQuery = createQuery((db) =>
     }>()
 )
 
+/** A payment's Lightning address method, for `syncLightningAddressPayment`. */
+export const paymentLightningAddressByIdQuery = (idValue: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentLightningAddress")
+      .select([
+        "id",
+        "accountId",
+        "amountSats",
+        "lnInvoice",
+        "paymentHash",
+        "verifyUrl",
+        "invoiceExpiresAt",
+        "preimage",
+      ])
+      .where("id", "=", idValue)
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("accountId", "is not", null)
+      .where("amountSats", "is not", null)
+      .where("lnInvoice", "is not", null)
+      .where("paymentHash", "is not", null)
+      .where("verifyUrl", "is not", null)
+      .where("invoiceExpiresAt", "is not", null)
+      .$narrowType<{
+        accountId: KyselyNotNull
+        amountSats: KyselyNotNull
+        lnInvoice: KyselyNotNull
+        paymentHash: KyselyNotNull
+        verifyUrl: KyselyNotNull
+        invoiceExpiresAt: KyselyNotNull
+      }>()
+  )
+
+/**
+ * Every Lightning address invoice not yet proved paid, on a payment nobody
+ * settled another way, for the verify job (lightning-address/0005). The job
+ * itself stops a day after the invoice expired.
+ */
+export const unsettledLightningAddressPaymentsQuery = createQuery((db) =>
+  db
+    .selectFrom("paymentLightningAddress")
+    .innerJoin("payment", "payment.id", "paymentLightningAddress.id")
+    .select([
+      "paymentLightningAddress.id",
+      "paymentLightningAddress.lnInvoice",
+      "paymentLightningAddress.invoiceExpiresAt",
+    ])
+    .where("paymentLightningAddress.isDeleted", "is not", sqliteTrue)
+    .where("paymentLightningAddress.preimage", "is", null)
+    .where("paymentLightningAddress.lnInvoice", "is not", null)
+    .where("paymentLightningAddress.invoiceExpiresAt", "is not", null)
+    .where("payment.isDeleted", "is not", sqliteTrue)
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom("reconciliationClaim")
+            .innerJoin(
+              "accountTransaction",
+              "accountTransaction.id",
+              "reconciliationClaim.accountTransactionId"
+            )
+            .select("reconciliationClaim.id")
+            .whereRef("reconciliationClaim.paymentId", "=", "payment.id")
+            .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+            .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+        )
+      )
+    )
+    .$narrowType<{
+      lnInvoice: KyselyNotNull
+      invoiceExpiresAt: KyselyNotNull
+    }>()
+)
+
 /**
  * The payment a terminal request id was launched for — how a result that
  * arrives after Android restarted the app finds its way back.
@@ -417,6 +498,15 @@ export const paymentReconciliationsQuery = (paymentId: PaymentId) =>
           .onRef("paymentCashu.id", "=", "reconciliationClaim.paymentId")
           .on("paymentCashu.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentLightningAddress", (join) =>
+        join
+          .onRef(
+            "paymentLightningAddress.id",
+            "=",
+            "reconciliationClaim.paymentId"
+          )
+          .on("paymentLightningAddress.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "reconciliationClaim.id",
         "reconciliationClaim.source",
@@ -439,7 +529,9 @@ export const paymentReconciliationsQuery = (paymentId: PaymentId) =>
           kind: "accountTransaction.kind",
           btc: "paymentBtc.amountSats",
           cashu: "paymentCashu.amountSats",
+          lightningAddress: "paymentLightningAddress.amountSats",
         }).as("paymentAmountSats"),
+        "accountTransactionLightning.preImage as preimage",
       ])
       .where("reconciliationClaim.paymentId", "=", paymentId)
       .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
@@ -548,6 +640,21 @@ export const latestPaymentsQuery = (limit: number) =>
                 .onRef("ownPaymentCashu.id", "=", "ownClaim.paymentId")
                 .on("ownPaymentCashu.isDeleted", "is not", sqliteTrue)
             )
+            .leftJoin(
+              "paymentLightningAddress as ownPaymentLightningAddress",
+              (join) =>
+                join
+                  .onRef(
+                    "ownPaymentLightningAddress.id",
+                    "=",
+                    "ownClaim.paymentId"
+                  )
+                  .on(
+                    "ownPaymentLightningAddress.isDeleted",
+                    "is not",
+                    sqliteTrue
+                  )
+            )
             .select([
               "ownClaim.accountTransactionId",
               "ownClaimTx.kind as transactionKind",
@@ -557,6 +664,7 @@ export const latestPaymentsQuery = (limit: number) =>
                 kind: "ownClaimTx.kind",
                 btc: "ownPaymentBtc.amountSats",
                 cashu: "ownPaymentCashu.amountSats",
+                lightningAddress: "ownPaymentLightningAddress.amountSats",
               }).as("paymentAmountSats"),
             ])
             // The claim's payment is this row's payment (see the `whereRef`
@@ -672,6 +780,21 @@ export const latestPaymentsQuery = (limit: number) =>
                 .onRef("billPaymentCashu.id", "=", "billPayment.id")
                 .on("billPaymentCashu.isDeleted", "is not", sqliteTrue)
             )
+            .leftJoin(
+              "paymentLightningAddress as billPaymentLightningAddress",
+              (join) =>
+                join
+                  .onRef(
+                    "billPaymentLightningAddress.id",
+                    "=",
+                    "billPayment.id"
+                  )
+                  .on(
+                    "billPaymentLightningAddress.isDeleted",
+                    "is not",
+                    sqliteTrue
+                  )
+            )
             .select([
               "billPayment.id as paymentId",
               "billPayment.tipAmount",
@@ -681,6 +804,7 @@ export const latestPaymentsQuery = (limit: number) =>
                 kind: "billClaimTx.kind",
                 btc: "billPaymentBtc.amountSats",
                 cashu: "billPaymentCashu.amountSats",
+                lightningAddress: "billPaymentLightningAddress.amountSats",
               }).as("paymentAmountSats"),
               "billClaim.accountTransactionId",
               "billClaimTx.amount",
@@ -764,6 +888,11 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
           .onRef("paymentCashu.id", "=", "payment.id")
           .on("paymentCashu.isDeleted", "is not", sqliteTrue)
       )
+      .leftJoin("paymentLightningAddress", (join) =>
+        join
+          .onRef("paymentLightningAddress.id", "=", "payment.id")
+          .on("paymentLightningAddress.isDeleted", "is not", sqliteTrue)
+      )
       .select([
         "payment.id",
         "payment.billId",
@@ -793,6 +922,11 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentCashu.mintUrl as cashuMintUrl",
         "paymentCashu.quoteExpiresAt as cashuQuoteExpiresAt",
         "paymentCashu.receiveOperationId as cashuReceiveOperationId",
+        "paymentLightningAddress.accountId as lightningAddressAccountId",
+        "paymentLightningAddress.amountSats as lightningAddressAmountSats",
+        "paymentLightningAddress.lnInvoice as lightningAddressLnInvoice",
+        "paymentLightningAddress.invoiceExpiresAt as lightningAddressInvoiceExpiresAt",
+        "paymentLightningAddress.preimage as lightningAddressPreimage",
       ])
       .where("payment.id", "=", paymentId)
       .where("payment.isDeleted", "is not", sqliteTrue)
@@ -830,9 +964,10 @@ export const paymentClaimsQuery = (paymentId: PaymentId) =>
   )
 
 /**
- * Payments of ours this Lightning invoice belongs to. A withdrawal refuses to
- * pay one (withdraw/0006). Invoices are stored as the SDK returns them,
- * lowercase.
+ * Payments of ours this Lightning invoice belongs to, from Spark or from the
+ * merchant's Lightning address. A withdrawal refuses to pay one
+ * (withdraw/0006). Invoices are stored lowercase, as the SDK returns them and
+ * as `parseLightningInvoice` gives them.
  */
 export const paymentIdsByLnInvoiceQuery = (lnInvoice: NonEmptyString) =>
   createQuery((db) =>
@@ -840,6 +975,12 @@ export const paymentIdsByLnInvoiceQuery = (lnInvoice: NonEmptyString) =>
       .selectFrom("paymentBtcLightning")
       .select(["paymentBtcLightning.id"])
       .where("paymentBtcLightning.lnInvoice", "=", lnInvoice)
+      .union(
+        db
+          .selectFrom("paymentLightningAddress")
+          .select(["paymentLightningAddress.id"])
+          .where("paymentLightningAddress.lnInvoice", "=", lnInvoice)
+      )
       .limit(1)
   )
 

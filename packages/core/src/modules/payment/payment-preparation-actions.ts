@@ -2,6 +2,7 @@ import {
   err,
   type InsertValues,
   ok,
+  sqliteTrue,
   type Task,
   type UpsertValues,
 } from "@evolu/common"
@@ -18,6 +19,11 @@ import type {
   FetchError,
 } from "../../deps.ts"
 import {
+  createLightningAddressVerifyUnsupportedError,
+  fetchLnurlPayInvoice,
+  fetchLnurlPayMetadata,
+} from "../../integrations/lnurl/lnurl-pay-client.ts"
+import {
   fetchYadioBtcExchangeRate,
   type YadioApiDep,
   type YadioApiError,
@@ -29,6 +35,7 @@ import {
   cardSwitchioAccountByIdQuery,
   cashRegisterAccountByIdQuery,
   ibanAccountByIdQuery,
+  lightningAddressAccountByIdQuery,
   qerkoTerminalAccountByIdQuery,
 } from "../account/account-queries.ts"
 import { activeSparkAccountByIdQuery } from "../account/account-spark-queries.ts"
@@ -47,8 +54,11 @@ import {
   type FiatCurrency,
   type NonEmptyString,
   NonEmptyStringSchema,
+  type NonNegativeInteger,
   NonNegativeIntegerSchema,
+  type PositiveNumber,
   PositiveNumberSchema,
+  type TimestampMs,
   TimestampMsSchema,
 } from "../shared/schema.ts"
 import type {
@@ -57,6 +67,7 @@ import type {
   paymentCardSwitchio,
   paymentCashRegister,
   paymentIban,
+  paymentLightningAddress,
   paymentQerkoTerminal,
 } from "./payment.ts"
 import {
@@ -79,6 +90,8 @@ import {
   createCashuAccountNotFoundError,
   createCashuWalletNotSyncedError,
   createIbanAccountNotFoundError,
+  createLightningAddressAccountNotFoundError,
+  createLightningAddressAmountOutOfRangeError,
   createPaymentNumberNotFoundError,
   createPaymentPreparationFailedError,
   createQerkoTerminalAccountNotFoundError,
@@ -87,6 +100,7 @@ import {
   type PaymentNotFoundError,
   type PaymentNumberNotFoundError,
   type PaymentPreparationFailedError,
+  type PrepareLightningAddressMethodError,
   type PreparePaymentMethodError,
   type QerkoTerminalAccountNotFoundError,
   type ZeroAmountNotPayableError,
@@ -109,6 +123,55 @@ const optionalNonEmptyString = (
   value === null || value === undefined || value === ""
     ? undefined
     : NonEmptyStringSchema.decode(value)
+
+interface SatsQuote {
+  readonly amountSats: NonNegativeInteger
+  readonly exchangeRate: PositiveNumber
+  readonly exchangeRateSource: "yadio"
+  readonly exchangeRateFetchedAt: TimestampMs
+}
+
+/**
+ * The fiat amount in sats at Yadio's rate, shared by every method that asks
+ * for a Lightning invoice.
+ */
+const quoteFiatAmountInSats =
+  ({
+    currency,
+    amount,
+  }: {
+    readonly currency: FiatCurrency
+    readonly amount: number
+  }): Task<
+    SatsQuote,
+    ZeroAmountNotPayableError | YadioHttpError | YadioApiError | FetchError,
+    FetchDep & YadioApiDep
+  > =>
+  async (run) => {
+    // A zero-sat Lightning invoice is an *amountless* invoice: the payer
+    // chooses what to send. Handing one out from a terminal displaying a zero
+    // charge would take whatever arrived and claim it against a payment worth
+    // nothing, so refuse before the quote is even fetched. The keypad does
+    // let "0" through — it only checks that the amount parses — which is how
+    // this is reachable at all.
+    if (amount <= 0) return err(createZeroAmountNotPayableError({ amount }))
+
+    const quote = await run(fetchYadioBtcExchangeRate(currency))
+    if (!quote.ok) return quote
+
+    return ok({
+      amountSats: NonNegativeIntegerSchema.decode(
+        fiatMinorUnitsToSats({
+          amount,
+          currency,
+          exchangeRate: quote.value.exchangeRate,
+        })
+      ),
+      exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
+      exchangeRateSource: "yadio",
+      exchangeRateFetchedAt: TimestampMsSchema.decode(quote.value.fetchedAt),
+    })
+  }
 
 /**
  * Quotes the fiat amount in sats, creates a Spark Lightning invoice, and
@@ -152,24 +215,9 @@ const createSparkLightningInvoice =
     EvoluDep & SparkWalletDep & FetchDep & YadioApiDep
   > =>
   async (run) => {
-    // A zero-sat Lightning invoice is an *amountless* invoice: the payer
-    // chooses what to send. Handing one out from a terminal displaying a zero
-    // charge would take whatever arrived and claim it against a payment worth
-    // nothing, so refuse before the quote is even fetched. The keypad does
-    // let "0" through — it only checks that the amount parses — which is how
-    // this is reachable at all.
-    if (amount <= 0) return err(createZeroAmountNotPayableError({ amount }))
-
-    const quote = await run(fetchYadioBtcExchangeRate(currency))
+    const quote = await run(quoteFiatAmountInSats({ currency, amount }))
     if (!quote.ok) return quote
-
-    const amountSats = NonNegativeIntegerSchema.decode(
-      fiatMinorUnitsToSats({
-        amount,
-        currency,
-        exchangeRate: quote.value.exchangeRate,
-      })
-    )
+    const { amountSats } = quote.value
 
     try {
       await using wallet = await run.deps.sparkWallet.create(secret)
@@ -187,10 +235,7 @@ const createSparkLightningInvoice =
 
       return ok({
         accountId,
-        amountSats,
-        exchangeRate: PositiveNumberSchema.decode(quote.value.exchangeRate),
-        exchangeRateSource: "yadio" as const,
-        exchangeRateFetchedAt: TimestampMsSchema.decode(quote.value.fetchedAt),
+        ...quote.value,
         lightning: {
           lnInvoice: NonEmptyStringSchema.decode(
             lightningInvoice.invoice.encodedInvoice
@@ -486,6 +531,101 @@ const prepareSparkMethod =
     return ok({ id: paymentId, expirySeconds, ...sparkInvoiceResult.value })
   }
 
+/**
+ * Asks the merchant's own wallet for an invoice through its Lightning address
+ * (lightning-address/0001): the sats amount from Yadio, within the wallet's
+ * min/maxSendable, the payment's number as a LUD-12 comment where the wallet
+ * takes one. An invoice without a LUD-21 `verify` URL Payky could poll, or
+ * without a payment hash to check a preimage against, is refused
+ * (lightning-address/0003).
+ */
+const prepareLightningAddressMethod =
+  ({
+    paymentId,
+    paymentCurrency,
+    amount,
+    accountId,
+  }: {
+    readonly paymentId: PaymentId
+    readonly paymentCurrency: FiatCurrency
+    readonly amount: number
+    readonly accountId: AccountId
+  }): Task<
+    UpsertValues<typeof paymentLightningAddress> & {
+      readonly invoiceExpiresAt: TimestampMs
+    },
+    | PrepareLightningAddressMethodError
+    | ZeroAmountNotPayableError
+    | YadioHttpError
+    | YadioApiError,
+    EvoluDep & FetchDep & DateDep & YadioApiDep
+  > =>
+  async (run) => {
+    const { evolu } = run.deps
+    const [[account], [paymentNumber]] = await Promise.all([
+      evolu.loadQuery(lightningAddressAccountByIdQuery(accountId)),
+      evolu.loadQuery(paymentNumberByPaymentIdQuery(paymentId)),
+    ])
+    if (account === undefined || account.isDeleted === sqliteTrue) {
+      return err(createLightningAddressAccountNotFoundError({ id: accountId }))
+    }
+
+    const quote = await run(
+      quoteFiatAmountInSats({ currency: paymentCurrency, amount })
+    )
+    if (!quote.ok) return quote
+    const { amountSats } = quote.value
+
+    const metadata = await run(
+      fetchLnurlPayMetadata({ address: account.address })
+    )
+    if (!metadata.ok) return metadata
+    const { minSendableSats, maxSendableSats } = metadata.value
+    if (amountSats < minSendableSats || amountSats > maxSendableSats) {
+      return err(
+        createLightningAddressAmountOutOfRangeError({
+          amountSats,
+          minSendableSats,
+          maxSendableSats,
+        })
+      )
+    }
+
+    const invoice = await run(
+      fetchLnurlPayInvoice({
+        amountSats,
+        metadata: metadata.value,
+        comment:
+          paymentNumber === undefined
+            ? "Payky"
+            : `Payky #${paymentNumber.serialNumber}`,
+      })
+    )
+    if (!invoice.ok) return invoice
+    const { verify } = invoice.value
+    const { paymentHash } = invoice.value.invoice
+    if (
+      verify === undefined ||
+      new URL(verify).protocol !== "https:" ||
+      paymentHash === null
+    ) {
+      return err(createLightningAddressVerifyUnsupportedError())
+    }
+
+    return ok({
+      id: paymentId,
+      accountId,
+      ...quote.value,
+      lnInvoice: NonEmptyStringSchema.decode(invoice.value.invoice.invoice),
+      paymentHash: NonEmptyStringSchema.decode(paymentHash),
+      verifyUrl: NonEmptyStringSchema.decode(verify),
+      invoiceExpiresAt: TimestampMsSchema.decode(
+        invoice.value.invoice.expiresAt
+      ),
+      preimage: null,
+    })
+  }
+
 export const preparePaymentMethod =
   ({
     paymentId,
@@ -494,6 +634,7 @@ export const preparePaymentMethod =
     card,
     qerkoTerminal,
     spark,
+    lightningAddress,
   }: {
     readonly paymentId: PaymentId
     readonly bank?: {
@@ -513,6 +654,9 @@ export const preparePaymentMethod =
       readonly memo?: string
       readonly expirySeconds?: number
       readonly includeSparkInvoice?: boolean
+    }
+    readonly lightningAddress?: {
+      readonly accountId: AccountId
     }
   }): Task<
     PaymentId,
@@ -599,18 +743,36 @@ export const preparePaymentMethod =
           )
     if (sparkResult !== null && !sparkResult.ok) return sparkResult
 
+    // The same for the merchant's wallet, which Payky reaches over LNURL.
+    const lightningAddressResult =
+      lightningAddress === undefined
+        ? null
+        : await run(
+            prepareLightningAddressMethod({
+              paymentId,
+              paymentCurrency: payment.currency,
+              amount: payment.amount,
+              accountId: lightningAddress.accountId,
+            })
+          )
+    if (lightningAddressResult !== null && !lightningAddressResult.ok) {
+      return lightningAddressResult
+    }
+
     const cashRegisterValues = cashRegisterResult?.value ?? null
     const cardValues = cardResult?.value ?? null
     const qerkoValues = qerkoResult?.value ?? null
     const ibanValues = ibanResult?.value ?? null
     const sparkValues = sparkResult?.value ?? null
+    const lightningAddressValues = lightningAddressResult?.value ?? null
 
     if (
       cashRegisterValues === null &&
       cardValues === null &&
       qerkoValues === null &&
       ibanValues === null &&
-      sparkValues === null
+      sparkValues === null &&
+      lightningAddressValues === null
     ) {
       return ok(paymentId)
     }
@@ -671,24 +833,43 @@ export const preparePaymentMethod =
           ...options,
           owner: evoluOwner,
         })
-        // Unconditional for a Spark preparation: a new invoice always has a
-        // new expiry, so keeping the previous `expiresAt` would report a live
-        // payment as expired. It used to be skipped whenever the caller
-        // omitted `expirySeconds`, which is exactly when the old stamp was
-        // most likely to be wrong.
-        if (!hasNonExpiringMethod) {
-          run.deps.evolu.update(
-            "payment",
-            {
-              id: paymentId,
-              expiresAt: computePaymentExpiresAt(
+      }
+
+      if (lightningAddressValues !== null) {
+        run.deps.evolu.upsert(
+          "paymentLightningAddress",
+          lightningAddressValues,
+          { ...options, owner: evoluOwner }
+        )
+      }
+
+      // Unconditional for a Lightning preparation: a new invoice always has
+      // a new expiry, so keeping the previous `expiresAt` would report a live
+      // payment as expired. It used to be skipped whenever the caller omitted
+      // `expirySeconds`, which is exactly when the old stamp was most likely
+      // to be wrong. With both prepared at once, the earlier expiry wins.
+      const invoiceExpiries = [
+        ...(sparkValues === null
+          ? []
+          : [
+              computePaymentExpiresAt(
                 run.deps.date.now(),
                 sparkValues.expirySeconds
               ),
-            },
-            { ...options, owner: evoluOwner }
-          )
-        }
+            ]),
+        ...(lightningAddressValues === null
+          ? []
+          : [lightningAddressValues.invoiceExpiresAt]),
+      ].filter((expiresAt): expiresAt is TimestampMs => expiresAt !== null)
+      if (!hasNonExpiringMethod && invoiceExpiries.length > 0) {
+        run.deps.evolu.update(
+          "payment",
+          {
+            id: paymentId,
+            expiresAt: TimestampMsSchema.decode(Math.min(...invoiceExpiries)),
+          },
+          { ...options, owner: evoluOwner }
+        )
       }
 
       if (hasNonExpiringMethod && payment.expiresAt !== null) {

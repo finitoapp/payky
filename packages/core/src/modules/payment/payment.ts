@@ -189,6 +189,36 @@ export const paymentCashu = {
   receiveOperationId: CashuOperationId.nullable(),
 } as const
 
+/**
+ * A payment's Lightning address method (lightning-address/0004): its own
+ * detail table beside `paymentBtc`, as Cashu's is (cashu/0003), so Spark and
+ * a Lightning address prepared on one payment keep a row each. The invoice
+ * comes from the merchant's own wallet (lightning-address/0001), and
+ * `verifyUrl` is its LUD-21 verify endpoint.
+ *
+ * `preimage` is `null` until a poll of `verifyUrl` returns one whose SHA-256
+ * is `paymentHash` (lightning-address/0002); the same batch then books the
+ * account transaction and claims the payment, so a row with a preimage is
+ * settled. Preparing again writes a new invoice over the old one; money for
+ * the old one is not watched any more, which only happens when staff asked
+ * for a fresh invoice. `invoiceExpiresAt` bounds how long the background job
+ * keeps polling (lightning-address/0005).
+ */
+export const paymentLightningAddress = {
+  id: PaymentId,
+  accountId: AccountId,
+  amountSats: NonNegativeIntegerSchema,
+  exchangeRate: PositiveNumberSchema,
+  exchangeRateSource: z.enum(["yadio"]),
+  exchangeRateFetchedAt: TimestampMsSchema,
+  /** Lowercased, as `parseLightningInvoice` gives it. */
+  lnInvoice: NonEmptyStringSchema,
+  paymentHash: NonEmptyStringSchema,
+  verifyUrl: NonEmptyStringSchema,
+  invoiceExpiresAt: TimestampMsSchema,
+  preimage: NonEmptyStringSchema.nullable(),
+} as const
+
 export const paymentIndexes = ((create) => [
   create("payment_billId").on("payment").column("billId"),
   create("payment_tableId").on("payment").column("tableId"),
@@ -222,6 +252,16 @@ export const paymentIndexes = ((create) => [
   create("paymentCashu_receiveOperationId")
     .on("paymentCashu")
     .column("receiveOperationId"),
+  create("paymentLightningAddress_accountId")
+    .on("paymentLightningAddress")
+    .column("accountId"),
+  create("paymentLightningAddress_lnInvoice")
+    .on("paymentLightningAddress")
+    .column("lnInvoice"),
+  // The verify job watches the rows still without one.
+  create("paymentLightningAddress_preimage")
+    .on("paymentLightningAddress")
+    .column("preimage"),
   create("paymentIban_variableSymbol")
     .on("paymentIban")
     .column("variableSymbol"),
@@ -236,3 +276,6 @@ export type PaymentIbanRow = InferTable<typeof paymentIban>
 export type PaymentCardSwitchioRow = InferTable<typeof paymentCardSwitchio>
 export type PaymentQerkoTerminalRow = InferTable<typeof paymentQerkoTerminal>
 export type PaymentCashuRow = InferTable<typeof paymentCashu>
+export type PaymentLightningAddressRow = InferTable<
+  typeof paymentLightningAddress
+>

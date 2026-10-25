@@ -109,6 +109,11 @@ export const eetPaymentsToReportQuery = createQuery((db) =>
             .onRef("paymentCashu.id", "=", "payment.id")
             .on("paymentCashu.isDeleted", "is not", sqliteTrue)
         )
+        .leftJoin("paymentLightningAddress", (join) =>
+          join
+            .onRef("paymentLightningAddress.id", "=", "payment.id")
+            .on("paymentLightningAddress.isDeleted", "is not", sqliteTrue)
+        )
         .select((eb) => {
           const firstActiveClaim = eb
             .selectFrom("reconciliationClaim")
@@ -142,6 +147,7 @@ export const eetPaymentsToReportQuery = createQuery((db) =>
                   kind: "accountTransaction.kind",
                   btc: "paymentBtc.amountSats",
                   cashu: "paymentCashu.amountSats",
+                  lightningAddress: "paymentLightningAddress.amountSats",
                 }).as("paymentAmountSats")
               )
               .as("paymentAmountSats"),
@@ -223,6 +229,11 @@ export const eetExtraClaimsQuery = createQuery((db) =>
         .onRef("paymentCashu.id", "=", "payment.id")
         .on("paymentCashu.isDeleted", "is not", sqliteTrue)
     )
+    .leftJoin("paymentLightningAddress", (join) =>
+      join
+        .onRef("paymentLightningAddress.id", "=", "payment.id")
+        .on("paymentLightningAddress.isDeleted", "is not", sqliteTrue)
+    )
     .select((eb) => [
       "reconciliationClaim.id as claimId",
       "reconciliationClaim.claimedAt",
@@ -241,6 +252,7 @@ export const eetExtraClaimsQuery = createQuery((db) =>
         kind: "accountTransaction.kind",
         btc: "paymentBtc.amountSats",
         cashu: "paymentCashu.amountSats",
+        lightningAddress: "paymentLightningAddress.amountSats",
       }).as("paymentAmountSats"),
       "eetSettings.enabledAt",
       "eetSettings.tipOwner",
@@ -306,6 +318,7 @@ export const eetExtraClaimsQuery = createQuery((db) =>
               kind: "accountTransaction.kind",
               btc: "paymentBtc.amountSats",
               cashu: "paymentCashu.amountSats",
+              lightningAddress: "paymentLightningAddress.amountSats",
             })
           ),
         ]),

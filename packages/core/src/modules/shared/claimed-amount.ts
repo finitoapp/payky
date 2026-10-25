@@ -33,11 +33,13 @@ export interface ClaimedAmount {
 export interface QuotedAmountsSats {
   readonly btc: NonNegativeInteger | null
   readonly cashu: NonNegativeInteger | null
+  readonly lightningAddress: NonNegativeInteger | null
 }
 
 /**
  * The quote a transaction of `kind` is measured against. Each Lightning
- * method keeps its own (`paymentBtc` for Spark, `paymentCashu`, cashu/0003),
+ * method keeps its own (`paymentBtc` for Spark, `paymentCashu`, cashu/0003,
+ * and `paymentLightningAddress`, lightning-address/0004),
  * and two of them prepared on one payment were quoted at different times and
  * rates, so a Cashu settlement measured by Spark's sats would read a few
  * minor units off. Every kind without its own quote falls back to Spark's.
@@ -45,7 +47,12 @@ export interface QuotedAmountsSats {
 export const quotedAmountSats = (
   kind: AccountTransactionKind,
   quotes: QuotedAmountsSats
-): NonNegativeInteger | null => (kind === "cashu" ? quotes.cashu : quotes.btc)
+): NonNegativeInteger | null =>
+  kind === "cashu"
+    ? quotes.cashu
+    : kind === "lightningAddress"
+      ? quotes.lightningAddress
+      : quotes.btc
 
 /**
  * `quotedAmountSats` in SQL, over column references so it fits whatever
@@ -55,8 +62,9 @@ export const quotedAmountSatsSql = (columns: {
   readonly kind: string
   readonly btc: string
   readonly cashu: string
+  readonly lightningAddress: string
 }) =>
-  kyselySql<NonNegativeInteger | null>`case ${kyselySql.ref(columns.kind)} when 'cashu' then ${kyselySql.ref(columns.cashu)} else ${kyselySql.ref(columns.btc)} end`
+  kyselySql<NonNegativeInteger | null>`case ${kyselySql.ref(columns.kind)} when 'cashu' then ${kyselySql.ref(columns.cashu)} when 'lightningAddress' then ${kyselySql.ref(columns.lightningAddress)} else ${kyselySql.ref(columns.btc)} end`
 
 /**
  * A claimed transaction's value in its payment's currency. Summing raw

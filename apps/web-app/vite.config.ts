@@ -222,7 +222,10 @@ export default (({ command, isSsrBuild, mode }: ConfigEnv) => {
         manifest: false,
         workbox: {
           cleanupOutdatedCaches: true,
-          globPatterns: ["**/*.{css,html,js,png,svg,webmanifest,woff2}"],
+          // `wasm` too: the SQLite binary is a hashed asset the bundled worker
+          // fetches at start, and a deploy removes the old one from the
+          // server. A precache without it opens the installed app on a 404.
+          globPatterns: ["**/*.{css,html,js,png,svg,wasm,webmanifest,woff2}"],
           maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
           navigateFallback: "/index.html",
           // The landing pages are served as they were prerendered, never

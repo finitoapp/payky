@@ -390,4 +390,9 @@ export const csPayment = {
   "refund.state.full": "Vráceno {amount}",
   "refund.state.partial": "Částečně vráceno {amount}",
   "paymentDetail.paymentMethod.lightningAddress": "Lightning adresa",
+  "paymentWait.method.lightningAddress": "Lightning",
+  "paymentWait.preparing.lightningAddress": "Žádám peněženku o invoice...",
+  "paymentWait.lightningAddress.unverified":
+    "Peněženka hlásí invoice zaplacený, ale neposlala důkaz platby. Než vydáte zboží, zkontrolujte peněženku.",
+  "paymentDetail.transaction.preimage": "Důkaz platby (preimage)",
 } satisfies Record<keyof typeof enPayment, string>

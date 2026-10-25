@@ -399,4 +399,10 @@ export const enPayment = {
   "refund.state.full": "Refunded {amount}",
   "refund.state.partial": "Partly refunded {amount}",
   "paymentDetail.paymentMethod.lightningAddress": "Lightning address",
+  "paymentWait.method.lightningAddress": "Lightning",
+  "paymentWait.preparing.lightningAddress":
+    "Asking your wallet for an invoice...",
+  "paymentWait.lightningAddress.unverified":
+    "Your wallet reports the invoice paid but sent no proof of payment. Check the wallet before you hand over the goods.",
+  "paymentDetail.transaction.preimage": "Proof of payment (preimage)",
 } as const

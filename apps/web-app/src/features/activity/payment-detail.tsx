@@ -476,6 +476,10 @@ function PaymentDetailContent({
                           value={reconciliation.paymentHash}
                         />
                         <PaymentDetailCopyRow
+                          label={t("paymentDetail.transaction.preimage")}
+                          value={reconciliation.preimage}
+                        />
+                        <PaymentDetailCopyRow
                           label={t("paymentDetail.reconciliation.id")}
                           value={reconciliation.id}
                         />

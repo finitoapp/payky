@@ -43,6 +43,7 @@ import {
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useAtomValue } from "jotai"
 import {
+  AtSignIcon,
   BanknoteIcon,
   CoinsIcon,
   CreditCardIcon,
@@ -98,6 +99,7 @@ const preparingPaymentMethodKeys = {
   card: "paymentWait.preparing.card",
   qerko: "paymentWait.preparing.qerko",
   cashu: "paymentWait.preparing.cashu",
+  lightningAddress: "paymentWait.preparing.lightningAddress",
 } satisfies Record<PaymentMethodTab, TranslationKey>
 
 /**
@@ -363,6 +365,21 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       })
     }
 
+    const enabledLightningAddressAccount = enabledPaymentMethodAccounts.find(
+      (account) =>
+        account.kind === "lightningAddress" && account.lightningAddress !== null
+    )
+    if (enabledLightningAddressAccount) {
+      paymentMethods.push({
+        id: "lightningAddress",
+        kind: "lightningAddress",
+        accountId: enabledLightningAddressAccount.id,
+        label: t("paymentWait.method.lightningAddress"),
+        qrPayload: payment?.lightningAddressLnInvoice ?? null,
+        icon: <AtSignIcon />,
+      })
+    }
+
     return paymentMethods.toSorted(
       (firstMethod, secondMethod) =>
         paymentMethodOrder.indexOf(firstMethod.kind) -
@@ -421,7 +438,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
         payment.qerkoAccountId !== undefined) ||
       (activePaymentMethod.id === "cashu" &&
         payment.cashuLnInvoice !== null &&
-        payment.cashuLnInvoice !== undefined))
+        payment.cashuLnInvoice !== undefined) ||
+      (activePaymentMethod.id === "lightningAddress" &&
+        payment.lightningAddressLnInvoice !== null &&
+        payment.lightningAddressLnInvoice !== undefined))
 
   const runPaymentMethodPreparation = useCallback(
     async (
@@ -459,6 +479,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
                 : {}),
               ...(method.kind === "spark"
                 ? { spark: { accountId: method.accountId } }
+                : {}),
+              ...(method.kind === "lightningAddress"
+                ? { lightningAddress: { accountId: method.accountId } }
                 : {}),
             })
           )
@@ -592,14 +615,18 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const activeAmountSats =
     activePaymentMethod?.id === "cashu"
       ? (payment.cashuAmountSats ?? null)
-      : payment.amountSats
+      : activePaymentMethod?.id === "lightningAddress"
+        ? (payment.lightningAddressAmountSats ?? null)
+        : payment.amountSats
   // A Bolt Card pays a Lightning invoice, not a Spark one, and only Android
   // has an NFC reader that can wait under the QR for a tap.
   const boltCardPaymentId =
     isNfcPlatform() &&
-    activePaymentMethod?.id === "spark" &&
     paymentStatus === "pending" &&
-    payment.lnInvoice !== null
+    ((activePaymentMethod?.id === "spark" && payment.lnInvoice !== null) ||
+      (activePaymentMethod?.id === "lightningAddress" &&
+        payment.lightningAddressLnInvoice !== null &&
+        payment.lightningAddressLnInvoice !== undefined))
       ? paymentId
       : null
 
@@ -905,6 +932,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               cashuPaymentId={paymentId}
               newCashuQuotePending={newCashuQuotePending}
               onNewCashuQuote={() => void handleNewCashuQuote()}
+              lightningAddressPaymentId={paymentId}
+              lightningAddressPayable={paymentStatus === "pending"}
             />
           ) : null}
 

@@ -1,3 +1,4 @@
+import { openRecoveryWords, readShownRecoveryWords } from "./support/access.ts"
 import { expect, test } from "./support/fixtures.ts"
 import { translate } from "./support/i18n.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
@@ -65,19 +66,12 @@ test("switch the regional (device locale) format", async ({
 })
 
 test("reveal the recovery phrase", async ({ seededPage: page }) => {
-  const mnemonicField = page.getByRole("textbox", {
-    name: translate("en", "settings.security.mnemonic.label"),
-  })
-
   await test.step("open security settings and reveal the phrase", async () => {
-    await gotoPage(page, "/settings/security", "en", "settings.security.title")
-    await page
-      .getByRole("button", { name: translate("en", "passwordTextarea.show") })
-      .click()
+    await openRecoveryWords(page, "en")
   })
 
   await test.step("verify a plausible recovery phrase is revealed", async () => {
-    const mnemonic = await mnemonicField.inputValue()
+    const mnemonic = (await readShownRecoveryWords(page, "en")).join(" ")
     expect(mnemonic.trim().split(/\s+/u).length).toBeGreaterThanOrEqual(12)
   })
 })

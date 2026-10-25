@@ -8,8 +8,8 @@ tags: [settings]
     env:
       ROUTE: settings/security
       TEXT: ${output.t["settings.security.title"]}
-- scrollUntilVisible:
-    element: ${output.t["passwordTextarea.show"]}
-- tapOn: ${output.t["passwordTextarea.show"]}
+- tapOn: ${output.t["settings.security.backup.open"]}
+- tapOn: ${output.t["settings.security.backup.start"]}
 # A plausible phrase: at least twelve words.
-- assertVisible: "(\\S+ ){11,}\\S+"
+- assertVisible:
+    id: recovery-word-20

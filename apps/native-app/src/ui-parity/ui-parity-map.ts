@@ -1371,13 +1371,45 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     },
   },
   {
-    native: "src/features/settings/security/recovery-phrase-card.tsx",
-    web: ["apps/web-app/src/features/shared/recovery-phrase-card.tsx"],
+    native: "src/features/settings/security/recovery-backup-card.tsx",
+    web: [
+      "apps/web-app/src/features/settings/security/recovery-backup-card.tsx",
+    ],
+    status: "matched",
+  },
+  {
+    native: "src/features/settings/security/recovery-backup-page.tsx",
+    web: [
+      "apps/web-app/src/features/settings/security/recovery-backup-page.tsx",
+    ],
     status: "matched",
     allowedDifferences: {
-      PasswordTextarea:
-        "Native intentionally keeps the phrase in an unselectable Text view, derives it only after owner approval, drops the zero-lifetime query on hide, hides on app inactivity, and prevents screenshots; web's reusable password field also offers copy and is not used on native.",
+      CardContent:
+        "Web lays the steps out with a flex column inside CardContent; native renders each step's own YStack.",
     },
+  },
+  {
+    native: "src/features/settings/security/recovery-verify-step.tsx",
+    web: [
+      "apps/web-app/src/features/settings/security/recovery-verify-step.tsx",
+    ],
+    status: "matched",
+  },
+  {
+    native: "src/features/settings/security/recovery-words-grid.tsx",
+    web: [
+      "apps/web-app/src/features/settings/security/recovery-words-grid.tsx",
+    ],
+    status: "matched",
+    allowedDifferences: {
+      Input:
+        "Web shows the words in read-only inputs; native draws them as unselectable Text, so the phrase cannot be selected or copied (account/0006).",
+    },
+  },
+  {
+    native: "src/features/terminal-home/backup-reminder-dialog.tsx",
+    web: ["apps/web-app/src/features/terminal-home/backup-reminder-dialog.tsx"],
+    status: "matched",
   },
   {
     native: "src/features/settings/security/security-settings-page.tsx",

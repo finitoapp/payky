@@ -772,6 +772,41 @@ export const skSettings = {
   "settings.security.mnemonic.title": "Obnova účtu",
   "settings.security.mnemonic.warning":
     "Ak túto frázu stratíte, tento účet a jeho dáta už nikdy nepôjde obnoviť – nepodarí sa to ani nám.",
+  "settings.security.mnemonic.intro":
+    "Týchto 20 slov je jediná cesta, ako tento účet dostať na iné zariadenie alebo po strate telefónu. Uložte ich do správcu hesiel alebo na papier — nie do screenshotu ani do chatu. Nikto, ani Payky, vám ich neobnoví.",
+  "settings.security.mnemonic.nativeHint":
+    "Opíšte slová na papier v uvedenom poradí, obrazovku nefoťte. Potom zálohu overte.",
+  "settings.security.mnemonic.savePasswords": "Uložiť do hesiel",
+  "settings.security.mnemonic.savePasswords.saved":
+    "Recovery phrase uložená do správcu hesiel.",
+  "settings.security.mnemonic.savePasswords.unsupported":
+    "Tento prehliadač nevie ukladať do správcu hesiel. Skopírujte frázu alebo ju opíšte.",
+  "settings.security.mnemonic.savePasswords.failed":
+    "Do správcu hesiel sa uložiť nepodarilo.",
+  "settings.security.verify.action": "Overiť zálohu",
+  "settings.security.verify.title": "Overenie zálohy",
+  "settings.security.verify.description":
+    "Zadajte slová {slots} zo svojej zálohy. Je to voliteľné a nič neblokuje.",
+  "settings.security.verify.wordLabel": "Slovo {index}",
+  "settings.security.verify.submit": "Skontrolovať",
+  "settings.security.verify.cancel": "Zrušiť",
+  "settings.security.verify.wrong":
+    "Slová nesedia s vašou recovery phrase. Skontrolujte svoj zápis a skúste to znova.",
+  "settings.security.verify.success": "Záloha overená.",
+  "settings.security.verify.status.verified": "Overené {date}",
+  "settings.security.verify.status.unverified": "Neoverené",
+  "settings.security.reminder.text": "Zazálohujte si účet",
+  "settings.security.reminder.action": "Zálohovať teraz",
+  "settings.security.reminder.later": "Neskôr",
+  "settings.security.backup.description":
+    "Či je recovery phrase zálohovaná a overená.",
+  "settings.security.backup.open": "Zálohovať",
+  "settings.security.backup.view": "Zobraziť zálohu",
+  "settings.security.backup.start": "Zobraziť recovery phrase",
+  "settings.security.backup.continue": "Mám zapísané — overiť",
+  "settings.security.verify.skip": "Preskočiť overenie",
+  "settings.security.reminder.description":
+    "Keď prídete o telefón, bez zálohy sa do svojho účtu nedostanete. Zaberie to asi minútu.",
   "settings.security.title": "Bezpečnosť a synchronizácia",
   "settings.security.transports.add": "Pridať transport",
   "settings.security.transports.demo":

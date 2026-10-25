@@ -1,0 +1,19 @@
+# Fills the backup check's three fields (the slots in output.slots): with the
+# right words from output.phrase when MODE is "right", else with wrong ones.
+appId: ${APP_ID}
+---
+- runFlow:
+    file: verify-word.yaml
+    env:
+      N: ${output.slots[0]}
+      MODE: ${MODE}
+- runFlow:
+    file: verify-word.yaml
+    env:
+      N: ${output.slots[1]}
+      MODE: ${MODE}
+- runFlow:
+    file: verify-word.yaml
+    env:
+      N: ${output.slots[2]}
+      MODE: ${MODE}

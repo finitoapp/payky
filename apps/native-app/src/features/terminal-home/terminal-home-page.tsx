@@ -39,6 +39,7 @@ import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import { maxWidth, radius } from "../../theme/tokens.ts"
 import { AmountKeypad } from "./amount-keypad.tsx"
+import { BackupReminderDialog } from "./backup-reminder-dialog.tsx"
 import { PosOverviewPage } from "./pos-overview-page.tsx"
 import { useTerminalHomeMode } from "./use-terminal-home-mode.ts"
 
@@ -153,6 +154,7 @@ export function TerminalHomePage() {
           </Button>
         </XStack>
       </XStack>
+      <BackupReminderDialog />
       {mode === "pos" ? (
         <Suspense fallback={<LoadingView />}>
           <PosOverviewPage />

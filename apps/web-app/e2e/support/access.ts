@@ -79,17 +79,41 @@ export async function readRecoveryPhrase(
   page: Page,
   language: Language
 ): Promise<string> {
+  await openRecoveryWords(page, language)
+  return (await readShownRecoveryWords(page, language)).join(" ")
+}
+
+/** Opens the backup screen and steps to the words (account/0006). */
+export async function openRecoveryWords(
+  page: Page,
+  language: Language
+): Promise<void> {
   await gotoPage(
     page,
-    "/settings/security",
+    "/settings/security/backup",
     language,
-    "settings.security.title"
+    "settings.security.mnemonic.title"
   )
+  await page
+    .getByRole("button", {
+      name: translate(language, "settings.security.backup.start"),
+    })
+    .click()
+}
+
+/** The phrase's 20 words in order, read from the grid of the backup screen's words step. */
+export async function readShownRecoveryWords(
+  page: Page,
+  language: Language
+): Promise<ReadonlyArray<string>> {
   return page
-    .getByRole("textbox", {
+    .getByRole("group", {
       name: translate(language, "settings.security.mnemonic.label"),
     })
-    .inputValue()
+    .locator("input")
+    .evaluateAll((inputs) =>
+      inputs.map((input) => (input as HTMLInputElement).value)
+    )
 }
 
 /** The one-shot PIN prompt raised for `actionKey` (an `access.action.*` key). */

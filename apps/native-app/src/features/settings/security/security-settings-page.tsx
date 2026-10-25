@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "../../../hooks/use-translation.ts"
 import { TransportAddForm } from "../../shared/evolu-transports/transport-add-form.tsx"
 import { TransportToggleList } from "../../shared/evolu-transports/transport-toggle-list.tsx"
-import { RecoveryPhraseCard } from "./recovery-phrase-card.tsx"
+import { RecoveryBackupCard } from "./recovery-backup-card.tsx"
 
 /** Recovery phrase and Evolu sync transports of the active account, like web's Security & Sync. */
 export function SecuritySettingsPage() {
@@ -26,7 +26,7 @@ export function SecuritySettingsPage() {
     <Screen>
       <FadeHeader title={t("settings.security.title")} />
       <YStack gap="5">
-        <RecoveryPhraseCard key={account.id} />
+        <RecoveryBackupCard key={account.id} />
         <Card>
           <CardHeader>
             <CardTitle>{t("settings.security.transports.title")}</CardTitle>

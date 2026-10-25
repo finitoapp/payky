@@ -1,10 +1,22 @@
-# web's readRecoveryPhrase: on Settings → Security, reveals the phrase and
-# keeps it as output.phrase.
+# web's readRecoveryPhrase: opens the backup screen, reveals the phrase and
+# keeps it as output.phrase (the 20 words, space separated). The words are
+# not selectable, so Maestro reads them tile by tile (testID recovery-word-N).
 appId: ${APP_ID}
 ---
-- scrollUntilVisible:
-    element: ${output.t["passwordTextarea.show"]}
-- tapOn: ${output.t["passwordTextarea.show"]}
-- copyTextFrom:
-    text: "(\\S+ ){11,}\\S+"
-- evalScript: ${output.phrase = maestro.copiedText}
+- runFlow:
+    file: goto.yaml
+    env:
+      ROUTE: settings/security/backup
+      TEXT: ${output.t["settings.security.mnemonic.title"]}
+- tapOn: ${output.t["settings.security.backup.start"]}
+- evalScript: ${output.phrase = ""; output.wordIndex = 1}
+- repeat:
+    times: 20
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: "recovery-word-${output.wordIndex}"
+      - copyTextFrom:
+          id: "recovery-word-${output.wordIndex}"
+      - evalScript: ${output.phrase = output.phrase + maestro.copiedText + " "; output.wordIndex = output.wordIndex + 1}
+- evalScript: ${output.phrase = output.phrase.trim()}

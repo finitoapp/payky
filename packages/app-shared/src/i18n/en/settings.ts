@@ -771,6 +771,41 @@ export const enSettings = {
   "settings.security.mnemonic.title": "Account recovery",
   "settings.security.mnemonic.warning":
     "If you lose this phrase, this account and its data can never be recovered — not even by us.",
+  "settings.security.mnemonic.intro":
+    "These 20 words are the only way to get this account back on another device or after losing this phone. Keep them in a password manager or on paper — not in a screenshot or a chat. Nobody, not even Payky, can restore them for you.",
+  "settings.security.mnemonic.nativeHint":
+    "Write the words on paper in the order shown — do not photograph the screen. Then verify the backup.",
+  "settings.security.mnemonic.savePasswords": "Save to passwords",
+  "settings.security.mnemonic.savePasswords.saved":
+    "Recovery phrase saved to your password manager.",
+  "settings.security.mnemonic.savePasswords.unsupported":
+    "This browser cannot save to a password manager. Copy the phrase or write it down.",
+  "settings.security.mnemonic.savePasswords.failed":
+    "Could not save to the password manager.",
+  "settings.security.verify.action": "Verify backup",
+  "settings.security.verify.title": "Verify your backup",
+  "settings.security.verify.description":
+    "Type the words {slots} from your written copy. This is optional and blocks nothing.",
+  "settings.security.verify.wordLabel": "Word {index}",
+  "settings.security.verify.submit": "Check",
+  "settings.security.verify.cancel": "Cancel",
+  "settings.security.verify.wrong":
+    "Those words do not match your recovery phrase. Check your copy and try again.",
+  "settings.security.verify.success": "Backup verified.",
+  "settings.security.verify.status.verified": "Verified {date}",
+  "settings.security.verify.status.unverified": "Not verified",
+  "settings.security.reminder.text": "Back up your account",
+  "settings.security.reminder.action": "Back up now",
+  "settings.security.reminder.later": "Later",
+  "settings.security.backup.description":
+    "Whether your recovery phrase is backed up and checked.",
+  "settings.security.backup.open": "Back up",
+  "settings.security.backup.view": "View backup",
+  "settings.security.backup.start": "Show recovery phrase",
+  "settings.security.backup.continue": "I wrote it down — verify",
+  "settings.security.verify.skip": "Skip verification",
+  "settings.security.reminder.description":
+    "If you lose this phone, you won't be able to get back into your account without a backup. It takes about a minute.",
   "settings.security.title": "Security & Sync",
   "settings.security.transports.add": "Add transport",
   "settings.security.transports.demo":

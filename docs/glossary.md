@@ -83,6 +83,11 @@ The word "account" means two unrelated things here.
 - **Owner** — in access control, the person holding the account's one owner
   PIN (`docs/decisions/access/0001`) and the `owner` preset. Unrelated to an
   Evolu owner (`evoluOwner`), which is the dataset's sync identity.
+- **Recovery phrase** — the 20 SLIP-39 words derived from an account's master
+  key (`seed` in Linky): the only way to restore the account elsewhere.
+  **Verified** means the merchant typed three random words of it back
+  (`appSettings.recoveryPhraseVerifiedAt`, `account/0006`); it is the account's
+  own fact and syncs, unlike a device's PIN session.
 - **Linky owner** — the Evolu identity of Linky, the owner's personal wallet
   app, derived from the same master key next to Payky's own owner
   (`deriveLinkyAppOwnerSecret`). Its app owner holds `shardPointer` and

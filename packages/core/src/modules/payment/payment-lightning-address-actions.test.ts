@@ -2,11 +2,6 @@ import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
 import { createQuery } from "../../evolu/schema.ts"
-import { createYadioApiDep } from "../../integrations/yadio/yadio-client.ts"
-import { createFakeSparkWallet } from "../../spark/spark-wallet-test-fixtures.ts"
-import { createEvoluTest } from "../../testing/evolu.ts"
-import { evoluTestDeps } from "../../testing/evolu-deps.ts"
-import { saveLightningAddressAccount } from "../account/account-actions.ts"
 import { activeClaimedTransactionsByPaymentIdQuery } from "../reconciliation-claim/reconciliation-claim-queries.ts"
 import { sumDistinctClaimedAmounts } from "../shared/claimed-amount.ts"
 import {
@@ -14,121 +9,18 @@ import {
   testPreimage,
   testPreimagePaymentHash,
 } from "../shared/lightning-invoice-test-fixtures.ts"
+import { NonEmptyStringSchema } from "../shared/schema.ts"
+import { cancelPayment } from "./payment-actions.ts"
 import {
-  NonEmptyString255,
-  NonEmptyStringSchema,
-  NonNegativeInteger,
-} from "../shared/schema.ts"
-import { cancelPayment, createPayment } from "./payment-actions.ts"
-import { syncLightningAddressPayment } from "./payment-lightning-address-actions.ts"
-import { preparePaymentMethod } from "./payment-preparation-actions.ts"
+  invoice,
+  invoiceTimestamp,
+  prepareLightningAddressPayment,
+  setupLightningAddressPayment,
+  syncLightningAddressTestPayment,
+  verifyUrl,
+} from "./payment-lightning-address-test-fixtures.ts"
 import { paymentIdsByLnInvoiceQuery } from "./payment-queries.ts"
 import type { PaymentId } from "./payment-types.ts"
-
-// Yadio: 1 BTC = 1 500 000 CZK, so 129 CZK is 8 600 sats = 86 µBTC.
-const invoiceTimestamp = 1_780_000_000
-const invoice = createTestInvoice({
-  hrp: "lnbc86u",
-  timestamp: invoiceTimestamp,
-  expirySeconds: 600,
-  paymentHash: testPreimagePaymentHash,
-})
-const verifyUrl = "https://wallet.test/lnurlp/shop/verify/1"
-
-interface FakeWallet {
-  minSendable: number
-  verify: boolean
-  settled: boolean
-  preimage: string | null
-  pr: string
-  readonly requests: string[]
-}
-
-const setup = async () => {
-  const testEvolu = await createEvoluTest()
-  const wallet: FakeWallet = {
-    minSendable: 1_000,
-    verify: true,
-    settled: false,
-    preimage: null,
-    pr: invoice,
-    requests: [],
-  }
-  const deps = {
-    ...evoluTestDeps(testEvolu.evolu),
-    ...createYadioApiDep(),
-    sparkWallet: { create: async () => createFakeSparkWallet({}) },
-    date: { now: () => new Date((invoiceTimestamp + 60) * 1000) },
-    fetch: async (input: RequestInfo | URL) => {
-      const url = new URL(input instanceof URL ? input : String(input))
-      wallet.requests.push(url.toString())
-      if (url.hostname === "api.yadio.io") {
-        return Response.json({ BTC: 1_500_000, timestamp: 1_780_000_000_000 })
-      }
-      if (url.pathname === "/.well-known/lnurlp/shop") {
-        return Response.json({
-          tag: "payRequest",
-          callback: "https://wallet.test/lnurlp/shop/callback",
-          minSendable: wallet.minSendable,
-          maxSendable: 100_000_000_000,
-          metadata: '[["text/plain","Shop"]]',
-          commentAllowed: 32,
-        })
-      }
-      if (url.pathname === "/lnurlp/shop/callback") {
-        return Response.json({
-          pr: invoice,
-          routes: [],
-          ...(wallet.verify ? { verify: verifyUrl } : {}),
-        })
-      }
-      if (url.toString() === verifyUrl) {
-        return Response.json({
-          status: "OK",
-          settled: wallet.settled,
-          preimage: wallet.preimage,
-          pr: wallet.pr,
-        })
-      }
-      return new Response("not found", { status: 404 })
-    },
-  }
-  await using run = testCreateRun(deps)
-  const accountId = await run.ok(
-    saveLightningAddressAccount({
-      enabled: true,
-      address: NonEmptyString255("shop@wallet.test"),
-    })
-  )
-  if (accountId === null) throw new Error("no Lightning address account")
-  const paymentId = await run.orThrow(
-    createPayment({
-      deviceId: null,
-      billId: null,
-      tableId: null,
-      amount: NonNegativeInteger(12_900),
-      currency: "CZK",
-      tipAmount: NonNegativeInteger(0),
-      canceledAt: null,
-      expiresAt: null,
-    })
-  )
-  return { testEvolu, deps, wallet, accountId, paymentId }
-}
-
-type Setup = Awaited<ReturnType<typeof setup>>
-
-const prepare = async ({ deps, accountId, paymentId }: Setup) => {
-  await using run = testCreateRun(deps)
-  return await run(
-    preparePaymentMethod({ paymentId, lightningAddress: { accountId } })
-  )
-}
-
-const sync = async ({ deps, paymentId }: Setup) => {
-  await using run = testCreateRun(deps)
-  return await run(syncLightningAddressPayment({ paymentId }))
-}
 
 const paymentRowsQuery = (id: PaymentId) =>
   createQuery((db) =>
@@ -172,10 +64,13 @@ const lightningTransactionsQuery = createQuery((db) =>
 
 describe("preparePaymentMethod with a Lightning address", () => {
   test("asks the merchant's wallet for an invoice and expires with it", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
 
-    expect(await prepare(s)).toEqual({ ok: true, value: s.paymentId })
+    expect(await prepareLightningAddressPayment(s)).toEqual({
+      ok: true,
+      value: s.paymentId,
+    })
     expect(await s.deps.evolu.loadQuery(paymentRowsQuery(s.paymentId))).toEqual(
       [
         {
@@ -197,11 +92,11 @@ describe("preparePaymentMethod with a Lightning address", () => {
   })
 
   test("refuses an amount below what the wallet accepts", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
     s.wallet.minSendable = 10_000_000
 
-    expect(await prepare(s)).toMatchObject({
+    expect(await prepareLightningAddressPayment(s)).toMatchObject({
       ok: false,
       error: {
         type: "LightningAddressAmountOutOfRange",
@@ -212,11 +107,11 @@ describe("preparePaymentMethod with a Lightning address", () => {
   })
 
   test("refuses an invoice without a LUD-21 verify URL", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
     s.wallet.verify = false
 
-    expect(await prepare(s)).toEqual({
+    expect(await prepareLightningAddressPayment(s)).toEqual({
       ok: false,
       error: { type: "LightningAddressVerifyUnsupported" },
     })
@@ -226,9 +121,9 @@ describe("preparePaymentMethod with a Lightning address", () => {
   })
 
   test("keeps a withdrawal from paying the invoice back out", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
-    await prepare(s)
+    await prepareLightningAddressPayment(s)
 
     expect(
       await s.deps.evolu.loadQuery(
@@ -240,13 +135,16 @@ describe("preparePaymentMethod with a Lightning address", () => {
 
 describe("syncLightningAddressPayment", () => {
   test("settles the payment with the preimage that proves it", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
-    await prepare(s)
+    await prepareLightningAddressPayment(s)
     s.wallet.settled = true
     s.wallet.preimage = testPreimage
 
-    expect(await sync(s)).toEqual({ ok: true, value: "paid" })
+    expect(await syncLightningAddressTestPayment(s)).toEqual({
+      ok: true,
+      value: "paid",
+    })
     expect(await s.deps.evolu.loadQuery(lightningTransactionsQuery)).toEqual([
       expect.objectContaining({
         kind: "lightningAddress",
@@ -266,43 +164,52 @@ describe("syncLightningAddressPayment", () => {
   })
 
   test("waits while the wallet has not been paid", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
-    await prepare(s)
+    await prepareLightningAddressPayment(s)
 
-    expect(await sync(s)).toEqual({ ok: true, value: "pending" })
+    expect(await syncLightningAddressTestPayment(s)).toEqual({
+      ok: true,
+      value: "pending",
+    })
   })
 
   test("writes nothing when the wallet says settled without a preimage", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
-    await prepare(s)
+    await prepareLightningAddressPayment(s)
     s.wallet.settled = true
 
-    expect(await sync(s)).toEqual({ ok: true, value: "unverified" })
+    expect(await syncLightningAddressTestPayment(s)).toEqual({
+      ok: true,
+      value: "unverified",
+    })
     expect(await s.deps.evolu.loadQuery(lightningTransactionsQuery)).toEqual([])
   })
 
   test("writes nothing for a preimage of another invoice", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
-    await prepare(s)
+    await prepareLightningAddressPayment(s)
     s.wallet.settled = true
     s.wallet.preimage = "44".repeat(32)
 
-    expect(await sync(s)).toEqual({ ok: true, value: "unverified" })
+    expect(await syncLightningAddressTestPayment(s)).toEqual({
+      ok: true,
+      value: "unverified",
+    })
     expect(await s.deps.evolu.loadQuery(lightningTransactionsQuery)).toEqual([])
   })
 
   test("refuses an answer about another invoice", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
-    await prepare(s)
+    await prepareLightningAddressPayment(s)
     s.wallet.settled = true
     s.wallet.preimage = testPreimage
     s.wallet.pr = createTestInvoice({ hrp: "lnbc86u" })
 
-    expect(await sync(s)).toEqual({
+    expect(await syncLightningAddressTestPayment(s)).toEqual({
       ok: false,
       error: { type: "LightningAddressVerifyMismatch", id: s.paymentId },
     })
@@ -310,9 +217,9 @@ describe("syncLightningAddressPayment", () => {
   })
 
   test("still books money that arrives after the payment was canceled", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
-    await prepare(s)
+    await prepareLightningAddressPayment(s)
     {
       await using run = testCreateRun(s.deps)
       await run.orThrow(cancelPayment(s.paymentId))
@@ -320,7 +227,10 @@ describe("syncLightningAddressPayment", () => {
     s.wallet.settled = true
     s.wallet.preimage = testPreimage
 
-    expect(await sync(s)).toEqual({ ok: true, value: "paid" })
+    expect(await syncLightningAddressTestPayment(s)).toEqual({
+      ok: true,
+      value: "paid",
+    })
     const claims = await s.deps.evolu.loadQuery(
       activeClaimedTransactionsByPaymentIdQuery(s.paymentId)
     )
@@ -328,14 +238,17 @@ describe("syncLightningAddressPayment", () => {
   })
 
   test("two polls of a paid invoice write one transaction and one claim", async () => {
-    const s = await setup()
+    const s = await setupLightningAddressPayment()
     await using _ = s.testEvolu
-    await prepare(s)
+    await prepareLightningAddressPayment(s)
     s.wallet.settled = true
     s.wallet.preimage = testPreimage
 
     // Two devices that both saw the preimage before either write synced.
-    const [first, second] = await Promise.all([sync(s), sync(s)])
+    const [first, second] = await Promise.all([
+      syncLightningAddressTestPayment(s),
+      syncLightningAddressTestPayment(s),
+    ])
     expect(first).toEqual({ ok: true, value: "paid" })
     expect(second).toEqual({ ok: true, value: "paid" })
     expect(
@@ -349,7 +262,10 @@ describe("syncLightningAddressPayment", () => {
 
     // Once settled, nobody asks the wallet again.
     const polls = s.wallet.requests.filter((url) => url === verifyUrl).length
-    expect(await sync(s)).toEqual({ ok: true, value: "paid" })
+    expect(await syncLightningAddressTestPayment(s)).toEqual({
+      ok: true,
+      value: "paid",
+    })
     expect(s.wallet.requests.filter((url) => url === verifyUrl)).toHaveLength(
       polls
     )

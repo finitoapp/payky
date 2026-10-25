@@ -7,7 +7,7 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 import { z } from "zod"
-import type { EvoluOwnerDep, MasterKeyDep } from "../../deps.ts"
+import type { DateDep, EvoluOwnerDep, MasterKeyDep } from "../../deps.ts"
 import { defineError } from "../../error.ts"
 import {
   saveCashRegisterAccount,
@@ -22,7 +22,7 @@ import {
   removeUndefinedValues,
   runMutationWithCompletion,
 } from "../shared/evolu-utils.ts"
-import type { FiatCurrency, Iban } from "../shared/schema.ts"
+import { type FiatCurrency, type Iban, TimestampMs } from "../shared/schema.ts"
 import { seedTaxRatesForCountry } from "../tax-rate/tax-rate-actions.ts"
 import { taxRatesQuery } from "../tax-rate/tax-rate-queries.ts"
 import type { appSettings } from "./app-settings.ts"
@@ -171,6 +171,20 @@ export const setEnabledHomeModes =
       })
     )
   }
+
+/**
+ * Records that the merchant typed back words of the recovery phrase
+ * correctly (account/0006). The row is account data, so every device of the
+ * account sees it. Running it again only moves the stamp forward.
+ */
+export const markRecoveryPhraseVerified =
+  (): Task<AppSettingsId, never, EvoluDep & EvoluOwnerDep & DateDep> =>
+  async (run) =>
+    await run(
+      updateSettings({
+        recoveryPhraseVerifiedAt: TimestampMs(run.deps.date.now().getTime()),
+      })
+    )
 
 /**
  * Writes everything the onboarding wizard collected. Refuses an onboarded

@@ -1,0 +1,7 @@
+# Types into the backup check's field "Word N" when the dialog asks for slot N
+# (env N): the word from output.phrase when MODE is "right", else a wrong one.
+appId: ${APP_ID}
+---
+- tapOn: 'Word ${N}'
+- eraseText
+- inputText: '${MODE == "right" ? output.phrase.split(" ")[N - 1] : "zzz"}'

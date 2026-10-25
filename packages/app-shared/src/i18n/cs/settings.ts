@@ -770,6 +770,41 @@ export const csSettings = {
   "settings.security.mnemonic.title": "Obnova účtu",
   "settings.security.mnemonic.warning":
     "Pokud tuto frázi ztratíte, tento účet a jeho data už nikdy nepůjde obnovit – ani nám se to nepodaří.",
+  "settings.security.mnemonic.intro":
+    "Těchto 20 slov je jediná cesta, jak tento účet dostat na jiné zařízení nebo po ztrátě telefonu. Uložte je do správce hesel nebo na papír — ne do screenshotu ani do chatu. Nikdo, ani Payky, vám je neobnoví.",
+  "settings.security.mnemonic.nativeHint":
+    "Opište slova na papír v uvedeném pořadí, obrazovku nefoťte. Potom zálohu ověřte.",
+  "settings.security.mnemonic.savePasswords": "Uložit do hesel",
+  "settings.security.mnemonic.savePasswords.saved":
+    "Recovery phrase uložena do správce hesel.",
+  "settings.security.mnemonic.savePasswords.unsupported":
+    "Tento prohlížeč neumí ukládat do správce hesel. Zkopírujte frázi nebo ji opište.",
+  "settings.security.mnemonic.savePasswords.failed":
+    "Do správce hesel se uložit nepodařilo.",
+  "settings.security.verify.action": "Ověřit zálohu",
+  "settings.security.verify.title": "Ověření zálohy",
+  "settings.security.verify.description":
+    "Zadejte slova {slots} ze své zálohy. Je to volitelné a nic neblokuje.",
+  "settings.security.verify.wordLabel": "Slovo {index}",
+  "settings.security.verify.submit": "Zkontrolovat",
+  "settings.security.verify.cancel": "Zrušit",
+  "settings.security.verify.wrong":
+    "Slova nesedí s vaší recovery phrase. Zkontrolujte svůj zápis a zkuste to znovu.",
+  "settings.security.verify.success": "Záloha ověřena.",
+  "settings.security.verify.status.verified": "Ověřeno {date}",
+  "settings.security.verify.status.unverified": "Neověřeno",
+  "settings.security.reminder.text": "Zazálohujte si účet",
+  "settings.security.reminder.action": "Zálohovat teď",
+  "settings.security.reminder.later": "Později",
+  "settings.security.backup.description":
+    "Zda je recovery phrase zazálohovaná a ověřená.",
+  "settings.security.backup.open": "Zálohovat",
+  "settings.security.backup.view": "Zobrazit zálohu",
+  "settings.security.backup.start": "Zobrazit recovery phrase",
+  "settings.security.backup.continue": "Mám zapsáno — ověřit",
+  "settings.security.verify.skip": "Přeskočit ověření",
+  "settings.security.reminder.description":
+    "Když přijdete o telefon, bez zálohy se do svého účtu nedostanete. Zabere to asi minutu.",
   "settings.security.title": "Bezpečnost a synchronizace",
   "settings.security.transports.add": "Přidat transport",
   "settings.security.transports.demo":

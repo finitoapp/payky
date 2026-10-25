@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { verifyEvent } from "nostr-tools/pure"
+import { openRecoveryWords, readShownRecoveryWords } from "./support/access.ts"
 import { translate } from "./support/i18n.ts"
 import { fillInlineField } from "./support/inline-edit.ts"
 import { gotoPage, reloadPage } from "./support/navigation.ts"
@@ -24,15 +25,8 @@ test("complete onboarding as a new account, without backing up the recovery phra
   })
 
   await test.step("security settings still hand out the recovery phrase", async () => {
-    await gotoPage(page, "/settings/security", "en", "settings.security.title")
-    await page
-      .getByRole("button", { name: translate("en", "passwordTextarea.show") })
-      .click()
-    const mnemonic = await page
-      .getByRole("textbox", {
-        name: translate("en", "settings.security.mnemonic.label"),
-      })
-      .inputValue()
+    await openRecoveryWords(page, "en")
+    const mnemonic = (await readShownRecoveryWords(page, "en")).join(" ")
     expect(mnemonic.trim().split(/\s+/u).length).toBeGreaterThanOrEqual(12)
   })
 })

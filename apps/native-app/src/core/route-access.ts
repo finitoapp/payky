@@ -57,6 +57,7 @@ export type NativeRoutePath =
   | "/settings/access"
   | "/settings/access/add-device"
   | "/settings/security"
+  | "/settings/security/backup"
   | "/settings/evolu-export"
   | "/settings/payment-accounts"
   | "/settings/payment-accounts/iban"
@@ -169,6 +170,8 @@ export const routeAccess = {
   "/settings/access/add-device": "admin",
   // Like web's `_terminal/settings/security`: the recovery phrase and sync relays are owner-only.
   "/settings/security": "admin",
+  // Like web's `_terminal/settings/security_/backup`: the recovery phrase is owner-only.
+  "/settings/security/backup": "admin",
   // Like web's `_terminal/settings/evolu-export`: owner-only, and the export asks again before serializing.
   "/settings/evolu-export": "admin",
   // Like web's `_terminal/settings/payment-accounts` (owner-only, access/0002).

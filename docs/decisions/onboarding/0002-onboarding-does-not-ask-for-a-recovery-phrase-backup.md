@@ -15,8 +15,8 @@ moment they most want to start selling.
 
 Onboarding of a new account ends on the payment-methods step; it neither
 shows the phrase nor asks for a confirmation. The phrase stays available in
-Settings > Security. Prompting the merchant to back it up later, once they
-use the app, is a separate decision still to be made.
+Settings > Security. Prompting the merchant to back it up later is
+`account/0006`: a reminder after the first paid payment.
 
 ## Alternatives considered
 
@@ -25,7 +25,7 @@ use the app, is a separate decision still to be made.
 
 ## Consequences
 
-Until the later prompt exists, a merchant who never opens Settings >
+Until the first payment brings the reminder, a merchant who never opens Settings >
 Security and loses the device loses the account.
 
 ## Enforced by

@@ -18,6 +18,7 @@ import {
 } from "@/components/sliding-pill.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx"
+import { BackupReminderDialog } from "@/features/terminal-home/backup-reminder-dialog.tsx"
 import { PosOverviewPage } from "@/features/terminal-home/pos-overview-page.tsx"
 import { TerminalPaymentKeypad } from "@/features/terminal-home/terminal-payment-keypad.tsx"
 import { useIsConfirmDialogOpen } from "@/hooks/use-confirm-dialog.ts"
@@ -178,6 +179,7 @@ export function TerminalHomePage() {
       )}
     >
       <Header />
+      <BackupReminderDialog />
 
       <Suspense fallback={null}>
         {isNumpadMode ? <TerminalPaymentKeypadLoader /> : <PosOverviewPage />}

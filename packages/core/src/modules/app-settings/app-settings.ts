@@ -1,6 +1,10 @@
 import { SqliteBoolean, sqliteTrue } from "@evolu/common"
 import { z } from "zod"
-import { FiatCurrencySchema, type InferTable } from "../shared/schema.ts"
+import {
+  FiatCurrencySchema,
+  type InferTable,
+  TimestampMsSchema,
+} from "../shared/schema.ts"
 import {
   AppSettingsId,
   DefaultPaymentMethodSchema,
@@ -21,6 +25,14 @@ export const appSettings = {
    * before the column existed still count as onboarded settings.
    */
   enabledHomeModesJson: z.string().nullable(),
+  /**
+   * When the merchant proved the recovery phrase is written down correctly
+   * (account/0006); `null` means not verified. Nullable and left out of
+   * `settingsQuery`'s filter like `enabledHomeModesJson`. It lives on the
+   * account, so verifying on one device clears the reminder on all of them.
+   * Carries a timestamp only, never the phrase or any word of it.
+   */
+  recoveryPhraseVerifiedAt: TimestampMsSchema.nullable(),
 } as const
 
 export type AppSettingsRow = InferTable<typeof appSettings>

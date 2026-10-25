@@ -1,5 +1,7 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
+import type { DateDep, EvoluOwnerDep } from "../../deps.ts"
+import { createTestDateDep, testFixedDate } from "../../testing/date-dep.ts"
 import { createEvoluTest } from "../../testing/evolu.ts"
 import { evoluTestDeps } from "../../testing/evolu-deps.ts"
 import {
@@ -9,17 +11,21 @@ import {
   sparkAccountQuery,
 } from "../account/account-queries.ts"
 import { legalEntityQuery } from "../legal-entity/legal-entity-queries.ts"
+import type { EvoluDep } from "../shared/evolu-deps.ts"
 import { MasterKey } from "../shared/key-derivation.ts"
 import { BankAccountInputIbanSchema } from "../shared/schema.ts"
 import { taxRatesQuery } from "../tax-rate/tax-rate-queries.ts"
 import {
   completeOnboarding,
   finishOnboarding,
+  markRecoveryPhraseVerified,
+  requireNotOnboarded,
   setEnabledHomeModes,
   updateTipSettings,
 } from "./app-settings-actions.ts"
 import { settingsQuery } from "./app-settings-queries.ts"
 import {
+  createDefaultSettings,
   defaultPaymentMethod,
   defaultPaymentMethodOrder,
 } from "./app-settings-utils.ts"
@@ -114,6 +120,69 @@ describe("setEnabledHomeModes", () => {
     await expect
       .poll(() => evolu.loadQuery(settingsQuery))
       .toEqual([expect.objectContaining({ enabledHomeModesJson: '["pos"]' })])
+  })
+})
+
+describe("markRecoveryPhraseVerified", () => {
+  const onboard = completeOnboarding({
+    fiatCurrency: "CZK",
+    defaultPaymentMethod,
+    paymentMethodOrderJson: JSON.stringify(defaultPaymentMethodOrder),
+  })
+
+  test("a new account is unverified, and still onboarded", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun(evoluTestDeps(evolu))
+
+    await run.orThrow(onboard)
+
+    await expect
+      .poll(() => evolu.loadQuery(settingsQuery))
+      .toEqual([expect.objectContaining({ recoveryPhraseVerifiedAt: null })])
+  })
+
+  test("a settings row written without the column still counts as onboarded", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    await using run = testCreateRun(evoluTestDeps(evolu))
+
+    // What an older app version syncs: the row has no recoveryPhraseVerifiedAt.
+    const { recoveryPhraseVerifiedAt: _omitted, ...legacy } = {
+      ...createDefaultSettings(),
+      enabledHomeModesJson: null,
+      recoveryPhraseVerifiedAt: null,
+    }
+    evolu.upsert("appSettings", legacy, { owner: evolu.appOwner })
+
+    await expect
+      .poll(() => evolu.loadQuery(settingsQuery))
+      .toEqual([expect.objectContaining({ recoveryPhraseVerifiedAt: null })])
+    await expect(run(requireNotOnboarded())).resolves.toMatchObject({
+      ok: false,
+    })
+  })
+
+  test("writes the stamp and stays verified when run again", async () => {
+    await using testEvolu = await createEvoluTest()
+    const { evolu } = testEvolu
+    const deps: EvoluDep & EvoluOwnerDep & DateDep = {
+      ...evoluTestDeps(evolu),
+      ...createTestDateDep(),
+    }
+    await using run = testCreateRun(deps)
+
+    await run.orThrow(onboard)
+    await run.ok(markRecoveryPhraseVerified())
+    await run.ok(markRecoveryPhraseVerified())
+
+    await expect
+      .poll(() => evolu.loadQuery(settingsQuery))
+      .toEqual([
+        expect.objectContaining({
+          recoveryPhraseVerifiedAt: testFixedDate.getTime(),
+        }),
+      ])
   })
 })
 

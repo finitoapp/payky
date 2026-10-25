@@ -65,6 +65,7 @@ import { Route as TerminalSettingsPaymentAccountsCashuRouteImport } from './rout
 import { Route as TerminalSettingsPaymentAccountsIbanRouteImport } from './routes/_terminal.settings.payment-accounts.iban'
 import { Route as TerminalSettingsPaymentAccountsQerkoTerminalRouteImport } from './routes/_terminal.settings.payment-accounts.qerko-terminal'
 import { Route as TerminalSettingsPaymentAccountsSparkRouteImport } from './routes/_terminal.settings.payment-accounts.spark'
+import { Route as TerminalSettingsSecurityBackupRouteImport } from './routes/_terminal.settings.security_.backup'
 import { Route as TerminalSettingsTablesIndexRouteImport } from './routes/_terminal.settings.tables.index'
 import { Route as TerminalSettingsTablesTableIdRouteImport } from './routes/_terminal.settings.tables.$tableId'
 import { Route as TerminalSettingsTablesNewRouteImport } from './routes/_terminal.settings.tables.new'
@@ -400,6 +401,12 @@ const TerminalSettingsPaymentAccountsSparkRoute =
     path: '/spark',
     getParentRoute: () => TerminalSettingsPaymentAccountsRoute,
   } as any)
+const TerminalSettingsSecurityBackupRoute =
+  TerminalSettingsSecurityBackupRouteImport.update({
+    id: '/security_/backup',
+    path: '/security/backup',
+    getParentRoute: () => TerminalSettingsRoute,
+  } as any)
 const TerminalSettingsTablesIndexRoute =
   TerminalSettingsTablesIndexRouteImport.update({
     id: '/',
@@ -578,6 +585,7 @@ export interface FileRoutesByFullPath {
   '/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
   '/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   '/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
+  '/settings/security/backup': typeof TerminalSettingsSecurityBackupRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about/': typeof TerminalSettingsAboutIndexRoute
@@ -645,6 +653,7 @@ export interface FileRoutesByTo {
   '/settings/items/new': typeof TerminalSettingsItemsNewRoute
   '/settings/payment-accounts/card-switchio': typeof TerminalSettingsPaymentAccountsCardSwitchioRoute
   '/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
+  '/settings/security/backup': typeof TerminalSettingsSecurityBackupRoute
   '/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/settings/about': typeof TerminalSettingsAboutIndexRoute
@@ -721,6 +730,7 @@ export interface FileRoutesById {
   '/_terminal/settings/payment-accounts/iban': typeof TerminalSettingsPaymentAccountsIbanRouteWithChildren
   '/_terminal/settings/payment-accounts/qerko-terminal': typeof TerminalSettingsPaymentAccountsQerkoTerminalRoute
   '/_terminal/settings/payment-accounts/spark': typeof TerminalSettingsPaymentAccountsSparkRouteWithChildren
+  '/_terminal/settings/security_/backup': typeof TerminalSettingsSecurityBackupRoute
   '/_terminal/settings/tables/$tableId': typeof TerminalSettingsTablesTableIdRoute
   '/_terminal/settings/tables/new': typeof TerminalSettingsTablesNewRoute
   '/_terminal/settings/about/': typeof TerminalSettingsAboutIndexRoute
@@ -800,6 +810,7 @@ export interface FileRouteTypes {
     | '/settings/payment-accounts/iban'
     | '/settings/payment-accounts/qerko-terminal'
     | '/settings/payment-accounts/spark'
+    | '/settings/security/backup'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
     | '/settings/about/'
@@ -867,6 +878,7 @@ export interface FileRouteTypes {
     | '/settings/items/new'
     | '/settings/payment-accounts/card-switchio'
     | '/settings/payment-accounts/qerko-terminal'
+    | '/settings/security/backup'
     | '/settings/tables/$tableId'
     | '/settings/tables/new'
     | '/settings/about'
@@ -942,6 +954,7 @@ export interface FileRouteTypes {
     | '/_terminal/settings/payment-accounts/iban'
     | '/_terminal/settings/payment-accounts/qerko-terminal'
     | '/_terminal/settings/payment-accounts/spark'
+    | '/_terminal/settings/security_/backup'
     | '/_terminal/settings/tables/$tableId'
     | '/_terminal/settings/tables/new'
     | '/_terminal/settings/about/'
@@ -1370,6 +1383,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TerminalSettingsPaymentAccountsSparkRouteImport
       parentRoute: typeof TerminalSettingsPaymentAccountsRoute
     }
+    '/_terminal/settings/security_/backup': {
+      id: '/_terminal/settings/security_/backup'
+      path: '/security/backup'
+      fullPath: '/settings/security/backup'
+      preLoaderRoute: typeof TerminalSettingsSecurityBackupRouteImport
+      parentRoute: typeof TerminalSettingsRoute
+    }
     '/_terminal/settings/tables/': {
       id: '/_terminal/settings/tables/'
       path: '/'
@@ -1779,6 +1799,7 @@ interface TerminalSettingsRouteChildren {
   TerminalSettingsTipsRoute: typeof TerminalSettingsTipsRoute
   TerminalSettingsIndexRoute: typeof TerminalSettingsIndexRoute
   TerminalSettingsAccessAddDeviceRoute: typeof TerminalSettingsAccessAddDeviceRoute
+  TerminalSettingsSecurityBackupRoute: typeof TerminalSettingsSecurityBackupRoute
 }
 
 const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
@@ -1810,6 +1831,7 @@ const TerminalSettingsRouteChildren: TerminalSettingsRouteChildren = {
   TerminalSettingsTipsRoute: TerminalSettingsTipsRoute,
   TerminalSettingsIndexRoute: TerminalSettingsIndexRoute,
   TerminalSettingsAccessAddDeviceRoute: TerminalSettingsAccessAddDeviceRoute,
+  TerminalSettingsSecurityBackupRoute: TerminalSettingsSecurityBackupRoute,
 }
 
 const TerminalSettingsRouteWithChildren =

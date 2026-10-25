@@ -1,0 +1,59 @@
+# web recovery-backup.spec.ts: "the backup reminder waits for the first payment,
+# and verifying the backup ends it" (native shows no copy action; the check
+# refuses a wrong word and accepts the right ones).
+appId: ${APP_ID}
+tags: [settings]
+---
+- runFlow: ../../subflows/seed-onboarding.yaml
+# Nothing is shown before the first payment.
+- assertNotVisible:
+    id: backup-reminder
+- runFlow: ../../subflows/take-cash-payment.yaml
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: ""
+      TEXT: ${output.t["home.pay"]}
+- extendedWaitUntil:
+    visible:
+      id: backup-reminder
+    timeout: 15000
+- tapOn: ${output.t["settings.security.reminder.later"]}
+- assertNotVisible:
+    id: backup-reminder
+# Security only reports the status.
+- runFlow:
+    file: ../../subflows/goto.yaml
+    env:
+      ROUTE: settings/security
+      TEXT: ${output.t["settings.security.title"]}
+- assertVisible: ${output.t["settings.security.verify.status.unverified"]}
+- assertNotVisible:
+    id: recovery-word-1
+- assertNotVisible: ${output.t["settings.security.mnemonic.copy"]}
+- runFlow: ../../subflows/read-phrase.yaml
+- tapOn: ${output.t["settings.security.backup.continue"]}
+- assertVisible: ${output.t["settings.security.verify.title"]}
+# The check names the three slots it asks for.
+- copyTextFrom:
+    text: "Type the words \\d+, \\d+, \\d+ from.*"
+- evalScript: ${output.slots = /words (\d+), (\d+), (\d+)/.exec(maestro.copiedText).slice(1, 4).map(Number)}
+# A wrong word is refused.
+- runFlow:
+    file: ../../subflows/verify-slots.yaml
+    env:
+      MODE: wrong
+- hideKeyboard
+- tapOn: ${output.t["settings.security.verify.submit"]}
+- assertVisible: ${output.t["settings.security.verify.wrong"]}
+# The right ones verify the backup and leave for Security.
+- runFlow:
+    file: ../../subflows/verify-slots.yaml
+    env:
+      MODE: right
+- hideKeyboard
+- tapOn: ${output.t["settings.security.verify.submit"]}
+- extendedWaitUntil:
+    visible: ${output.t["settings.security.title"]}
+    timeout: 15000
+- assertNotVisible: ${output.t["settings.security.verify.status.unverified"]}

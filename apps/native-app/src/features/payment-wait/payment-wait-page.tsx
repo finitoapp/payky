@@ -21,6 +21,7 @@ import type {
   BankQrFormat,
 } from "@payky/core/modules/account/account-types"
 import { settingsQuery } from "@payky/core/modules/app-settings/app-settings-queries"
+import type { DefaultPaymentMethod } from "@payky/core/modules/app-settings/app-settings-types"
 import { getPaymentMethodOrder } from "@payky/core/modules/app-settings/app-settings-utils"
 import {
   cancelPayment,
@@ -46,6 +47,7 @@ import { PaymentId } from "@payky/core/modules/payment/payment-types"
 import { Currency, Integer } from "@payky/core/modules/shared/schema"
 import { router, useLocalSearchParams } from "expo-router"
 import { useAtomValue } from "jotai"
+import AtSign from "lucide-react-native/icons/at-sign"
 import Banknote from "lucide-react-native/icons/banknote"
 import Check from "lucide-react-native/icons/check"
 import Coins from "lucide-react-native/icons/coins"
@@ -96,12 +98,21 @@ import { BoltCardReader } from "./payment-wait-bolt-card.tsx"
 import { CardPaymentTab } from "./payment-wait-card-tab.tsx"
 import { CashuPaymentTab } from "./payment-wait-cashu-tab.tsx"
 import { IbanPaymentTab } from "./payment-wait-iban-tab.tsx"
+import { LightningAddressPaymentTab } from "./payment-wait-lightning-address-tab.tsx"
 import { QerkoPaymentTab } from "./payment-wait-qerko-tab.tsx"
 
 // Spark/Lightning (with a Bolt Card tap under the QR), cash, bank transfer,
-// Cashu and the SwitchioPay card terminal are offered here.
+// Cashu, the merchant's own Lightning address and the card terminals are
+// offered here.
 
-type MethodId = "spark" | "cash" | "iban" | "cashu" | "card" | "qerko"
+type MethodId =
+  | "spark"
+  | "cash"
+  | "iban"
+  | "cashu"
+  | "card"
+  | "qerko"
+  | "lightningAddress"
 
 const methodLabelKeys = {
   spark: "paymentWait.method.lightning",
@@ -110,6 +121,7 @@ const methodLabelKeys = {
   cashu: "paymentWait.method.cashu",
   card: "paymentWait.method.card",
   qerko: "paymentWait.method.qerko",
+  lightningAddress: "paymentWait.method.lightningAddress",
 } satisfies Record<MethodId, TranslationKey>
 
 const methodIcons = {
@@ -119,7 +131,24 @@ const methodIcons = {
   cashu: Coins,
   card: CreditCard,
   qerko: Nfc,
-} as const
+  lightningAddress: AtSign,
+} as const satisfies Record<MethodId, unknown>
+
+/**
+ * What `preparePaymentMethod` is asked for each method a run of it prepares.
+ * A lookup, so a new method cannot fall through to another's preparation.
+ * Cashu prepares through its own Task.
+ */
+const preparationRequests = {
+  spark: (accountId: AccountId) => ({ spark: { accountId } }),
+  cash: (accountId: AccountId) => ({ cashRegister: { accountId } }),
+  iban: (accountId: AccountId) => ({ bank: { accountId } }),
+  card: (accountId: AccountId) => ({ card: { accountId } }),
+  qerko: (accountId: AccountId) => ({ qerkoTerminal: { accountId } }),
+  lightningAddress: (accountId: AccountId) => ({
+    lightningAddress: { accountId },
+  }),
+} satisfies Record<Exclude<MethodId, "cashu">, (accountId: AccountId) => object>
 
 /**
  * A card decline and an unreadable terminal result must never read the same:
@@ -244,6 +273,10 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       account.kind === "qerkoTerminal" &&
       account.qerkoTerminalCurrency === payment?.currency
   )
+  const lightningAddressAccount = accounts.find(
+    (account) =>
+      account.kind === "lightningAddress" && account.lightningAddress !== null
+  )
   const methods = useMemo(() => {
     const order = getPaymentMethodOrder(settings)
     const found: { id: MethodId; accountId: AccountId }[] = []
@@ -259,6 +292,11 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       found.push({ id: "qerko", accountId: qerkoAccount.id })
     if (cashuAccount !== undefined)
       found.push({ id: "cashu", accountId: cashuAccount.id })
+    if (lightningAddressAccount !== undefined)
+      found.push({
+        id: "lightningAddress",
+        accountId: lightningAddressAccount.id,
+      })
     const kindOf = {
       spark: "spark",
       cash: "cashRegister",
@@ -266,7 +304,8 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       cashu: "cashu",
       card: "cardSwitchio",
       qerko: "qerkoTerminal",
-    } as const
+      lightningAddress: "lightningAddress",
+    } as const satisfies Record<MethodId, DefaultPaymentMethod>
     return found.toSorted(
       (a, b) => order.indexOf(kindOf[a.id]) - order.indexOf(kindOf[b.id])
     )
@@ -278,6 +317,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
     cashuAccount,
     cardAccount,
     qerkoAccount,
+    lightningAddressAccount,
   ])
   const active = methods.find(({ id }) => id === selected) ?? methods[0]
   const preparationKey =
@@ -285,23 +325,17 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       ? null
       : `${paymentId}:${active.id}:${active.accountId}`
   const sparkInvoice = payment?.lnInvoice ?? payment?.sparkInvoice ?? null
-  const prepared =
-    active?.id === "spark"
-      ? sparkInvoice !== null
-      : active?.id === "cash"
-        ? payment?.cashRegisterAccountId !== null &&
-          payment?.cashRegisterAccountId !== undefined
-        : active?.id === "iban"
-          ? payment?.ibanAccountId !== null &&
-            payment?.ibanAccountId !== undefined
-          : active?.id === "card"
-            ? payment?.cardAccountId !== null &&
-              payment?.cardAccountId !== undefined
-            : active?.id === "qerko"
-              ? payment?.qerkoAccountId !== null &&
-                payment?.qerkoAccountId !== undefined
-              : payment?.cashuLnInvoice !== null &&
-                payment?.cashuLnInvoice !== undefined
+  const isSet = (value: unknown) => value !== null && value !== undefined
+  const preparedBy = {
+    spark: sparkInvoice !== null,
+    cash: isSet(payment?.cashRegisterAccountId),
+    iban: isSet(payment?.ibanAccountId),
+    card: isSet(payment?.cardAccountId),
+    qerko: isSet(payment?.qerkoAccountId),
+    cashu: isSet(payment?.cashuLnInvoice),
+    lightningAddress: isSet(payment?.lightningAddressLnInvoice),
+  } satisfies Record<MethodId, boolean>
+  const prepared = active !== undefined && preparedBy[active.id]
   const preparationStatus =
     preparationKey === null ? undefined : preparation[preparationKey]
   // Spark invoices carry an `expiresAt` and nothing writes a row when it
@@ -425,15 +459,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
           return await run(
             preparePaymentMethod({
               paymentId,
-              ...(method.id === "cash"
-                ? { cashRegister: { accountId: method.accountId } }
-                : method.id === "card"
-                  ? { card: { accountId: method.accountId } }
-                  : method.id === "qerko"
-                    ? { qerkoTerminal: { accountId: method.accountId } }
-                    : method.id === "spark"
-                      ? { spark: { accountId: method.accountId } }
-                      : { bank: { accountId: method.accountId } }),
+              ...preparationRequests[method.id](method.accountId),
             })
           )
         }
@@ -679,7 +705,9 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       ? payment.amountSats
       : active?.id === "cashu"
         ? (payment.cashuAmountSats ?? null)
-        : null
+        : active?.id === "lightningAddress"
+          ? (payment.lightningAddressAmountSats ?? null)
+          : null
 
   return (
     <Screen>
@@ -803,6 +831,13 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
               <BoltCardReader paymentId={paymentId} />
             ) : null}
           </YStack>
+        ) : active.id === "lightningAddress" ? (
+          <LightningAddressPaymentTab
+            paymentId={paymentId}
+            invoice={payment.lightningAddressLnInvoice ?? null}
+            payable={status === "pending"}
+            expired={status === "expired"}
+          />
         ) : active.id === "cashu" ? (
           <YStack gap={12} items="center" w="100%">
             <CashuPaymentTab

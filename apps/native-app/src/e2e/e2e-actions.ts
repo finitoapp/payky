@@ -15,7 +15,10 @@ import {
   legacyFiatBankAccountId,
 } from "@payky/core/modules/account/account-utils"
 import { createAccountTransaction } from "@payky/core/modules/account-transaction/account-transaction-actions"
-import { completeOnboarding } from "@payky/core/modules/app-settings/app-settings-actions"
+import {
+  completeOnboarding,
+  markRecoveryPhraseVerified,
+} from "@payky/core/modules/app-settings/app-settings-actions"
 import { PaymentMethodOrderJson } from "@payky/core/modules/app-settings/app-settings-utils"
 import { cancelBill } from "@payky/core/modules/bill/bill-actions"
 import {
@@ -108,6 +111,7 @@ type E2eAction = (
 const SeedOnboardingParams = z.object({
   spark: z.stringbool().default(false),
   fiatCurrency: z.enum(FiatCurrency).default(FiatCurrency.USD),
+  unverifiedBackup: z.stringbool().default(false),
 })
 
 const FakeParams = z.object({
@@ -121,10 +125,14 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
   /**
    * `__e2eSeedOnboarding`: the rows the onboarding UI writes (cash + IBAN,
    * USD, tips on defaults; `spark=true` adds Spark, `fiatCurrency=` another
-   * currency), plus English, so no flow depends on the device locale.
+   * currency), plus English, so no flow depends on the device locale. It
+   * marks the recovery phrase verified, as web's does, so the backup reminder
+   * (account/0006) does not cover the screen after the first payment;
+   * `unverifiedBackup=true` keeps it for a flow that tests the reminder.
    */
   seedOnboarding: async (run, params) => {
-    const { spark, fiatCurrency } = SeedOnboardingParams.parse(params)
+    const { spark, fiatCurrency, unverifiedBackup } =
+      SeedOnboardingParams.parse(params)
     updateDeviceSettings(run.deps.deviceEvolu, {
       language: "en",
       locale: getDeviceLocaleForLanguage("en"),
@@ -150,6 +158,7 @@ export const e2eActions: Readonly<Record<string, E2eAction>> = {
         ),
       })
     )
+    if (!unverifiedBackup) await run.ok(markRecoveryPhraseVerified())
     return undefined
   },
 

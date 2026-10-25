@@ -4,7 +4,10 @@
 appId: ${APP_ID}
 tags: [settings]
 ---
-- runFlow: ../../subflows/seed-onboarding.yaml
+- runFlow:
+    file: ../../subflows/seed-onboarding.yaml
+    env:
+      QUERY: unverifiedBackup=true
 # Nothing is shown before the first payment.
 - assertNotVisible:
     id: backup-reminder

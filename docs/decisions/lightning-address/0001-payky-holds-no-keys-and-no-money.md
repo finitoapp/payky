@@ -44,4 +44,5 @@ merchant. A Bolt Card tapped under the tab pays the wallet's invoice.
 
 - `packages/core/src/modules/payment/payment-lightning-address-actions.test.ts > preparePaymentMethod with a Lightning address > asks the merchant's wallet for an invoice and expires with it`
 - `packages/core/src/modules/payment/payment-lightning-address-actions.test.ts > syncLightningAddressPayment > settles the payment with the preimage that proves it`
+- `packages/core/src/modules/payment/payment-lightning-address-actions.test.ts > payPaymentWithBoltCard on the Lightning address tab > hands the wallet's invoice to the card's service`
 - `apps/web-app/e2e/payment-lightning-address.spec.ts > take a payment into the merchant's wallet and see it settle`

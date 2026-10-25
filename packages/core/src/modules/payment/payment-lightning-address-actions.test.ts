@@ -10,7 +10,7 @@ import {
   testPreimagePaymentHash,
 } from "../shared/lightning-invoice-test-fixtures.ts"
 import { NonEmptyStringSchema } from "../shared/schema.ts"
-import { cancelPayment } from "./payment-actions.ts"
+import { cancelPayment, payPaymentWithBoltCard } from "./payment-actions.ts"
 import {
   invoice,
   invoiceTimestamp,
@@ -130,6 +130,50 @@ describe("preparePaymentMethod with a Lightning address", () => {
         paymentIdsByLnInvoiceQuery(NonEmptyStringSchema.decode(invoice))
       )
     ).toEqual([{ id: s.paymentId }])
+  })
+})
+
+describe("payPaymentWithBoltCard on the Lightning address tab", () => {
+  test("hands the wallet's invoice to the card's service", async () => {
+    const s = await setupLightningAddressPayment()
+    await using _ = s.testEvolu
+    await prepareLightningAddressPayment(s)
+    const cardRequests: string[] = []
+    const deps = {
+      ...s.deps,
+      fetch: async (input: RequestInfo | URL) => {
+        const url = input instanceof URL ? input.toString() : String(input)
+        if (!url.startsWith("https://card.example.test/")) {
+          return s.deps.fetch(input)
+        }
+        cardRequests.push(url)
+        return Response.json(
+          url.includes("/callback")
+            ? { status: "OK" }
+            : {
+                tag: "withdrawRequest",
+                callback: "https://card.example.test/callback",
+                k1: "k1",
+                minWithdrawable: 1_000,
+                maxWithdrawable: 100_000_000,
+              }
+        )
+      },
+    }
+    await using run = testCreateRun(deps)
+
+    expect(
+      await run(
+        payPaymentWithBoltCard({
+          paymentId: s.paymentId,
+          uri: "lnurlw://card.example.test/ln?p=AA&c=BB",
+          method: "lightningAddress",
+        })
+      )
+    ).toEqual({ ok: true, value: undefined })
+    expect(cardRequests.at(-1)).toBe(
+      `https://card.example.test/callback?k1=k1&pr=${invoice}`
+    )
   })
 })
 

@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "@evolu/common"
+import { sha256 } from "@noble/hashes/sha2.js"
 import { bech32, bech32m, hex } from "@scure/base"
 import { decode as decodeBolt11 } from "light-bolt11-decoder"
 import { defineError } from "../../error.ts"
@@ -194,4 +195,28 @@ export const parseLightningInvoice = (
       1000,
     sparkFallbackIdentity: readSparkFallbackIdentity(decoded),
   })
+}
+
+const HEX_32_BYTES = /^[0-9a-f]{64}$/
+
+/**
+ * Whether `preimage` is the proof an invoice was paid: 32 bytes of hex whose
+ * SHA-256 is the invoice's `paymentHash` (lightning-address/0002).
+ */
+export const verifyLightningPreimage = ({
+  preimage,
+  paymentHash,
+}: {
+  readonly preimage: string
+  readonly paymentHash: string
+}): boolean => {
+  const normalizedPreimage = preimage.trim().toLowerCase()
+  const normalizedHash = paymentHash.trim().toLowerCase()
+  if (
+    !HEX_32_BYTES.test(normalizedPreimage) ||
+    !HEX_32_BYTES.test(normalizedHash)
+  ) {
+    return false
+  }
+  return hex.encode(sha256(hex.decode(normalizedPreimage))) === normalizedHash
 }

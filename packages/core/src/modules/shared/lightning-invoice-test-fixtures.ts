@@ -35,6 +35,11 @@ const tagged = (tag: number, words: ReadonlyArray<number>): number[] => [
   ...words,
 ]
 
+/** A preimage and its SHA-256, the payment hash an invoice paid with it carries. */
+export const testPreimage = "33".repeat(32)
+export const testPreimagePaymentHash =
+  "deb0e38ced1e41de6f92e70e80c418d2d356afaaa99e26f5939dbc7d3ef4772a"
+
 export const testSparkIdentity = `02${"ab".repeat(32)}`
 
 /** A Spark invoice (`spark1…`) for `identity`, as an SSP embeds it. */
@@ -52,6 +57,7 @@ export const createTestInvoice = ({
   expirySeconds,
   description,
   descriptionHash,
+  paymentHash = "11".repeat(32),
   sparkFallback,
 }: {
   readonly hrp?: string
@@ -60,6 +66,8 @@ export const createTestInvoice = ({
   readonly description?: string
   /** 64 hex characters. */
   readonly descriptionHash?: string
+  /** 64 hex characters; pair it with `testPreimagePaymentHash` for a real preimage. */
+  readonly paymentHash?: string
   readonly sparkFallback?: {
     readonly via: "fallback-address" | "route-hint"
     readonly identity: string
@@ -67,7 +75,7 @@ export const createTestInvoice = ({
 } = {}): string => {
   const words = [
     ...intWords(timestamp, 7),
-    ...tagged(1, toWords(hexBytes("11".repeat(32)))),
+    ...tagged(1, toWords(hexBytes(paymentHash))),
     ...tagged(16, toWords(hexBytes("22".repeat(32)))),
     ...(description === undefined
       ? []

@@ -1,7 +1,10 @@
 import { err, ok, type Result } from "@evolu/common"
 import { defineError } from "../../error.ts"
 import {
-  decodeBech32Bytes,
+  LIGHTNING_ADDRESS,
+  lnurlToLightningAddress,
+} from "../shared/lightning-address-utils.ts"
+import {
   type LightningInvoice,
   type ParseLightningInvoiceError,
   parseLightningInvoice,
@@ -37,41 +40,8 @@ export type ParseWithdrawDestinationError =
   | InvalidWithdrawDestinationError
   | ParseLightningInvoiceError
 
-const LIGHTNING_ADDRESS = /^[a-z0-9._+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/
-
 const stripScheme = (value: string, scheme: string): string =>
   value.toLowerCase().startsWith(scheme) ? value.slice(scheme.length) : value
-
-const LUD16_PATH = /^\/\.well-known\/lnurlp\/([^/]+)$/
-
-/**
- * The Lightning address an `lnurl1…` stands for, when it encodes exactly the
- * LUD-16 URL `https://<domain>/.well-known/lnurlp/<name>` — as wallets such as
- * Primal show their Lightning addresses. Any other LNURL gives `null`
- * (withdraw/0005).
- */
-const lnurlToLightningAddress = (lnurl: string): string | null => {
-  const bytes = decodeBech32Bytes(lnurl)
-  if (bytes === null) return null
-  let url: URL
-  try {
-    url = new URL(new TextDecoder().decode(bytes))
-  } catch {
-    return null
-  }
-  const name = LUD16_PATH.exec(url.pathname)?.[1]
-  if (
-    url.protocol !== "https:" ||
-    url.port !== "" ||
-    url.search !== "" ||
-    url.username !== "" ||
-    name === undefined
-  ) {
-    return null
-  }
-  const address = `${decodeURIComponent(name)}@${url.hostname}`.toLowerCase()
-  return LIGHTNING_ADDRESS.test(address) ? address : null
-}
 
 const parseInvoiceDestination = (
   raw: string

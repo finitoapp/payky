@@ -11,6 +11,7 @@ import {
   fetchLnurlPayMetadata,
   fetchLnurlVerify,
   type LnurlPayMetadata,
+  probeLightningAddress,
 } from "./lnurl-pay-client.ts"
 
 const inputToString = (input: RequestInfo | URL): string =>
@@ -442,6 +443,68 @@ describe("lnurl pay client", () => {
         status: 200,
         responseBody: "not json",
       } satisfies Partial<LnurlResponseError>,
+    })
+  })
+
+  test("never polls a verify URL that is not https", async () => {
+    const requestedUrls: string[] = []
+    const deps = {
+      fetch: async (input) => {
+        requestedUrls.push(inputToString(input))
+        return Response.json({})
+      },
+    } satisfies FetchDep
+    await using run = testCreateRun(deps)
+
+    await expect(
+      run(fetchLnurlVerify({ verifyUrl: "http://pay.example.test/verify/1" }))
+    ).resolves.toMatchObject({
+      ok: false,
+      error: { type: "LightningAddressInvoiceMismatch" },
+    })
+    expect(requestedUrls).toEqual([])
+  })
+
+  describe("probeLightningAddress", () => {
+    // 1 sat = 1 000 msat = 10 nano-BTC, the metadata's minSendable.
+    const invoiceFor1Sat = createTestInvoice({ hrp: "lnbc10n" })
+    const probeDeps = (invoice: Record<string, unknown>) =>
+      ({
+        fetch: async (input) =>
+          inputToString(input).startsWith("https://payky.me/.well-known/")
+            ? metadataResponse()
+            : Response.json(invoice),
+        ...beforeExpiry,
+      }) satisfies FetchDep & DateDep
+
+    test("accepts an address whose invoices carry a verify URL", async () => {
+      await using run = testCreateRun(
+        probeDeps({
+          pr: invoiceFor1Sat,
+          routes: [],
+          verify: "https://pay.example.test/verify/1",
+        })
+      )
+
+      await expect(
+        run(probeLightningAddress({ address: "shop@payky.me" }))
+      ).resolves.toMatchObject({
+        ok: true,
+        value: { minSendableSats: 1, maxSendableSats: 100_000 },
+      })
+    })
+
+    test("rejects an address without LUD-21 verify", async () => {
+      await using run = testCreateRun(
+        probeDeps({ pr: invoiceFor1Sat, routes: [] })
+      )
+
+      await expect(
+        run(probeLightningAddress({ address: "shop@payky.me" }))
+      ).resolves.toEqual({
+        ok: false,
+        error: { type: "LightningAddressVerifyUnsupported" },
+      })
     })
   })
 })

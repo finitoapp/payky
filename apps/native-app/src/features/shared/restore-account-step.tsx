@@ -2,6 +2,7 @@ import type { TranslationKey } from "@payky/app-shared/i18n/resources"
 import { checkRestorePhrase } from "@payky/app-shared/restore-phrase"
 import {
   analyzeRestoreWords,
+  detectForeignSeed,
   emptyRestoreWords,
   fillRestoreWords,
   RESTORE_WORD_COUNT,
@@ -55,7 +56,9 @@ export function RestoreAccountStep({
 
   const analysis = analyzeRestoreWords(words, activeIndex)
   const phrase = restoreWordsToPhrase(words)
-  const unknownWords = analysis.invalidIndexes.flatMap((index) => {
+  // A seed from another wallet is explained once, not word by word.
+  const invalidIndexes = detectForeignSeed(words) ? [] : analysis.invalidIndexes
+  const unknownWords = invalidIndexes.flatMap((index) => {
     const word = words[index]
     return word === undefined || word === "" ? [] : [word]
   })
@@ -170,8 +173,7 @@ export function RestoreAccountStep({
                   })}
                   placeholder={restoreFixedWords[index]}
                   invalid={
-                    visibleError !== null ||
-                    analysis.invalidIndexes.includes(index)
+                    visibleError !== null || invalidIndexes.includes(index)
                   }
                   secureTextEntry={!shown}
                   autoComplete={index === 0 ? "current-password" : "off"}

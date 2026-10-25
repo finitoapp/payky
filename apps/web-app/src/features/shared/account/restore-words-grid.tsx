@@ -1,5 +1,6 @@
 import {
   analyzeRestoreWords,
+  detectForeignSeed,
   fillRestoreWords,
   RESTORE_WORD_COUNT,
   restoreFixedWords,
@@ -37,7 +38,10 @@ export function RestoreWordsGrid({
   const inputs = useRef<Array<HTMLInputElement | null>>([])
 
   const analysis = analyzeRestoreWords(words, activeIndex)
-  const unknownWords = analysis.invalidIndexes.flatMap((index) => {
+  // A seed from another wallet is explained once by the form, not word by word.
+  const foreign = detectForeignSeed(words)
+  const invalidIndexes = foreign ? [] : analysis.invalidIndexes
+  const unknownWords = invalidIndexes.flatMap((index) => {
     const word = words[index]
     return word === undefined || word === "" ? [] : [word]
   })
@@ -110,9 +114,7 @@ export function RestoreWordsGrid({
                 aria-label={t("onboarding.restore.wordLabel", {
                   index: index + 1,
                 })}
-                aria-invalid={
-                  invalid || analysis.invalidIndexes.includes(index)
-                }
+                aria-invalid={invalid || invalidIndexes.includes(index)}
                 placeholder={fixedWord}
                 title={
                   fixedWord === undefined

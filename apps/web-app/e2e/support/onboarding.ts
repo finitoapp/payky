@@ -12,6 +12,13 @@ import { translate } from "./i18n.ts"
  * outside the Playwright test runner, so nothing here may call `test.step(...)`
  * — it throws "test.step() can only be called from a test" there.
  */
+export interface SeedOptions {
+  readonly spark?: boolean
+  readonly fiatCurrency?: FiatCurrency
+  /** Leaves the recovery phrase unverified, so the backup reminder can show. */
+  readonly unverifiedBackup?: boolean
+}
+
 /**
  * Seeds onboarding for whichever account is currently active on the page via
  * `window.__e2eSeedOnboarding` (see src/components/app/e2e-test-bridge.tsx),
@@ -23,7 +30,7 @@ import { translate } from "./i18n.ts"
 export async function seedCurrentAccountOnboarding(
   page: Page,
   language: Language,
-  options?: { readonly spark?: boolean; readonly fiatCurrency?: FiatCurrency }
+  options?: SeedOptions
 ): Promise<void> {
   // Retried, because the document can be replaced under this call — only a
   // *document* navigation destroys an execution context, so a client-side
@@ -69,7 +76,7 @@ export async function seedCurrentAccountOnboarding(
 export async function seedOnboarding(
   page: Page,
   language: Language,
-  options?: { readonly spark?: boolean; readonly fiatCurrency?: FiatCurrency }
+  options?: SeedOptions
 ): Promise<void> {
   await page.goto("/onboarding", { waitUntil: "domcontentloaded" })
   await seedCurrentAccountOnboarding(page, language, options)

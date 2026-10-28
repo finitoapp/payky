@@ -12,10 +12,12 @@ import {
 } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { atom, type PrimitiveAtom, useAtomValue, useSetAtom } from "jotai"
-import { useLayoutEffect, useRef, useState } from "react"
-import { Animated, Easing, StyleSheet } from "react-native"
+import { useRef, useState } from "react"
+import { Animated, StyleSheet } from "react-native"
 import { Text, useTheme, XStack, YStack } from "tamagui"
+import { replay } from "../../components/motion.ts"
 import { Button } from "../../components/ui/button.tsx"
+import { useChangePulse } from "../../hooks/use-change-pulse.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { hapticButtonPress } from "../../platform/haptics.ts"
@@ -25,17 +27,7 @@ import { useKeypadKeyboard } from "./use-keypad-keyboard.ts"
 
 type AmountInputAtom = PrimitiveAtom<string>
 
-/**
- * Web's motion keyframes as one 0 → 1 progress interpolated over `times`
- * (web eases each segment, here the eased progress spans all of them).
- */
-const amountKeyframes = {
-  inputRange: [0, 0.55, 1],
-  opacity: [0.6, 1, 1],
-  scale: [0.94, 1.03, 1],
-  duration: 320,
-} as const
-
+/** The key bubble, read as `changePulseKeyframes` in `components/motion.ts`. */
 const bubbleKeyframes = {
   inputRange: [0, 0.6, 1],
   opacity: [0.28, 0.16, 0],
@@ -44,18 +36,6 @@ const bubbleKeyframes = {
   /** Web's `size-24`. */
   size: 96,
 } as const
-
-/** Restarts `progress` from 0, cutting off a run still in flight. */
-const replay = (progress: Animated.Value, duration: number) => {
-  progress.stopAnimation()
-  progress.setValue(0)
-  Animated.timing(progress, {
-    toValue: 1,
-    duration,
-    easing: Easing.out(Easing.quad),
-    useNativeDriver: true,
-  }).start()
-}
 
 /**
  * The typed amount lives in a component-scoped atom passed down as a prop
@@ -147,39 +127,13 @@ function AmountDisplay({
   const locale = useLocale()
   const formattedAmount = formatAmountInput(amountInput, currency, locale)
 
-  // Starts settled, so the first render does not bounce. A layout effect,
-  // so the new amount is never painted at full size before the bounce.
-  const [progress] = useState(() => new Animated.Value(1))
-  const lastAmount = useRef(formattedAmount)
-  useLayoutEffect(() => {
-    if (lastAmount.current === formattedAmount) return
-    lastAmount.current = formattedAmount
-    if (!isReduceMotionEnabled()) {
-      replay(progress, amountKeyframes.duration)
-    }
-  }, [formattedAmount, progress])
+  const pulse = useChangePulse(formattedAmount)
 
   // The transform sits on a wrapper so `adjustsFontSizeToFit` measures the
   // untransformed text.
   return (
     <YStack items="center">
-      <Animated.View
-        style={{
-          maxWidth: "100%",
-          opacity: progress.interpolate({
-            inputRange: amountKeyframes.inputRange,
-            outputRange: amountKeyframes.opacity,
-          }),
-          transform: [
-            {
-              scale: progress.interpolate({
-                inputRange: amountKeyframes.inputRange,
-                outputRange: amountKeyframes.scale,
-              }),
-            },
-          ],
-        }}
-      >
+      <Animated.View style={[{ maxWidth: "100%" }, pulse]}>
         <Text
           role="heading"
           fontSize="6xl"

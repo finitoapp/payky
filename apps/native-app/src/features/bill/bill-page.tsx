@@ -59,6 +59,7 @@ import {
 } from "react"
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Pressable,
   ScrollView,
@@ -84,6 +85,7 @@ import {
 import { Icon } from "../../components/ui/icon.tsx"
 import { nativeConsole } from "../../core/native-runtime.ts"
 import { useRequirePermission } from "../../core/use-access.ts"
+import { useChangePulse } from "../../hooks/use-change-pulse.ts"
 import { useConfirm } from "../../hooks/use-confirm.ts"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts"
@@ -424,6 +426,7 @@ function BillCart({
     () => deriveBillSummaryStats(summaries),
     [summaries]
   )
+  const totalAmountPulse = useChangePulse(totalAmount)
   const cart = useCartBill({ billId, currency, tableId, onTableSeedChange })
   const toast = useToast()
   const runToast = useRunToast()
@@ -873,14 +876,16 @@ function BillCart({
                     </Text>
                   </XStack>
                   <XStack items="center" gap={8}>
-                    <Text
-                      fontSize={fontSize.base}
-                      lineHeight={fontSize.base}
-                      fontWeight={fontWeight.semibold}
-                      fontVariant={["tabular-nums"]}
-                    >
-                      {formatMoney({ value: totalAmount, currency }, locale)}
-                    </Text>
+                    <Animated.View style={totalAmountPulse}>
+                      <Text
+                        fontSize={fontSize.base}
+                        lineHeight={fontSize.base}
+                        fontWeight={fontWeight.semibold}
+                        fontVariant={["tabular-nums"]}
+                      >
+                        {formatMoney({ value: totalAmount, currency }, locale)}
+                      </Text>
+                    </Animated.View>
                     <View rotate={summaryOpen ? "0deg" : "180deg"}>
                       <Icon icon={ChevronDown} />
                     </View>
@@ -1040,6 +1045,8 @@ function SummaryRow({
   const { t } = useTranslation()
   const money = (value: number) =>
     formatMoney({ value: Integer(value), currency: summary.currency }, locale)
+  // As web's, the line's quantity and amount pulse together on a new quantity.
+  const pulse = useChangePulse(summary.quantity)
 
   return (
     <XStack
@@ -1090,16 +1097,18 @@ function SummaryRow({
           })}
           onPress={onRemoveOne}
         />
-        <Text
-          minW={24}
-          text="center"
-          fontSize={fontSize.sm}
-          lineHeight={fontSize.sm}
-          fontWeight={fontWeight.semibold}
-          fontVariant={["tabular-nums"]}
-        >
-          {summary.quantity}
-        </Text>
+        <Animated.View style={pulse}>
+          <Text
+            minW={24}
+            text="center"
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.semibold}
+            fontVariant={["tabular-nums"]}
+          >
+            {summary.quantity}
+          </Text>
+        </Animated.View>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -1114,16 +1123,18 @@ function SummaryRow({
           }}
         />
       </XStack>
-      <Text
-        minW={80}
-        text="right"
-        fontSize={fontSize.sm}
-        lineHeight={fontSize.sm}
-        fontWeight={fontWeight.semibold}
-        fontVariant={["tabular-nums"]}
-      >
-        {money(summary.totalAmount)}
-      </Text>
+      <Animated.View style={pulse}>
+        <Text
+          minW={80}
+          text="right"
+          fontSize={fontSize.sm}
+          lineHeight={fontSize.sm}
+          fontWeight={fontWeight.semibold}
+          fontVariant={["tabular-nums"]}
+        >
+          {money(summary.totalAmount)}
+        </Text>
+      </Animated.View>
       <Button
         variant="ghost"
         size="icon-sm"
@@ -1197,6 +1208,7 @@ function ItemBrick({
     0
   )
   const latestSummary = getLatestCatalogItemSummary(summaries, catalogItem.id)
+  const quantityPulse = useChangePulse(quantity)
 
   const inCart = quantity > 0
 
@@ -1250,14 +1262,16 @@ function ItemBrick({
           aria-label={t("bill.brick.quantity.trigger.aria", { name })}
           onPress={() => setQuantityDialogOpen(true)}
         >
-          <Text
-            fontSize={12.8}
-            fontWeight={fontWeight.bold}
-            fontVariant={["tabular-nums"]}
-            color="primary-foreground"
-          >
-            {quantity}
-          </Text>
+          <Animated.View style={quantityPulse}>
+            <Text
+              fontSize={12.8}
+              fontWeight={fontWeight.bold}
+              fontVariant={["tabular-nums"]}
+              color="primary-foreground"
+            >
+              {quantity}
+            </Text>
+          </Animated.View>
         </Button>
       </XStack>
       <XStack

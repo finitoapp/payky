@@ -13,6 +13,7 @@ import { Suspense } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { ListSkeleton } from "../../components/list-skeleton.tsx"
+import { PulseDot } from "../../components/pulse-dot.tsx"
 import { Screen } from "../../components/screen.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { Skeleton } from "../../components/ui/skeleton.tsx"
@@ -102,7 +103,7 @@ function PeriodSummary({
       </YStack>
       {live ? (
         <XStack items="center" gap="1.5">
-          <YStack width={8} height={8} rounded={4} bg="success" opacity={0.6} />
+          <PulseDot color="success" loop="ping" />
           <Text fontSize="xs" lineHeight="xs" color="success">
             {t("stats.live")}
           </Text>

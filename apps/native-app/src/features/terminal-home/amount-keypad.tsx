@@ -12,16 +12,50 @@ import {
 } from "@payky/core/modules/shared/schema"
 import { router } from "expo-router"
 import { atom, type PrimitiveAtom, useAtomValue, useSetAtom } from "jotai"
-import { useRef, useState } from "react"
-import { Text, XStack, YStack } from "tamagui"
+import { useLayoutEffect, useRef, useState } from "react"
+import { Animated, Easing, StyleSheet } from "react-native"
+import { Text, useTheme, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
 import { useCreateTerminalPayment } from "../../hooks/use-create-terminal-payment.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { hapticButtonPress } from "../../platform/haptics.ts"
+import { isReduceMotionEnabled } from "../../platform/reduce-motion.ts"
 import { fontSize, fontWeight, radius } from "../../theme/tokens.ts"
 import { useKeypadKeyboard } from "./use-keypad-keyboard.ts"
 
 type AmountInputAtom = PrimitiveAtom<string>
+
+/**
+ * Web's motion keyframes as one 0 → 1 progress interpolated over `times`
+ * (web eases each segment, here the eased progress spans all of them).
+ */
+const amountKeyframes = {
+  inputRange: [0, 0.55, 1],
+  opacity: [0.6, 1, 1],
+  scale: [0.94, 1.03, 1],
+  duration: 320,
+} as const
+
+const bubbleKeyframes = {
+  inputRange: [0, 0.6, 1],
+  opacity: [0.28, 0.16, 0],
+  scale: [0.25, 1.15, 1.65],
+  duration: 340,
+  /** Web's `size-24`. */
+  size: 96,
+} as const
+
+/** Restarts `progress` from 0, cutting off a run still in flight. */
+const replay = (progress: Animated.Value, duration: number) => {
+  progress.stopAnimation()
+  progress.setValue(0)
+  Animated.timing(progress, {
+    toValue: 1,
+    duration,
+    easing: Easing.out(Easing.quad),
+    useNativeDriver: true,
+  }).start()
+}
 
 /**
  * The typed amount lives in a component-scoped atom passed down as a prop
@@ -33,9 +67,12 @@ type AmountInputAtom = PrimitiveAtom<string>
  * font-semibold tabular-nums`), the 3-column grid of round ghost keys
  * (`text-3xl`, rows `gap-y-10` around keys that overlap by `-m-6`) and the
  * round outline Charge button (`h-14 rounded-full text-base font-bold`),
- * spread over the height. Web's press bubble and amount bounce are motion
- * effects left out; a key shows the ghost press tint instead. A physical
- * keyboard types too (`useKeypadKeyboard`), and its Enter charges as the
+ * spread over the height, with web's two motion effects: the amount
+ * bounces when it changes and a key blooms a bubble where it is pressed.
+ * Both run on RN `Animated` with the native driver (the Tamagui config has
+ * no animation driver), on plain `Animated.View`s, as `ui/skeleton.tsx`
+ * explains, and neither runs under reduced motion. A physical keyboard
+ * types too (`useKeypadKeyboard`), and its Enter charges as the
  * Charge button does, so the pending charge lives here, shared by both.
  */
 export function AmountKeypad({
@@ -108,20 +145,53 @@ function AmountDisplay({
 }) {
   const amountInput = useAtomValue(amountInputAtom)
   const locale = useLocale()
+  const formattedAmount = formatAmountInput(amountInput, currency, locale)
 
+  // Starts settled, so the first render does not bounce. A layout effect,
+  // so the new amount is never painted at full size before the bounce.
+  const [progress] = useState(() => new Animated.Value(1))
+  const lastAmount = useRef(formattedAmount)
+  useLayoutEffect(() => {
+    if (lastAmount.current === formattedAmount) return
+    lastAmount.current = formattedAmount
+    if (!isReduceMotionEnabled()) {
+      replay(progress, amountKeyframes.duration)
+    }
+  }, [formattedAmount, progress])
+
+  // The transform sits on a wrapper so `adjustsFontSizeToFit` measures the
+  // untransformed text.
   return (
     <YStack items="center">
-      <Text
-        role="heading"
-        fontSize="6xl"
-        lineHeight="6xl"
-        fontWeight={fontWeight.semibold}
-        fontVariant={["tabular-nums"]}
-        adjustsFontSizeToFit
-        numberOfLines={1}
+      <Animated.View
+        style={{
+          maxWidth: "100%",
+          opacity: progress.interpolate({
+            inputRange: amountKeyframes.inputRange,
+            outputRange: amountKeyframes.opacity,
+          }),
+          transform: [
+            {
+              scale: progress.interpolate({
+                inputRange: amountKeyframes.inputRange,
+                outputRange: amountKeyframes.scale,
+              }),
+            },
+          ],
+        }}
       >
-        {formatAmountInput(amountInput, currency, locale)}
-      </Text>
+        <Text
+          role="heading"
+          fontSize="6xl"
+          lineHeight="6xl"
+          fontWeight={fontWeight.semibold}
+          fontVariant={["tabular-nums"]}
+          adjustsFontSizeToFit
+          numberOfLines={1}
+        >
+          {formattedAmount}
+        </Text>
+      </Animated.View>
     </YStack>
   )
 }
@@ -175,6 +245,19 @@ function Keys({
 
 const PRESS_IN_EXPIRES_MS = 5000
 
+const styles = StyleSheet.create({
+  bubble: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    width: bubbleKeyframes.size,
+    height: bubbleKeyframes.size,
+    marginTop: -bubbleKeyframes.size / 2,
+    marginLeft: -bubbleKeyframes.size / 2,
+    borderRadius: bubbleKeyframes.size / 2,
+  },
+})
+
 /**
  * A key that types as the finger lands, as web's keypad does on
  * `pointerdown`, rather than on release: fast typing feels immediate. A
@@ -182,6 +265,9 @@ const PRESS_IN_EXPIRES_MS = 5000
  * no `onPressIn` came just before it; a press the finger slid off of has
  * no `onPress`, and its stamp expires.
  * ponytail: holding a key past PRESS_IN_EXPIRES_MS types it again on release.
+ *
+ * The landing finger also blooms web's bubble (`bg-primary/20`, clipped by
+ * the round key); the ghost press tint stays under it.
  */
 function KeypadKey({
   label,
@@ -193,15 +279,21 @@ function KeypadKey({
   readonly onKey: () => void
 }) {
   const typedOnPressInAt = useRef<number | null>(null)
+  const theme = useTheme()
+  const [bubble] = useState(() => new Animated.Value(1))
   return (
     <Button
       variant="ghost"
       flex={1}
       h={72}
       rounded={radius.full}
+      overflow="hidden"
       aria-label={label}
       onPressIn={() => {
         typedOnPressInAt.current = Date.now()
+        if (!isReduceMotionEnabled()) {
+          replay(bubble, bubbleKeyframes.duration)
+        }
         onKey()
       }}
       onPress={() => {
@@ -210,6 +302,28 @@ function KeypadKey({
         if (at === null || Date.now() - at > PRESS_IN_EXPIRES_MS) onKey()
       }}
     >
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.bubble,
+          {
+            backgroundColor: theme.primary?.val,
+            // Web's `/20` alpha folded into the animated opacity.
+            opacity: bubble.interpolate({
+              inputRange: bubbleKeyframes.inputRange,
+              outputRange: bubbleKeyframes.opacity.map((o) => o * 0.2),
+            }),
+            transform: [
+              {
+                scale: bubble.interpolate({
+                  inputRange: bubbleKeyframes.inputRange,
+                  outputRange: bubbleKeyframes.scale,
+                }),
+              },
+            ],
+          },
+        ]}
+      />
       <Text fontSize={fontSize["3xl"]} lineHeight={fontSize["3xl"]}>
         {children}
       </Text>

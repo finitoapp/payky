@@ -630,11 +630,11 @@ export const skLanding = {
   "landing.tech.services.cashuMints.sent":
     "Žiadosti o faktúry, ecash na výmenu a faktúry, na ktoré vyberáte. Mint vidí sumy a časy.",
   "landing.tech.services.cashuMints.when": "Keď máte zapnuté platby Cashu.",
-  "landing.tech.services.linkyWallet.name":
-    "Relaye Linky pre zdieľanú Cashu peňaženku (evolu.linky.fit, evolu.eu.freedomrelay.dev) a linky.fit",
-  "landing.tech.services.linkyWallet.sent":
-    "Zašifrované dáta peňaženky a žiadosť o zoznam relayí Linky.",
-  "landing.tech.services.linkyWallet.when": "Keď máte zapnuté platby Cashu.",
+  "landing.tech.services.cashuWallet.name":
+    "Vaše relaye pre zálohu, aj pre Cashu peňaženku",
+  "landing.tech.services.cashuWallet.sent":
+    "Zašifrované dáta Cashu peňaženky, spolu so zvyškom zálohy pod identifikátorom účtu.",
+  "landing.tech.services.cashuWallet.when": "Keď máte zapnuté platby Cashu.",
   "landing.tech.services.contact.name": "Kontaktný formulár",
   "landing.tech.services.contact.sent": "Meno, kontakt a správa.",
   "landing.tech.services.contact.when": "Keď formulár odošlete.",

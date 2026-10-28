@@ -636,11 +636,11 @@ export const enLanding = {
     "Requests for invoices, ecash to swap, and the invoices you withdraw to. The mint sees amounts and times.",
   "landing.tech.services.cashuMints.when":
     "When you have Cashu payments turned on.",
-  "landing.tech.services.linkyWallet.name":
-    "The relays of Linky for the shared Cashu wallet (evolu.linky.fit, evolu.eu.freedomrelay.dev) and linky.fit",
-  "landing.tech.services.linkyWallet.sent":
-    "The wallet's encrypted data, and a request for Linky's list of relays.",
-  "landing.tech.services.linkyWallet.when":
+  "landing.tech.services.cashuWallet.name":
+    "Your backup relays, for the Cashu wallet too",
+  "landing.tech.services.cashuWallet.sent":
+    "The Cashu wallet's encrypted data, with the rest of the backup under the account's identifier.",
+  "landing.tech.services.cashuWallet.when":
     "When you have Cashu payments turned on.",
   "landing.tech.services.contact.name": "Contact form",
   "landing.tech.services.contact.sent": "Name, contact and message.",

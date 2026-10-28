@@ -7,13 +7,9 @@ import {
   useRef,
   useState,
 } from "react"
-import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  View as NativeView,
-} from "react-native"
+import { Animated, Easing, View as NativeView } from "react-native"
 import { Text, useTheme, View } from "tamagui"
+import { isReduceMotionEnabled } from "../platform/reduce-motion.ts"
 import type { ThemeColor } from "../theme/themes.ts"
 import { fontSize, fontWeight, radius } from "../theme/tokens.ts"
 
@@ -60,15 +56,6 @@ const pillBoxes = new Map<string, Box>()
 
 const slide = { duration: 350, easing: Easing.out(Easing.cubic) }
 
-/** Read synchronously in a layout effect. */
-let reduceMotion = false
-void AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
-  reduceMotion = reduced
-})
-AccessibilityInfo.addEventListener("reduceMotionChanged", (reduced) => {
-  reduceMotion = reduced
-})
-
 interface FlipValues {
   readonly translateX: Animated.Value
   readonly scaleX: Animated.Value
@@ -96,7 +83,7 @@ function useFlip(
     const start = from(to)
     if (
       start === undefined ||
-      reduceMotion ||
+      isReduceMotionEnabled() ||
       (start.x === to.x && start.width === to.width)
     )
       return
@@ -226,7 +213,7 @@ export function SlidingPillSegmentContent({
   const [activeIconOpacity] = useState(() => new Animated.Value(active ? 1 : 0))
   useEffect(() => {
     const toValue = active ? 1 : 0
-    if (reduceMotion) {
+    if (isReduceMotionEnabled()) {
       activeIconOpacity.setValue(toValue)
       return
     }
@@ -279,7 +266,7 @@ function SlidingPillLabel({
   readonly fadeIn: boolean
 }) {
   const [opacity] = useState(
-    () => new Animated.Value(fadeIn && !reduceMotion ? 0 : 1)
+    () => new Animated.Value(fadeIn && !isReduceMotionEnabled() ? 0 : 1)
   )
   useEffect(() => {
     const animation = Animated.timing(opacity, {

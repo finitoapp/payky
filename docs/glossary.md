@@ -88,14 +88,6 @@ The word "account" means two unrelated things here.
   **Verified** means the merchant typed three random words of it back
   (`appSettings.recoveryPhraseVerifiedAt`, `account/0006`); it is the account's
   own fact and syncs, unlike a device's PIN session.
-- **Linky owner** — the Evolu identity of Linky, the owner's personal wallet
-  app, derived from the same master key next to Payky's own owner
-  (`deriveLinkyAppOwnerSecret`). Its app owner holds `shardPointer` and
-  `setting`; the shard owners `["cashu", i]` hold the shared Cashu wallet
-  (`cashu.md` §2). Payky's own owner never holds a Linky row.
-- **`setting`** vs **`appSettings`** — `setting` is Linky's synced key/value
-  table under the Linky owner (`defaultMint`, ...), read and written only
-  through the Cashu shard store; `appSettings` is Payky's own.
 - **Permission** / **preset** — a permission (`sell`, `refund`, ...) gates a
   route or an action; a preset is a named set of them, copied onto a device
   when chosen and never linked afterward (`access-types.ts`).
@@ -106,17 +98,20 @@ The word "account" means two unrelated things here.
 ## Outside services
 
 - **Spark** — the Bitcoin/Lightning wallet SDK behind `spark` accounts.
-- **Cashu** — ecash behind `cashu` accounts, in the wallet Payky shares with
-  Linky (`cashu.md`). A **mint** issues and redeems the ecash, named by its
-  normalised URL (`normalizeMintUrl`); a **proof** (`cashuProof`) is one
-  piece of ecash at one mint, worth `amount` sats. A **token** is proofs
-  encoded as text (`cashuA…`/`cashuB…`) to hand over; a customer sends one
-  over NIP-17 to pay. The **known mints** are those proofs or operations
-  name, plus those this device saw or added (`loadKnownCashuMints`); being
-  known says nothing about trust. **The payment's mint** is
-  `paymentCashu.mintUrl`, the mint its request and topup quote name. Payky
-  receives tokens only from the **default mint** (Linky's synced
-  `defaultMint`); a received token pays whatever its mint (`cashu/0011`).
+- **Cashu** — ecash behind `cashu` accounts, in Payky's own wallet, whose
+  tables live in the app database (`cashu.md`, `cashu/0012`); Linky keeps a
+  separate one. A **mint** issues
+  and redeems the ecash, named by its normalised URL (`normalizeMintUrl`); a
+  **proof** (`cashuProof`) is one piece of ecash at one mint, worth `amount`
+  sats. A **token** is proofs encoded as text (`cashuA…`/`cashuB…`) to hand
+  over; a customer sends one over NIP-17 to pay. The **trusted mints** are
+  the `cashuMint` rows that are not deleted: Payky receives tokens only from
+  them and names them in the NUT-18 request (`cashu/0017`). The **default
+  mint** is the trusted one chosen last, by `defaultedAt`: new payments are
+  quoted there and "move funds" targets it (`cashu/0013`); the screens call
+  it the mint "for payments". A mint that holds a balance is not
+  necessarily trusted. **The payment's mint** is `paymentCashu.mintUrl`, the
+  mint its topup quote names; a received token pays whatever its mint.
 - **Lightning address account** — a `lightningAddress` account: the
   merchant's own wallet, reached through its Lightning address (LUD-16).
   Payky asks it for an invoice per payment and watches the invoice's LUD-21

@@ -35,7 +35,10 @@ const allowedInUi = (file: string, specifier: string): boolean => {
     ).split(path.sep)
     return (
       (target[0] === "components" && target[1] === "ui") ||
-      target[0] === "theme"
+      target[0] === "theme" ||
+      // The system's reduce-motion setting, which a kit animation honours
+      // as web's `motion-reduce:` does; no app knowledge.
+      target.join("/") === "platform/reduce-motion.ts"
     )
   }
   return (
@@ -46,7 +49,7 @@ const allowedInUi = (file: string, specifier: string): boolean => {
   )
 }
 
-test("components/ui imports only tamagui, react-native, lucide and the theme", () => {
+test("components/ui imports only tamagui, react-native, lucide, the theme and reduce motion", () => {
   const violations = sourceFiles(uiDir).flatMap((file) =>
     importSpecifiers(readFileSync(file, "utf8"))
       .filter((specifier) => !allowedInUi(file, specifier))

@@ -16,8 +16,6 @@ import type { QerkoPluginRow } from "@payky/core/modules/qerko-plugin/qerko-plug
 import { deleteQerkoPlugin } from "@payky/core/modules/qerko-plugin/qerko-plugin-actions"
 import { qerkoPluginQuery } from "@payky/core/modules/qerko-plugin/qerko-plugin-queries"
 import { useAtomValue } from "jotai"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
-import ChevronUp from "lucide-react-native/icons/chevron-up"
 import { useEffect, useRef, useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
@@ -35,11 +33,10 @@ import {
 } from "../../../components/ui/card.tsx"
 import {
   Collapsible,
+  CollapsibleChevron,
   CollapsibleContent,
   CollapsibleTrigger,
-  useCollapsible,
 } from "../../../components/ui/collapsible.tsx"
-import { Icon } from "../../../components/ui/icon.tsx"
 import { useAppRun } from "../../../hooks/use-app-run.ts"
 import { useConfirm } from "../../../hooks/use-confirm.ts"
 import {
@@ -281,13 +278,12 @@ function Row({
 }
 
 function AdvancedSettingsLabel({ label }: { readonly label: string }) {
-  const { open } = useCollapsible()
   return (
     <XStack items="center" justify="space-between" w="100%">
       <Text fontSize="sm" lineHeight="sm" fontWeight="600">
         {label}
       </Text>
-      <Icon icon={open ? ChevronUp : ChevronDown} color="muted-foreground" />
+      <CollapsibleChevron color="muted-foreground" />
     </XStack>
   )
 }

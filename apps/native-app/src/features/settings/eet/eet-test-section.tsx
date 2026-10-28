@@ -9,11 +9,10 @@ import type {
   EetEnvironment,
 } from "@payky/core/modules/eet/eet-types"
 import { useAtomValue } from "jotai"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
 import PlugZap from "lucide-react-native/icons/plug-zap"
 import Receipt from "lucide-react-native/icons/receipt"
 import { useState } from "react"
-import { Text, View, XStack, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../../atoms/account.ts"
 import { Button } from "../../../components/ui/button.tsx"
 import {
@@ -25,11 +24,10 @@ import {
 } from "../../../components/ui/card.tsx"
 import {
   Collapsible,
+  CollapsibleChevron,
   CollapsibleContent,
   CollapsibleTrigger,
-  useCollapsible,
 } from "../../../components/ui/collapsible.tsx"
-import { Icon } from "../../../components/ui/icon.tsx"
 import { useRunToast } from "../../../hooks/use-run-toast.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
 
@@ -177,7 +175,7 @@ function RawMessage({
         >
           {label}
         </Text>
-        <RawMessageChevron />
+        <CollapsibleChevron size={14} color="muted-foreground" />
       </CollapsibleTrigger>
       <CollapsibleContent
         mt="2"
@@ -192,14 +190,5 @@ function RawMessage({
         </Text>
       </CollapsibleContent>
     </Collapsible>
-  )
-}
-
-function RawMessageChevron() {
-  const { open } = useCollapsible()
-  return (
-    <View rotate={open ? "180deg" : "0deg"}>
-      <Icon icon={ChevronDown} size={14} color="muted-foreground" />
-    </View>
   )
 }

@@ -23,6 +23,7 @@ import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import Minus from "lucide-react-native/icons/minus"
 import Plus from "lucide-react-native/icons/plus"
 import { useMemo, useState } from "react"
+import { Animated } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { Button } from "../../components/ui/button.tsx"
 import {
@@ -37,6 +38,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "../../components/ui/toggle-group.tsx"
+import { useChangePulse } from "../../hooks/use-change-pulse.ts"
 import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { hapticButtonPress } from "../../platform/haptics.ts"
@@ -120,6 +122,8 @@ function SplitBillBody({
     [summaries, selected]
   )
   const { itemCount, totalAmount } = deriveBillSummaryStats(items)
+  const itemCountPulse = useChangePulse(itemCount)
+  const totalAmountPulse = useChangePulse(totalAmount)
   const canConfirm = canConfirmSplit({
     itemCount: items.length,
     pending,
@@ -230,20 +234,26 @@ function SplitBillBody({
 
       <DialogFooter flexDirection="column">
         <XStack justify="space-between">
-          <Text
-            fontSize={fontSize.sm}
-            lineHeight={fontSize.sm}
-            fontWeight={fontWeight.medium}
-          >
-            {`${t("bill.split.selectedCount")} ${itemCount}`}
-          </Text>
-          <Text
-            fontSize={fontSize.sm}
-            lineHeight={fontSize.sm}
-            fontWeight={fontWeight.medium}
-          >
-            {formatMoney({ value: totalAmount, currency }, locale)}
-          </Text>
+          {/* One text with the label, as the e2e flow reads it, so the
+              whole label pulses where web pulses only the count. */}
+          <Animated.View style={itemCountPulse}>
+            <Text
+              fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
+              fontWeight={fontWeight.medium}
+            >
+              {`${t("bill.split.selectedCount")} ${itemCount}`}
+            </Text>
+          </Animated.View>
+          <Animated.View style={totalAmountPulse}>
+            <Text
+              fontSize={fontSize.sm}
+              lineHeight={fontSize.sm}
+              fontWeight={fontWeight.medium}
+            >
+              {formatMoney({ value: totalAmount, currency }, locale)}
+            </Text>
+          </Animated.View>
         </XStack>
         <XStack gap={8}>
           <Button
@@ -357,6 +367,7 @@ function SplitBillRow({
   readonly onChange: (quantity: number) => void
 }) {
   const { t } = useTranslation()
+  const quantityPulse = useChangePulse(quantity)
   return (
     <XStack
       py={8}
@@ -398,16 +409,18 @@ function SplitBillRow({
             onChange(quantity - 1)
           }}
         />
-        <Text
-          minW={24}
-          text="center"
-          fontSize={fontSize.sm}
-          lineHeight={fontSize.sm}
-          fontWeight={fontWeight.semibold}
-          fontVariant={["tabular-nums"]}
-        >
-          {quantity}
-        </Text>
+        <Animated.View style={quantityPulse}>
+          <Text
+            minW={24}
+            text="center"
+            fontSize={fontSize.sm}
+            lineHeight={fontSize.sm}
+            fontWeight={fontWeight.semibold}
+            fontVariant={["tabular-nums"]}
+          >
+            {quantity}
+          </Text>
+        </Animated.View>
         <Button
           variant="ghost"
           size="icon"

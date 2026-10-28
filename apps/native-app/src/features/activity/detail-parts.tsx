@@ -6,10 +6,9 @@ import {
   type Currency,
   NonNegativeInteger,
 } from "@payky/core/modules/shared/schema"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import type { ReactNode } from "react"
-import { Text, View, XStack, YStack } from "tamagui"
+import { Text, XStack, YStack } from "tamagui"
 import { DetailRow } from "../../components/detail-row.tsx"
 import { FadeHeader } from "../../components/fade-header.tsx"
 import { Screen } from "../../components/screen.tsx"
@@ -20,11 +19,10 @@ import {
 } from "../../components/ui/alert.tsx"
 import {
   Collapsible,
+  CollapsibleChevron,
   CollapsibleContent,
   CollapsibleTrigger,
-  useCollapsible,
 } from "../../components/ui/collapsible.tsx"
-import { Icon } from "../../components/ui/icon.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import { fontSize, fontWeight } from "../../theme/tokens.ts"
 
@@ -79,7 +77,6 @@ export function Technical({ children }: { readonly children: ReactNode }) {
 }
 
 function TechnicalTriggerLabel({ label }: { readonly label: string }) {
-  const { open } = useCollapsible()
   return (
     <XStack items="center" gap={4}>
       <Text
@@ -90,9 +87,7 @@ function TechnicalTriggerLabel({ label }: { readonly label: string }) {
       >
         {label}
       </Text>
-      <View rotate={open ? "180deg" : "0deg"}>
-        <Icon icon={ChevronDown} size={14} color="muted-foreground" />
-      </View>
+      <CollapsibleChevron size={14} color="muted-foreground" />
     </XStack>
   )
 }

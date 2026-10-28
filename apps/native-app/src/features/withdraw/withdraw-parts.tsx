@@ -1,20 +1,18 @@
 import { formatSatsAmount } from "@payky/app-shared/format-money"
 import { withdrawalStatusKey } from "@payky/app-shared/withdraw-display"
 import type { WithdrawalView } from "@payky/core/modules/withdraw/withdraw-queries"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
 import LoaderCircle from "lucide-react-native/icons/loader-circle"
 import type { ReactNode } from "react"
 import { Text as RNText } from "react-native"
-import { Text, useTheme, View, XStack, YStack } from "tamagui"
+import { Text, useTheme, XStack, YStack } from "tamagui"
 import { CopyLink } from "../../components/copy-link.tsx"
 import { Badge } from "../../components/ui/badge.tsx"
 import {
+  CollapsibleChevron,
   CollapsibleContent,
   Collapsible as CollapsibleRoot,
   CollapsibleTrigger,
-  useCollapsible,
 } from "../../components/ui/collapsible.tsx"
-import { Icon } from "../../components/ui/icon.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
 import type { ThemeColor } from "../../theme/themes.ts"
@@ -138,15 +136,12 @@ export function Collapsible({
 }
 
 function CollapsibleLabel({ label }: { readonly label: string }) {
-  const { open } = useCollapsible()
   return (
     <XStack w="100%" items="center" justify="space-between">
       <Text fontSize={13} fontWeight="600" color="muted-foreground">
         {label}
       </Text>
-      <View rotate={open ? "180deg" : "0deg"}>
-        <Icon icon={ChevronDown} color="muted-foreground" />
-      </View>
+      <CollapsibleChevron color="muted-foreground" />
     </XStack>
   )
 }

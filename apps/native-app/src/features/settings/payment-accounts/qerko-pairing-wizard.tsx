@@ -19,8 +19,6 @@ import {
   requestQerkoPairing,
 } from "@payky/core/integrations/qerko/qerko-client"
 import { completeQerkoPairing } from "@payky/core/modules/qerko-plugin/qerko-plugin-actions"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
-import ChevronUp from "lucide-react-native/icons/chevron-up"
 import { useEffect, useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import { Alert, AlertDescription } from "../../../components/ui/alert.tsx"
@@ -35,9 +33,9 @@ import {
 } from "../../../components/ui/card.tsx"
 import {
   Collapsible,
+  CollapsibleChevron,
   CollapsibleContent,
   CollapsibleTrigger,
-  useCollapsible,
 } from "../../../components/ui/collapsible.tsx"
 import {
   Field,
@@ -46,7 +44,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "../../../components/ui/field.tsx"
-import { Icon } from "../../../components/ui/icon.tsx"
 import { Input } from "../../../components/ui/input.tsx"
 import {
   InputOTP,
@@ -439,13 +436,12 @@ export function QerkoPairingWizard({
 }
 
 function AdvancedSettingsLabel({ label }: { readonly label: string }) {
-  const { open } = useCollapsible()
   return (
     <XStack items="center" justify="space-between" w="100%">
       <Text fontSize="sm" lineHeight="sm" fontWeight="600">
         {label}
       </Text>
-      <Icon icon={open ? ChevronUp : ChevronDown} color="muted-foreground" />
+      <CollapsibleChevron color="muted-foreground" />
     </XStack>
   )
 }

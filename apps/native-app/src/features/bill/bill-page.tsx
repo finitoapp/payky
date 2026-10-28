@@ -37,7 +37,6 @@ import { tablesQuery } from "@payky/core/modules/table/table-queries"
 import { TableId } from "@payky/core/modules/table/table-types"
 import { isSameDay } from "date-fns"
 import { Redirect, router, useLocalSearchParams } from "expo-router"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
 import Minus from "lucide-react-native/icons/minus"
 import Plus from "lucide-react-native/icons/plus"
 import Redo2 from "lucide-react-native/icons/redo-2"
@@ -79,6 +78,7 @@ import { Button } from "../../components/ui/button.tsx"
 import { Card, CardContent } from "../../components/ui/card.tsx"
 import {
   Collapsible,
+  CollapsibleChevron,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../../components/ui/collapsible.tsx"
@@ -886,9 +886,7 @@ function BillCart({
                         {formatMoney({ value: totalAmount, currency }, locale)}
                       </Text>
                     </Animated.View>
-                    <View rotate={summaryOpen ? "0deg" : "180deg"}>
-                      <Icon icon={ChevronDown} />
-                    </View>
+                    <CollapsibleChevron direction="up" />
                   </XStack>
                 </XStack>
               </CollapsibleTrigger>

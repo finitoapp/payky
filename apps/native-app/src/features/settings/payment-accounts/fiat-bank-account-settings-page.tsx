@@ -15,8 +15,6 @@ import {
   isFioBankIban,
 } from "@payky/core/modules/shared/iban-utils"
 import type { FiatCurrency, Iban } from "@payky/core/modules/shared/schema"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
-import ChevronUp from "lucide-react-native/icons/chevron-up"
 import Plug from "lucide-react-native/icons/plug"
 import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useState } from "react"
@@ -33,9 +31,9 @@ import {
 } from "../../../components/ui/card.tsx"
 import {
   Collapsible,
+  CollapsibleChevron,
   CollapsibleContent,
   CollapsibleTrigger,
-  useCollapsible,
 } from "../../../components/ui/collapsible.tsx"
 import { FieldDescription, FieldGroup } from "../../../components/ui/field.tsx"
 import { Icon } from "../../../components/ui/icon.tsx"
@@ -273,13 +271,12 @@ export function FiatBankAccountSettingsPage() {
 }
 
 function AdvancedSettingsLabel({ label }: { readonly label: string }) {
-  const { open } = useCollapsible()
   return (
     <XStack items="center" justify="space-between" w="100%">
       <Text fontSize="sm" lineHeight="sm" fontWeight="600">
         {label}
       </Text>
-      <Icon icon={open ? ChevronUp : ChevronDown} color="muted-foreground" />
+      <CollapsibleChevron color="muted-foreground" />
     </XStack>
   )
 }

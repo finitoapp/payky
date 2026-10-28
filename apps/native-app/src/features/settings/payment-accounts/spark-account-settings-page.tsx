@@ -22,7 +22,6 @@ import { createDefaultSparkPaymentWallet } from "@payky/core/spark/spark-wallet"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAtomValue } from "jotai"
 import ArrowUpFromLine from "lucide-react-native/icons/arrow-up-from-line"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
 import KeyRound from "lucide-react-native/icons/key-round"
 import Wallet from "lucide-react-native/icons/wallet"
 import { useState } from "react"
@@ -43,6 +42,7 @@ import {
 } from "../../../components/ui/card.tsx"
 import {
   Collapsible,
+  CollapsibleChevron,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../../../components/ui/collapsible.tsx"
@@ -423,7 +423,7 @@ function AdvancedSettingsLabel({ label }: { readonly label: string }) {
       <Text fontSize="sm" lineHeight="sm" fontWeight="600">
         {label}
       </Text>
-      <Icon icon={ChevronDown} color="muted-foreground" />
+      <CollapsibleChevron color="muted-foreground" />
     </XStack>
   )
 }

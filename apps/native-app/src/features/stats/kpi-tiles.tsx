@@ -8,15 +8,13 @@ import { type Currency, Integer } from "@payky/core/modules/shared/schema"
 import { startOfDay, subMilliseconds } from "date-fns"
 import ArrowDown from "lucide-react-native/icons/arrow-down"
 import ArrowUp from "lucide-react-native/icons/arrow-up"
-import ChevronDown from "lucide-react-native/icons/chevron-down"
-import ChevronRight from "lucide-react-native/icons/chevron-right"
 import { useState } from "react"
 import { Text, XStack, YStack } from "tamagui"
 import {
   Collapsible,
+  CollapsibleChevron,
   CollapsibleContent,
   CollapsibleTrigger,
-  useCollapsible,
 } from "../../components/ui/collapsible.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
@@ -233,7 +231,6 @@ export function BreakdownLine({
 }
 
 function CalculationTrigger({ label }: { readonly label: string }) {
-  const { open } = useCollapsible()
   return (
     <CollapsibleTrigger mt="1" flexDirection="row" items="center" gap="1">
       <Text
@@ -244,11 +241,7 @@ function CalculationTrigger({ label }: { readonly label: string }) {
       >
         {label}
       </Text>
-      <Icon
-        icon={open ? ChevronDown : ChevronRight}
-        size={14}
-        color="muted-foreground"
-      />
+      <CollapsibleChevron size={14} color="muted-foreground" />
     </CollapsibleTrigger>
   )
 }

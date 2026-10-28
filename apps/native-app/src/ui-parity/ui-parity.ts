@@ -58,6 +58,13 @@ const kitModuleOf = (file: string, specifier: string): string | undefined => {
   return rootKitModules.has(module) ? module : undefined
 }
 
+/**
+ * Native kit members that draw what web renders as a plain lucide icon, so
+ * they count no more than `ui/icon` does: `CollapsibleChevron` is web's
+ * `ChevronDown` with a `rotate-180` class at each collapsible trigger.
+ */
+const iconKitNames = new Set(["CollapsibleChevron"])
+
 export interface KitElement {
   readonly name: string
   readonly line: number
@@ -83,11 +90,9 @@ const importedKitNames = (
     const bindings = statement.importClause?.namedBindings
     if (bindings === undefined || !ts.isNamedImports(bindings)) continue
     for (const element of bindings.elements) {
-      if (element.isTypeOnly) continue
-      names.set(
-        element.name.text,
-        (element.propertyName ?? element.name).getText(sourceFile)
-      )
+      const name = (element.propertyName ?? element.name).getText(sourceFile)
+      if (element.isTypeOnly || iconKitNames.has(name)) continue
+      names.set(element.name.text, name)
     }
   }
   return names

@@ -14,12 +14,8 @@ import type { DeviceId } from "@payky/core/modules/device/device-types"
 import { useAtomValue } from "jotai"
 import { useCallback, useEffect } from "react"
 import { accountAtom } from "@/atoms/account.ts"
-import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import {
-  cashuShardStoreAtom,
-  cashuWalletDepAtom,
-  evoluAtom,
-} from "@/atoms/evolu.ts"
+import { cashuWalletDepAtom } from "@/atoms/cashu.ts"
+import { evoluAtom } from "@/atoms/evolu.ts"
 import { appEnv } from "@/core/app-env.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import {
@@ -143,15 +139,13 @@ export function AppBackgroundJobs() {
 }
 
 /**
- * The Cashu job, apart from the others: it suspends on and throws from the
- * Cashu atoms alone, under its own boundary in `App.tsx`, so a Cashu wallet
- * that fails to start, or never does, stops no other job.
+ * The Cashu job, apart from the others: it suspends on the Cashu wallet atom
+ * and runs under its own boundary in `App.tsx`, so a mint or the SDK
+ * crashing it stops no other job.
  */
 export function CashuBackgroundJobs() {
   const evolu = useAtomValue(evoluAtom)
   const account = useAtomValue(accountAtom)
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const cashuShardStore = useAtomValue(cashuShardStoreAtom)
   const cashuWalletDep = useAtomValue(cashuWalletDepAtom)
   const console = useConsole()
   const deviceId = account.device.id
@@ -159,22 +153,12 @@ export function CashuBackgroundJobs() {
   const start = useCallback(() => {
     const run = createRun({
       ...createAppJobDeps({ evolu, deviceId, console }),
-      deviceEvolu,
       masterKey,
       ...createNostrDep(appEnv.VITE_PAYKY_NOSTR_RELAYS),
-      cashuShardStore,
       ...cashuWalletDep,
     })
     return { run, jobs: run.ok(runBackgroundJobs(cashuBackgroundJobs)) }
-  }, [
-    cashuShardStore,
-    cashuWalletDep,
-    console,
-    deviceEvolu,
-    deviceId,
-    evolu,
-    masterKey,
-  ])
+  }, [cashuWalletDep, console, deviceId, evolu, masterKey])
 
   useBackgroundJobs({ isDemo: account.demo !== null, console, start })
 

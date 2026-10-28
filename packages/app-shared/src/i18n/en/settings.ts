@@ -141,21 +141,19 @@ export const enSettings = {
   "settings.categories.search.clear.aria": "Clear search",
   "settings.categories.title": "Categories",
   "settings.cashuAccount.title": "Cashu",
-  "settings.cashuAccount.wallet.title": "Wallet shared with Linky",
+  "settings.cashuAccount.wallet.title": "Payky's Cashu wallet",
   "settings.cashuAccount.wallet.description":
-    "Cashu payments go into the same ecash wallet your Linky app shows. Its balance includes money received in Linky.",
+    "Cashu payments go into an ecash wallet of this account's own. It syncs between your Payky devices; Linky keeps a separate wallet.",
   "settings.cashuAccount.defaultMint": "Default mint",
-  "settings.cashuAccount.syncing": "Syncing the wallet with Linky...",
   "settings.cashuAccount.empty": "The wallet holds no ecash yet.",
   "settings.cashuMints.title": "Mints",
-  "settings.cashuMints.known": "Your mints",
+  "settings.cashuMints.trusted": "Trusted mints",
   "settings.cashuMints.suggested": "Suggested mints",
-  "settings.cashuMints.empty": "The wallet knows no mint yet.",
-  "settings.cashuMints.default": "Default",
+  "settings.cashuMints.default": "Payments",
   "settings.cashuMints.add": "Add a mint",
   "settings.cashuMints.url": "Mint URL",
   "settings.cashuMints.addDescription":
-    "The mint is checked before it is added. Adding it changes neither the default mint nor which tokens pay your payments.",
+    "The mint is checked before it is added. Payky then accepts tokens from it; the default mint stays as it is.",
   "settings.cashuMints.addError.invalid": "This is not a mint URL.",
   "settings.cashuMints.addError.unreachable": "The mint did not answer.",
   "settings.cashuMints.addError.rejected":
@@ -163,12 +161,26 @@ export const enSettings = {
   "settings.cashuMints.invalid": "This mint URL is not valid.",
   "settings.cashuMints.infoUnavailable": "The mint did not answer.",
   "settings.cashuMints.balance": "Balance: {amount}",
-  "settings.cashuMints.defaultWarning":
-    "New Cashu payments will use this mint, in Linky too. Linky's Lightning address keeps paying into the old mint until you change the default in Linky.",
-  "settings.cashuMints.setDefault": "Set as default",
-  "settings.cashuMints.remove": "Remove the mint",
-  "settings.cashuMints.removeError.inUse":
-    "The mint still holds ecash, so it cannot be removed.",
+  "settings.cashuMints.setDefault": "Use for payments",
+  "settings.cashuMints.withBalance": "Other mints with a balance",
+  "settings.cashuMints.trust": "Trust this mint",
+  "settings.cashuMints.trustDescription":
+    "Payky accepts tokens from a mint you trust and names it in the payment QR.",
+  "settings.cashuMints.notTrustedDescription":
+    "Payky does not accept tokens from this mint.",
+  "settings.cashuMints.untrust": "Stop trusting the mint",
+  "settings.cashuMints.untrustConfirm.title": "Stop trusting {mint}?",
+  "settings.cashuMints.untrustConfirm.description":
+    "Payky stops accepting tokens from it. Its balance stays, to move or withdraw.",
+  "settings.cashuMints.untrustConfirm.defaultDescription":
+    "Payky stops accepting tokens from it, and {next} becomes the default mint. Its balance stays, to move or withdraw.",
+  "settings.cashuMints.untrustConfirm.confirm": "Stop trusting",
+  "settings.cashuMints.untrustConfirm.cancel": "Cancel",
+  "settings.cashuMints.untrustError.last":
+    "This is the only trusted mint. Trust another one first.",
+  "settings.cashuMints.setDefaultError.untrusted":
+    "Only a trusted mint can be the default.",
+  "settings.cashuMints.withdraw": "Withdraw",
   "settings.cashuMints.move.title": "Move funds",
   "settings.cashuMints.move.description":
     "Moves ecash from this mint to the default mint {mint} over Lightning.",
@@ -194,12 +206,8 @@ export const enSettings = {
   "settings.cashuAccount.withdraw": "Withdraw",
   "settings.cashuAccount.withdrawDescription": "Send ecash out over Lightning",
   "settings.cashuAccount.enabled.label": "Accept Cashu",
-  "settings.debugConsole.cashu.title": "Linky Cashu wallet (development)",
-  "settings.debugConsole.cashu.activeShard": "Active shard: {index}",
-  "settings.debugConsole.cashu.hydrated": "Hydrated: {hydrated}",
+  "settings.debugConsole.cashu.title": "Cashu wallet (development)",
   "settings.debugConsole.cashu.noBalance": "No available proofs.",
-  "settings.debugConsole.cashu.writeTestSetting":
-    "Write a test setting for Linky",
   "settings.debugConsole.clear": "Clear",
   "settings.debugConsole.description": "Inspect captured app console output",
   "settings.debugConsole.empty": "No console entries captured yet.",

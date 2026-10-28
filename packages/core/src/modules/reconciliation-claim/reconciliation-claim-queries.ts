@@ -411,7 +411,7 @@ export const sparkReconciliationCandidateByValuesQuery = ({
  * The payment a Cashu movement settles (cashu/0005): the one whose
  * `paymentCashu` names its mint quote at the payment's mint (a quote id is
  * unique only within its mint), or the token receive it holds, at whatever
- * mint: whoever received the token trusted its mint (cashu/0011). By id only, never by amount: a token after its
+ * mint: whoever received the token trusted its mint (cashu/0017). By id only, never by amount: a token after its
  * input fee would never match one. A payment that already has money against
  * it takes nothing more; the movement stays unclaimed.
  */

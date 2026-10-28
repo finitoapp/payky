@@ -1,6 +1,6 @@
 # 0012 A Cashu withdrawal may spend money received in Linky
 
-Status: accepted
+Status: superseded by withdraw/0015
 Date: 2026-10-14
 
 ## Context

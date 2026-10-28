@@ -35,8 +35,8 @@ matches by quote id (cashu/0005).
 
 ## Enforced by
 
-- `packages/core/src/modules/payment/payment-cashu-preparation.test.ts > prepareCashuPaymentMethod > quotes the default mint, writes the topup, the paymentCashu row and the payment's expiry`
+- `packages/core/src/modules/payment/payment-cashu-preparation.test.ts > prepareCashuPaymentMethod > quotes the payment mint, writes the topup, the paymentCashu row and the payment's expiry`
 - `packages/core/src/modules/payment/payment-cashu-preparation.test.ts > prepareCashuPaymentMethod > leaves Spark's rows alone when both are prepared`
 - `packages/core/src/modules/payment/payment-cashu-preparation.test.ts > prepareCashuPaymentMethod > refuses a payment of nothing`
-- `packages/core/src/modules/cashu/cashu-cross-app.test.ts > cross-app Cashu vectors (shared with Linky) > BIP-321 $uri`
+- `packages/core/src/cashu/cashu-payment-request.test.ts > the Cashu tab's payment request > BIP-321 $uri`
 - `apps/web-app/e2e/cashu.spec.ts > enable Cashu, take a payment over the mint's invoice and see it settle`

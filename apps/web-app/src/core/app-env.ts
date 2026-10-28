@@ -27,17 +27,6 @@ export const appEnv = createEnv({
         "wss://relay.0xchat.com",
         "wss://nostr.linky.fit",
       ]),
-    // Where Linky publishes the Evolu relays its Cashu wallet syncs through;
-    // Payky syncs the shared wallet over the same ones (cashu.md §2).
-    VITE_LINKY_RELAYS_URL: z
-      .url()
-      .default("https://linky.fit/recommended-relays"),
-    // Linky's bundled fallback, used until the list above has been fetched.
-    VITE_LINKY_EVOLU_RELAYS: z
-      .string()
-      .transform((value) => value.split(",").map((url) => url.trim()))
-      .pipe(z.array(z.url({ protocol: /^wss$/u })).min(1))
-      .default(["wss://evolu.eu.freedomrelay.dev", "wss://evolu.linky.fit"]),
     // Unset leaves error reporting unavailable, whatever the device opted.
     VITE_SENTRY_DSN: z.string().optional(),
   },

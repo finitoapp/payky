@@ -6,8 +6,8 @@ Date: 2026-10-14
 ## Context
 
 A token can arrive while its mint is down. Linky then writes a
-`deferredReceive`; a second writer of those would race Linky's own retries
-(`cashu.md` §5 "Mint unreachable", decision 12).
+`deferredReceive`; Payky keeps no such row (`cashu.md` §5 "Mint
+unreachable", decision 12), and its wallet is its own (cashu/0012).
 
 ## Decision
 
@@ -17,20 +17,21 @@ A token can arrive while its mint is down. Linky then writes a
   tick, tries each token message in its look-back window (7 days, never less
   than NIP-59's two) whose receive is not `done` or `failed`. A final refusal
   that writes nothing is remembered for the run.
-- Payky never resumes or closes Linky's `deferredReceive` rows.
+- Payky writes no `deferredReceive` of its own.
 
 ## Alternatives considered
 
-Writing `deferredReceive` like Linky: two apps resuming one row.
+A deferred-receive row like Linky's: a second queue next to the message,
+which already is one.
 
 ## Consequences
 
 A mint down for longer than the window, or a relay that drops the message,
-leaves the token to Linky's own deferral or to the merchant.
+leaves the token to the merchant.
 
 ## Enforced by
 
-- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > an unreachable mint writes nothing`
-- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > a spent token writes nothing`
-- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > someone else got there first > Linky received it: done, nothing written`
-- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > someone else got there first > a receive Linky has pending: nothing is written, never failed`
+- `packages/core/src/modules/cashu/cashu-receive-actions.test.ts > receiveCashuToken > an unreachable mint writes nothing`
+- `packages/core/src/modules/cashu/cashu-receive-actions.test.ts > receiveCashuToken > a token another wallet already spent is received elsewhere, writing nothing`
+- `packages/core/src/modules/cashu/cashu-receive-actions.test.ts > receiveCashuToken > another device got there first > another device received it: done, nothing written`
+- `packages/core/src/modules/cashu/cashu-receive-actions.test.ts > receiveCashuToken > another device got there first > a receive another device has pending: nothing is written, never failed`

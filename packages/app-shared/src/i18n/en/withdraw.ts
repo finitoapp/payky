@@ -31,7 +31,7 @@ export const enWithdraw = {
   "withdraw.cashu.error.unreachable":
     "The mint did not answer. Nothing was sent.",
   "withdraw.cashu.form.description":
-    "Send ecash from one mint of the Cashu wallet you share with Linky to a Lightning invoice or a Lightning address.",
+    "Send ecash from one mint of the Cashu wallet to a Lightning invoice or a Lightning address.",
   "withdraw.cashu.mint": "From which mint",
   "withdraw.cashu.noAccount.description":
     "Turn on Cashu in Payment accounts before withdrawing.",

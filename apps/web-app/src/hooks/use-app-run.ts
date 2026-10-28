@@ -8,8 +8,8 @@ import { createSparkWalletDep } from "@payky/core/spark/spark-wallet"
 import { useAtomValue, useStore } from "jotai"
 import { useCallback, useMemo } from "react"
 import { accountAtom } from "@/atoms/account.ts"
+import { cashuWalletDepAtom } from "@/atoms/cashu.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { cashuShardStoreAtom, cashuWalletDepAtom } from "@/atoms/evolu.ts"
 import { appEnv } from "@/core/app-env.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
@@ -79,20 +79,16 @@ export const useAppRun = () => {
 }
 
 /**
- * `useAppRun` plus the shared Cashu wallet (`cashuShardStore`, `cashuWallet`),
- * for the Cashu actions only: `await using run = await cashuAppRun()`. The
- * Cashu atoms are read when a run is made, never while rendering, so a
- * wallet that fails to start, or never does, holds up no screen; the call
- * that needed it rejects instead.
+ * `useAppRun` plus Payky's Cashu wallet (`cashuWallet`), for the Cashu
+ * actions only: `await using run = await cashuAppRun()`. The wallet atom is
+ * read when a run is made, never while rendering, so a mint SDK that fails
+ * to load holds up no screen; the call that needed it rejects instead.
  */
 export const useCashuAppRun = () => {
   const appRunDeps = useAppRunDeps()
   const jotaiStore = useStore()
   return useCallback(async () => {
-    const [cashuShardStore, cashuWalletDep] = await Promise.all([
-      jotaiStore.get(cashuShardStoreAtom),
-      jotaiStore.get(cashuWalletDepAtom),
-    ])
-    return createRun({ ...appRunDeps(), cashuShardStore, ...cashuWalletDep })
+    const cashuWalletDep = await jotaiStore.get(cashuWalletDepAtom)
+    return createRun({ ...appRunDeps(), ...cashuWalletDep })
   }, [appRunDeps, jotaiStore])
 }

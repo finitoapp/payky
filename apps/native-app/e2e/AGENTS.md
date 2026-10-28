@@ -135,8 +135,8 @@ assertions.
 - `fake` swaps in outside services until the app restarts, so run it after
   `seed-onboarding` and, on web, move on with `next=`: `spark=funded`
   (`e2e-spark-presets.ts`), `cashu=manual|autopay` (`e2e-cashu-mint.ts`, web's
-  `__e2eCashuMint`: an in-app fake mint and no Linky sync; set it before the
-  Cashu wallet first starts). `cashuPayQuotes` is web's
+  `__e2eCashuMint`: an in-app fake mint the wallet talks to instead of a
+  real one; set it before the Cashu wallet first starts). `cashuPayQuotes` is web's
   `__e2eCashuPayQuotes` and prints how many quotes it paid; a web link
   reloads the page and loses the mint, so flows use `cashu=autopay` instead,
   which pays open quotes every 4 s by itself.

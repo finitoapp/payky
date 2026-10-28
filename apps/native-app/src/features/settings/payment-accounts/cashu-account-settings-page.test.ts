@@ -6,38 +6,26 @@ const page = readFileSync(
   new URL("./cashu-account-settings-page.tsx", import.meta.url),
   "utf8"
 )
-const snapshotHook = readFileSync(
-  new URL("../../shared/cashu/use-cashu-wallet-snapshot.ts", import.meta.url),
-  "utf8"
-)
-const snapshotSubscription = readFileSync(
-  new URL(
-    "../../shared/cashu/cashu-wallet-snapshot-subscription.ts",
-    import.meta.url
-  ),
+const walletHook = readFileSync(
+  new URL("../../shared/cashu/use-cashu-wallet.ts", import.meta.url),
   "utf8"
 )
 
 it("keeps the Cashu overview owner-only and read-only", () => {
   expect(requiredPermission("/settings/payment-accounts/cashu")).toBe("admin")
   expect(page).toContain('href: "/cashu-withdraw"')
-  expect(page).not.toMatch(/saveCashuAccount|writeCashu|Wallet\.|Mint\./u)
-  expect(snapshotHook).toContain(
-    'queryKey: ["cashuWalletSnapshot", store.linkyAppOwner.id]'
+  expect(page).not.toMatch(
+    /saveCashuAccount|setDefaultCashuMint|Wallet\.|Mint\./u
   )
-  expect(snapshotHook).toContain("sumAvailableByMint(proofs)")
-  expect(snapshotHook).not.toMatch(
+  expect(walletHook).not.toMatch(
     /cashuWalletDepAtom|deriveCashuWalletSeed|loadCashuWallet/u
   )
 })
 
-it("does not report an unread wallet as empty and refreshes live snapshots", () => {
-  expect(page).toContain("isError ?")
-  expect(page).toContain("isPending || snapshot === null ?")
-  expect(page).toContain("!snapshot.hydrated")
-  expect(page).toContain("snapshot.balances.size === 0")
-  expect(snapshotSubscription).toContain("store.subscribe(")
-  expect(snapshotSubscription).toContain("store.subscribeHydration(")
-  expect(snapshotSubscription).toContain("stopChanges()")
-  expect(snapshotSubscription).toContain("stopHydration()")
+it("reads the wallet and its default mint live", () => {
+  expect(walletHook).toContain("useEvoluQuery(cashuBalancesQuery)")
+  expect(walletHook).toContain("useEvoluQuery(cashuTrustedMintsQuery)")
+  expect(walletHook).not.toContain("cashuAccountQuery")
+  expect(page).toContain("wallet.defaultMint")
+  expect(page).toContain("wallet.balances.size === 0")
 })

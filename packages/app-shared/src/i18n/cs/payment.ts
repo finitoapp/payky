@@ -253,7 +253,9 @@ export const csPayment = {
   "paymentWait.cashu.arrival.waitingForMint":
     "Přišel token na {amount} sat. Čekám, až odpoví mint {mint}...",
   "paymentWait.cashu.arrival.untrustedMint":
-    "Token na {amount} sat přišel z {mint}, což není výchozí mint. Nebyl přijat a tuto platbu nezaplatí.",
+    "Token na {amount} sat přišel z {mint}, kterému nedůvěřujete. Nebyl přijat a tuto platbu nezaplatí.",
+  "paymentWait.cashu.arrival.receivedElsewhere":
+    "Token na {amount} sat z {mint} přijala dřív jiná peněženka, možná Linky se stejným klíčem. Platba tu zůstává nezaplacená; vyřiďte ji ručně.",
   "paymentWait.cashu.failure.mintUnreachable":
     "Mint neodpověděl. Token zkusím znovu.",
   "paymentWait.cashu.failure.mintRejected":
@@ -266,8 +268,6 @@ export const csPayment = {
     "Peněženka už tento token má. Platba zůstává nezaplacená.",
   "paymentWait.cashu.failure.fee":
     "Poplatek mintu by vzal celý token. Platba zůstává nezaplacená.",
-  "paymentWait.cashu.failure.spent":
-    "Token už byl utracen. Platba zůstává nezaplacená.",
   "paymentWait.cashu.newQuote": "Nová faktura",
   "paymentWait.method.card": "Platební karta",
   "paymentWait.method.cash": "Hotovost",

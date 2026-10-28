@@ -9,7 +9,7 @@ import { TamaguiProvider, Theme, useTheme, View } from "tamagui"
 import { AccessGate } from "../src/components/app/access-gate.tsx"
 import {
   AppEvoluConsumers,
-  CashuEvoluConsumers,
+  CashuJobConsumers,
 } from "../src/components/app/app-background-jobs.tsx"
 import { AppErrorScreen } from "../src/components/app/app-error-screen.tsx"
 import { AppLoader } from "../src/components/app/app-loader.tsx"
@@ -119,7 +119,7 @@ function ThemedApp() {
           </AccessGate>
           {/* After the first screen and a pause in tapping: their start blocks the JS thread. */}
           {appJobsMayStart ? <AppEvoluConsumers /> : null}
-          {cashuJobsMayStart ? <CashuEvoluConsumers /> : null}
+          {cashuJobsMayStart ? <CashuJobConsumers /> : null}
           <ConfirmHost />
           <PinPromptHost />
           <ToastHost />

@@ -40,7 +40,7 @@ describe("getBackgroundJobsForRuntime", () => {
     expect(cliBackgroundJobs).not.toContain(startQerkoTerminalSyncJob)
   })
 
-  test("keeps the Cashu job out of the CLI, which has no Linky owners", () => {
+  test("keeps the Cashu job out of the CLI, which has no Cashu wallet", () => {
     expect(cliBackgroundJobs).not.toContain(startCashuAccountSyncJob)
   })
 

@@ -149,7 +149,7 @@ export const fundedMints = (
     .filter(([, balance]) => balance > 0)
     .toSorted(([a], [b]) => a.localeCompare(b))
 
-/** The chosen mint if still funded, else the default one if funded, else the first funded. */
+/** The chosen mint if still funded, else the default mint if funded, else the first funded. */
 export const withdrawMint = ({
   funded,
   chosen,

@@ -44,8 +44,15 @@ export type PaymentMethodOption = PaymentMethodOptionBase &
     | { readonly id: "qerko"; readonly qrPayload: null }
     | {
         readonly id: "cashu"
-        /** The BIP-321 URI with the mint's invoice (and later a NUT-18 request). */
+        /**
+         * The BIP-321 URI with the mint's invoice and a NUT-18 request naming
+         * the payment's mint only, while the trusted mints are not read.
+         */
         readonly qrPayload: string | null
+        /** The same URI with the request naming `mintUrls` (cashu/0017). */
+        readonly buildQrPayload: (
+          mintUrls: ReadonlyArray<string>
+        ) => string | null
         /** The mint quote expired: the tab offers a new one. */
         readonly quoteExpired: boolean
       }

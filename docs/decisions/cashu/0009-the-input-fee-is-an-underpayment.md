@@ -29,5 +29,5 @@ Most mints charge no input fee, so this is usually zero.
 
 ## Enforced by
 
-- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > credits what is left after the mint's input fee`
-- `packages/core/src/cashu/cashu-receive.test.ts > receiveCashuToken > refuses a token the fee would eat whole, writing nothing`
+- `packages/core/src/modules/cashu/cashu-receive-actions.test.ts > receiveCashuToken > credits what is left after the mint's input fee`
+- `packages/core/src/modules/cashu/cashu-receive-actions.test.ts > receiveCashuToken > refuses a token the fee would eat whole, writing nothing`

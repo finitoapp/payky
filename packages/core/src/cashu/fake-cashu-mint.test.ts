@@ -1,6 +1,5 @@
 import { getEncodedToken } from "@cashu/cashu-ts"
 import { describe, expect, test } from "vitest"
-import type { DeviceAccountId } from "../evolu/device-client.ts"
 import { KeysetId, MintUrl } from "../modules/cashu/cashu-types.ts"
 import {
   deriveCashuWalletSeed,
@@ -22,7 +21,6 @@ const setup = (inputFeePpk = 0) => {
   const mint = createFakeCashuMint({ url: mintUrl, inputFeePpk })
   const dep = createCashuWalletDep({
     seed,
-    deviceAccountId: "device" as DeviceAccountId,
     fetch: mint.fetch,
   })
   return { mint, dep }

@@ -1,24 +1,31 @@
-import { createIdFromString, type OwnerId } from "@evolu/common"
+import { createIdFromString } from "@evolu/common"
 import { base64urlnopad } from "@scure/base"
 import { z } from "zod"
 import { jsonCodec } from "../../zod-utils.ts"
-import type {
-  CashuOperationId,
-  CashuOperationKind,
-  CashuProofId,
-  CashuProofState,
-  CashuTokenText,
-  LinkySettingId,
+import type { PaymentId } from "../payment/payment-types.ts"
+import { type TimestampMs, TimestampMsSchema } from "../shared/schema.ts"
+import {
+  type CashuClaimAttemptId,
+  type CashuCounterId,
+  type CashuMintId,
+  type CashuMoveId,
+  type CashuOperationId,
+  type CashuProofId,
+  type CashuProofState,
+  type CashuQuoteId,
+  type CashuTokenArrivalId,
+  type CashuTokenText,
+  CashuTokenTextSchema,
+  type KeysetId,
   MintUrl,
-  ShardPointerId,
+  MintUrlSchema,
 } from "./cashu-types.ts"
-import { CashuTokenTextSchema, MintUrlSchema } from "./cashu-types.ts"
 
 /**
- * Linky's `normalizeMintUrl` (`apps/web-app/src/utils/mint.ts`) followed by
- * linkshu's `parseMintUrl`: trimmed, no trailing slash, no search or hash,
- * and any `mint.minibits.cash` URL forced to `/Bitcoin`. Null when the result
- * is not an http(s) URL with a host. Pinned by `cashu-cross-app.test.ts`.
+ * A mint's one spelling: trimmed, no trailing slash, no search or hash, and
+ * any `mint.minibits.cash` URL forced to `/Bitcoin`, as Linky spells it, so a
+ * token from Linky names the mint the way the wallet does. Null when the
+ * result is not an http(s) URL with a host.
  */
 export const normalizeMintUrl = (value: string): MintUrl | null => {
   const raw = value.trim()
@@ -37,101 +44,217 @@ export const normalizeMintUrl = (value: string): MintUrl | null => {
     }
   })()
 
-  // linkshu's `parseMintUrl` trims and strips trailing slashes once more.
   const parsed = MintUrlSchema.safeParse(normalized.trim().replace(/\/+$/u, ""))
   return parsed.success ? parsed.data : null
 }
 
-/**
- * linkshu's `operationKeyOf` (`src/ports/OperationStore.ts`): a quote
- * operation by kind, mint and quote id, any other by kind and token text.
- */
-export const operationKeyOf = (operation: {
-  readonly kind: CashuOperationKind
-  readonly mint: string
-  readonly quoteId: string | null
-  readonly tokenText: string | null
-}): string =>
-  operation.quoteId === null && operation.tokenText !== null
-    ? [operation.kind, operation.tokenText].join("|")
-    : [operation.kind, operation.mint, operation.quoteId ?? ""].join("|")
-
-/** The proof id hashes the secret, so a synced or restored proof never duplicates. */
+/** Every id below derives from what the row is about, so devices agree on it. */
 export const cashuProofIdFor = (secret: string): CashuProofId =>
   createIdFromString<"CashuProof">(secret)
 
-/** The operation id hashes {@link operationKeyOf}. */
-export const cashuOperationIdFor = (operationKey: string): CashuOperationId =>
-  createIdFromString<"CashuOperation">(operationKey)
+export const cashuTopupOperationIdFor = (
+  mint: MintUrl,
+  quoteId: CashuQuoteId
+): CashuOperationId =>
+  createIdFromString<"CashuOperation">(`topup|${mint}|${quoteId}`)
 
-/** Every device upserts the same pointer row per scope. */
-export const shardPointerIdFor = (scope: string): ShardPointerId =>
-  createIdFromString<"ShardPointer">(`shardPointer/${scope}`)
+/** Whoever swaps the token, the payment holding this id recognises it. */
+export const cashuReceiveOperationIdFor = (
+  tokenText: CashuTokenText
+): CashuOperationId =>
+  createIdFromString<"CashuOperation">(`receive|${tokenText}`)
 
-export const linkySettingIdFor = (key: string): LinkySettingId =>
-  createIdFromString<"Setting">(`setting/${key}`)
+export const cashuMeltOperationIdFor = (
+  mint: MintUrl,
+  quoteId: CashuQuoteId
+): CashuOperationId =>
+  createIdFromString<"CashuOperation">(`melt|${mint}|${quoteId}`)
 
-/** What every merge needs of a row: who holds the copy and whether it is a tombstone. */
-export interface ShardRowCopy {
-  readonly id: string
-  readonly ownerId: OwnerId
-  readonly isDeleted: 0 | 1 | null
+export const cashuMoveIdFor = (
+  topupOperationId: CashuOperationId
+): CashuMoveId => createIdFromString<"CashuMove">(`move|${topupOperationId}`)
+
+export const cashuMintIdFor = (mint: MintUrl): CashuMintId =>
+  createIdFromString<"CashuMint">(`mint|${mint}`)
+
+export const cashuCounterIdFor = (
+  mint: MintUrl,
+  keysetId: KeysetId
+): CashuCounterId =>
+  createIdFromString<"CashuCounter">(`counter|${mint}|sat|${keysetId}`)
+
+export const cashuClaimAttemptIdFor = (
+  operationId: CashuOperationId
+): CashuClaimAttemptId =>
+  createIdFromString<"CashuClaimAttempt">(`claim-attempt|${operationId}`)
+
+export const cashuTokenArrivalIdFor = (
+  paymentId: PaymentId
+): CashuTokenArrivalId =>
+  createIdFromString<"CashuTokenArrival">(`token-arrival|${paymentId}`)
+
+/** The default mint of a new account (cashu/0013), Linky's default too. */
+export const MAIN_MINT_URL = MintUrl("https://cashu.cz")
+
+/** A trusted mint as the default and the request order read it. */
+export interface TrustedCashuMint {
+  readonly mintUrl: MintUrl
+  readonly defaultedAt: number | null
+  /** Evolu's ISO timestamp of the row, for the fallback (cashu/0013). */
+  readonly createdAt: string
 }
 
 /**
- * Linky's plain merge (`mergeShardRows`): one copy per id, the highest
- * shard's, from owners in `indexByOwner` only; tombstones dropped.
+ * The default mint (cashu/0013): the trusted mint with the newest
+ * `defaultedAt`, a tie going to the smaller URL so every device picks the
+ * same one. `chosen` is false for the fallback when no trusted mint was ever
+ * chosen: the newest trusted mint, else `MAIN_MINT_URL`.
  */
-export const mergeShardRows = <Row extends ShardRowCopy>(
-  rows: ReadonlyArray<Row>,
-  indexByOwner: ReadonlyMap<OwnerId, number>
-): ReadonlyArray<Row> => {
-  const newest = new Map<
-    string,
-    { readonly row: Row; readonly index: number }
-  >()
-  for (const row of rows) {
-    const index = indexByOwner.get(row.ownerId)
-    if (index === undefined) continue
-    const current = newest.get(row.id)
-    if (current === undefined || index > current.index)
-      newest.set(row.id, { row, index })
+export const pickDefaultCashuMint = (
+  trusted: ReadonlyArray<TrustedCashuMint>
+): { readonly mintUrl: MintUrl; readonly chosen: boolean } => {
+  const [first] = [...trusted].sort(compareForDefault)
+  if (first === undefined) return { mintUrl: MAIN_MINT_URL, chosen: false }
+  return { mintUrl: first.mintUrl, chosen: first.defaultedAt !== null }
+}
+
+const compareForDefault = (
+  a: TrustedCashuMint,
+  b: TrustedCashuMint
+): number => {
+  if (a.defaultedAt !== b.defaultedAt) {
+    if (a.defaultedAt === null) return 1
+    if (b.defaultedAt === null) return -1
+    return b.defaultedAt - a.defaultedAt
   }
-  return [...newest.values()]
-    .map((entry) => entry.row)
-    .filter((row) => row.isDeleted !== 1)
+  if (a.defaultedAt === null && a.createdAt !== b.createdAt)
+    return a.createdAt < b.createdAt ? 1 : -1
+  return a.mintUrl < b.mintUrl ? -1 : a.mintUrl > b.mintUrl ? 1 : 0
 }
 
 /**
- * Linky's `mergeProofCopies` (`repositories/wallet.ts`): per id the highest
- * shard's copy wins, except that any `spent` copy wins, and a spent proof is
- * kept even when its copy is a tombstone.
+ * The default once `mint` is no longer trusted (cashu/0016): the next newest
+ * choice, or null when `mint` is the last trusted mint.
  */
-export const mergeProofCopies = <
-  Row extends ShardRowCopy & { readonly state: CashuProofState | null },
->(
-  rows: ReadonlyArray<Row>,
-  indexByOwner: ReadonlyMap<OwnerId, number>
-): ReadonlyArray<Row> => {
-  const newestFirst = rows
-    .filter((row) => indexByOwner.has(row.ownerId))
-    .toSorted(
-      (a, b) =>
-        (indexByOwner.get(b.ownerId) ?? 0) - (indexByOwner.get(a.ownerId) ?? 0)
-    )
-  const byId = new Map<string, Row>()
-  for (const copy of newestFirst) {
-    const current = byId.get(copy.id)
-    if (
-      current === undefined ||
-      (copy.state === "spent" && current.state !== "spent")
-    )
-      byId.set(copy.id, copy)
-  }
-  return [...byId.values()].filter(
-    (row) => row.state === "spent" || row.isDeleted !== 1
+export const defaultCashuMintWithout = (
+  trusted: ReadonlyArray<TrustedCashuMint>,
+  mint: MintUrl
+): MintUrl | null => {
+  const remaining = trusted.filter((row) => row.mintUrl !== mint)
+  return remaining.length === 0 ? null : pickDefaultCashuMint(remaining).mintUrl
+}
+
+/**
+ * The trusted mints, the default first, then by `defaultedAt` descending and
+ * the never-chosen ones by URL (cashu/0017). With no trusted row the default
+ * `MAIN_MINT_URL` is the only one, since the default is always trusted.
+ */
+export const orderTrustedCashuMints = (
+  trusted: ReadonlyArray<TrustedCashuMint>
+): ReadonlyArray<MintUrl> => {
+  const { mintUrl: defaultMint } = pickDefaultCashuMint(trusted)
+  const rest = trusted
+    .filter((row) => row.mintUrl !== defaultMint)
+    .sort((a, b) => {
+      if (a.defaultedAt !== b.defaultedAt) {
+        if (a.defaultedAt === null) return 1
+        if (b.defaultedAt === null) return -1
+        return b.defaultedAt - a.defaultedAt
+      }
+      return a.mintUrl < b.mintUrl ? -1 : a.mintUrl > b.mintUrl ? 1 : 0
+    })
+    .map((row) => row.mintUrl)
+  return [defaultMint, ...rest]
+}
+
+/** The mints a NUT-18 request names: the trusted ones in order, capped. */
+export const orderCashuRequestMints = (
+  trusted: ReadonlyArray<TrustedCashuMint>,
+  max: number
+): ReadonlyArray<MintUrl> => orderTrustedCashuMints(trusted).slice(0, max)
+
+/**
+ * The `defaultedAt` of a new choice: now, or later than every one this
+ * device knows when another device's clock ran ahead (cashu/0013).
+ */
+export const nextDefaultedAt = (
+  nowMs: number,
+  newest: number | null
+): TimestampMs =>
+  TimestampMsSchema.decode(
+    newest === null ? nowMs : Math.max(nowMs, newest + 1)
   )
+
+/**
+ * The `defaultedAt` of a default Payky writes on the merchant's behalf, the
+ * seed and the fallback (cashu/0013): below every real choice, so a device
+ * that has the Cashu account but not yet its mints overrides no choice made
+ * elsewhere.
+ */
+export const WEAKEST_DEFAULTED_AT = TimestampMsSchema.decode(0)
+
+/** Suggestions on the mints screen; Linky's test mint is left out on purpose. */
+export const PRODUCTION_MINTS: ReadonlyArray<MintUrl> = [
+  MAIN_MINT_URL,
+  MintUrl("https://mint.minibits.cash/Bitcoin"),
+  MintUrl("https://kashu.me"),
+  MintUrl("https://cashu.21m.lol"),
+]
+
+/**
+ * What the merchant typed as a mint URL: `https://` when no scheme is given,
+ * a dot in the host, then normalised.
+ */
+export const parseMintUrlInput = (text: string): MintUrl | null => {
+  const trimmed = text.trim()
+  if (trimmed === "") return null
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//iu.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`
+  try {
+    if (!new URL(withScheme).hostname.includes(".")) return null
+  } catch {
+    return null
+  }
+  return normalizeMintUrl(withScheme)
 }
+
+/** The available balance per mint. */
+export const sumAvailableByMint = (
+  proofs: ReadonlyArray<{
+    readonly mintUrl: MintUrl
+    readonly amount: number
+    readonly state: CashuProofState
+  }>
+): ReadonlyMap<MintUrl, number> =>
+  proofs.reduce((balances, proof) => {
+    if (proof.state !== "available") return balances
+    balances.set(
+      proof.mintUrl,
+      (balances.get(proof.mintUrl) ?? 0) + proof.amount
+    )
+    return balances
+  }, new Map<MintUrl, number>())
+
+/** How many proofs `amount` splits into: one per set bit. */
+export const proofCountOf = (amount: number): number =>
+  amount.toString(2).replaceAll("0", "").length
+
+/** NUT-12's DLEQ proof as cashu-ts carries it, stored in `cashuProof.dleq`. */
+export const cashuDleqCodec = jsonCodec(
+  z.looseObject({
+    e: z.string(),
+    s: z.string(),
+    r: z.string().optional(),
+  })
+)
+
+/** A `defineError` value, stored in `cashuOperation.error`. */
+export const cashuErrorCodec = jsonCodec(z.looseObject({ type: z.string() }))
+
+/** The error column's text: the encoded error, cut to the column's 1000. */
+export const encodeCashuError = (error: { readonly type: string }): string =>
+  z.encode(cashuErrorCodec, error).slice(0, 1000)
 
 const JsonValue = jsonCodec(z.unknown())
 
@@ -168,11 +291,11 @@ const flattenProofs = (
 }
 
 /**
- * Linky's `normalizeTokenText` (`linkshu/src/token/codec.ts`): a bare
- * `cashu…` text trimmed, with no inner whitespace; a JSON proof bundle — the
- * NUT-18 payload included — re-serialised as-is into v3 `cashuA` text. The
- * receive operation's id hashes this text, so both apps must agree on it to
- * the byte (pinned by the cross-app vectors). Null for anything else.
+ * A token's one text: a bare `cashu…` text trimmed, with no inner
+ * whitespace; a JSON proof bundle — the NUT-18 payload included —
+ * re-serialised as-is into v3 `cashuA` text. The receive operation's id
+ * hashes this text, so every device must agree on it to the byte. Null for
+ * anything else.
  */
 export const normalizeCashuTokenText = (raw: string): CashuTokenText | null => {
   const trimmed = raw.trim()

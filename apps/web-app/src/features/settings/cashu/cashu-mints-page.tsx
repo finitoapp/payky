@@ -1,6 +1,6 @@
 import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
-import { PRODUCTION_MINTS } from "@payky/core/cashu/cashu-mints"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
+import { PRODUCTION_MINTS } from "@payky/core/modules/cashu/cashu-utils"
 import { Currency, Integer } from "@payky/core/modules/shared/schema"
 import { Link } from "@tanstack/react-router"
 import { PlusIcon } from "lucide-react"
@@ -14,20 +14,22 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 
 /**
- * The mints of the wallet shared with Linky (cashu.md §7): every known mint
- * with its balance and the default badge, then Linky's presets as
- * suggestions.
+ * The wallet's mints (cashu/0016): the trusted ones, the default first with
+ * its badge; the mints not trusted that still hold a balance; then the preset
+ * mints as suggestions, each opening its detail to be trusted there.
  */
 export function CashuMintsPage() {
   const { t } = useTranslation()
   const locale = useLocale()
-  const { snapshot } = useCashuWallet()
-  const known = snapshot?.knownMints ?? []
-  const defaultMint = snapshot?.defaultMint ?? null
-  const listed: ReadonlyArray<MintUrl> = [
-    ...new Set([...(defaultMint === null ? [] : [defaultMint]), ...known]),
-  ]
-  const suggestions = PRODUCTION_MINTS.filter((mint) => !listed.includes(mint))
+  const wallet = useCashuWallet()
+  const trusted = wallet.trustedMints
+  const withBalance = [...wallet.balances]
+    .filter(([mint, balance]) => balance > 0 && !trusted.includes(mint))
+    .map(([mint]) => mint)
+    .toSorted((a, b) => a.localeCompare(b))
+  const suggestions = PRODUCTION_MINTS.filter(
+    (mint) => !trusted.includes(mint) && !withBalance.includes(mint)
+  )
 
   const row = (mint: MintUrl) => ({
     id: mint,
@@ -37,7 +39,7 @@ export function CashuMintsPage() {
     label: (
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="min-w-0 truncate">{formatMintLabel(mint)}</span>
-        {mint === defaultMint ? (
+        {mint === wallet.defaultMint ? (
           <Badge variant="secondary">{t("settings.cashuMints.default")}</Badge>
         ) : null}
       </span>
@@ -46,7 +48,7 @@ export function CashuMintsPage() {
       <span className="text-xs text-muted-foreground tabular-nums">
         {formatMoney(
           {
-            value: Integer(snapshot?.balances.get(mint) ?? 0),
+            value: Integer(wallet.balances.get(mint) ?? 0),
             currency: Currency.BTC,
           },
           locale
@@ -61,10 +63,15 @@ export function CashuMintsPage() {
       <FadeHeader title={t("settings.cashuMints.title")} />
       <div className="flex flex-col gap-4">
         <VerticalNav
-          title={t("settings.cashuMints.known")}
-          items={listed.map(row)}
-          empty={t("settings.cashuMints.empty")}
+          title={t("settings.cashuMints.trusted")}
+          items={trusted.map(row)}
         />
+        {withBalance.length > 0 ? (
+          <VerticalNav
+            title={t("settings.cashuMints.withBalance")}
+            items={withBalance.map(row)}
+          />
+        ) : null}
         {suggestions.length > 0 ? (
           <VerticalNav
             title={t("settings.cashuMints.suggested")}

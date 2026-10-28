@@ -3,9 +3,7 @@ import { PrivateDirectMessage } from "nostr-tools/kinds"
 import { createRumor, createSeal, createWrap } from "nostr-tools/nip59"
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure"
 import { describe, expect, test } from "vitest"
-import { writeCashuDefaultMint } from "../../cashu/cashu-mints.ts"
 import { createCashuWalletDep } from "../../cashu/cashu-wallet.ts"
-import type { DeviceAccountId } from "../../evolu/device-client.ts"
 import { createEetApiDep } from "../../integrations/eet/eet-client.ts"
 import { createQerkoApiDep } from "../../integrations/qerko/qerko-client.ts"
 import { createYadioApiDep } from "../../integrations/yadio/yadio-client.ts"
@@ -60,7 +58,6 @@ const setup = async () => {
   await using run = testCreateRun(deps)
   const accountId = await run.ok(saveCashuAccount({ enabled: true }))
   if (accountId === null) throw new Error("no Cashu account")
-  await writeCashuDefaultMint(deps.cashuShardStore, testMintUrl)
   const paymentId = await run.orThrow(
     createPayment({
       deviceId: null,
@@ -110,7 +107,6 @@ describe("cashu account sync job", () => {
     // The customer's wallet sends the payment's 8 600 sat as a payload.
     const customerWallet = await createCashuWalletDep({
       seed: CashuWalletSeed(new Uint8Array(64).fill(9)),
-      deviceAccountId: "customer" as DeviceAccountId,
       fetch: t.deps.fetch,
     }).cashuWallet.load(testMintUrl)
     const quote = await customerWallet.createMintQuoteBolt11(8_600)

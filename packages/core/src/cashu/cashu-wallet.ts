@@ -1,101 +1,42 @@
-import type { JSONIntApi, ProofState, RequestFn, Wallet } from "@cashu/cashu-ts"
-import { err, ok, type Result, sqliteTrue, type Task } from "@evolu/common"
-import type { FetchDep } from "../deps.ts"
-import { defineError } from "../error.ts"
+import type {
+  AmountLike,
+  JSONIntApi,
+  ProofState,
+  RequestFn,
+  Wallet,
+} from "@cashu/cashu-ts"
 import {
-  cashuDeviceKnownMintsQuery,
-  markCashuMintSeen,
-} from "../evolu/device-cashu.ts"
-import type { DeviceAccountId } from "../evolu/device-client.ts"
-import type { CashuProofCopy } from "../modules/cashu/cashu-queries.ts"
+  err,
+  type LockManagerDep,
+  ok,
+  type Result,
+  type Task,
+} from "@evolu/common"
+import type { DateDep, EvoluOwnerDep, FetchDep, MasterKeyDep } from "../deps.ts"
+import {
+  createMintRejectedError,
+  createMintUnreachableError,
+  type MintFailure,
+} from "../modules/cashu/cashu-errors.ts"
+import { cashuProofsOfKeysetsQuery } from "../modules/cashu/cashu-queries.ts"
 import {
   type KeysetId,
   KeysetIdSchema,
   type MintUrl,
 } from "../modules/cashu/cashu-types.ts"
-import type { DeviceEvoluDep } from "../modules/shared/evolu-deps.ts"
+import type { EvoluDep } from "../modules/shared/evolu-deps.ts"
 import type { CashuWalletSeed } from "../modules/shared/key-derivation.ts"
-import type { CashuShardStoreDep } from "./cashu-shard-store.ts"
 
 /**
- * The cashu-ts wallet behind Payky's Cashu payments, the counterpart of
- * `SparkWalletDep` (cashu.md §3). Other code never constructs a cashu-ts
- * `Wallet` itself: it goes through `loadCashuWallet`, which loads each
- * `mint|unit` once, refuses a mint listing another mint's keyset, and talks
- * to the mint over `FetchDep`, so tests, the demo and e2e put a fake mint
- * behind it.
+ * The cashu-ts wallet behind Payky's Cashu wallet, the counterpart of
+ * `SparkWalletDep` (cashu/0012). Other code never constructs a cashu-ts
+ * `Wallet` itself: it goes through `loadCashuWallet`, which loads each mint
+ * once, refuses a mint listing another mint's keyset, and talks to the mint
+ * over `FetchDep`, so tests, the demo and e2e put a fake mint behind it.
  *
  * cashu-ts is imported lazily, as the Spark SDK is, so it stays out of the
  * app's first chunk.
  */
-
-const createMintUnreachableError = defineError("MintUnreachable")<{
-  readonly mint: MintUrl
-  readonly detail: string
-}>()
-export type MintUnreachableError = ReturnType<typeof createMintUnreachableError>
-export const MintUnreachable = createMintUnreachableError
-
-const createMintRejectedError = defineError("MintRejected")<{
-  readonly mint: MintUrl
-  readonly code: number | null
-  readonly detail: string
-  /** Set when the mint listed a keyset that belongs to this other mint. */
-  readonly keysetOwner?: MintUrl
-}>()
-export type MintRejectedError = ReturnType<typeof createMintRejectedError>
-export const MintRejected = createMintRejectedError
-
-const createTokenLockedError = defineError("TokenLocked")<{
-  readonly detail: string
-}>()
-export type TokenLockedError = ReturnType<typeof createTokenLockedError>
-export const TokenLocked = createTokenLockedError
-
-const createAmountConsumedByFeeError = defineError("AmountConsumedByFee")<{
-  readonly amount: number
-  readonly fee: number
-}>()
-export type AmountConsumedByFeeError = ReturnType<
-  typeof createAmountConsumedByFeeError
->
-export const AmountConsumedByFee = createAmountConsumedByFeeError
-
-const createProofsSpentError = defineError("ProofsSpent")<{
-  readonly mint: MintUrl
-}>()
-export type ProofsSpentError = ReturnType<typeof createProofsSpentError>
-export const ProofsSpent = createProofsSpentError
-
-const createCounterLockTimeoutError = defineError("CounterLockTimeout")<{
-  readonly mint: MintUrl
-  readonly keysetId: KeysetId
-}>()
-export type CounterLockTimeoutError = ReturnType<
-  typeof createCounterLockTimeoutError
->
-export const CounterLockTimeout = createCounterLockTimeoutError
-
-const createQuoteExpiredError = defineError("QuoteExpired")<{
-  readonly mint: MintUrl
-  readonly quoteId: string
-}>()
-export type QuoteExpiredError = ReturnType<typeof createQuoteExpiredError>
-export const QuoteExpired = createQuoteExpiredError
-
-/**
- * Another app or device already claimed the quote or swapped the token
- * (decision 11). Payky stops and writes nothing; the winner's rows settle it.
- */
-const createClaimedElsewhereError = defineError("ClaimedElsewhere")<{
-  readonly mint: MintUrl
-}>()
-export type ClaimedElsewhereError = ReturnType<
-  typeof createClaimedElsewhereError
->
-export const ClaimedElsewhere = createClaimedElsewhereError
-
-export type MintFailure = MintUnreachableError | MintRejectedError
 
 interface CashuTs {
   readonly Mint: typeof import("@cashu/cashu-ts").Mint
@@ -172,8 +113,6 @@ const createMintRequest = (
 export interface CashuWalletDep {
   readonly cashuWallet: {
     readonly seed: CashuWalletSeed
-    /** The device account whose counters and attempts this device keeps. */
-    readonly deviceAccountId: DeviceAccountId
     /** A loaded wallet for `mint|sat`, cached; a failed load is not. */
     readonly load: (mint: MintUrl) => Promise<Wallet>
     /** One load past the cache, for showing a mint's info; never derives outputs. */
@@ -183,11 +122,9 @@ export interface CashuWalletDep {
 
 export const createCashuWalletDep = ({
   seed,
-  deviceAccountId,
   fetch,
 }: {
   readonly seed: CashuWalletSeed
-  readonly deviceAccountId: DeviceAccountId
   readonly fetch: FetchDep["fetch"]
 }): CashuWalletDep => {
   const loaded = new Map<string, Promise<Wallet>>()
@@ -205,7 +142,6 @@ export const createCashuWalletDep = ({
   return {
     cashuWallet: {
       seed,
-      deviceAccountId,
       load: (mint) => {
         const key = `${mint}|sat`
         const cached = loaded.get(key)
@@ -222,6 +158,13 @@ export const createCashuWalletDep = ({
   }
 }
 
+/**
+ * A cashu-ts amount as a number. Its `Amount` is converted explicitly:
+ * cashu-ts deprecates `Number(amount)` and throws on it from v5.
+ */
+export const amountToNumber = (value: AmountLike): number =>
+  typeof value === "object" ? value.toNumber() : Number(value)
+
 const errorText = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
@@ -235,8 +178,8 @@ export const mintErrorCode = (error: unknown): number | null =>
     : null
 
 /**
- * Linky's `classifyMintError`: a network-shaped failure or a 5xx is
- * `MintUnreachable`, anything else a definitive `MintRejected`.
+ * A network-shaped failure or a 5xx is `MintUnreachable`, anything else a
+ * definitive `MintRejected`.
  */
 export const classifyMintError = (
   mint: MintUrl,
@@ -244,7 +187,7 @@ export const classifyMintError = (
 ): MintFailure => {
   const detail = errorText(error)
   const code = mintErrorCode(error)
-  if (code !== null) return MintRejected({ mint, code, detail })
+  if (code !== null) return createMintRejectedError({ mint, code, detail })
   const status =
     typeof error === "object" &&
     error !== null &&
@@ -254,8 +197,8 @@ export const classifyMintError = (
       : null
   if (status !== null)
     return status >= 500
-      ? MintUnreachable({ mint, detail })
-      : MintRejected({ mint, code: null, detail })
+      ? createMintUnreachableError({ mint, detail })
+      : createMintRejectedError({ mint, code: null, detail })
   const name = error instanceof Error ? error.name : ""
   if (
     error instanceof TypeError ||
@@ -263,8 +206,8 @@ export const classifyMintError = (
     name === "AbortError" ||
     name === "TimeoutError"
   )
-    return MintUnreachable({ mint, detail })
-  return MintRejected({ mint, code: null, detail })
+    return createMintUnreachableError({ mint, detail })
+  return createMintRejectedError({ mint, code: null, detail })
 }
 
 /** A mint call as a `Result`, classified. */
@@ -283,26 +226,19 @@ export const callMint = async <T>(
  * NUT-13 derives secrets from the seed, keyset id and counter but not the
  * mint, so a mint listing another mint's keyset would re-derive proofs the
  * wallet already holds there. A keyset belongs to the mint of its oldest
- * stored proof (Linky's `foreignKeysetProof`).
+ * stored proof; `proofs` come oldest first.
  */
 export const foreignKeysetOwner = (
   mint: MintUrl,
-  listedKeysetIds: ReadonlyArray<string>,
-  proofs: ReadonlyArray<CashuProofCopy>
+  proofs: ReadonlyArray<{
+    readonly mintUrl: MintUrl
+    readonly keysetId: string
+  }>
 ): MintUrl | null => {
-  const listed = new Set(listedKeysetIds)
-  const oldest = new Map<string, CashuProofCopy>()
-  for (const proof of proofs) {
-    if (!listed.has(proof.keysetId)) continue
-    const current = oldest.get(proof.keysetId)
-    if (
-      current === undefined ||
-      proof.createdAt < current.createdAt ||
-      (proof.createdAt === current.createdAt && proof.mint < current.mint)
-    )
-      oldest.set(proof.keysetId, proof)
-  }
-  return [...oldest.values()].find((proof) => proof.mint !== mint)?.mint ?? null
+  const owners = new Map<string, MintUrl>()
+  for (const proof of proofs)
+    if (!owners.has(proof.keysetId)) owners.set(proof.keysetId, proof.mintUrl)
+  return [...owners.values()].find((owner) => owner !== mint) ?? null
 }
 
 export interface LoadedCashuWallet {
@@ -320,29 +256,25 @@ export interface LoadedCashuWallet {
 export const loadCashuWallet =
   (
     mint: MintUrl
-  ): Task<
-    LoadedCashuWallet,
-    MintFailure,
-    CashuWalletDep & CashuShardStoreDep & DeviceEvoluDep
-  > =>
+  ): Task<LoadedCashuWallet, MintFailure, CashuWalletDep & EvoluDep> =>
   async (run) => {
     const loaded = await callMint(mint, () => run.deps.cashuWallet.load(mint))
     if (!loaded.ok) return loaded
-    const { deviceAccountId } = run.deps.cashuWallet
-    const known = await run.deps.deviceEvolu.loadQuery(
-      cashuDeviceKnownMintsQuery(deviceAccountId)
-    )
-    if (!known.some((row) => row.mint === mint && row.seen === sqliteTrue))
-      markCashuMintSeen(run.deps.deviceEvolu, deviceAccountId, mint)
     const wallet = loaded.value
     const owner = foreignKeysetOwner(
       mint,
-      wallet.keyChain.getKeysets().map((keyset) => keyset.id),
-      await run.deps.cashuShardStore.loadProofs()
+      await run.deps.evolu.loadQuery(
+        cashuProofsOfKeysetsQuery(
+          wallet.keyChain.getKeysets().flatMap((keyset) => {
+            const id = KeysetIdSchema.safeParse(keyset.id)
+            return id.success ? [id.data] : []
+          })
+        )
+      )
     )
     if (owner !== null)
       return err(
-        MintRejected({
+        createMintRejectedError({
           mint,
           code: null,
           detail: `its keyset belongs to ${owner}`,
@@ -352,7 +284,7 @@ export const loadCashuWallet =
     const keysetId = KeysetIdSchema.safeParse(wallet.keysetId)
     if (!keysetId.success)
       return err(
-        MintRejected({
+        createMintRejectedError({
           mint,
           code: null,
           detail: `wallet bound to non-hex keyset id "${wallet.keysetId}"`,
@@ -370,11 +302,23 @@ export const loadCashuWallet =
     })
   }
 
+/**
+ * What every Cashu Task may use (cashu/0012): the wallet and its database,
+ * the app database the books live in, the counter locks, the nostr key that
+ * locks quotes, and the clock.
+ */
+export type CashuDeps = CashuWalletDep &
+  EvoluDep &
+  EvoluOwnerDep &
+  LockManagerDep &
+  MasterKeyDep &
+  DateDep
+
 export type ProofAnswer = "unspent" | "pending" | "spent" | "unknown"
 
 /**
  * NUT-07 over one mint, aligned to the input order. A missing or
- * unrecognised answer is `unknown`, never a guess (Linky's `answerAt`).
+ * unrecognised answer is `unknown`, never a guess.
  */
 export const checkProofStates = async (
   loaded: LoadedCashuWallet,
@@ -408,4 +352,4 @@ export const checkProofStates = async (
 export const inputFeeOf = (
   loaded: LoadedCashuWallet,
   proofs: ReadonlyArray<{ readonly id: string }>
-): number => Number(loaded.wallet.getFeesForProofs([...proofs]))
+): number => amountToNumber(loaded.wallet.getFeesForProofs([...proofs]))

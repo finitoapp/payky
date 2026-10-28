@@ -7,14 +7,7 @@ import {
 } from "@evolu/common"
 import { addDays, addMinutes, format, startOfDay, subDays } from "date-fns"
 import { z } from "zod"
-import { bookCashuOperations } from "../cashu/cashu-booking.ts"
-import { MAIN_MINT_URL, writeCashuDefaultMint } from "../cashu/cashu-mints.ts"
-import type { CashuShardStoreDep } from "../cashu/cashu-shard-store.ts"
-import { claimCashuTopup } from "../cashu/cashu-topup.ts"
-import {
-  type CashuWalletDep,
-  createCashuWalletDep,
-} from "../cashu/cashu-wallet.ts"
+import { createCashuWalletDep } from "../cashu/cashu-wallet.ts"
 import { createFakeCashuMint } from "../cashu/fake-cashu-mint.ts"
 import type { EvoluOwnerDep, MasterKeyDep, UuidDep } from "../deps.ts"
 import type { DeviceLanguage } from "../evolu/device-client.ts"
@@ -46,6 +39,10 @@ import {
 import type { BillId } from "../modules/bill/bill-types.ts"
 import { loadCalculatedBillLineSummaries } from "../modules/bill-line/bill-line-actions.ts"
 import { deriveBillSummaryTotal } from "../modules/bill-line/bill-line-utils.ts"
+import { loadCashuTopup } from "../modules/cashu/cashu-guards.ts"
+import { pendingCashuTopupsQuery } from "../modules/cashu/cashu-queries.ts"
+import { claimCashuTopup } from "../modules/cashu/cashu-topup-actions.ts"
+import { MAIN_MINT_URL } from "../modules/cashu/cashu-utils.ts"
 import { createCatalogCategoryAtEnd } from "../modules/catalog-category/catalog-category-actions.ts"
 import { createCatalogItemAtEnd } from "../modules/catalog-item/catalog-item-actions.ts"
 import type { CatalogItemId } from "../modules/catalog-item/catalog-item-types.ts"
@@ -74,8 +71,9 @@ import type { PaymentId } from "../modules/payment/payment-types.ts"
 import { saveQerkoPlugin } from "../modules/qerko-plugin/qerko-plugin-actions.ts"
 import { reconcileAccountTransaction } from "../modules/reconciliation-claim/reconciliation-claim-actions.ts"
 import { refundPayment } from "../modules/refund/refund-actions.ts"
-import type { DeviceEvoluDep, EvoluDep } from "../modules/shared/evolu-deps.ts"
+import type { EvoluDep } from "../modules/shared/evolu-deps.ts"
 import { createRowId } from "../modules/shared/evolu-utils.ts"
+import { deriveCashuWalletSeed } from "../modules/shared/key-derivation.ts"
 import {
   BankAccountInputIbanSchema,
   type FiatCurrency,
@@ -227,10 +225,7 @@ export type DemoDataDeps = EvoluDep &
   EvoluOwnerDep &
   MasterKeyDep &
   ConsoleDep &
-  DeviceEvoluDep &
-  LockManagerDep &
-  CashuShardStoreDep &
-  CashuWalletDep
+  LockManagerDep
 
 export const generateDemoData =
   ({
@@ -392,8 +387,7 @@ export const generateDemoData =
       ...run.deps,
       ...fakeServices,
       ...createCashuWalletDep({
-        seed: run.deps.cashuWallet.seed,
-        deviceAccountId: run.deps.cashuWallet.deviceAccountId,
+        seed: deriveCashuWalletSeed(run.deps.masterKey),
         fetch: demoMint.fetch,
       }),
       date: { now: () => new Date(simulatedNow) },
@@ -478,7 +472,6 @@ export const generateDemoData =
         await demoRun.ok(saveCashuAccount({ enabled: true })),
         "the Cashu account"
       )
-      await writeCashuDefaultMint(run.deps.cashuShardStore, MAIN_MINT_URL)
       const lightningAddressAccount = required(
         await demoRun.ok(
           saveLightningAddressAccount({
@@ -701,18 +694,13 @@ export const generateDemoData =
           prepareCashuPaymentMethod({ paymentId, accountId: cashuAccount })
         )
         advance(random.int(15, 45) * second)
-        const pending = (
-          await run.deps.cashuShardStore.loadOperations()
-        ).filter(
-          (operation) =>
-            operation.kind === "topup" && operation.status === "pending"
-        )
-        for (const operation of pending) {
-          if (operation.quoteId === null) continue
-          demoMint.payMintQuote(operation.quoteId)
-          await demoRun.orThrow(claimCashuTopup(operation.id))
+        for (const { id } of await evolu.loadQuery(pendingCashuTopupsQuery)) {
+          const topup = await demoRun.ok(loadCashuTopup(id))
+          if (topup === null) continue
+          demoMint.payMintQuote(topup.quoteId)
+          // The claim books the topup and claims the payment (cashu/0014).
+          await demoRun.orThrow(claimCashuTopup(id))
         }
-        await demoRun.ok(bookCashuOperations)
       }
 
       const prepareSpark = async (paymentId: PaymentId) =>

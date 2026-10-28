@@ -138,23 +138,30 @@ export const decodeCashuPaymentPayload = (
 }
 
 /**
+ * How many mints a NUT-18 request names at most (cashu/0017): each URL makes
+ * the QR denser, and three long ones still scan on a small phone.
+ */
+export const NUT18_MAX_MINTS = 3
+
+/**
  * The QR of a Cashu payment, rebuilt from stored data (cashu/0006): the
- * mint's invoice next to a NUT-18 request for the payment's sats at its
- * mint, delivered to Payky's nprofile over the relays it listens on, with the
+ * mint's invoice next to a NUT-18 request for the payment's sats at the
+ * trusted mints (cashu/0017; the caller orders and caps them, default first),
+ * delivered to Payky's nprofile over the relays it listens on, with the
  * payment id as the request id.
  */
 export const buildCashuPaymentUri = ({
   paymentId,
   lnInvoice,
   amountSats,
-  mintUrl,
+  mintUrls,
   nostrPubkey,
   relays,
 }: {
   readonly paymentId: string
   readonly lnInvoice: string
   readonly amountSats: number
-  readonly mintUrl: string
+  readonly mintUrls: ReadonlyArray<string>
   /** Hex; null while the identity is unknown, which leaves the token leg out. */
   readonly nostrPubkey: string | null
   readonly relays: ReadonlyArray<string>
@@ -162,11 +169,11 @@ export const buildCashuPaymentUri = ({
   buildBip321PaymentUri({
     lightning: lnInvoice,
     creq:
-      nostrPubkey === null || amountSats <= 0
+      nostrPubkey === null || amountSats <= 0 || mintUrls.length === 0
         ? null
         : encodeNostrPaymentRequest({
             amount: amountSats,
-            mintUrls: [mintUrl],
+            mintUrls,
             recipientNprofile: nprofileEncode({
               pubkey: nostrPubkey,
               relays: [...relays],

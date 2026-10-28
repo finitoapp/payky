@@ -985,23 +985,6 @@ export const paymentIdsByLnInvoiceQuery = (lnInvoice: NonEmptyString) =>
   )
 
 /**
- * The mint quotes of Payky's Cashu payments: which pending `topup`
- * operations in the shared wallet the Cashu job settles. Linky's own topups
- * are Linky's to resume.
- */
-export const cashuPaymentQuotesQuery = createQuery((db) =>
-  db
-    .selectFrom("paymentCashu")
-    .innerJoin("payment", "payment.id", "paymentCashu.id")
-    .select(["paymentCashu.quoteId", "paymentCashu.mintUrl"])
-    .where("paymentCashu.isDeleted", "is not", sqliteTrue)
-    .where("payment.isDeleted", "is not", sqliteTrue)
-    .where("paymentCashu.quoteId", "is not", null)
-    .where("paymentCashu.mintUrl", "is not", null)
-    .$narrowType<{ quoteId: KyselyNotNull; mintUrl: KyselyNotNull }>()
-)
-
-/**
  * The payments a Cashu token may pay (cashu/0006): every one with a Cashu
  * method, with what decides whether it is still open. Few rows: only
  * payments a Cashu tab was opened for.

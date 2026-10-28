@@ -56,7 +56,7 @@ import Landmark from "lucide-react-native/icons/landmark"
 import Nfc from "lucide-react-native/icons/nfc"
 import X from "lucide-react-native/icons/x"
 import Zap from "lucide-react-native/icons/zap"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
@@ -412,19 +412,25 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
   const cashuLnInvoice = payment?.cashuLnInvoice ?? null
   const cashuMintUrl = payment?.cashuMintUrl ?? null
   const cashuAmountSats = payment?.cashuAmountSats ?? 0
-  const cashuQrPayload = useMemo(
-    () =>
-      cashuLnInvoice === null || cashuMintUrl === null
+  // The QR with a request naming `mintUrls`; the tab names the trusted mints
+  // once it reads them (cashu/0017), the payment's mint only until then.
+  const buildCashuQrPayload = useCallback(
+    (mintUrls: ReadonlyArray<string>) =>
+      cashuLnInvoice === null
         ? null
         : buildCashuPaymentUri({
             paymentId,
             lnInvoice: cashuLnInvoice,
             amountSats: cashuAmountSats,
-            mintUrl: cashuMintUrl,
+            mintUrls,
             nostrPubkey,
             relays: nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS,
           }),
-    [paymentId, cashuLnInvoice, cashuAmountSats, cashuMintUrl, nostrPubkey]
+    [paymentId, cashuLnInvoice, cashuAmountSats, nostrPubkey]
+  )
+  const cashuQrPayload = useMemo(
+    () => (cashuMintUrl === null ? null : buildCashuQrPayload([cashuMintUrl])),
+    [buildCashuQrPayload, cashuMintUrl]
   )
   const defaultQrFormat = ibanAccount?.ibanDefaultQrFormat ?? "spayd"
   const activeQrFormat = selectedQrFormat ?? defaultQrFormat
@@ -843,6 +849,7 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
             <CashuPaymentTab
               paymentId={paymentId}
               qrPayload={cashuQrPayload}
+              buildQrPayload={buildCashuQrPayload}
               quoteExpired={
                 cashuQuoteExpiresAt !== null &&
                 now.getTime() >= cashuQuoteExpiresAt

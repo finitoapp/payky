@@ -140,21 +140,19 @@ export const skSettings = {
   "settings.categories.search.clear.aria": "Vymazať hľadanie",
   "settings.categories.title": "Kategórie",
   "settings.cashuAccount.title": "Cashu",
-  "settings.cashuAccount.wallet.title": "Peňaženka zdieľaná s Linky",
+  "settings.cashuAccount.wallet.title": "Cashu peňaženka Payky",
   "settings.cashuAccount.wallet.description":
-    "Platby Cashu idú do tej istej ecash peňaženky, ktorú ukazuje vaša aplikácia Linky. Jej zostatok zahŕňa aj peniaze prijaté v Linky.",
+    "Platby Cashu idú do vlastnej ecash peňaženky tohto účtu. Synchronizuje sa medzi vašimi zariadeniami s Payky; Linky má peňaženku zvlášť.",
   "settings.cashuAccount.defaultMint": "Predvolený mint",
-  "settings.cashuAccount.syncing": "Synchronizujem peňaženku s Linky...",
   "settings.cashuAccount.empty": "Peňaženka zatiaľ nemá žiadny ecash.",
   "settings.cashuMints.title": "Minty",
-  "settings.cashuMints.known": "Vaše minty",
+  "settings.cashuMints.trusted": "Dôveryhodné minty",
   "settings.cashuMints.suggested": "Odporúčané minty",
-  "settings.cashuMints.empty": "Peňaženka zatiaľ nepozná žiadny mint.",
-  "settings.cashuMints.default": "Predvolený",
+  "settings.cashuMints.default": "Platby",
   "settings.cashuMints.add": "Pridať mint",
   "settings.cashuMints.url": "Adresa mintu",
   "settings.cashuMints.addDescription":
-    "Mint sa pred pridaním overí. Pridanie nemení predvolený mint ani to, ktoré tokeny platia vaše platby.",
+    "Mint sa pred pridaním overí. Payky potom od neho prijíma tokeny; predvolený mint zostáva rovnaký.",
   "settings.cashuMints.addError.invalid": "Toto nie je adresa mintu.",
   "settings.cashuMints.addError.unreachable": "Mint neodpovedal.",
   "settings.cashuMints.addError.rejected":
@@ -162,12 +160,26 @@ export const skSettings = {
   "settings.cashuMints.invalid": "Táto adresa mintu nie je platná.",
   "settings.cashuMints.infoUnavailable": "Mint neodpovedal.",
   "settings.cashuMints.balance": "Zostatok: {amount}",
-  "settings.cashuMints.defaultWarning":
-    "Nové platby Cashu použijú tento mint, aj v Linky. Lightning adresa v Linky bude ďalej platiť do starého mintu, kým predvolený mint nezmeníte v Linky.",
-  "settings.cashuMints.setDefault": "Nastaviť ako predvolený",
-  "settings.cashuMints.remove": "Odobrať mint",
-  "settings.cashuMints.removeError.inUse":
-    "Mint ešte drží ecash, preto ho nemožno odobrať.",
+  "settings.cashuMints.setDefault": "Použiť pre platby",
+  "settings.cashuMints.withBalance": "Ďalšie minty so zostatkom",
+  "settings.cashuMints.trust": "Dôverovať tomuto mintu",
+  "settings.cashuMints.trustDescription":
+    "Od mintu, ktorému dôverujete, Payky prijíma tokeny a uvádza ho v QR kóde platby.",
+  "settings.cashuMints.notTrustedDescription":
+    "Od tohto mintu Payky tokeny neprijíma.",
+  "settings.cashuMints.untrust": "Prestať dôverovať mintu",
+  "settings.cashuMints.untrustConfirm.title": "Prestať dôverovať {mint}?",
+  "settings.cashuMints.untrustConfirm.description":
+    "Payky od neho prestane prijímať tokeny. Zostatok na ňom zostane, môžete ho presunúť alebo vybrať.",
+  "settings.cashuMints.untrustConfirm.defaultDescription":
+    "Payky od neho prestane prijímať tokeny a predvoleným mintom sa stane {next}. Zostatok na ňom zostane, môžete ho presunúť alebo vybrať.",
+  "settings.cashuMints.untrustConfirm.confirm": "Prestať dôverovať",
+  "settings.cashuMints.untrustConfirm.cancel": "Zrušiť",
+  "settings.cashuMints.untrustError.last":
+    "Toto je jediný dôveryhodný mint. Najprv začnite dôverovať inému.",
+  "settings.cashuMints.setDefaultError.untrusted":
+    "Predvoleným môže byť len mint, ktorému dôverujete.",
+  "settings.cashuMints.withdraw": "Vybrať",
   "settings.cashuMints.move.title": "Presunúť prostriedky",
   "settings.cashuMints.move.description":
     "Presunie ecash z tohto mintu do predvoleného mintu {mint} cez Lightning.",
@@ -193,12 +205,8 @@ export const skSettings = {
   "settings.cashuAccount.withdraw": "Výber",
   "settings.cashuAccount.withdrawDescription": "Odoslať ecash cez Lightning",
   "settings.cashuAccount.enabled.label": "Prijímať Cashu",
-  "settings.debugConsole.cashu.title": "Cashu peňaženka Linky (vývoj)",
-  "settings.debugConsole.cashu.activeShard": "Aktívny shard: {index}",
-  "settings.debugConsole.cashu.hydrated": "Synchronizované: {hydrated}",
+  "settings.debugConsole.cashu.title": "Cashu peňaženka (vývoj)",
   "settings.debugConsole.cashu.noBalance": "Žiadne dostupné proofy.",
-  "settings.debugConsole.cashu.writeTestSetting":
-    "Zapísať testovacie nastavenie pre Linky",
   "settings.debugConsole.clear": "Vymazať",
   "settings.debugConsole.description":
     "Zobraziť zachytený konzolový výstup aplikácie",

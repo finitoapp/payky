@@ -6,12 +6,7 @@ import {
   type Task,
   type UpsertValues,
 } from "@evolu/common"
-import { loadCashuDefaultMint } from "../../cashu/cashu-mints.ts"
-import {
-  type CashuTopupDeps,
-  createCashuTopupQuote,
-} from "../../cashu/cashu-topup.ts"
-import type { MintFailure } from "../../cashu/cashu-wallet.ts"
+import type { CashuDeps } from "../../cashu/cashu-wallet.ts"
 import type {
   DateDep,
   EvoluOwnerDep,
@@ -40,6 +35,15 @@ import {
 } from "../account/account-queries.ts"
 import { activeSparkAccountByIdQuery } from "../account/account-spark-queries.ts"
 import type { AccountId } from "../account/account-types.ts"
+import type { MintFailure } from "../cashu/cashu-errors.ts"
+import {
+  loadDefaultCashuMint,
+  upsertWeakDefaultCashuMint,
+} from "../cashu/cashu-mint-actions.ts"
+import {
+  requestCashuTopupQuote,
+  upsertCashuTopupRows,
+} from "../cashu/cashu-topup-actions.ts"
 import { CashuAmount } from "../cashu/cashu-types.ts"
 import { paymentNumberByPaymentIdQuery } from "../payment-number/payment-number-queries.ts"
 import type { EvoluDep } from "../shared/evolu-deps.ts"
@@ -82,13 +86,11 @@ import {
   type CardSwitchioAccountNotFoundError,
   type CashRegisterAccountNotFoundError,
   type CashuAccountNotFoundError,
-  type CashuWalletNotSyncedError,
   type CreatePreparedPaymentError,
   createAccountSparkNotFoundError,
   createCardSwitchioAccountNotFoundError,
   createCashRegisterAccountNotFoundError,
   createCashuAccountNotFoundError,
-  createCashuWalletNotSyncedError,
   createIbanAccountNotFoundError,
   createLightningAddressAccountNotFoundError,
   createLightningAddressAmountOutOfRangeError,
@@ -884,15 +886,13 @@ export const preparePaymentMethod =
     return ok(paymentId)
   }
 
-/** How long a preparation waits for Linky's owners before giving up. */
-const CASHU_HYDRATION_TIMEOUT_MS = 15_000
-
 /**
- * Prepares the Cashu method of a payment (cashu.md §4, cashu/0003): the
- * sats amount from Yadio as Spark's, a mint quote at Linky's default mint
- * with its pending `topup` in the shared wallet, the `paymentCashu` row, and
+ * Prepares the Cashu method of a payment (cashu/0003): the sats amount from
+ * Yadio as Spark's, a mint quote at the default mint (cashu/0013), then one
+ * batch with the quote's pending `topup`, the `paymentCashu` row,
  * `payment.expiresAt` from the quote under the same `hasNonExpiringMethod`
- * rule a Spark preparation follows. Spark's rows are left alone: with both
+ * rule a Spark preparation follows, and a fallback default nobody chose
+ * written as the weakest choice (cashu/0013). Spark's rows are left alone: with both
  * prepared, whichever ran last set `expiresAt`, and money that arrives after
  * the payment shows expired still settles by `quoteId`.
  */
@@ -909,16 +909,15 @@ export const prepareCashuPaymentMethod =
     PaymentId,
     | PaymentNotFoundError
     | CashuAccountNotFoundError
-    | CashuWalletNotSyncedError
     | ZeroAmountNotPayableError
     | YadioHttpError
     | YadioApiError
     | FetchError
     | MintFailure,
-    EvoluDep & EvoluOwnerDep & FetchDep & YadioApiDep & CashuTopupDeps
+    EvoluDep & EvoluOwnerDep & FetchDep & YadioApiDep & CashuDeps
   > =>
   async (run) => {
-    const { evolu, evoluOwner, cashuShardStore } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const [paymentResult, nonExpiringMethods, [account]] = await Promise.all([
       run(loadPayment(paymentId)),
       evolu.loadQuery(paymentNonExpiringMethodsByIdQuery(paymentId)),
@@ -933,14 +932,6 @@ export const prepareCashuPaymentMethod =
     if (payment.amount <= 0)
       return err(createZeroAmountNotPayableError({ amount: payment.amount }))
 
-    try {
-      await cashuShardStore.whenHydrated(
-        AbortSignal.timeout(CASHU_HYDRATION_TIMEOUT_MS)
-      )
-    } catch {
-      return err(createCashuWalletNotSyncedError())
-    }
-
     const rate = await run(fetchYadioBtcExchangeRate(payment.currency))
     if (!rate.ok) return rate
     const amountSats = fiatMinorUnitsToSats({
@@ -951,9 +942,9 @@ export const prepareCashuPaymentMethod =
     if (amountSats <= 0)
       return err(createZeroAmountNotPayableError({ amount: payment.amount }))
 
-    const mint = await loadCashuDefaultMint(cashuShardStore)
+    const { mintUrl: mint, chosen } = await run.ok(loadDefaultCashuMint)
     const quote = await run(
-      createCashuTopupQuote({
+      requestCashuTopupQuote({
         mint,
         amount: CashuAmount(amountSats),
         ...(memo === undefined ? {} : { description: memo }),
@@ -968,13 +959,12 @@ export const prepareCashuPaymentMethod =
         row.qerkoAccountId !== null ||
         row.ibanAccountId !== null
     )
-    const quoteExpiresAt =
-      quote.value.expiresAtSec === null
-        ? null
-        : TimestampMsSchema.decode(quote.value.expiresAtSec * 1000)
+    const quoteExpiresAt = quote.value.expiresAt
 
     await runMutationWithCompletion((options) => {
       const mutationOptions = { ...options, owner: evoluOwner }
+      if (!chosen) upsertWeakDefaultCashuMint(evolu, mint, mutationOptions)
+      upsertCashuTopupRows(evolu, quote.value, "payment", mutationOptions)
       evolu.upsert(
         "paymentCashu",
         {

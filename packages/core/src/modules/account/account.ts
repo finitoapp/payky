@@ -76,9 +76,10 @@ export const accountQerkoTerminal = {
 } as const
 
 /**
- * The Cashu payment method (cashu.md §4). It has no secret: the wallet is the
- * one Linky shows, derived from the master key, and its mint is Linky's
- * synced default mint, read when a payment is prepared.
+ * The Cashu payment method (cashu/0012). It has no secret: the wallet is
+ * Payky's own Cashu tables in this database, its seed derived from the master
+ * key, and the mints it trusts and quotes at live there too (cashu/0017,
+ * cashu/0013).
  */
 export const accountCashu = {
   id: AccountId,

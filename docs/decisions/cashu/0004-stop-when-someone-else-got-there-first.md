@@ -1,6 +1,6 @@
 # 0004 Payky stops when someone else claimed first
 
-Status: accepted
+Status: superseded by cashu/0015
 Date: 2026-10-14
 
 ## Context

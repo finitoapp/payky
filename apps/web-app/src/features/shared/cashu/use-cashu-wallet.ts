@@ -1,63 +1,41 @@
 import {
-  loadCashuDefaultMint,
-  loadKnownCashuMints,
-} from "@payky/core/cashu/cashu-mints"
-import type { CashuShardStore } from "@payky/core/cashu/cashu-shard-store"
-import type {
-  DeviceAccountId,
-  DeviceEvolu,
-} from "@payky/core/evolu/device-client"
-import { sumAvailableByMint } from "@payky/core/modules/cashu/cashu-queries"
+  cashuBalancesQuery,
+  cashuTrustedMintsQuery,
+} from "@payky/core/modules/cashu/cashu-queries"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
-import { useQuery } from "@tanstack/react-query"
-import { useAtomValue } from "jotai"
-import { useEffect } from "react"
-import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { cashuShardStoreAtom, cashuWalletDepAtom } from "@/atoms/evolu.ts"
+import {
+  defaultCashuMintWithout,
+  orderTrustedCashuMints,
+  pickDefaultCashuMint,
+} from "@payky/core/modules/cashu/cashu-utils"
+import { useMemo } from "react"
+import { useEvoluQuery } from "@/hooks/use-evolu-query.ts"
 
 export interface CashuWalletSnapshot {
-  readonly hydrated: boolean
+  /** Where payments are quoted, first in the NUT-18 request (cashu/0013). */
   readonly defaultMint: MintUrl
-  /** Available sats per mint, the shared Linky balance. */
+  /** The mints Payky receives from, the default first (cashu/0017). */
+  readonly trustedMints: ReadonlyArray<MintUrl>
+  /** Available sats per mint. */
   readonly balances: ReadonlyMap<MintUrl, number>
-  /** Linky's known mints: named by proofs or operations, or seen or added here. */
-  readonly knownMints: ReadonlyArray<MintUrl>
+  /** The default once `mint` is untrusted; null for the last trusted mint. */
+  readonly defaultWithout: (mint: MintUrl) => MintUrl | null
 }
 
-const loadSnapshot = async (
-  store: CashuShardStore,
-  deviceEvolu: DeviceEvolu,
-  deviceAccountId: DeviceAccountId
-): Promise<CashuWalletSnapshot> => ({
-  hydrated: store.isHydrated(),
-  defaultMint: await loadCashuDefaultMint(store),
-  balances: sumAvailableByMint(await store.loadProofs()),
-  knownMints: await loadKnownCashuMints({
-    store,
-    deviceEvolu,
-    deviceAccountId,
-  }),
-})
-
-/** The shared wallet as the Cashu settings show it, live. */
-export const useCashuWallet = () => {
-  const store = useAtomValue(cashuShardStoreAtom)
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const { deviceAccountId } = useAtomValue(cashuWalletDepAtom).cashuWallet
-  const query = useQuery({
-    queryKey: ["cashuWallet", store.linkyAppOwner.id],
-    queryFn: () => loadSnapshot(store, deviceEvolu, deviceAccountId),
-  })
-  const { refetch } = query
-
-  useEffect(() => {
-    const stopChanges = store.subscribe(() => void refetch())
-    const stopHydration = store.subscribeHydration(() => void refetch())
-    return () => {
-      stopChanges()
-      stopHydration()
+/** Payky's Cashu wallet as the Cashu screens show it, live. */
+export const useCashuWallet = (): CashuWalletSnapshot => {
+  const { data: balanceRows } = useEvoluQuery(cashuBalancesQuery)
+  const { data: trustedRows } = useEvoluQuery(cashuTrustedMintsQuery)
+  return useMemo(() => {
+    const trustedMints = orderTrustedCashuMints(trustedRows)
+    return {
+      defaultMint: pickDefaultCashuMint(trustedRows).mintUrl,
+      trustedMints,
+      balances: new Map(
+        balanceRows.map((row) => [row.mintUrl, Number(row.balance)])
+      ),
+      defaultWithout: (mint: MintUrl) =>
+        defaultCashuMintWithout(trustedRows, mint),
     }
-  }, [store, refetch])
-
-  return { store, snapshot: query.data ?? null, refetch }
+  }, [balanceRows, trustedRows])
 }

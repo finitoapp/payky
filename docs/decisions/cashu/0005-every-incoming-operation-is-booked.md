@@ -1,6 +1,6 @@
 # 0005 Every incoming Cashu operation is booked, matched only by id
 
-Status: accepted
+Status: superseded by cashu/0014
 Date: 2026-10-14
 
 ## Context

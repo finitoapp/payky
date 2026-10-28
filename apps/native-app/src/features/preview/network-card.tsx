@@ -1,11 +1,10 @@
 import { appFetchAsJson, fetchAndValidateJson } from "@payky/core/deps"
-import { fetchLinkyEvoluRelays } from "@payky/core/integrations/linky/linky-relays-client"
 import { getNetworkStateAsync } from "expo-network"
 import { useEffect, useState } from "react"
 import { Text, View } from "tamagui"
 import { z } from "zod"
 import { Button } from "../../components/ui/button.tsx"
-import { apiUrl, nativeEnv } from "../../core/native-env.ts"
+import { apiUrl } from "../../core/native-env.ts"
 import { nativeRun } from "../../core/native-runtime.ts"
 import {
   createConnectivityDep,
@@ -18,12 +17,6 @@ const describe = (result: { ok: boolean; error?: unknown; value?: unknown }) =>
 const check = async (name: string): Promise<string> => {
   await using run = nativeRun.create({ ...createFetchDep() })
   switch (name) {
-    case "relays": {
-      const r = await run(
-        fetchLinkyEvoluRelays(nativeEnv.EXPO_PUBLIC_LINKY_RELAYS_URL)
-      )
-      return r.ok ? `ok, ${r.value.length} evolu relays` : describe(r)
-    }
     case "http": {
       const r = await run(appFetchAsJson(apiUrl("/api/definitely-missing")))
       return r.ok ? `ok, HTTP ${r.value.status}` : describe(r)
@@ -84,7 +77,7 @@ export function NetworkCard() {
       <Text fontWeight="600">Network</Text>
       <Text>Online (connected/reachable): {online}</Text>
       <Text>onOnline events: {events}</Text>
-      {["relays", "http", "validation", "abort"].map((name) => (
+      {["http", "validation", "abort"].map((name) => (
         <View key={name}>
           <Button
             variant="outline"

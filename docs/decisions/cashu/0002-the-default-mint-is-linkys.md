@@ -1,6 +1,6 @@
 # 0002 The default mint is the one Linky uses
 
-Status: accepted
+Status: superseded by cashu/0013
 Date: 2026-10-14
 
 ## Context

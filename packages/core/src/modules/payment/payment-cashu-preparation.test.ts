@@ -1,18 +1,25 @@
-import { testCreateRun } from "@evolu/common"
+import { sqliteFalse, testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import { writeCashuDefaultMint } from "../../cashu/cashu-mints.ts"
-import { createQuery } from "../../evolu/schema.ts"
+import { createQuery, type Evolu } from "../../evolu/schema.ts"
 import { createYadioApiDep } from "../../integrations/yadio/yadio-client.ts"
 import { createFakeSparkWallet } from "../../spark/spark-wallet-test-fixtures.ts"
 import {
   createCashuTest,
-  testCashuMasterKey,
+  loadTestCashuOperations,
   testMintUrl,
 } from "../../testing/cashu.ts"
 import { saveCashuAccount } from "../account/account-actions.ts"
+import { createCashuAccountId } from "../account/account-utils.ts"
+import {
+  setDefaultCashuMint,
+  trustCashuMint,
+} from "../cashu/cashu-mint-actions.ts"
+import { cashuTrustedMintsQuery } from "../cashu/cashu-queries.ts"
 import { MintUrl } from "../cashu/cashu-types.ts"
-import { NonNegativeInteger } from "../shared/schema.ts"
+import { MAIN_MINT_URL, WEAKEST_DEFAULTED_AT } from "../cashu/cashu-utils.ts"
+import { runMutationWithCompletion } from "../shared/evolu-utils.ts"
+import { NonEmptyString255, NonNegativeInteger } from "../shared/schema.ts"
 import { createPayment } from "./payment-actions.ts"
 import {
   prepareCashuPaymentMethod,
@@ -23,8 +30,16 @@ import type { PaymentId } from "./payment-types.ts"
 
 const otherMint = MintUrl("https://other.mint.test")
 
-const setup = async () => {
-  const t = await createCashuTest({ extraMints: [{ url: otherMint }] })
+const setup = async ({
+  seeded = true,
+}: {
+  /** False: an account enabled before the seed, with no mint chosen. */
+  readonly seeded?: boolean
+} = {}) => {
+  const t = await createCashuTest({
+    extraMints: [{ url: otherMint }, { url: MAIN_MINT_URL }],
+    ...(seeded ? {} : { defaultMint: null }),
+  })
   const deps = {
     ...t.deps,
     // Yadio: 1 BTC = 1 500 000 CZK, so 129 CZK is 8 600 sats.
@@ -33,8 +48,6 @@ const setup = async () => {
         JSON.stringify({ BTC: 1_500_000, timestamp: 1_700_000_000_000 })
       ),
     ...createYadioApiDep(),
-    masterKey: testCashuMasterKey,
-    date: { now: () => new Date() },
     sparkWallet: {
       create: async () =>
         createFakeSparkWallet({
@@ -51,10 +64,10 @@ const setup = async () => {
     },
   }
   await using run = testCreateRun(deps)
-  const cashuAccountId = await run.ok(saveCashuAccount({ enabled: true }))
+  const cashuAccountId = seeded
+    ? await run.ok(saveCashuAccount({ enabled: true }))
+    : await writeUnseededCashuAccount(deps.evolu)
   if (cashuAccountId === null) throw new Error("no Cashu account")
-  // Queued after the seed `saveCashuAccount` started: the fake mint is default.
-  await writeCashuDefaultMint(deps.cashuShardStore, testMintUrl)
   const paymentId = await run.orThrow(
     createPayment({
       deviceId: null,
@@ -68,6 +81,26 @@ const setup = async () => {
     })
   )
   return { t, deps, cashuAccountId, paymentId }
+}
+
+/** The Cashu account alone, as a device holds it before its mints sync in. */
+const writeUnseededCashuAccount = async (evolu: Evolu) => {
+  const id = createCashuAccountId()
+  await runMutationWithCompletion((options) => {
+    evolu.upsert("accountCashu", { id }, options)
+    evolu.upsert(
+      "account",
+      {
+        id,
+        deviceId: null,
+        name: NonEmptyString255("Cashu"),
+        kind: "cashu",
+        isDeleted: sqliteFalse,
+      },
+      options
+    )
+  })
+  return id
 }
 
 const paymentRowsQuery = (id: PaymentId) =>
@@ -91,7 +124,7 @@ const paymentRowsQuery = (id: PaymentId) =>
   )
 
 describe("prepareCashuPaymentMethod", () => {
-  test("quotes the default mint, writes the topup, the paymentCashu row and the payment's expiry", async () => {
+  test("quotes the payment mint, writes the topup, the paymentCashu row and the payment's expiry", async () => {
     const { t, deps, cashuAccountId, paymentId } = await setup()
     await using _ = t
     await using run = testCreateRun(deps)
@@ -109,21 +142,21 @@ describe("prepareCashuPaymentMethod", () => {
     })
     expect(row?.lnInvoice?.startsWith("lnbc86000n")).toBe(true)
     expect(row?.expiresAt).toBe(row?.quoteExpiresAt)
-    const [operation] = await deps.cashuShardStore.loadOperations()
+    const [operation] = await loadTestCashuOperations(deps.evolu)
     expect(operation).toMatchObject({
       kind: "topup",
       status: "pending",
-      quoteId: row?.quoteId,
+      mintUrl: testMintUrl,
       amount: 8_600,
-      keysetId: t.mint.keysetId,
     })
   })
 
-  test("uses the default mint Linky synced", async () => {
+  test("quotes at the default mint", async () => {
     const { t, deps, cashuAccountId, paymentId } = await setup()
     await using _ = t
-    await writeCashuDefaultMint(deps.cashuShardStore, otherMint)
     await using run = testCreateRun(deps)
+    await run.orThrow(trustCashuMint(otherMint))
+    await run.orThrow(setDefaultCashuMint(otherMint))
 
     await run(
       prepareCashuPaymentMethod({ paymentId, accountId: cashuAccountId })
@@ -131,6 +164,27 @@ describe("prepareCashuPaymentMethod", () => {
 
     const [row] = await deps.evolu.loadQuery(paymentRowsQuery(paymentId))
     expect(row?.mintUrl).toBe(otherMint)
+  })
+
+  test("quotes at a fallback nobody chose and writes it as the weakest choice in the payment's batch", async () => {
+    const { t, deps, cashuAccountId, paymentId } = await setup({
+      seeded: false,
+    })
+    await using _ = t
+    await using run = testCreateRun(deps)
+
+    await run.orThrow(
+      prepareCashuPaymentMethod({ paymentId, accountId: cashuAccountId })
+    )
+
+    const [row] = await deps.evolu.loadQuery(paymentRowsQuery(paymentId))
+    expect(row?.mintUrl).toBe(MAIN_MINT_URL)
+    expect(await deps.evolu.loadQuery(cashuTrustedMintsQuery)).toEqual([
+      expect.objectContaining({
+        mintUrl: MAIN_MINT_URL,
+        defaultedAt: WEAKEST_DEFAULTED_AT,
+      }),
+    ])
   })
 
   test("leaves Spark's rows alone when both are prepared", async () => {

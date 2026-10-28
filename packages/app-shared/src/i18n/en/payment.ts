@@ -256,7 +256,9 @@ export const enPayment = {
   "paymentWait.cashu.arrival.waitingForMint":
     "A token for {amount} sat arrived. Waiting for the mint {mint} to answer...",
   "paymentWait.cashu.arrival.untrustedMint":
-    "A token for {amount} sat came from {mint}, which is not the default mint. It was not accepted and does not pay this payment.",
+    "A token for {amount} sat came from {mint}, a mint you do not trust. It was not accepted and does not pay this payment.",
+  "paymentWait.cashu.arrival.receivedElsewhere":
+    "A token for {amount} sat from {mint} was received by another wallet first, perhaps Linky on the same key. The payment stays unpaid here; settle it by hand.",
   "paymentWait.cashu.failure.mintUnreachable":
     "The mint did not answer. The token will be tried again.",
   "paymentWait.cashu.failure.mintRejected":
@@ -269,8 +271,6 @@ export const enPayment = {
     "The wallet already holds this token. The payment stays unpaid.",
   "paymentWait.cashu.failure.fee":
     "The mint's fee would take the whole token. The payment stays unpaid.",
-  "paymentWait.cashu.failure.spent":
-    "The token was already spent. The payment stays unpaid.",
   "paymentWait.cashu.newQuote": "New invoice",
   "paymentWait.method.card": "Payment card",
   "paymentWait.method.cash": "Cash",

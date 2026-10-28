@@ -9,12 +9,10 @@ import {
   cashuWalletSeedDerivationPath,
   defaultSparkWalletDerivationPath,
   evoluOwnerDerivationPath,
-  linkyAppOwnerDerivationPath,
 } from "./key-derivation.ts"
 
 const paths = [
   cashuWalletSeedDerivationPath,
-  linkyAppOwnerDerivationPath,
   evoluOwnerDerivationPath,
   defaultSparkWalletDerivationPath,
   "m/0'",

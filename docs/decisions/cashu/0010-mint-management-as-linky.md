@@ -1,6 +1,6 @@
 # 0010 Mints are managed as Linky manages them, with three deliberate differences
 
-Status: accepted
+Status: superseded by cashu/0016
 Date: 2026-10-14
 
 ## Context

@@ -32,7 +32,7 @@ export const csWithdraw = {
     "Tohle je jedna z vašich vlastních platebních faktur.",
   "withdraw.cashu.error.unreachable": "Mint neodpověděl. Nic nebylo odesláno.",
   "withdraw.cashu.form.description":
-    "Pošlete ecash z jednoho mintu Cashu peněženky sdílené s Linky na Lightning fakturu nebo Lightning adresu.",
+    "Pošlete ecash z jednoho mintu Cashu peněženky na Lightning fakturu nebo Lightning adresu.",
   "withdraw.cashu.mint": "Z kterého mintu",
   "withdraw.cashu.noAccount.description":
     "Před výběrem zapněte Cashu v platebních účtech.",

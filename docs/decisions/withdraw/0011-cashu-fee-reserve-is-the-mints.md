@@ -36,5 +36,5 @@ did not use.
 - `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > melts at the mint and books the money that left, once`
 - `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > an invoice without an amount is refused`
 - `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > a melt refused before it was sent fails the withdrawal and returns why`
-- `packages/core/src/cashu/cashu-melt.test.ts > meltCashu > refuses a melt the balance cannot cover before anything moves`
-- `packages/core/src/cashu/cashu-melt.test.ts > meltCashu > pays the invoice, keeps the change and closes the melt paid`
+- `packages/core/src/modules/cashu/cashu-melt-actions.test.ts > meltCashu > refuses a melt the balance cannot cover before anything moves`
+- `packages/core/src/modules/cashu/cashu-melt-actions.test.ts > meltCashu > pays the invoice, keeps the change and closes the melt paid`

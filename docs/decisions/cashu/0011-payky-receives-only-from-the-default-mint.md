@@ -1,6 +1,6 @@
 # 0011 Payky receives tokens only from the default mint; a received token pays whatever its mint
 
-Status: accepted
+Status: superseded by cashu/0017
 Date: 2026-10-15
 
 ## Context
@@ -37,6 +37,9 @@ no synced list of trusted mints; the one mint both apps share is the synced
 
 ## Consequences
 
+- The default mint is Payky's own since cashu/0013, and a
+  token Linky receives no longer pays anything: Linky keeps a wallet of its
+  own (cashu/0012, cashu/0015).
 - A token sent for a waiting payment from a former default mint (the
   default changed meanwhile, in either app) is not received by Payky.
 - A rogue mint's token that Linky received pays the payment holding its
@@ -44,7 +47,7 @@ no synced list of trusted mints; the one mint both apps share is the synced
 
 ## Enforced by
 
-- `packages/core/src/cashu/cashu-token-listener-trust.test.ts > a token from a mint other than the default is not received and pays nothing (cashu/0011)`
-- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, whatever its amount`
-- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its face amount`
-- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > a token another app received from another mint claims the payment that holds its receive`
+- `packages/core/src/background-jobs/jobs/cashu-token-listener.test.ts > the token listener > a token from a mint other than the payment mint is not received and pays nothing (cashu/0011)`
+- `packages/core/src/background-jobs/jobs/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, whatever its amount`
+- `packages/core/src/background-jobs/jobs/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its face amount`
+- `packages/core/src/modules/cashu/cashu-booking-actions.test.ts > bookCashuOperation > a received token is booked at its face value less the fee, and claims the payment holding its receive`

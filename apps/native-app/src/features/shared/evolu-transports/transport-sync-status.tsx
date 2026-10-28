@@ -12,8 +12,9 @@ import { resolveTransportUrl } from "@payky/core/evolu/device-account"
 import { isSameDay } from "date-fns"
 import { useAtomValue } from "jotai"
 import { useSyncExternalStore } from "react"
-import { Text, XStack, YStack } from "tamagui"
+import { Text, XStack } from "tamagui"
 import { evoluAtom } from "../../../atoms/evolu.ts"
+import { PulseDot } from "../../../components/pulse-dot.tsx"
 import { nativeRun } from "../../../core/native-runtime.ts"
 import { useDebouncedValue } from "../../../hooks/use-debounced-value.ts"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
@@ -89,7 +90,10 @@ export function TransportSyncStatus({ url }: { readonly url: string }) {
 
   return (
     <XStack items="center" gap="1.5">
-      <YStack w={8} h={8} shrink={0} rounded="full" bg={kindDotColors[kind]} />
+      <PulseDot
+        color={kindDotColors[kind]}
+        loop={kind === "syncing" || kind === "connecting" ? "pulse" : undefined}
+      />
       <Text
         fontSize="xs"
         lineHeight="xs"

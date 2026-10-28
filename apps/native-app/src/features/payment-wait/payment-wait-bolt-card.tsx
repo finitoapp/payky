@@ -6,6 +6,7 @@ import TriangleAlert from "lucide-react-native/icons/triangle-alert"
 import { useEffect, useEffectEvent, useRef, useState } from "react"
 import { ActivityIndicator, AppState } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
+import { Pulsing } from "../../components/pulse-dot.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { Icon } from "../../components/ui/icon.tsx"
 import { nativeConsole } from "../../core/native-runtime.ts"
@@ -194,7 +195,10 @@ export function BoltCardReader({
       role={state.step === "failed" ? "alert" : undefined}
     >
       {state.step === "ready" ? (
-        <Icon icon={Nfc} />
+        // Web's `animate-pulse`: the reader is waiting for a tap.
+        <Pulsing>
+          <Icon icon={Nfc} />
+        </Pulsing>
       ) : state.step === "failed" ? (
         <Icon icon={TriangleAlert} color="destructive" />
       ) : (

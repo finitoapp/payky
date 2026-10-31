@@ -4,6 +4,10 @@ import {
 } from "@payky/core/background-jobs/background-jobs"
 import { runBackgroundJobs } from "@payky/core/background-jobs/run-background-jobs"
 import { createDateDep } from "@payky/core/deps"
+import {
+  accountSyncs,
+  createAppOwnerSyncDep,
+} from "@payky/core/evolu/initial-sync-state"
 import type { Evolu } from "@payky/core/evolu/schema"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
@@ -20,8 +24,7 @@ import {
 } from "react"
 import { accountAtom } from "../../atoms/account.ts"
 import { appMigrationsAtom } from "../../atoms/app-migrations.ts"
-import { cashuShardStoreAtom, cashuWalletDepAtom } from "../../atoms/cashu.ts"
-import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { cashuWalletDepAtom } from "../../atoms/cashu.ts"
 import { evoluAtom } from "../../atoms/evolu.ts"
 import { captureReportedError } from "../../core/error-reporting.ts"
 import { nativeEnv } from "../../core/native-env.ts"
@@ -151,31 +154,33 @@ function AppBackgroundJobs() {
 }
 
 /**
- * The Cashu job, apart from the others: it suspends on and throws from the
- * Cashu atoms alone, under its own boundary, so a Cashu wallet that fails to
- * start, or never does, stops no other job. An account switch restarts it on
- * the new account's store and wallet after the old run is disposed.
+ * The Cashu job, apart from the others: it suspends on the Cashu wallet atom
+ * and runs under its own boundary, so a mint or the SDK crashing it stops no
+ * other job. An account switch restarts it on the new account's database and
+ * wallet after the old run is disposed.
  */
 function CashuBackgroundJobs() {
   const evolu = useAtomValue(evoluAtom)
   const account = useAtomValue(accountAtom)
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const cashuShardStore = useAtomValue(cashuShardStoreAtom)
   const cashuWalletDep = useAtomValue(cashuWalletDepAtom)
   useAtomValue(appMigrationsAtom)
   const deviceId = account.device.id
   const { masterKey } = account
+  const syncs = accountSyncs(account)
   const start = useCallback(() => {
     const run = nativeRun.create({
       ...createJobDeps({ evolu, deviceId }),
-      deviceEvolu,
       masterKey,
+      ...createAppOwnerSyncDep({
+        syncState: nativeRun.deps.syncState,
+        evolu,
+        syncs,
+      }),
       ...createNostrDep(nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS),
-      cashuShardStore,
       ...cashuWalletDep,
     })
     return { run, jobs: run.ok(runBackgroundJobs(cashuBackgroundJobs)) }
-  }, [cashuShardStore, cashuWalletDep, deviceEvolu, deviceId, evolu, masterKey])
+  }, [cashuWalletDep, deviceId, evolu, masterKey, syncs])
 
   useBackgroundJobs({ isDemo: account.demo !== null, start })
   return null
@@ -219,7 +224,7 @@ export function AppEvoluConsumers() {
 }
 
 /** The Cashu job under a boundary and Suspense of its own, apart from `AppEvoluConsumers`. */
-export function CashuEvoluConsumers() {
+export function CashuJobConsumers() {
   return (
     <AppEvoluConsumersBoundary>
       <Suspense fallback={null}>

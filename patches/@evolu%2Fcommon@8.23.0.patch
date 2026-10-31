@@ -117,10 +117,10 @@ index d7127ea4e2e47ca504c27352ebff5ec0f4f2cc94..4d39f9330f31341fbfaad4b94496f40c
          // stores it in quarantine instead of its table.
          const nextTimestamp = sendTimestamp(deps)(clockTimestamp, now);
 diff --git a/dist/src/local-first/Evolu.d.ts b/dist/src/local-first/Evolu.d.ts
-index b73275bb3176a465567128afae43e92e2f87b3e9..0ce32eac6f3c396d690f5e1eee5162c2608f4d9c 100644
+index b73275bb3176a465567128afae43e92e2f87b3e9..512c3dd7ba1f8ea0ff1c9bae4df9104391e3cc80 100644
 --- a/dist/src/local-first/Evolu.d.ts
 +++ b/dist/src/local-first/Evolu.d.ts
-@@ -434,6 +434,16 @@ export interface Evolu<S extends EvoluSchema = EvoluSchema> extends AsyncDisposa
+@@ -434,6 +434,20 @@ export interface Evolu<S extends EvoluSchema = EvoluSchema> extends AsyncDisposa
       * @see {@link Mutation}
       */
      readonly upsert: Mutation<S, "upsert">;
@@ -129,9 +129,13 @@ index b73275bb3176a465567128afae43e92e2f87b3e9..0ce32eac6f3c396d690f5e1eee5162c2
 +     * instead of the current time, so its `createdAt`/`updatedAt` lie in the
 +     * past. Later millis, or the same ones again, stay unique and ordered per
 +     * owner; earlier millis start that ordering over, so jump back only into
-+     * a span not written yet. The real clock is not advanced. Only for
-+     * generating demo data into an owner that never syncs; pass `null` to
-+     * stop.
++     * a span not written yet. The real clock is not advanced. Pass `null` to
++     * stop. Two uses: generating demo data into an owner that never syncs,
++     * and tests that sync instances of one owner at a simulated clock. The
++     * ordering clock is the database workers' module state, so instances in
++     * one process share it and their writes are ordered as they were made;
++     * the millis must stay in the past, or a receiving instance quarantines
++     * them as drifted.
 +     */
 +    readonly setMutationBackdate: (millis: number | null) => void;
      /**

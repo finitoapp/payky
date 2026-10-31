@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog.tsx"
 import { Button, buttonVariants } from "@/components/ui/button.tsx"
-import { useCashuAppRun } from "@/hooks/use-app-run.ts"
+import { useAppRun } from "@/hooks/use-app-run.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useScreenWakeLock } from "@/hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -53,7 +53,7 @@ type SeedState =
 export function DemoDataSeed() {
   const account = useAtomValue(accountAtom)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const cashuAppRun = useCashuAppRun()
+  const appRun = useAppRun()
   const console = useConsole()
   const { t, language } = useTranslation()
   const [state, setState] = useState<SeedState>({ status: "idle" })
@@ -72,7 +72,7 @@ export function DemoDataSeed() {
     void (async () => {
       setState({ status: "running", done: 0, total: 1 })
       try {
-        await using run = await cashuAppRun()
+        await using run = appRun()
         const { payments, days } = await run.ok(
           generateDemoData({
             language,
@@ -97,7 +97,7 @@ export function DemoDataSeed() {
         setState({ status: "failed" })
       }
     })()
-  }, [account.demo, account.id, cashuAppRun, console, deviceEvolu, language])
+  }, [account.demo, account.id, appRun, console, deviceEvolu, language])
 
   if (state.status === "idle") return null
   const isRunning = state.status === "running"

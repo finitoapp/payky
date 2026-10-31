@@ -41,15 +41,18 @@ interface CashuReview {
 }
 
 /**
- * A Lightning withdrawal from one mint of the wallet shared with Linky
- * (cashu.md §6): the default mint preselected, an invoice or a Lightning
+ * A Lightning withdrawal from one mint of Payky's Cashu wallet
+ * (withdraw/0015): the default mint preselected, an invoice or a Lightning
  * address, a review of the mint's own fees, and the PIN before anything
  * leaves.
  */
 export function CashuWithdrawPage({
   initialDestination,
+  initialMint = null,
 }: {
   readonly initialDestination: string
+  /** The mint to withdraw from, as the mint's detail page links it. */
+  readonly initialMint?: MintUrl | null
 }) {
   const { t } = useTranslation()
   const accountId = useWithdrawAccountId("cashu")
@@ -64,6 +67,7 @@ export function CashuWithdrawPage({
         <CashuWithdrawFlow
           accountId={accountId}
           initialDestination={initialDestination}
+          initialMint={initialMint}
         />
       )}
     </>
@@ -73,9 +77,11 @@ export function CashuWithdrawPage({
 function CashuWithdrawFlow({
   accountId,
   initialDestination,
+  initialMint,
 }: {
   readonly accountId: AccountId
   readonly initialDestination: string
+  readonly initialMint: MintUrl | null
 }) {
   const cashuAppRun = useCashuAppRun()
   const navigate = useNavigate()
@@ -84,11 +90,11 @@ function CashuWithdrawFlow({
   const jotaiStore = useStore()
   const { t } = useTranslation()
   const locale = useLocale()
-  const { snapshot } = useCashuWallet()
+  const wallet = useCashuWallet()
   const [draft, setDraft] = useState(() =>
     createWithdrawDraft(initialDestination)
   )
-  const [chosenMint, setChosenMint] = useState<MintUrl | null>(null)
+  const [chosenMint, setChosenMint] = useState<MintUrl | null>(initialMint)
   const [review, setReview] = useState<CashuReview | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [requoting, setRequoting] = useState(false)
@@ -100,11 +106,11 @@ function CashuWithdrawFlow({
   // not melt the same quote twice.
   const confirmingRef = useRef(false)
 
-  const funded = fundedMints(snapshot?.balances ?? new Map<MintUrl, number>())
+  const funded = fundedMints(wallet.balances)
   const mint = withdrawMint({
     funded,
     chosen: chosenMint,
-    defaultMint: snapshot?.defaultMint ?? null,
+    defaultMint: wallet.defaultMint,
   })
 
   const openDetail = (withdrawalId: string) =>

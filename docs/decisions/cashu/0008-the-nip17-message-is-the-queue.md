@@ -1,6 +1,6 @@
 # 0008 No deferred receive: the NIP-17 message is the queue
 
-Status: accepted
+Status: superseded by cashu/0030
 Date: 2026-10-14
 
 ## Context

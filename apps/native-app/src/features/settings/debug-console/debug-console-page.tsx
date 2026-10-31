@@ -22,7 +22,7 @@ import {
 } from "../../../components/ui/card.tsx"
 import { nativeConsoleHistory } from "../../../core/native-runtime.ts"
 import { useTranslation } from "../../../hooks/use-translation.ts"
-import { CashuShardDebugCard } from "./cashu-shard-debug-card.tsx"
+import { CashuWalletDebugCard } from "./cashu-wallet-debug-card.tsx"
 
 const methodColors = {
   trace: "info",
@@ -63,7 +63,7 @@ export function DebugConsolePage() {
       <FadeHeader title={t("settings.debugConsole.title")} />
       {__DEV__ ? (
         <Suspense fallback={null}>
-          <CashuShardDebugCard />
+          <CashuWalletDebugCard />
         </Suspense>
       ) : null}
       <Card>

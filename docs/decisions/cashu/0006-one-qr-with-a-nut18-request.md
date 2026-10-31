@@ -13,7 +13,8 @@ payer sends a bare token that names no request.
 
 - The Cashu tab shows `bitcoin:?lightning=<bolt11>&creq=<creqA…>`. The
   request is Linky's `encodeNostrPaymentRequest` byte for byte: the sats,
-  `sat`, single use, the payment's mint only, one nostr transport to Payky's
+  `sat`, single use, the payment's mint only (since `cashu/0016` the trusted
+  mints, the default first), one nostr transport to Payky's
   nprofile over the relays it listens on, tagged `["n", "17"]`, and the
   payment id as `i`. It is rebuilt from `paymentCashu`, never stored.
 - Tokens reach Payky only as NIP-17 messages to its key; no HTTP `post`
@@ -24,10 +25,14 @@ payer sends a bare token that names no request.
   a bare token to the one open payment of its mint and face amount. Otherwise
   the token is received unassigned. `cashu/0011` dropped both mint
   conditions: a payload goes to the open payment it names, a bare token to
-  the one open payment of its face amount.
+  the one open payment of its face amount. Since `cashu/0028` a bare token
+  pays no payment: it is received unassigned.
 - Before anyone receives a matched token, the payment holds its receive id
-  (`cashuOperationIdFor("receive|" + text)`, the text normalised as Linky
-  normalises it), so it settles whoever receives the token.
+  (`cashuReceiveOperationIdFor(text)`, the text normalised by
+  `normalizeCashuTokenText`), so it settles whoever receives the token.
+  Since `cashu/0012` and `cashu/0029` only a Payky device of the account
+  can; a token Linky receives leaves the payment unpaid. The receive is
+  booked in the batch that completes it (`cashu/0014`).
 
 ## Alternatives considered
 
@@ -37,18 +42,17 @@ pay the Lightning fee reserve.
 ## Consequences
 
 Two open payments of one amount at one mint make Linky's bare token
-ambiguous; it stays unassigned and pays neither.
+ambiguous; it stays unassigned and pays neither. Since `cashu/0028` every
+bare token does.
 
 ## Enforced by
 
-- `packages/core/src/modules/cashu/cashu-cross-app.test.ts > cross-app Cashu vectors (shared with Linky) > NUT-18 request $request`
-- `packages/core/src/modules/cashu/cashu-cross-app.test.ts > cross-app Cashu vectors (shared with Linky) > token text of %j`
+- `packages/core/src/cashu/cashu-payment-request.test.ts > the Cashu tab's payment request > NUT-18 request $request`
+- `packages/core/src/modules/cashu/cashu-utils.test.ts > Cashu ids and spellings > token text of %j`
 - `packages/core/src/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > takes a NUT-18 payload sent 1:1`
 - `packages/core/src/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > takes a bare token sent 1:1, as Linky sends it`
 - `packages/core/src/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > ignores chat text, even one that mentions a token`
 - `packages/core/src/integrations/nostr/nostr-cashu-inbox.test.ts > decodeCashuTokenWrap > ignores a token sent to a group, the support room included`
-- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names, whatever its amount`
-- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token goes to the one open payment of its face amount`
-- `packages/core/src/cashu/cashu-token-listener.test.ts > matchCashuToken > a bare token two payments fit, or none, is unassigned`
-- `packages/core/src/cashu/cashu-booking.test.ts > bookCashuOperations > a token Linky received first settles the payment that holds its receive`
+- `packages/core/src/background-jobs/jobs/cashu-token-listener.test.ts > matchCashuToken > a payload goes to the open payment its id names`
+- `packages/core/src/modules/cashu/cashu-booking-actions.test.ts > booking at completion (cashu/0014) > a received token is booked at its face value less the fee in the batch that completes it, and claims the payment holding its receive`
 - `packages/core/src/background-jobs/jobs/cashu-account-sync-job.test.ts > cashu account sync job > settles a payment paid with a NUT-18 token over NIP-17`

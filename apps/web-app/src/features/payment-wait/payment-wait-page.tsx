@@ -347,22 +347,25 @@ function PaymentWaitRequest({ paymentId }: { readonly paymentId: PaymentId }) {
       const cashuInvoice = payment?.cashuLnInvoice ?? null
       const cashuMint = payment?.cashuMintUrl ?? null
       const quoteExpiresAt = payment?.cashuQuoteExpiresAt ?? null
+      const cashuAmountSats = payment?.cashuAmountSats ?? 0
+      const buildCashuQrPayload = (mintUrls: ReadonlyArray<string>) =>
+        cashuInvoice === null || cashuMint === null
+          ? null
+          : buildCashuPaymentUri({
+              paymentId,
+              lnInvoice: cashuInvoice,
+              amountSats: cashuAmountSats,
+              mintUrls,
+              nostrPubkey: pubkey,
+              relays: appEnv.VITE_PAYKY_NOSTR_RELAYS,
+            })
       paymentMethods.push({
         id: "cashu",
         kind: "cashu",
         accountId: enabledCashuAccount.id,
         label: t("paymentWait.method.cashu"),
-        qrPayload:
-          cashuInvoice === null || cashuMint === null
-            ? null
-            : buildCashuPaymentUri({
-                paymentId,
-                lnInvoice: cashuInvoice,
-                amountSats: payment?.cashuAmountSats ?? 0,
-                mintUrl: cashuMint,
-                nostrPubkey: pubkey,
-                relays: appEnv.VITE_PAYKY_NOSTR_RELAYS,
-              }),
+        qrPayload: buildCashuQrPayload(cashuMint === null ? [] : [cashuMint]),
+        buildQrPayload: buildCashuQrPayload,
         quoteExpired:
           quoteExpiresAt !== null && now.getTime() >= quoteExpiresAt,
         icon: <CoinsIcon />,

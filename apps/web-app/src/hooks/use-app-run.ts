@@ -1,5 +1,9 @@
 import { createRun } from "@evolu/web"
 import { createDateDep } from "@payky/core/deps"
+import {
+  accountSyncs,
+  createAppOwnerSyncDep,
+} from "@payky/core/evolu/initial-sync-state"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
 import { createQerkoApiDep } from "@payky/core/integrations/qerko/qerko-client"
@@ -8,8 +12,9 @@ import { createSparkWalletDep } from "@payky/core/spark/spark-wallet"
 import { useAtomValue, useStore } from "jotai"
 import { useCallback, useMemo } from "react"
 import { accountAtom } from "@/atoms/account.ts"
+import { cashuWalletDepAtom } from "@/atoms/cashu.ts"
 import { deviceEvoluAtom } from "@/atoms/device-evolu.ts"
-import { cashuShardStoreAtom, cashuWalletDepAtom } from "@/atoms/evolu.ts"
+import { runAtom } from "@/atoms/run.ts"
 import { appEnv } from "@/core/app-env.ts"
 import { useConsole } from "@/hooks/use-console.ts"
 import { useEvolu } from "@/hooks/use-evolu.ts"
@@ -44,7 +49,9 @@ const useAppRunDeps = () => {
   const console = useConsole()
   const evolu = useEvolu()
   const account = useAtomValue(accountAtom)
+  const syncs = accountSyncs(account)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const { syncState } = useAtomValue(runAtom).deps
 
   return useCallback(() => {
     const dateDep = createDateDep()
@@ -69,8 +76,13 @@ const useAppRunDeps = () => {
         { productionUrl: appEnv.VITE_PAYKY_EET_PRODUCTION_URL }
       ),
       ...createNostrDep(appEnv.VITE_PAYKY_NOSTR_RELAYS),
+      ...createAppOwnerSyncDep({
+        syncState,
+        evolu,
+        syncs,
+      }),
     }
-  }, [account.masterKey, console, deviceEvolu, evolu])
+  }, [account.masterKey, console, deviceEvolu, evolu, syncState, syncs])
 }
 
 export const useAppRun = () => {
@@ -79,20 +91,16 @@ export const useAppRun = () => {
 }
 
 /**
- * `useAppRun` plus the shared Cashu wallet (`cashuShardStore`, `cashuWallet`),
- * for the Cashu actions only: `await using run = await cashuAppRun()`. The
- * Cashu atoms are read when a run is made, never while rendering, so a
- * wallet that fails to start, or never does, holds up no screen; the call
- * that needed it rejects instead.
+ * `useAppRun` plus Payky's Cashu wallet (`cashuWallet`), for the Cashu
+ * actions only: `await using run = await cashuAppRun()`. The wallet atom is
+ * read when a run is made, never while rendering, so a mint SDK that fails
+ * to load holds up no screen; the call that needed it rejects instead.
  */
 export const useCashuAppRun = () => {
   const appRunDeps = useAppRunDeps()
   const jotaiStore = useStore()
   return useCallback(async () => {
-    const [cashuShardStore, cashuWalletDep] = await Promise.all([
-      jotaiStore.get(cashuShardStoreAtom),
-      jotaiStore.get(cashuWalletDepAtom),
-    ])
-    return createRun({ ...appRunDeps(), cashuShardStore, ...cashuWalletDep })
+    const cashuWalletDep = await jotaiStore.get(cashuWalletDepAtom)
+    return createRun({ ...appRunDeps(), ...cashuWalletDep })
   }, [appRunDeps, jotaiStore])
 }

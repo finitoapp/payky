@@ -1,66 +1,47 @@
 import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import { formatSatsAmount } from "@payky/app-shared/format-money"
+import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
 import { router } from "expo-router"
 import Plus from "lucide-react-native/icons/plus"
-import TriangleAlert from "lucide-react-native/icons/triangle-alert"
-import { ActivityIndicator } from "react-native"
 import { Text, XStack, YStack } from "tamagui"
 import { FadeHeader } from "../../../components/fade-header.tsx"
 import { Screen } from "../../../components/screen.tsx"
-import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-} from "../../../components/ui/alert.tsx"
 import { Badge } from "../../../components/ui/badge.tsx"
 import { Button } from "../../../components/ui/button.tsx"
 import { VerticalNav } from "../../../components/vertical-nav.tsx"
 import { useLocale, useTranslation } from "../../../hooks/use-translation.ts"
-import { useCashuKnownMints } from "../../shared/cashu/use-cashu-known-mints.ts"
-import { useCashuWalletSnapshot } from "../../shared/cashu/use-cashu-wallet-snapshot.ts"
+import { useCashuWallet } from "../../shared/cashu/use-cashu-wallet.ts"
+import { CashuMintsNotSynced } from "./cashu-mints-not-synced.tsx"
 import { getCashuMintSections } from "./cashu-mints-page-model.ts"
 
+/** A row opening the mint's detail, where it is trusted or untrusted. */
+const mintLink = (mint: MintUrl) => ({
+  id: mint,
+  kind: "link" as const,
+  href: {
+    pathname: "/settings/payment-accounts/cashu/mints/[mint]" as const,
+    params: { mint },
+  },
+  accessibilityLabel: formatMintLabel(mint),
+})
+
+/**
+ * The wallet's mints (cashu/0015), as web's `CashuMintsPage`: the trusted
+ * ones with the default's badge, the mints not trusted that hold a balance,
+ * then the presets as suggestions. With no trusted mint the device has not
+ * synced them (cashu/0018), which the screen says in place of the trusted
+ * section, offering the default mint to a sync blocked by an unreachable
+ * relay (cashu/0013).
+ */
 export function CashuMintsPage() {
   const { t } = useTranslation()
   const locale = useLocale()
-  const wallet = useCashuWalletSnapshot()
-  const mints = useCashuKnownMints()
-  const snapshot = wallet.snapshot
-
-  if (wallet.isError || mints.isError) {
-    return (
-      <YStack flex={1} items="center" justify="center">
-        <Alert variant="destructive" icon={TriangleAlert}>
-          <AlertDescription>
-            <Text aria-live="polite">{t("appError.description")}</Text>
-          </AlertDescription>
-          <AlertAction>
-            <Button
-              size="lg"
-              variant="outline"
-              label={t("appError.tryAgain")}
-              onPress={() => {
-                void wallet.refetch()
-                void mints.refetch()
-              }}
-            />
-          </AlertAction>
-        </Alert>
-      </YStack>
-    )
-  }
-  if (wallet.isPending || snapshot === null || mints.isPending)
-    return (
-      <YStack flex={1} items="center" justify="center">
-        <ActivityIndicator size="large" />
-      </YStack>
-    )
-
-  const { known, suggested } = getCashuMintSections(
-    snapshot.defaultMint,
-    mints.data
+  const wallet = useCashuWallet()
+  const { trusted, withBalance, suggested } = getCashuMintSections(
+    wallet.trustedMints,
+    wallet.balances
   )
-  const balanceAction = (mint: (typeof known)[number]) => (
+  const balanceAction = (mint: MintUrl) => (
     <Text
       fontSize="xs"
       lineHeight="xs"
@@ -68,7 +49,7 @@ export function CashuMintsPage() {
       fontVariant={["tabular-nums"]}
     >
       {t("withdraw.sats", {
-        amount: formatSatsAmount(snapshot.balances.get(mint) ?? 0, locale),
+        amount: formatSatsAmount(wallet.balances.get(mint) ?? 0, locale),
       })}
     </Text>
   )
@@ -76,54 +57,48 @@ export function CashuMintsPage() {
   return (
     <Screen>
       <FadeHeader title={t("settings.cashuMints.title")} />
-      {!snapshot.hydrated ? (
-        <Text color="muted-foreground">
-          {t("settings.cashuAccount.syncing")}
-        </Text>
-      ) : null}
       <YStack gap="4">
-        <VerticalNav
-          title={t("settings.cashuMints.known")}
-          items={known.map((mint) => ({
-            id: mint,
-            kind: "link" as const,
-            href: {
-              pathname:
-                "/settings/payment-accounts/cashu/mints/[mint]" as const,
-              params: { mint },
-            },
-            accessibilityLabel: formatMintLabel(mint),
-            label: (
-              // Not flex={1}: the row's label slot is a column, where it
-              // would size the label to no height (settings-page.tsx).
-              <XStack w="100%" items="center" gap="2">
-                <Text flexShrink={1} numberOfLines={1}>
-                  {formatMintLabel(mint)}
-                </Text>
-                {mint === snapshot.defaultMint ? (
-                  <Badge
-                    variant="secondary"
-                    label={t("settings.cashuMints.default")}
-                  />
-                ) : null}
-              </XStack>
-            ),
-            action: snapshot.hydrated ? balanceAction(mint) : undefined,
-          }))}
-          empty={snapshot.hydrated ? t("settings.cashuMints.empty") : undefined}
-        />
+        {trusted.length === 0 ? (
+          <CashuMintsNotSynced />
+        ) : (
+          <VerticalNav
+            title={t("settings.cashuMints.trusted")}
+            items={trusted.map((mint) => ({
+              ...mintLink(mint),
+              label: (
+                // Not flex={1}: the row's label slot is a column, where it
+                // would size the label to no height (settings-page.tsx).
+                <XStack w="100%" items="center" gap="2">
+                  <Text flexShrink={1} numberOfLines={1}>
+                    {formatMintLabel(mint)}
+                  </Text>
+                  {mint === wallet.defaultMint ? (
+                    <Badge
+                      variant="secondary"
+                      label={t("settings.cashuMints.default")}
+                    />
+                  ) : null}
+                </XStack>
+              ),
+              action: balanceAction(mint),
+            }))}
+          />
+        )}
+        {withBalance.length === 0 ? null : (
+          <VerticalNav
+            title={t("settings.cashuMints.withBalance")}
+            items={withBalance.map((mint) => ({
+              ...mintLink(mint),
+              label: <Text numberOfLines={1}>{formatMintLabel(mint)}</Text>,
+              action: balanceAction(mint),
+            }))}
+          />
+        )}
         {suggested.length === 0 ? null : (
           <VerticalNav
             title={t("settings.cashuMints.suggested")}
             items={suggested.map((mint) => ({
-              id: mint,
-              kind: "link" as const,
-              href: {
-                pathname:
-                  "/settings/payment-accounts/cashu/mints/[mint]" as const,
-                params: { mint },
-              },
-              accessibilityLabel: formatMintLabel(mint),
+              ...mintLink(mint),
               label: <Text numberOfLines={1}>{formatMintLabel(mint)}</Text>,
               action: balanceAction(mint),
             }))}

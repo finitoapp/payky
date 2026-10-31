@@ -1,6 +1,7 @@
 import {
   createId,
   createIdFromString,
+  createStore,
   Millis,
   testAppOwner,
   testCreateDeps,
@@ -15,11 +16,13 @@ import type {
 import { describe, expect, test } from "vitest"
 
 import {
+  createAppOwnerSyncDep,
   evaluateInitialSync,
   findOwnerRelays,
   initialSyncIdleLimitMs,
   isInitialSyncPending,
   type OwnerRelays,
+  ownerSyncStateOf,
 } from "./initial-sync-state.ts"
 
 const deps = testCreateDeps()
@@ -89,24 +92,24 @@ const evaluate = (input: Partial<Parameters<typeof evaluateInitialSync>[0]>) =>
     ...input,
   })
 
-describe("findOwnerRelays", () => {
-  const stateWith = (relays: OwnerRelays): SyncState => ({
-    transports: relays.map(({ transport }) => transport),
-    tenants: [
-      {
-        type: "Active",
-        name: testName,
-        owners: [
-          {
-            type: "Writable",
-            ownerId: testAppOwner.id,
-            routes: relays.map(({ route }) => route),
-          },
-        ],
-      },
-    ],
-  })
+const stateWith = (relays: OwnerRelays): SyncState => ({
+  transports: relays.map(({ transport }) => transport),
+  tenants: [
+    {
+      type: "Active",
+      name: testName,
+      owners: [
+        {
+          type: "Writable",
+          ownerId: testAppOwner.id,
+          routes: relays.map(({ route }) => route),
+        },
+      ],
+    },
+  ],
+})
 
+describe("findOwnerRelays", () => {
   test("pairs the owner's routes with their transports", () => {
     const synced = relay("synced")
 
@@ -188,5 +191,73 @@ describe("isInitialSyncPending", () => {
       isInitialSyncPending([relay("syncing", { completedBefore: true })])
     ).toBe(false)
     expect(isInitialSyncPending([relay("connecting")])).toBe(false)
+  })
+})
+
+describe("ownerSyncStateOf (cashu/0013)", () => {
+  const complete = { type: "complete" }
+  const pending = { type: "pending" }
+
+  test("is complete once every relay has completed a sync since the app started", () => {
+    expect(ownerSyncStateOf([relay("synced"), relay("synced")])).toEqual(
+      complete
+    )
+  })
+
+  test("stays complete while a relay syncs again, as after any write", () => {
+    expect(
+      ownerSyncStateOf([
+        relay("synced"),
+        relay("syncing", { completedBefore: true }),
+      ])
+    ).toEqual(complete)
+  })
+
+  test("is pending while a relay that never completed is still connecting or syncing", () => {
+    expect(ownerSyncStateOf([relay("synced"), relay("syncing")])).toEqual(
+      pending
+    )
+    expect(ownerSyncStateOf([relay("connecting")])).toEqual(pending)
+    expect(
+      ownerSyncStateOf([relay("unreachable"), relay("connecting")])
+    ).toEqual(pending)
+  })
+
+  test("is blocked, naming them, once every relay that never completed has failed or is unreachable", () => {
+    const down = relay("unreachable")
+    const failing = relay("error")
+    expect(ownerSyncStateOf([relay("synced"), down])).toEqual({
+      type: "blocked",
+      unreachable: [down.transport.label],
+    })
+    expect(ownerSyncStateOf([down, failing])).toEqual({
+      type: "blocked",
+      unreachable: [down.transport.label, failing.transport.label],
+    })
+  })
+
+  test("is pending before the worker reports the owner; an owner with no relays is complete", () => {
+    expect(ownerSyncStateOf(null)).toEqual(pending)
+    expect(ownerSyncStateOf([])).toEqual(complete)
+  })
+
+  test("an account that does not sync is always complete", () => {
+    const evolu = { name: testName, appOwner: { id: testAppOwner.id } }
+    using syncState = createStore<SyncState | null>(null)
+
+    expect(
+      createAppOwnerSyncDep({
+        syncState,
+        evolu,
+        syncs: false,
+      }).appOwnerSync.state()
+    ).toEqual(complete)
+    expect(
+      createAppOwnerSyncDep({
+        syncState,
+        evolu,
+        syncs: true,
+      }).appOwnerSync.state()
+    ).toEqual(pending)
   })
 })

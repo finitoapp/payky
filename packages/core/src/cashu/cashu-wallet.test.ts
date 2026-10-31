@@ -1,10 +1,12 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
-import { addCashuMint } from "../evolu/device-cashu.ts"
-import { CashuAmount, KeysetId, MintUrl } from "../modules/cashu/cashu-types.ts"
-import { createCashuTest, testMintUrl } from "../testing/cashu.ts"
-import { loadKnownCashuMints } from "./cashu-mints.ts"
-import { loadCashuWallet } from "./cashu-wallet.ts"
+import { MintUrl } from "../modules/cashu/cashu-types.ts"
+import {
+  createCashuTest,
+  storeTestCashuProofs,
+  testMintUrl,
+} from "../testing/cashu.ts"
+import { foreignKeysetOwner, loadCashuWallet } from "./cashu-wallet.ts"
 
 const otherMintUrl = MintUrl("https://other.mint.test")
 
@@ -16,17 +18,12 @@ describe("loadCashuWallet", () => {
       mint: { keySeed },
       extraMints: [{ url: otherMintUrl, keySeed }],
     })
-    await t.deps.cashuShardStore.insertProofs([
+    await storeTestCashuProofs(t.deps.evolu, [
       {
-        mint: testMintUrl,
-        unit: "sat",
-        keysetId: KeysetId(t.mint.keysetId),
-        amount: CashuAmount(1),
+        mintUrl: testMintUrl,
+        keysetId: t.mint.keysetId,
+        amount: 1,
         secret: "s",
-        C: "02aa",
-        dleq: null,
-        state: "available",
-        operationId: null,
       },
     ])
     await using run = testCreateRun(t.deps)
@@ -49,42 +46,18 @@ describe("loadCashuWallet", () => {
   })
 })
 
-describe("known mints", () => {
-  test("are the mints proofs and operations name plus the ones this device saw or added", async () => {
-    await using t = await createCashuTest({
-      extraMints: [{ url: otherMintUrl }],
-    })
-    await using run = testCreateRun(t.deps)
-    await run(loadCashuWallet(otherMintUrl))
-    addCashuMint(
-      t.deps.deviceEvolu,
-      t.deps.cashuWallet.deviceAccountId,
-      MintUrl("https://added.mint.test")
-    )
-    await t.deps.cashuShardStore.insertProofs([
-      {
-        mint: MintUrl("https://proof.mint.test"),
-        unit: "sat",
-        keysetId: KeysetId("00aa"),
-        amount: CashuAmount(1),
-        secret: "s",
-        C: "02aa",
-        dleq: null,
-        state: "spent",
-        operationId: null,
-      },
-    ])
-
+describe("foreignKeysetOwner", () => {
+  test("a keyset belongs to the mint of its oldest proof", () => {
     expect(
-      await loadKnownCashuMints({
-        store: t.deps.cashuShardStore,
-        deviceEvolu: t.deps.deviceEvolu,
-        deviceAccountId: t.deps.cashuWallet.deviceAccountId,
-      })
-    ).toEqual([
-      "https://added.mint.test",
-      "https://other.mint.test",
-      "https://proof.mint.test",
-    ])
+      foreignKeysetOwner(otherMintUrl, [
+        { mintUrl: testMintUrl, keysetId: "00aa" },
+        { mintUrl: otherMintUrl, keysetId: "00aa" },
+      ])
+    ).toBe(testMintUrl)
+    expect(
+      foreignKeysetOwner(testMintUrl, [
+        { mintUrl: testMintUrl, keysetId: "00aa" },
+      ])
+    ).toBeNull()
   })
 })

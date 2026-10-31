@@ -1,6 +1,6 @@
 import type { KyselyNotNull } from "@evolu/common"
 import { sqliteTrue } from "@evolu/common"
-import type { ExpressionBuilder, Kysely } from "kysely"
+import type { Expression, ExpressionBuilder, Kysely } from "kysely"
 
 import { createQuery } from "../../evolu/schema.ts"
 import type {
@@ -9,6 +9,11 @@ import type {
   AccountTransactionRow,
 } from "../account-transaction/account-transaction.ts"
 import type { AccountTransactionId } from "../account-transaction/account-transaction-types.ts"
+import type {
+  CashuOperationId,
+  CashuQuoteId,
+  MintUrl,
+} from "../cashu/cashu-types.ts"
 import type { PaymentId } from "../payment/payment-types.ts"
 import { quotedAmountSatsSql } from "../shared/claimed-amount.ts"
 import type {
@@ -151,6 +156,46 @@ const hasNoActiveClaim = (eb: ExpressionBuilder<AppDb, "payment">) =>
  */
 const liveBeforeCanceled = (eb: ExpressionBuilder<AppDb, "payment">) =>
   eb("payment.canceledAt", "is not", null)
+
+/**
+ * Whether the payment holds a Cashu movement (cashu/0036): a mint quote it
+ * was ever prepared with, at that quote's mint (a quote id is unique only
+ * within its mint), or a token receive it holds, at whatever mint: whoever
+ * received the token trusted its mint (cashu/0016). Holds are only ever
+ * added, so the quote the payment shows now and the last token to arrive are
+ * not the only ones it is paid by.
+ */
+const holdsCashuMovement = (
+  eb: ExpressionBuilder<AppDb, "payment">,
+  movement: {
+    readonly quoteId: Expression<CashuQuoteId | null>
+    readonly mintUrl: Expression<MintUrl | null>
+    readonly cashuOperationId: Expression<CashuOperationId | null>
+  }
+) =>
+  eb.or([
+    eb.exists(
+      eb
+        .selectFrom("paymentCashuQuoteHold")
+        .select("paymentCashuQuoteHold.id")
+        .whereRef("paymentCashuQuoteHold.paymentId", "=", "payment.id")
+        .where("paymentCashuQuoteHold.isDeleted", "is not", sqliteTrue)
+        .where("paymentCashuQuoteHold.quoteId", "=", movement.quoteId)
+        .where("paymentCashuQuoteHold.mintUrl", "=", movement.mintUrl)
+    ),
+    eb.exists(
+      eb
+        .selectFrom("paymentCashuReceiveHold")
+        .select("paymentCashuReceiveHold.id")
+        .whereRef("paymentCashuReceiveHold.paymentId", "=", "payment.id")
+        .where("paymentCashuReceiveHold.isDeleted", "is not", sqliteTrue)
+        .where(
+          "paymentCashuReceiveHold.receiveOperationId",
+          "=",
+          movement.cashuOperationId
+        )
+    ),
+  ])
 
 export const ibanReconciliationCandidateByAccountTransactionIdQuery = (
   accountTransactionId: AccountTransactionId
@@ -408,11 +453,9 @@ export const sparkReconciliationCandidateByValuesQuery = ({
   )
 
 /**
- * The payment a Cashu movement settles (cashu/0005): the one whose
- * `paymentCashu` names its mint quote at the payment's mint (a quote id is
- * unique only within its mint), or the token receive it holds, at whatever
- * mint: whoever received the token trusted its mint (cashu/0011). By id only, never by amount: a token after its
- * input fee would never match one. A payment that already has money against
+ * The payment a Cashu movement settles (cashu/0005): the one that holds its
+ * mint quote or its token receive (`holdsCashuMovement`, cashu/0036). By id
+ * only, never by amount: a token after its input fee would never match one. A payment that already has money against
  * it takes nothing more; the movement stays unclaimed.
  */
 export const cashuReconciliationCandidateByValuesQuery = ({
@@ -434,17 +477,11 @@ export const cashuReconciliationCandidateByValuesQuery = ({
       .where("paymentCashu.isDeleted", "is not", sqliteTrue)
       .where("payment.isDeleted", "is not", sqliteTrue)
       .where((eb) =>
-        eb.or([
-          ...(quoteId === null
-            ? []
-            : [
-                eb.and([
-                  eb("paymentCashu.quoteId", "=", quoteId),
-                  eb("paymentCashu.mintUrl", "=", mintUrl),
-                ]),
-              ]),
-          eb("paymentCashu.receiveOperationId", "=", cashuOperationId),
-        ])
+        holdsCashuMovement(eb, {
+          quoteId: eb.val(quoteId),
+          mintUrl: eb.val(mintUrl),
+          cashuOperationId: eb.val(cashuOperationId),
+        })
       )
       .where(hasNoActiveClaim)
       .orderBy(liveBeforeCanceled)
@@ -464,32 +501,19 @@ export const cashuReconciliationCandidateByAccountTransactionIdQuery = (
         "accountTransactionCashu.id",
         "accountTransaction.id"
       )
-      .innerJoin("paymentCashu", (join) =>
-        join
-          .onRef("paymentCashu.accountId", "=", "accountTransaction.accountId")
-          .on((eb) =>
-            eb.or([
-              eb.and([
-                eb(
-                  "paymentCashu.quoteId",
-                  "=",
-                  eb.ref("accountTransactionCashu.quoteId")
-                ),
-                eb(
-                  "paymentCashu.mintUrl",
-                  "=",
-                  eb.ref("accountTransactionCashu.mintUrl")
-                ),
-              ]),
-              eb(
-                "paymentCashu.receiveOperationId",
-                "=",
-                eb.ref("accountTransactionCashu.cashuOperationId")
-              ),
-            ])
-          )
+      .innerJoin(
+        "paymentCashu",
+        "paymentCashu.accountId",
+        "accountTransaction.accountId"
       )
       .innerJoin("payment", "payment.id", "paymentCashu.id")
+      .where((eb) =>
+        holdsCashuMovement(eb, {
+          quoteId: eb.ref("accountTransactionCashu.quoteId"),
+          mintUrl: eb.ref("accountTransactionCashu.mintUrl"),
+          cashuOperationId: eb.ref("accountTransactionCashu.cashuOperationId"),
+        })
+      )
       .select(["payment.id as paymentId"])
       .where("accountTransaction.id", "=", accountTransactionId)
       .where("accountTransaction.kind", "=", "cashu")
@@ -503,3 +527,87 @@ export const cashuReconciliationCandidateByAccountTransactionIdQuery = (
       .limit(1)
       .$narrowType<{ paymentId: KyselyNotNull }>()
   )
+
+/**
+ * Cashu transactions no claim holds yet whose payment does hold their quote
+ * or receive (cashu/0036), with no claim of its own: a booking written by a device the
+ * payment had not synced to (cashu/0025). Each is claimed through
+ * `reconcileAccountTransaction`.
+ *
+ * Read from the holds, one join per kind through their quote and receive
+ * indexes, never by pairing every transaction with every payment of the
+ * account: the job asks it on every pass, and transactions no claim ever
+ * takes, withdrawals and tokens no payment held, only grow.
+ */
+export const unclaimedCashuTransactionsHeldByPaymentsQuery = createQuery(
+  (db) => {
+    const unclaimed = db
+      .selectFrom("accountTransaction")
+      .innerJoin(
+        "accountTransactionCashu",
+        "accountTransactionCashu.id",
+        "accountTransaction.id"
+      )
+      .where("accountTransaction.kind", "=", "cashu")
+      .where("accountTransaction.isDeleted", "is not", sqliteTrue)
+      .where("accountTransactionCashu.isDeleted", "is not", sqliteTrue)
+      .where((eb) =>
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom("reconciliationClaim")
+              .select("reconciliationClaim.id")
+              .whereRef(
+                "reconciliationClaim.accountTransactionId",
+                "=",
+                "accountTransaction.id"
+              )
+              .where("reconciliationClaim.isDeleted", "is not", sqliteTrue)
+          )
+        )
+      )
+    const heldByQuote = unclaimed
+      .innerJoin("paymentCashuQuoteHold", (join) =>
+        join
+          .onRef(
+            "paymentCashuQuoteHold.quoteId",
+            "=",
+            "accountTransactionCashu.quoteId"
+          )
+          .onRef(
+            "paymentCashuQuoteHold.mintUrl",
+            "=",
+            "accountTransactionCashu.mintUrl"
+          )
+      )
+      .innerJoin("payment", "payment.id", "paymentCashuQuoteHold.paymentId")
+      .innerJoin("paymentCashu", (join) =>
+        join
+          .onRef("paymentCashu.id", "=", "payment.id")
+          .onRef("paymentCashu.accountId", "=", "accountTransaction.accountId")
+      )
+      .where("paymentCashuQuoteHold.isDeleted", "is not", sqliteTrue)
+      .where("paymentCashu.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+      .where(hasNoActiveClaim)
+      .select("accountTransaction.id")
+    const heldByReceive = unclaimed
+      .innerJoin(
+        "paymentCashuReceiveHold",
+        "paymentCashuReceiveHold.receiveOperationId",
+        "accountTransactionCashu.cashuOperationId"
+      )
+      .innerJoin("payment", "payment.id", "paymentCashuReceiveHold.paymentId")
+      .innerJoin("paymentCashu", (join) =>
+        join
+          .onRef("paymentCashu.id", "=", "payment.id")
+          .onRef("paymentCashu.accountId", "=", "accountTransaction.accountId")
+      )
+      .where("paymentCashuReceiveHold.isDeleted", "is not", sqliteTrue)
+      .where("paymentCashu.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+      .where(hasNoActiveClaim)
+      .select("accountTransaction.id")
+    return heldByQuote.union(heldByReceive)
+  }
+)

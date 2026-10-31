@@ -1,319 +1,486 @@
-import {
-  createIdFromString,
-  kyselySql,
-  type NonEmptyReadonlyArray,
-  type OwnerId,
-  ownerIdToOwnerIdBytes,
-} from "@evolu/common"
-import { z } from "zod"
-
+import { type InferRow, type KyselyNotNull, sqliteTrue } from "@evolu/common"
 import { createQuery } from "../../evolu/schema.ts"
-import {
-  cashuOperation as cashuOperationColumns,
-  cashuProof as cashuProofColumns,
-} from "./cashu.ts"
-import {
-  type CashuOperationId,
-  type CashuProofId,
-  type CashuQuoteId,
-  cashuShardScope,
-  type MintUrl,
+import type { PaymentId } from "../payment/payment-types.ts"
+import { NonNegativeInteger } from "../shared/schema.ts"
+import type {
+  CashuOperationId,
+  CashuProofId,
+  KeysetId,
+  MintUrl,
 } from "./cashu-types.ts"
-import { linkySettingIdFor, shardPointerIdFor } from "./cashu-utils.ts"
+import {
+  cashuCounterIdFor,
+  cashuMintCacheIdFor,
+  cashuMintTrustId,
+  cashuTokenArrivalIdFor,
+} from "./cashu-utils.ts"
 
 /*
- * Every query over Linky's tables names the owners it reads (cashu.md §2):
- * Linky's app owner for `shardPointer`/`setting`, the cashu shard owners for
- * proofs and operations. Tombstones are read too, because Linky's merge rules
- * need them (`mergeProofCopies`, `mergeShardRows` in `cashu-utils.ts`); the
- * shard store applies those rules, not SQL.
+ * Read models of Payky's Cashu wallet (cashu/0012). Payky is the only writer,
+ * so every query reads live rows only and none merges copies.
  */
-
-/** The pointer row of the cashu scope, live or tombstoned, under Linky's app owner. */
-export const cashuShardPointerQuery = (linkyAppOwnerId: OwnerId) =>
-  createQuery((db) =>
-    db
-      .selectFrom("shardPointer")
-      .select(["id", "ownerId", "scope", "index", "rotatedAtMs", "isDeleted"])
-      .where("ownerId", "=", linkyAppOwnerId)
-      .where("id", "=", shardPointerIdFor(cashuShardScope))
-  )
-
-export const linkySettingQuery = (linkyAppOwnerId: OwnerId, key: string) =>
-  createQuery((db) =>
-    db
-      .selectFrom("setting")
-      .select(["id", "ownerId", "key", "value", "isDeleted"])
-      .where("ownerId", "=", linkyAppOwnerId)
-      .where("id", "=", linkySettingIdFor(key))
-  )
 
 const proofColumns = [
   "id",
-  "ownerId",
-  "createdAt",
-  "isDeleted",
-  "mint",
-  "unit",
+  "mintUrl",
   "keysetId",
   "amount",
   "secret",
   "c",
-  "dleq",
-  "state",
-  "operationId",
-] as const
-
-const operationColumns = [
-  "id",
-  "ownerId",
   "createdAt",
-  "isDeleted",
-  "kind",
-  "status",
-  "mint",
-  "unit",
-  "keysetId",
-  "amount",
-  "feeReserve",
-  "inputsTotal",
-  "quoteId",
-  "invoice",
-  "sourceMint",
-  "counter",
-  "locked",
-  "expiresAtSec",
-  "createdAtSec",
-  "tokenText",
-  "error",
 ] as const
 
-/** Every copy of every proof under the shard owners, tombstones included. */
-export const cashuProofCopiesQuery = (
-  ownerIds: NonEmptyReadonlyArray<OwnerId>
-) =>
-  createQuery((db) =>
-    db
-      .selectFrom("cashuProof")
-      .select(proofColumns)
-      .where("ownerId", "in", ownerIds)
-  )
-
-export const cashuProofCopiesByIdQuery = (
-  ownerIds: NonEmptyReadonlyArray<OwnerId>,
-  id: CashuProofId
-) =>
-  createQuery((db) =>
-    db
-      .selectFrom("cashuProof")
-      .select(proofColumns)
-      .where("ownerId", "in", ownerIds)
-      .where("id", "=", id)
-  )
-
-/** Every copy of every operation under the shard owners, tombstones included. */
-export const cashuOperationCopiesQuery = (
-  ownerIds: NonEmptyReadonlyArray<OwnerId>
-) =>
-  createQuery((db) =>
-    db
-      .selectFrom("cashuOperation")
-      .select(operationColumns)
-      .where("ownerId", "in", ownerIds)
-  )
-
-export const cashuOperationCopiesByIdQuery = (
-  ownerIds: NonEmptyReadonlyArray<OwnerId>,
-  id: CashuOperationId
-) =>
-  createQuery((db) =>
-    db
-      .selectFrom("cashuOperation")
-      .select(operationColumns)
-      .where("ownerId", "in", ownerIds)
-      .where("id", "=", id)
-  )
-
-/** Copies of the operations behind one mint quote: a topup, a melt, an autoswap. */
-export const cashuOperationCopiesByQuoteQuery = (
-  ownerIds: NonEmptyReadonlyArray<OwnerId>,
-  quoteId: CashuQuoteId
-) =>
-  createQuery((db) =>
-    db
-      .selectFrom("cashuOperation")
-      .select(operationColumns)
-      .where("ownerId", "in", ownerIds)
-      .where("quoteId", "=", quoteId)
-  )
-
-/** Whether a shard owner holds any Cashu row, tombstones included (`repairPointers`). */
-export const cashuShardHoldsRowsQuery = (ownerId: OwnerId) =>
-  createQuery((db) =>
-    db
-      .selectFrom(
-        kyselySql<{
-          holdsRows: number
-        }>`(select (exists (select 1 from "cashuProof" where "ownerId" = ${ownerId}) or exists (select 1 from "cashuOperation" where "ownerId" = ${ownerId})) as "holdsRows")`.as(
-          "probe"
-        )
-      )
-      .select("probe.holdsRows")
-  )
-
-/**
- * What the shard rotation measures (Linky's `ownerUsage`,
- * `evolu/evoluShardDb.ts`): distinct timestamps and value bytes in the
- * owner's local `evolu_history`, which keys rows by the owner id's bytes.
- * `evolu-history-shape.test.ts` fails when that table changes shape.
- */
-export const cashuShardUsageQuery = (ownerId: OwnerId) =>
-  createQuery((db) =>
-    db
-      .selectFrom(
-        kyselySql<{
-          mutations: number
-          bytes: number
-        }>`(select count(distinct "timestamp") as "mutations", coalesce(sum(length("value")), 0) as "bytes" from "evolu_history" where "ownerId" = ${ownerIdToOwnerIdBytes(ownerId)})`.as(
-          "usage"
-        )
-      )
-      .select(["usage.mutations", "usage.bytes"])
-  )
-
-export const cashuBookingCursorId = createIdFromString<"CashuBookingCursor">(
-  "cashu-booking-cursor"
-)
-
-export const cashuBookingCursorQuery = createQuery((db) =>
-  db
-    .selectFrom("_cashuBookingCursor")
-    .select(["historyRowid"])
-    .where("id", "=", cashuBookingCursorId)
-)
-
-/** The newest change this database holds, whatever it changed. */
-export const evoluHistoryMaxRowidQuery = createQuery((db) =>
-  db
-    .selectFrom(
-      kyselySql<{
-        maxRowid: number | null
-      }>`(select max("rowid") as "maxRowid" from "evolu_history")`.as("history")
-    )
-    .select("history.maxRowid")
-)
-
-/**
- * The operations whose `status` changed on this device after `afterRowid`,
- * in arrival order, under the given shard owners: what the booking job reads
- * on every run after its bootstrap. A rowid range, so the cost follows the
- * new changes only.
- */
-export const changedCashuOperationIdsQuery = (
-  afterRowid: number,
-  throughRowid: number,
-  ownerIds: NonEmptyReadonlyArray<OwnerId>
-) =>
-  createQuery((db) =>
-    db
-      .selectFrom(
-        kyselySql<{
-          idHex: string
-        }>`(select distinct hex("id") as "idHex" from "evolu_history" where "rowid" > ${afterRowid} and "rowid" <= ${throughRowid} and "table" = 'cashuOperation' and "column" = 'status' and "ownerId" in (${kyselySql.join(ownerIds.map((ownerId) => ownerIdToOwnerIdBytes(ownerId)))}))`.as(
-          "changed"
-        )
-      )
-      .select("changed.idHex")
-  )
+type NotNullProof = {
+  mintUrl: KyselyNotNull
+  keysetId: KyselyNotNull
+  amount: KyselyNotNull
+  secret: KyselyNotNull
+  c: KyselyNotNull
+}
 
 /*
- * Rows as Linky's decoders accept them (`toStoredProof`/`toStoredOperation`):
- * a copy that does not decode is skipped, as Linky skips it.
+ * A proof's state is read from its cells (cashu/0024): `spent` once
+ * `isSpent`, else `held` while `operationId` names a melt, else `available`.
  */
 
-const systemColumns = {
-  ownerId: z.string(),
-  createdAt: z.string(),
-  isDeleted: z.union([z.literal(0), z.literal(1)]).nullable(),
+/** One mint's available proofs, oldest first. */
+export const availableCashuProofsAtMintQuery = (mint: MintUrl) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuProof")
+      .select(proofColumns)
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("mintUrl", "=", mint)
+      .where("isSpent", "is not", sqliteTrue)
+      .where("operationId", "is", null)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .$narrowType<NotNullProof>()
+  )
+export type StoredCashuProof = InferRow<
+  ReturnType<typeof availableCashuProofsAtMintQuery>
+>
+
+/** The unspent inputs a melt holds. */
+export const heldCashuProofsOfOperationQuery = (
+  operationId: CashuOperationId
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuProof")
+      .select(proofColumns)
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("operationId", "=", operationId)
+      .where("isSpent", "is not", sqliteTrue)
+      .$narrowType<NotNullProof>()
+  )
+
+/** Which of these proofs the wallet holds already, in any state. */
+export const storedCashuProofIdsQuery = (ids: ReadonlyArray<CashuProofId>) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuProof")
+      .select(["id"])
+      .where("id", "in", ids.length === 0 ? [null] : ids)
+  )
+
+/**
+ * The stored proofs of these keysets, oldest first: a keyset belongs to the
+ * mint of its oldest proof (`foreignKeysetOwner`).
+ */
+export const cashuProofsOfKeysetsQuery = (keysetIds: ReadonlyArray<KeysetId>) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuProof")
+      .select(["mintUrl", "keysetId", "createdAt"])
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("keysetId", "in", keysetIds.length === 0 ? [null] : keysetIds)
+      .orderBy("createdAt")
+      .orderBy("mintUrl")
+      .$narrowType<{ mintUrl: KyselyNotNull; keysetId: KyselyNotNull }>()
+  )
+
+/** The available balance per mint. */
+export const cashuBalancesQuery = createQuery((db) =>
+  db
+    .selectFrom("cashuProof")
+    .select((eb) => ["mintUrl", eb.fn.sum<number>("amount").as("balance")])
+    .where("isDeleted", "is not", sqliteTrue)
+    .where("isSpent", "is not", sqliteTrue)
+    .where("operationId", "is", null)
+    .groupBy("mintUrl")
+    .orderBy("mintUrl")
+    .$narrowType<{ mintUrl: KyselyNotNull; balance: KyselyNotNull }>()
+)
+
+const operationColumns = [
+  "cashuOperation.id",
+  "cashuOperation.kind",
+  "cashuOperation.status",
+  "cashuOperation.mintUrl",
+  "cashuOperation.amount",
+  "cashuOperation.keysetId",
+  "cashuOperation.settledAt",
+  "cashuOperation.createdAt",
+] as const
+
+type NotNullOperation = {
+  kind: KyselyNotNull
+  status: KyselyNotNull
+  mintUrl: KyselyNotNull
+  amount: KyselyNotNull
 }
 
-const optional = <T extends z.ZodType>(schema: T) => schema.nullable()
+export const cashuOperationQuery = (id: CashuOperationId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuOperation")
+      .select(operationColumns)
+      .where("cashuOperation.isDeleted", "is not", sqliteTrue)
+      .where("cashuOperation.id", "=", id)
+      .$narrowType<NotNullOperation>()
+  )
+export type CashuOperationSnapshot = InferRow<
+  ReturnType<typeof cashuOperationQuery>
+>
 
-const CashuProofCopySchema = z.object({
-  ...systemColumns,
-  id: cashuProofColumns.id,
-  mint: cashuProofColumns.mint,
-  unit: cashuProofColumns.unit,
-  keysetId: cashuProofColumns.keysetId,
-  amount: cashuProofColumns.amount,
-  secret: cashuProofColumns.secret,
-  c: z
-    .string()
-    .regex(/^(?:[0-9a-f]{2})+$/iu)
-    .pipe(cashuProofColumns.c),
-  dleq: optional(z.string()),
-  state: cashuProofColumns.state,
-  operationId: cashuProofColumns.operationId,
-})
-export type CashuProofCopy = z.output<typeof CashuProofCopySchema> & {
-  readonly ownerId: OwnerId
-}
+export const cashuTopupQuery = (id: CashuOperationId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuOperation")
+      .innerJoin("cashuTopup", "cashuTopup.id", "cashuOperation.id")
+      .select([
+        ...operationColumns,
+        "cashuTopup.quoteId",
+        "cashuTopup.lnInvoice",
+        "cashuTopup.expiresAt",
+        "cashuTopup.locked",
+        "cashuTopup.purpose",
+      ])
+      .where("cashuOperation.isDeleted", "is not", sqliteTrue)
+      .where("cashuOperation.id", "=", id)
+      .where("cashuOperation.kind", "=", "topup")
+      .$narrowType<
+        NotNullOperation & {
+          quoteId: KyselyNotNull
+          lnInvoice: KyselyNotNull
+          purpose: KyselyNotNull
+        }
+      >()
+  )
+export type CashuTopupRow = InferRow<ReturnType<typeof cashuTopupQuery>>
 
-const CashuOperationCopySchema = z.object({
-  ...systemColumns,
-  id: cashuOperationColumns.id,
-  kind: cashuOperationColumns.kind,
-  status: cashuOperationColumns.status,
-  mint: cashuOperationColumns.mint,
-  unit: cashuOperationColumns.unit,
-  keysetId: cashuOperationColumns.keysetId,
-  amount: cashuOperationColumns.amount,
-  feeReserve: cashuOperationColumns.feeReserve,
-  inputsTotal: cashuOperationColumns.inputsTotal,
-  quoteId: cashuOperationColumns.quoteId,
-  invoice: cashuOperationColumns.invoice,
-  sourceMint: cashuOperationColumns.sourceMint,
-  counter: cashuOperationColumns.counter,
-  locked: cashuOperationColumns.locked,
-  expiresAtSec: cashuOperationColumns.expiresAtSec,
-  createdAtSec: cashuOperationColumns.createdAtSec,
-  tokenText: cashuOperationColumns.tokenText,
-  error: optional(z.string()),
-})
-export type CashuOperationCopy = z.output<typeof CashuOperationCopySchema> & {
-  readonly ownerId: OwnerId
-}
+export const cashuReceiveQuery = (id: CashuOperationId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuOperation")
+      .innerJoin("cashuReceive", "cashuReceive.id", "cashuOperation.id")
+      .select([
+        ...operationColumns,
+        "cashuReceive.tokenText",
+        "cashuReceive.fee",
+      ])
+      .where("cashuOperation.isDeleted", "is not", sqliteTrue)
+      .where("cashuOperation.id", "=", id)
+      .where("cashuOperation.kind", "=", "receive")
+      .$narrowType<
+        NotNullOperation & { tokenText: KyselyNotNull; fee: KyselyNotNull }
+      >()
+  )
+export type CashuReceiveRow = InferRow<ReturnType<typeof cashuReceiveQuery>>
 
-const decodeRows = <T>(
-  schema: z.ZodType<T>,
-  rows: ReadonlyArray<unknown>
-): ReadonlyArray<T> =>
-  rows.flatMap((row) => {
-    const decoded = schema.safeParse(row)
-    return decoded.success ? [decoded.data] : []
-  })
+export const cashuMeltQuery = (id: CashuOperationId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuOperation")
+      .innerJoin("cashuMelt", "cashuMelt.id", "cashuOperation.id")
+      .select([
+        ...operationColumns,
+        "cashuMelt.quoteId",
+        "cashuMelt.lnInvoice",
+        "cashuMelt.feeReserve",
+        "cashuMelt.inputsTotal",
+        "cashuMelt.purpose",
+        "cashuMelt.expiresAt",
+      ])
+      .where("cashuOperation.isDeleted", "is not", sqliteTrue)
+      .where("cashuOperation.id", "=", id)
+      .where("cashuOperation.kind", "=", "melt")
+      .$narrowType<
+        NotNullOperation & {
+          quoteId: KyselyNotNull
+          feeReserve: KyselyNotNull
+          inputsTotal: KyselyNotNull
+        }
+      >()
+  )
+export type CashuMeltRow = InferRow<ReturnType<typeof cashuMeltQuery>>
 
-export const decodeCashuProofCopies = (
-  rows: ReadonlyArray<unknown>
-): ReadonlyArray<CashuProofCopy> =>
-  decodeRows(CashuProofCopySchema, rows) as ReadonlyArray<CashuProofCopy>
+/** Topups still waiting for their quote to be paid and claimed. */
+export const pendingCashuTopupsQuery = createQuery((db) =>
+  db
+    .selectFrom("cashuOperation")
+    .innerJoin("cashuTopup", "cashuTopup.id", "cashuOperation.id")
+    .select([
+      "cashuOperation.id",
+      "cashuOperation.mintUrl",
+      "cashuOperation.createdAt",
+      "cashuTopup.quoteId",
+    ])
+    .where("cashuOperation.isDeleted", "is not", sqliteTrue)
+    .where("cashuOperation.kind", "=", "topup")
+    .where("cashuOperation.status", "=", "pending")
+    // Settled, whatever a late write left in `status` (cashu/0022).
+    .where("cashuOperation.settledAt", "is", null)
+    .$narrowType<{ mintUrl: KyselyNotNull }>()
+)
 
-export const decodeCashuOperationCopies = (
-  rows: ReadonlyArray<unknown>
-): ReadonlyArray<CashuOperationCopy> =>
-  decodeRows(
-    CashuOperationCopySchema,
-    rows
-  ) as ReadonlyArray<CashuOperationCopy>
+/**
+ * Topups another device closed as contested (cashu/0029) on which this
+ * device holds an attempt of its own no mark settled: its claim may have
+ * been signed where no device looked before the close.
+ */
+export const contestedCashuTopupsWithOwnAttemptQuery = createQuery((db) =>
+  db
+    .selectFrom("cashuOperation")
+    .innerJoin(
+      "cashuOperationAttempt",
+      "cashuOperationAttempt.operationId",
+      "cashuOperation.id"
+    )
+    .innerJoin(
+      "_cashuOwnAttempt",
+      "_cashuOwnAttempt.id",
+      "cashuOperationAttempt.id"
+    )
+    .select(["cashuOperation.id"])
+    .distinct()
+    .where("cashuOperation.isDeleted", "is not", sqliteTrue)
+    .where("cashuOperation.kind", "=", "topup")
+    .where("cashuOperation.settledAt", "is not", null)
+    .where("cashuOperationAttempt.isDeleted", "is not", sqliteTrue)
+    .where("cashuOperationAttempt.isRejected", "is not", sqliteTrue)
+    .where("cashuOperationAttempt.isContested", "is not", sqliteTrue)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("cashuOperationAttempt as contested")
+          .select("contested.id")
+          .whereRef("contested.operationId", "=", "cashuOperation.id")
+          .where("contested.isDeleted", "is not", sqliteTrue)
+          .where("contested.isContested", "=", sqliteTrue)
+      )
+    )
+)
 
-/** The available balance per mint over merged proofs, as Linky's balance reads it. */
-export const sumAvailableByMint = (
-  proofs: ReadonlyArray<CashuProofCopy>
-): ReadonlyMap<MintUrl, number> => {
-  const balances = new Map<MintUrl, number>()
-  for (const proof of proofs) {
-    if (proof.state !== "available" || proof.unit !== "sat") continue
-    balances.set(proof.mint, (balances.get(proof.mint) ?? 0) + proof.amount)
-  }
-  return balances
-}
+/** The move a melt pays for, when it is a move's source. */
+export const cashuMoveByMeltQuery = (meltOperationId: CashuOperationId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuMove")
+      .select(["topupOperationId", "sourceMintUrl"])
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("meltOperationId", "=", meltOperationId)
+      .$narrowType<{
+        topupOperationId: KyselyNotNull
+        sourceMintUrl: KyselyNotNull
+      }>()
+  )
+
+/** Melts sent whose outcome the mint has not told yet. */
+export const pendingCashuMeltsQuery = createQuery((db) =>
+  db
+    .selectFrom("cashuOperation")
+    .select(["id", "createdAt"])
+    .where("isDeleted", "is not", sqliteTrue)
+    .where("kind", "=", "melt")
+    .where("status", "=", "pending")
+    .where("settledAt", "is", null)
+)
+
+/**
+ * The account's trusted mints (cashu/0016, cashu/0013): its one row, no row
+ * on a device that has not synced it. `trustedCashuMintsOf` reads it.
+ */
+export const cashuTrustedMintsQuery = createQuery((db) =>
+  db
+    .selectFrom("cashuMintTrust")
+    .select(["trustedMintsJson", "seedMintUrl"])
+    .where("isDeleted", "is not", sqliteTrue)
+    .where("id", "=", cashuMintTrustId)
+)
+
+export const cashuCounterQuery = (mint: MintUrl, keysetId: KeysetId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("_cashuCounter")
+      .select(["next", "orphansRecovered"])
+      .where("id", "=", cashuCounterIdFor(mint, keysetId))
+  )
+
+/** A mint's info and keysets cached on this device (`_cashuMintCache`). */
+export const cashuMintCacheQuery = (mint: MintUrl) =>
+  createQuery((db) =>
+    db
+      .selectFrom("_cashuMintCache")
+      .select(["infoJson", "keychainJson"])
+      .where("id", "=", cashuMintCacheIdFor(mint))
+      .where("isDeleted", "is not", sqliteTrue)
+  )
+
+/**
+ * The first slot past every block on record at the keyset, any device's
+ * (cashu/0031); null when there is none.
+ */
+export const cashuAttemptsEndQuery = (keysetId: KeysetId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuOperationAttempt")
+      .select((eb) =>
+        eb.fn.max<number | null>(eb("counter", "+", eb.ref("slots"))).as("end")
+      )
+      .where("isDeleted", "is not", sqliteTrue)
+      .where("keysetId", "=", keysetId)
+  )
+
+/**
+ * Every block at the keyset the mint did not refuse, with what its
+ * operation is now (cashu/0031).
+ */
+export const cashuLiveAttemptsAtKeysetQuery = (keysetId: KeysetId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuOperationAttempt")
+      .leftJoin(
+        "cashuOperation",
+        "cashuOperation.id",
+        "cashuOperationAttempt.operationId"
+      )
+      .select([
+        "cashuOperationAttempt.counter",
+        "cashuOperationAttempt.slots",
+        "cashuOperation.kind",
+        "cashuOperation.status",
+        "cashuOperation.settledAt",
+      ])
+      .where("cashuOperationAttempt.isDeleted", "is not", sqliteTrue)
+      .where("cashuOperationAttempt.keysetId", "=", keysetId)
+      .where("cashuOperationAttempt.isRejected", "is not", sqliteTrue)
+      .$narrowType<{ counter: KyselyNotNull; slots: KyselyNotNull }>()
+  )
+
+/**
+ * Blocks of other operations that share a slot with `from..to` at the keyset
+ * and that the mint did not refuse, with what their operation is now
+ * (cashu/0029).
+ */
+export const cashuOverlappingAttemptsQuery = ({
+  operationId,
+  keysetId,
+  from,
+  to,
+}: {
+  readonly operationId: CashuOperationId
+  readonly keysetId: KeysetId
+  readonly from: number
+  readonly to: number
+}) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuOperationAttempt")
+      .leftJoin(
+        "cashuOperation",
+        "cashuOperation.id",
+        "cashuOperationAttempt.operationId"
+      )
+      .select([
+        "cashuOperationAttempt.id",
+        "cashuOperationAttempt.operationId",
+        "cashuOperationAttempt.counter",
+        "cashuOperationAttempt.slots",
+        "cashuOperationAttempt.role",
+        "cashuOperation.kind",
+        "cashuOperation.status",
+        "cashuOperation.settledAt",
+      ])
+      .where("cashuOperationAttempt.isDeleted", "is not", sqliteTrue)
+      .where("cashuOperationAttempt.keysetId", "=", keysetId)
+      .where("cashuOperationAttempt.operationId", "!=", operationId)
+      .where("cashuOperationAttempt.isRejected", "is not", sqliteTrue)
+      .where("cashuOperationAttempt.counter", "<", NonNegativeInteger(to))
+      .where((eb) =>
+        eb(
+          eb(
+            "cashuOperationAttempt.counter",
+            "+",
+            eb.ref("cashuOperationAttempt.slots")
+          ),
+          ">",
+          NonNegativeInteger(from)
+        )
+      )
+      .$narrowType<{
+        operationId: KyselyNotNull
+        counter: KyselyNotNull
+        slots: KyselyNotNull
+        role: KyselyNotNull
+      }>()
+  )
+
+/**
+ * Every NUT-13 reservation any device made for the operation (cashu/0029),
+ * `ownId` set on this device's own, lowest slot first.
+ */
+export const cashuOperationAttemptsQuery = (operationId: CashuOperationId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("cashuOperationAttempt")
+      .leftJoin(
+        "_cashuOwnAttempt",
+        "_cashuOwnAttempt.id",
+        "cashuOperationAttempt.id"
+      )
+      .select([
+        "cashuOperationAttempt.id",
+        "cashuOperationAttempt.keysetId",
+        "cashuOperationAttempt.counter",
+        "cashuOperationAttempt.slots",
+        "cashuOperationAttempt.role",
+        "cashuOperationAttempt.isRejected",
+        "cashuOperationAttempt.isContested",
+        "cashuOperationAttempt.createdAt",
+        "_cashuOwnAttempt.id as ownId",
+        "_cashuOwnAttempt.isFence as ownIsFence",
+      ])
+      .where("cashuOperationAttempt.isDeleted", "is not", sqliteTrue)
+      .where("cashuOperationAttempt.operationId", "=", operationId)
+      .orderBy("cashuOperationAttempt.counter")
+      .$narrowType<{
+        keysetId: KyselyNotNull
+        counter: KyselyNotNull
+        slots: KyselyNotNull
+        role: KyselyNotNull
+      }>()
+  )
+
+/** What the wait screen shows of a token sent for the payment. */
+export const cashuTokenArrivalQuery = (paymentId: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("_cashuTokenArrival")
+      .select(["mintUrl", "amount", "fee", "state", "failure"])
+      .where("id", "=", cashuTokenArrivalIdFor(paymentId))
+      .$narrowType<{
+        mintUrl: KyselyNotNull
+        amount: KyselyNotNull
+        state: KyselyNotNull
+      }>()
+  )
+
+/** How many operations the wallet holds, for the debug card. */
+export const cashuOperationCountQuery = createQuery((db) =>
+  db
+    .selectFrom("cashuOperation")
+    .select((eb) => [eb.fn.countAll<number>().as("count")])
+    .where("isDeleted", "is not", sqliteTrue)
+)

@@ -50,18 +50,6 @@ export const PinAttemptBaseIdRaw = id("PinAttemptBase")
 export const PinAttemptBaseId = standardSchemaToZod(PinAttemptBaseIdRaw)
 export type PinAttemptBaseId = typeof PinAttemptBaseIdRaw.Output
 
-export const CashuCounterIdRaw = id("CashuCounter")
-export const CashuCounterId = standardSchemaToZod(CashuCounterIdRaw)
-export type CashuCounterId = typeof CashuCounterIdRaw.Output
-
-export const CashuClaimAttemptIdRaw = id("CashuClaimAttempt")
-export const CashuClaimAttemptId = standardSchemaToZod(CashuClaimAttemptIdRaw)
-export type CashuClaimAttemptId = typeof CashuClaimAttemptIdRaw.Output
-
-export const CashuKnownMintIdRaw = id("CashuKnownMint")
-export const CashuKnownMintId = standardSchemaToZod(CashuKnownMintIdRaw)
-export type CashuKnownMintId = typeof CashuKnownMintIdRaw.Output
-
 export const QerkoTerminalSelectionIdRaw = id("QerkoTerminalSelection")
 export const QerkoTerminalSelectionId = standardSchemaToZod(
   QerkoTerminalSelectionIdRaw
@@ -155,41 +143,6 @@ const deviceEvoluSchema = {
     accountId: DeviceAccountId,
     unblockToken: NonEmptyString255Schema.nullable(),
     baseCount: NonNegativeIntegerSchema,
-  },
-  /**
-   * NUT-13 counters of the shared Cashu wallet, per account and
-   * `mint|unit|keysetId` (cashu.md §3): the next free derivation slot. Local
-   * to this device on purpose, as Linky keeps its own; never moves back.
-   */
-  cashuCounter: {
-    id: CashuCounterId,
-    accountId: DeviceAccountId,
-    scope: z.string().min(1).max(1200),
-    next: NonNegativeIntegerSchema,
-  },
-  /**
-   * The counter this device reserved for a Cashu operation's claim or swap:
-   * the one way to tell its own attempt from someone else's synced counter
-   * (decision 11).
-   */
-  cashuClaimAttempt: {
-    id: CashuClaimAttemptId,
-    accountId: DeviceAccountId,
-    operationId: z.string().min(1).max(100),
-    counter: NonNegativeIntegerSchema,
-  },
-  /**
-   * Mints this device has loaded (`seen`) or the merchant added by URL
-   * (`added`), per account; with the mints proofs and operations name, they
-   * are the known mints (Linky's `knownMints`). Removing a mint tombstones
-   * its rows.
-   */
-  cashuKnownMint: {
-    id: CashuKnownMintId,
-    accountId: DeviceAccountId,
-    mint: z.string().min(1).max(1000),
-    seen: SqliteBoolSchema.nullable(),
-    added: SqliteBoolSchema.nullable(),
   },
   /**
    * The Qerko terminal this device pays on, per account (qerko/0001): the

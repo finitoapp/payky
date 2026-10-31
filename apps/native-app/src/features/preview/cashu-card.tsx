@@ -1,44 +1,42 @@
 import { ok } from "@evolu/common"
 import {
-  counterScopeOf,
-  withCashuCounter,
-} from "@payky/core/cashu/cashu-counters"
-import {
   buildBip321PaymentUri,
   encodeNostrPaymentRequest,
   pickBip321PayableLeg,
 } from "@payky/core/cashu/cashu-payment-request"
-import type { CashuShardStore } from "@payky/core/cashu/cashu-shard-store"
 import {
   createCashuWalletDep,
   loadCashuWallet,
 } from "@payky/core/cashu/cashu-wallet"
 import { createFakeCashuMint } from "@payky/core/cashu/fake-cashu-mint"
-import { cashuCounterQuery } from "@payky/core/evolu/device-cashu"
-import { MintUrl } from "@payky/core/modules/cashu/cashu-types"
+import { withCashuCounter } from "@payky/core/modules/cashu/cashu-counter-actions"
+import { cashuCounterQuery } from "@payky/core/modules/cashu/cashu-queries"
 import {
-  cashuOperationIdFor,
+  CashuQuoteId,
+  CashuTokenText,
+  MintUrl,
+} from "@payky/core/modules/cashu/cashu-types"
+import {
+  cashuMeltOperationIdFor,
   cashuProofIdFor,
-  linkySettingIdFor,
+  cashuReceiveOperationIdFor,
+  cashuTopupOperationIdFor,
   normalizeCashuTokenText,
   normalizeMintUrl,
-  operationKeyOf,
-  shardPointerIdFor,
 } from "@payky/core/modules/cashu/cashu-utils"
 import { CashuWalletSeed } from "@payky/core/modules/shared/key-derivation"
 import { useAtomValue } from "jotai"
 import { useState } from "react"
 import { Text, View } from "tamagui"
-import { accountAtom } from "../../atoms/account.ts"
-import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
+import { evoluAtom } from "../../atoms/evolu.ts"
 import { Button } from "../../components/ui/button.tsx"
 import { nativeRun } from "../../core/native-runtime.ts"
 import { lockManager } from "../../platform/evolu-runtime"
 
 /*
- * Vectors below are COPIED from packages/core/src/modules/cashu/
- * cashu-cross-app.test.ts, the source of truth shared byte for byte with
- * Linky (not exported there). Keep them identical to that file.
+ * Vectors below are COPIED from `packages/core/src/modules/cashu/
+ * cashu-utils.test.ts` and `packages/core/src/cashu/cashu-payment-
+ * request.test.ts`, run again on Hermes. Keep them identical to those files.
  */
 
 const MINT_URL_VECTORS: ReadonlyArray<
@@ -63,70 +61,19 @@ const MINT_URL_VECTORS: ReadonlyArray<
   ["ftp://x.y", null],
 ]
 
-const OPERATION_KEY_VECTORS: ReadonlyArray<{
-  readonly operation: {
-    readonly kind: "topup" | "receive" | "melt"
-    readonly mint: string
-    readonly quoteId: string | null
-    readonly tokenText: string | null
-  }
-  readonly key: string
-  readonly id: string
-}> = [
-  {
-    operation: {
-      kind: "topup",
-      mint: "https://cashu.cz",
-      quoteId: "q1",
-      tokenText: null,
-    },
-    key: "topup|https://cashu.cz|q1",
-    id: "BGlgDe11qmFny9YMFDFEMA",
-  },
-  {
-    operation: {
-      kind: "receive",
-      mint: "https://cashu.cz",
-      quoteId: null,
-      tokenText: "cashuBabc",
-    },
-    key: "receive|cashuBabc",
-    id: "Jp7BJO58G7fLgNCYxFZ5vw",
-  },
-  {
-    operation: {
-      kind: "melt",
-      mint: "https://cashu.cz",
-      quoteId: null,
-      tokenText: null,
-    },
-    key: "melt|https://cashu.cz|",
-    id: "SyizwpKPhVHxry_Apy878A",
-  },
-  {
-    operation: {
-      kind: "melt",
-      mint: "https://cashu.cz",
-      quoteId: "m1",
-      tokenText: "cashuBenv",
-    },
-    key: "melt|https://cashu.cz|m1",
-    id: "v8OkMn4X0n6QC4aCZBJqWQ",
-  },
-]
+/** Operation ids every device derives alike. */
+const OPERATION_ID_VECTORS = {
+  topup: "BGlgDe11qmFny9YMFDFEMA",
+  receive: "Jp7BJO58G7fLgNCYxFZ5vw",
+  melt: "v8OkMn4X0n6QC4aCZBJqWQ",
+}
 
 const PROOF_ID_VECTOR = {
   secret: "407915bc212be61a77e3e6d2aeb4c727980bda51cd06a6afc29e2861768a7837",
   id: "BZPKWM_sfeFRihXDyPbdLw",
 }
 
-/** `createIdFromString` of the meta rows, as Linky's `shardPointerId`/`settingIdFor`. */
-const META_ROW_ID_VECTORS = {
-  cashuShardPointer: "w3pAg-Ph4dKu9GiB84K7cw",
-  defaultMintSetting: "d1KTr4HXiQVodmiXwSA3ig",
-}
-
-/** Linky's `buildBip321PaymentUri`, then `pickBip321PayableLeg` of its parse. */
+/** `buildBip321PaymentUri`, then `pickBip321PayableLeg` of its parse. */
 const BIP321_VECTORS: ReadonlyArray<{
   readonly legs: { readonly lightning?: string; readonly creq?: string }
   readonly uri: string | null
@@ -155,7 +102,7 @@ const BIP321_VECTORS: ReadonlyArray<{
   },
 ]
 
-/** Linky's `encodeNostrPaymentRequest` of the same arguments. */
+/** What `encodeNostrPaymentRequest` makes of these. */
 const NUT18_VECTORS = [
   {
     args: {
@@ -181,7 +128,7 @@ const NUT18_VECTORS = [
   },
 ]
 
-/** Linky's `normalizeTokenText`: what a receive's operation id hashes. */
+/** What a receive's operation id hashes. */
 const TOKEN_TEXT_VECTORS: ReadonlyArray<
   readonly [input: string, tokenText: string | null]
 > = [
@@ -219,44 +166,34 @@ const runVectors = (): string[] => [
   ...MINT_URL_VECTORS.map(([input, out], i) =>
     check(`mintUrl#${i}`, normalizeMintUrl(input), out)
   ),
-  ...OPERATION_KEY_VECTORS.map((v, i) =>
-    check(
-      `opKey#${i}`,
-      [operationKeyOf(v.operation), cashuOperationIdFor(v.key)],
-      [v.key, v.id]
-    )
+  check(
+    "operationIds",
+    {
+      topup: cashuTopupOperationIdFor(
+        MintUrl("https://cashu.cz"),
+        CashuQuoteId("q1")
+      ),
+      receive: cashuReceiveOperationIdFor(CashuTokenText("cashuBabc")),
+      melt: cashuMeltOperationIdFor(
+        MintUrl("https://cashu.cz"),
+        CashuQuoteId("m1")
+      ),
+    },
+    OPERATION_ID_VECTORS
   ),
   check("proofId", cashuProofIdFor(PROOF_ID_VECTOR.secret), PROOF_ID_VECTOR.id),
-  check(
-    "metaRows",
-    [shardPointerIdFor("cashu"), linkySettingIdFor("defaultMint")],
-    [
-      META_ROW_ID_VECTORS.cashuShardPointer,
-      META_ROW_ID_VECTORS.defaultMintSetting,
-    ]
-  ),
 ]
 
 /**
  * Diagnostic mint: a fixed fake URL and key seed, so its keyset id (and thus
  * the counter scope) is identical on every launch. Counters are keyed by
- * account|mint|unit|keyset, so this scope can never collide with a real mint.
+ * mint|unit|keyset, so this scope can never collide with a real mint.
  */
 const DIAGNOSTIC_MINT = MintUrl("https://diagnostic.fake-mint.invalid")
 const DIAGNOSTIC_KEY_SEED = new Uint8Array(32).fill(7)
 
-/**
- * Not a real shard store: the wrapper only reads proofs (foreign-keyset
- * check, restore), and this diagnostic must never write Linky tables.
- */
-const emptyShardStore = {
-  loadProofs: async () => [],
-  insertProofs: async () => {},
-} as unknown as CashuShardStore
-
 export function CashuCard() {
-  const account = useAtomValue(accountAtom)
-  const deviceEvolu = useAtomValue(deviceEvoluAtom)
+  const evolu = useAtomValue(evoluAtom)
   const [text, setText] = useState("-")
   const [busy, setBusy] = useState(false)
 
@@ -279,13 +216,17 @@ export function CashuCard() {
     return {
       fake,
       deps: {
-        deviceEvolu,
+        // The account's database: the diagnostic mint's keyset owns no proof
+        // there, and its counter scope is its own.
+        evolu,
+        evoluOwner: evolu.appOwner,
         lockManager,
-        cashuShardStore: emptyShardStore,
+        // Never synced as far as the counter knows: the diagnostic stores no
+        // orphan into the account's wallet (cashu/0031).
+        appOwnerSync: { state: () => ({ type: "pending" as const }) },
         // Throwaway seed per press, never the account's.
         ...createCashuWalletDep({
           seed: CashuWalletSeed(crypto.getRandomValues(new Uint8Array(64))),
-          deviceAccountId: account.id,
           fetch: fake.fetch,
         }),
       },
@@ -317,20 +258,17 @@ export function CashuCard() {
       await using run = nativeRun.create(deps)
       const loaded = await run(loadCashuWallet(DIAGNOSTIC_MINT))
       if (!loaded.ok) return `load failed ${loaded.error.type}`
-      const scope = counterScopeOf(loaded.value, loaded.value.keysetId)
-      const result = await withCashuCounter(
-        deps,
-        loaded.value,
-        scope,
-        async (held) => {
+      const { keysetId } = loaded.value
+      const result = await run(
+        withCashuCounter(loaded.value, keysetId, (held) => async () => {
           const before = held.current()
           const after = await held.advanceTo(before + 5)
           return ok({ before, after })
-        }
+        })
       )
       if (!result.ok) return `reserve failed ${result.error.type}`
-      const [row] = await deviceEvolu.loadQuery(
-        cashuCounterQuery(account.id, scope)
+      const [row] = await evolu.loadQuery(
+        cashuCounterQuery(DIAGNOSTIC_MINT, keysetId)
       )
       return `counter ${result.value.before} -> ${result.value.after}\nstored: ${row?.next ?? "none"}`
     })

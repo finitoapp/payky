@@ -5,6 +5,7 @@ import {
 } from "@evolu/common"
 import { createQuery } from "../../evolu/schema.ts"
 import type { BillId } from "../bill/bill-types.ts"
+import type { CashuOperationId } from "../cashu/cashu-types.ts"
 import { quotedAmountSatsSql } from "../shared/claimed-amount.ts"
 import type { NonEmptyString, NonEmptyString255 } from "../shared/schema.ts"
 import type { PaymentId } from "./payment-types.ts"
@@ -921,7 +922,6 @@ export const paymentRequestQuery = (paymentId: PaymentId) =>
         "paymentCashu.lnInvoice as cashuLnInvoice",
         "paymentCashu.mintUrl as cashuMintUrl",
         "paymentCashu.quoteExpiresAt as cashuQuoteExpiresAt",
-        "paymentCashu.receiveOperationId as cashuReceiveOperationId",
         "paymentLightningAddress.accountId as lightningAddressAccountId",
         "paymentLightningAddress.amountSats as lightningAddressAmountSats",
         "paymentLightningAddress.lnInvoice as lightningAddressLnInvoice",
@@ -985,24 +985,75 @@ export const paymentIdsByLnInvoiceQuery = (lnInvoice: NonEmptyString) =>
   )
 
 /**
- * The mint quotes of Payky's Cashu payments: which pending `topup`
- * operations in the shared wallet the Cashu job settles. Linky's own topups
- * are Linky's to resume.
+ * The payments that hold a token's receive (cashu/0036), open or not: a
+ * token's arrival is still shown on its payment after it expired
+ * (cashu/0034).
  */
-export const cashuPaymentQuotesQuery = createQuery((db) =>
-  db
-    .selectFrom("paymentCashu")
-    .innerJoin("payment", "payment.id", "paymentCashu.id")
-    .select(["paymentCashu.quoteId", "paymentCashu.mintUrl"])
-    .where("paymentCashu.isDeleted", "is not", sqliteTrue)
-    .where("payment.isDeleted", "is not", sqliteTrue)
-    .where("paymentCashu.quoteId", "is not", null)
-    .where("paymentCashu.mintUrl", "is not", null)
-    .$narrowType<{ quoteId: KyselyNotNull; mintUrl: KyselyNotNull }>()
-)
+export const paymentsHoldingCashuReceiveQuery = (
+  receiveOperationId: CashuOperationId
+) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentCashuReceiveHold")
+      .innerJoin("payment", "payment.id", "paymentCashuReceiveHold.paymentId")
+      .select("payment.id as paymentId")
+      .where(
+        "paymentCashuReceiveHold.receiveOperationId",
+        "=",
+        receiveOperationId
+      )
+      .where("paymentCashuReceiveHold.isDeleted", "is not", sqliteTrue)
+      .where("payment.isDeleted", "is not", sqliteTrue)
+  )
 
 /**
- * The payments a Cashu token may pay (cashu/0006): every one with a Cashu
+ * The Lightning payments of a payment's Cashu method that a contest gave to
+ * no one (cashu/0029): a quote the payment holds (cashu/0036) whose topup
+ * carries the contest's mark (cashu/0029). The sats are in the Cashu
+ * wallet, unbooked, and the payment stays unpaid for the merchant to
+ * settle.
+ */
+export const paymentCashuContestedTopupsQuery = (paymentId: PaymentId) =>
+  createQuery((db) =>
+    db
+      .selectFrom("paymentCashuQuoteHold")
+      .innerJoin(
+        "cashuTopup",
+        "cashuTopup.quoteId",
+        "paymentCashuQuoteHold.quoteId"
+      )
+      .innerJoin("cashuOperation", (join) =>
+        join
+          .onRef("cashuOperation.id", "=", "cashuTopup.id")
+          .onRef("cashuOperation.mintUrl", "=", "paymentCashuQuoteHold.mintUrl")
+      )
+      .select([
+        "cashuOperation.id as operationId",
+        "cashuOperation.amount",
+        "cashuOperation.mintUrl",
+      ])
+      .where("paymentCashuQuoteHold.paymentId", "=", paymentId)
+      .where("paymentCashuQuoteHold.isDeleted", "is not", sqliteTrue)
+      .where("cashuOperation.isDeleted", "is not", sqliteTrue)
+      .where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("cashuOperationAttempt")
+            .select("cashuOperationAttempt.id")
+            .whereRef(
+              "cashuOperationAttempt.operationId",
+              "=",
+              "cashuOperation.id"
+            )
+            .where("cashuOperationAttempt.isContested", "=", sqliteTrue)
+            .where("cashuOperationAttempt.isDeleted", "is not", sqliteTrue)
+        )
+      )
+      .$narrowType<{ amount: KyselyNotNull; mintUrl: KyselyNotNull }>()
+  )
+
+/**
+ * The payments a NUT-18 payload may name (cashu/0006, cashu/0028): every one with a Cashu
  * method, with what decides whether it is still open. Few rows: only
  * payments a Cashu tab was opened for.
  */
@@ -1015,8 +1066,6 @@ export const cashuTokenCandidatePaymentsQuery = createQuery((db) =>
       "payment.canceledAt",
       "payment.confirmedPaidAt",
       "payment.expiresAt",
-      "paymentCashu.amountSats",
-      "paymentCashu.receiveOperationId",
       eb
         .exists(
           eb

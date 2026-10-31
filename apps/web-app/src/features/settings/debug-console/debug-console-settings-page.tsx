@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx"
-import { CashuShardDebugCard } from "@/features/settings/debug-console/cashu-shard-debug-card.tsx"
+import { CashuWalletDebugCard } from "@/features/settings/debug-console/cashu-wallet-debug-card.tsx"
 import { useConsoleHistory } from "@/hooks/use-console.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { cn } from "@/lib/utils.ts"
@@ -49,7 +49,7 @@ export function DebugConsoleSettingsPage() {
 
       {import.meta.env.DEV ? (
         <Suspense fallback={null}>
-          <CashuShardDebugCard />
+          <CashuWalletDebugCard />
         </Suspense>
       ) : null}
 

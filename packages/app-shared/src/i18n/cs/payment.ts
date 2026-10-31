@@ -253,11 +253,23 @@ export const csPayment = {
   "paymentWait.cashu.arrival.waitingForMint":
     "Přišel token na {amount} sat. Čekám, až odpoví mint {mint}...",
   "paymentWait.cashu.arrival.untrustedMint":
-    "Token na {amount} sat přišel z {mint}, což není výchozí mint. Nebyl přijat a tuto platbu nezaplatí.",
+    "Token na {amount} sat přišel z {mint}, kterému nedůvěřujete. Nebyl přijat a tuto platbu nezaplatí.",
+  "paymentWait.cashu.arrival.receivingElsewhere":
+    "Token na {amount} sat z {mint} přijímá jiné zařízení Payky tohoto účtu. Čekám na něj...",
+  "paymentWait.cashu.arrival.checkingElsewhere":
+    "Token na {amount} sat z {mint} už byl utracen. Ověřuji, zda ho nepřijalo jiné zařízení Payky tohoto účtu...",
+  "paymentWait.cashu.arrival.receivedElsewhere":
+    "Token na {amount} sat z {mint} přijala dřív jiná peněženka, možná Linky se stejným klíčem. Platba tu zůstává nezaplacená; pokud jsou peníze v Linky, vyřiďte ji ručně.",
+  "paymentWait.cashu.arrival.contested":
+    "Token na {amount} sat z {mint} skončil ve slotech, které mohla použít i jiná operace tohoto účtu. Satoshi jsou v Cashu peněžence, ale Payky nepozná, kterou z obou zaplatily: platba tu zůstává nezaplacená; vyřiďte ji ručně.",
+  "paymentWait.cashu.lightning.contested":
+    "Platba Lightning na {amount} sat do {mint} skončila ve slotech, které mohla použít i jiná operace tohoto účtu. Satoshi jsou v Cashu peněžence, ale Payky nepozná, kterou z obou zaplatily: platba tu zůstává nezaplacená; vyřiďte ji ručně.",
   "paymentWait.cashu.failure.mintUnreachable":
     "Mint neodpověděl. Token zkusím znovu.",
   "paymentWait.cashu.failure.mintRejected":
     "Mint token odmítl. Platba zůstává nezaplacená.",
+  "paymentWait.cashu.failure.unsupported":
+    "Token je z mintu, který Payky nemůže použít: neuvádí NUT-07 a NUT-09. Platba zůstává nezaplacená.",
   "paymentWait.cashu.failure.locked":
     "Token je zamčený pro někoho jiného. Platba zůstává nezaplacená.",
   "paymentWait.cashu.failure.undecodable":
@@ -266,8 +278,6 @@ export const csPayment = {
     "Peněženka už tento token má. Platba zůstává nezaplacená.",
   "paymentWait.cashu.failure.fee":
     "Poplatek mintu by vzal celý token. Platba zůstává nezaplacená.",
-  "paymentWait.cashu.failure.spent":
-    "Token už byl utracen. Platba zůstává nezaplacená.",
   "paymentWait.cashu.newQuote": "Nová faktura",
   "paymentWait.method.card": "Platební karta",
   "paymentWait.method.cash": "Hotovost",

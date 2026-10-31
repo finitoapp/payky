@@ -60,7 +60,7 @@ export function VerticalNav({
   return (
     <div className={cn(verticalNavShellClassName, className)}>
       {title && <div className={verticalNavTitleClassName}>{title}</div>}
-      <nav className={"divide-y"}>
+      <nav className={"divide-y"} aria-label={title}>
         {items.length === 0 && empty !== undefined ? (
           <NavItemComponent
             item={{ kind: "static", disableAction: true, label: empty }}

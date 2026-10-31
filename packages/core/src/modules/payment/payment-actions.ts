@@ -1,5 +1,6 @@
 import type { Query } from "@evolu/common"
 import {
+  createIdFromString,
   err,
   type InsertValues,
   type MutationOptions,
@@ -32,7 +33,11 @@ import {
 import { deriveManualPaymentAccountTransactionId } from "../account-transaction/account-transaction-utils.ts"
 import { requireBillAcceptingPayment } from "../bill/bill-guards.ts"
 import type { BillLineSummary } from "../bill-line/bill-line-summary.ts"
-import type { CashuOperationId } from "../cashu/cashu-types.ts"
+import type {
+  CashuOperationId,
+  CashuQuoteId,
+  MintUrl,
+} from "../cashu/cashu-types.ts"
 import type { DeviceId } from "../device/device-types.ts"
 import { snapshotBillLinesForPayment } from "../payment-line/payment-line-actions.ts"
 import {
@@ -1114,9 +1119,38 @@ export const acknowledgePaymentExcessSettlement =
   }
 
 /**
+ * Makes the payment hold a mint quote it was prepared with (cashu/0036), in
+ * the caller's batch: the quote's money is claimed for it whenever it lands,
+ * whatever quote the payment shows by then. Idempotent: the id derives from
+ * the payment, the mint and the quote.
+ */
+export const upsertPaymentCashuQuoteHold = (
+  evolu: EvoluDep["evolu"],
+  hold: {
+    readonly paymentId: PaymentId
+    readonly mintUrl: MintUrl
+    readonly quoteId: CashuQuoteId
+  },
+  options: MutationOptions
+): void => {
+  evolu.upsert(
+    "paymentCashuQuoteHold",
+    {
+      ...hold,
+      id: createIdFromString<"PaymentCashuQuoteHold">(
+        `payment-cashu-quote-hold|${hold.paymentId}|${hold.mintUrl}|${hold.quoteId}`
+      ),
+    },
+    options
+  )
+}
+
+/**
  * Makes the payment hold the receive of a token sent for it, before anyone
- * receives it (cashu.md §5): the id comes from the token text alone, so it is
- * right whether Payky, a running Linky or another device swaps the token.
+ * receives it (cashu.md §5, cashu/0036): the id comes from the token text
+ * alone, so it is right whether Payky, a running Linky or another device
+ * swaps the token. A hold is only ever added, so a second token or a new
+ * quote never takes this one away.
  */
 export const holdCashuReceive =
   ({
@@ -1128,9 +1162,15 @@ export const holdCashuReceive =
   }): Task<void, never, EvoluDep & EvoluOwnerDep> =>
   async (run) => {
     await runMutationWithCompletion((options) =>
-      run.deps.evolu.update(
-        "paymentCashu",
-        { id: paymentId, receiveOperationId },
+      run.deps.evolu.upsert(
+        "paymentCashuReceiveHold",
+        {
+          id: createIdFromString<"PaymentCashuReceiveHold">(
+            `payment-cashu-receive-hold|${paymentId}|${receiveOperationId}`
+          ),
+          paymentId,
+          receiveOperationId,
+        },
         { ...options, owner: run.deps.evoluOwner }
       )
     )

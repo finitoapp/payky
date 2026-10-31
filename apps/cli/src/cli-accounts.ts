@@ -230,7 +230,7 @@ export const registerAccountsCommand =
             }
 
             if (options.kind === "cashu") {
-              // The CLI has no Linky owners: the shared wallet lives there.
+              // The CLI loads no Cashu wallet: the wallet runs in the app.
               printCliError(
                 run.deps.console,
                 "A Cashu account is enabled in the app's settings."

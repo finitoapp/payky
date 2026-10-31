@@ -8,10 +8,17 @@ import {
   type UpdateValues,
 } from "@evolu/common"
 import type { RequireExactlyOne, Simplify } from "type-fest"
-import { seedCashuDefaultMint } from "../../cashu/cashu-mints.ts"
-import type { CashuShardStoreDep } from "../../cashu/cashu-shard-store.ts"
-import type { DateDep, EvoluOwnerDep, MasterKeyDep } from "../../deps.ts"
+import type {
+  AppOwnerSyncDep,
+  DateDep,
+  EvoluOwnerDep,
+  MasterKeyDep,
+} from "../../deps.ts"
 import { defineError } from "../../error.ts"
+import {
+  loadCashuMintSeedDue,
+  upsertCashuMintSeed,
+} from "../cashu/cashu-mint-actions.ts"
 import { updateFioPluginAccountRow } from "../fio-plugin/fio-plugin-actions.ts"
 import { fioPluginByIdQuery } from "../fio-plugin/fio-plugin-queries.ts"
 import { fioPluginId } from "../fio-plugin/fio-plugin-utils.ts"
@@ -744,10 +751,13 @@ export const saveQerkoTerminalAccount =
   }
 
 /**
- * Enables or disables Cashu payments (cashu.md §4). The account's id derives
- * from Linky's app owner, so every device writes the same row. Enabling seeds
- * Linky's default mint into the shared wallet when it has none yet, as Linky's
- * onboarding does. Returns `null` when disabling an account that never existed.
+ * Enables or disables Cashu payments (cashu/0012). The account's id is fixed
+ * (cashu/0012), so every device writes the same row.
+ * Enabling on a device that knows no trusted mint and has synced seeds
+ * `MAIN_MINT_URL` in the same batch, in a cell any list the merchant wrote
+ * outranks (cashu/0013); one that has not synced leaves the seed to the
+ * Cashu job (cashu/0013).
+ * Returns `null` when disabling an account that never existed.
  */
 export const saveCashuAccount =
   ({
@@ -757,17 +767,18 @@ export const saveCashuAccount =
   }): Task<
     AccountId | null,
     never,
-    EvoluDep & EvoluOwnerDep & CashuShardStoreDep
+    EvoluDep & EvoluOwnerDep & AppOwnerSyncDep
   > =>
   async (run) => {
-    const { evolu, evoluOwner, cashuShardStore } = run.deps
+    const { evolu, evoluOwner } = run.deps
     const [current] = await evolu.loadQuery(cashuAccountQuery)
     if (!enabled && current === undefined) return ok(null)
 
-    const id = createCashuAccountId(cashuShardStore.linkyAppOwner.id)
-
+    const id = createCashuAccountId()
+    const seed = enabled && (await run.ok(loadCashuMintSeedDue))
     await runMutationWithCompletion((options) => {
       const mutationOptions = { ...options, owner: evoluOwner }
+      if (seed) upsertCashuMintSeed(evolu, mutationOptions)
       evolu.upsert("accountCashu", { id }, mutationOptions)
       if (current !== undefined && current.id !== id) {
         evolu.update(
@@ -788,12 +799,6 @@ export const saveCashuAccount =
         mutationOptions
       )
     })
-
-    // The shared wallet waits for Linky's owners to sync; the account does not.
-    if (enabled)
-      seedCashuDefaultMint(cashuShardStore).catch(() => {
-        // Best effort: without the row, payments use Linky's default anyway.
-      })
 
     return ok(id)
   }

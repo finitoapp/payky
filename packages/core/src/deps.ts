@@ -214,6 +214,30 @@ export type MasterKeyDep = { readonly masterKey: MasterKey }
 
 export type DeviceIdDep = { readonly deviceId: DeviceId }
 
+/**
+ * What this device knows it holds of the app owner's data (cashu/0013,
+ * cashu/0013):
+ *
+ * - `complete`: every relay has completed a sync since the app started, so
+ *   what this device lacks, no device had sent to a relay. Always so for an
+ *   account with no relay.
+ * - `pending`: a relay is still connecting or syncing, so more may arrive.
+ * - `blocked`: no relay is on its way any more, and those in `unreachable`
+ *   could not be synced with: what they hold stays unknown until they can.
+ */
+export type AppOwnerSyncState =
+  | { readonly type: "complete" }
+  | { readonly type: "pending" }
+  | {
+      readonly type: "blocked"
+      /** The labels of the relays that never completed a sync. */
+      readonly unreachable: ReadonlyArray<string>
+    }
+
+export type AppOwnerSyncDep = {
+  readonly appOwnerSync: { readonly state: () => AppOwnerSyncState }
+}
+
 /** The browser's `localStorage`, for the one migration that still reads it. */
 export type LocalStorageDep = {
   readonly localStorage: Pick<Storage, "getItem" | "removeItem">

@@ -39,6 +39,7 @@ const cashuQuoteErrorKeys = {
   AbortError: "withdraw.quoteError.generic",
   MintUnreachable: "withdraw.cashu.error.unreachable",
   MintRejected: "withdraw.cashu.error.rejected",
+  CashuMintUnsupported: "withdraw.cashu.error.unsupported",
   CashuWithdrawalAmountNeeded: "withdraw.amount.invalid",
   CashuWithdrawalToSelf: "withdraw.cashu.error.toSelf",
   CashuWithdrawalInvoiceExpired: "withdraw.error.lightningInvoiceExpired",
@@ -70,6 +71,7 @@ const cashuEarlyConfirmErrorKeys = {
   AbortError: "withdraw.review.error.interrupted",
   MintUnreachable: "withdraw.cashu.error.unreachable",
   MintRejected: "withdraw.cashu.error.rejected",
+  CashuMintUnsupported: "withdraw.cashu.error.unsupported",
   CounterLockTimeout: "withdraw.cashu.error.unreachable",
   QuoteExpired: "withdraw.error.quoteExpired",
   CashuInsufficientFunds: "withdraw.cashu.error.insufficient",
@@ -149,7 +151,7 @@ export const fundedMints = (
     .filter(([, balance]) => balance > 0)
     .toSorted(([a], [b]) => a.localeCompare(b))
 
-/** The chosen mint if still funded, else the default one if funded, else the first funded. */
+/** The chosen mint if still funded, else the default mint if funded, else the first funded. */
 export const withdrawMint = ({
   funded,
   chosen,

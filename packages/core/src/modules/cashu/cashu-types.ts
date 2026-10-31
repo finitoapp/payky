@@ -1,20 +1,9 @@
 import { id } from "@evolu/common"
 import { z } from "zod"
 import { standardSchemaToZod } from "../../zod-utils.ts"
-import {
-  NonNegativeIntegerSchema,
-  PositiveIntegerSchema,
-} from "../shared/schema.ts"
+import { PositiveIntegerSchema } from "../shared/schema.ts"
 
-/**
- * Linky's ids and column types (`packages/domain/src/ids.ts`,
- * `packages/linksync/src/model/schema.ts`, the decode rules of
- * `packages/linkshu/src/domain/primitives.ts`). Rows Payky writes must pass
- * Linky's decoders, or Linky silently skips them (cashu.md, "Writing rows
- * Linky can read"); the brands below are those rules. Nothing trims: a value
- * must be stored exactly as Linky would store it.
- */
-
+/** The proof id hashes the secret, so a synced or restored proof never duplicates. */
 export const CashuProofIdRaw = id("CashuProof")
 export const CashuProofId = standardSchemaToZod(CashuProofIdRaw)
 export type CashuProofId = typeof CashuProofIdRaw.Output
@@ -23,31 +12,31 @@ export const CashuOperationIdRaw = id("CashuOperation")
 export const CashuOperationId = standardSchemaToZod(CashuOperationIdRaw)
 export type CashuOperationId = typeof CashuOperationIdRaw.Output
 
-export const ShardPointerIdRaw = id("ShardPointer")
-export const ShardPointerId = standardSchemaToZod(ShardPointerIdRaw)
-export type ShardPointerId = typeof ShardPointerIdRaw.Output
+export const CashuMoveIdRaw = id("CashuMove")
+export const CashuMoveId = standardSchemaToZod(CashuMoveIdRaw)
+export type CashuMoveId = typeof CashuMoveIdRaw.Output
 
-/** Linky's `setting` table, not Payky's `appSettings` (docs/glossary.md). */
-export const LinkySettingIdRaw = id("Setting")
-export const LinkySettingId = standardSchemaToZod(LinkySettingIdRaw)
-export type LinkySettingId = typeof LinkySettingIdRaw.Output
+export const CashuMintTrustIdRaw = id("CashuMintTrust")
+export const CashuMintTrustId = standardSchemaToZod(CashuMintTrustIdRaw)
+export type CashuMintTrustId = typeof CashuMintTrustIdRaw.Output
 
-export const CashuBookingCursorIdRaw = id("CashuBookingCursor")
-export const CashuBookingCursorId = standardSchemaToZod(CashuBookingCursorIdRaw)
-export type CashuBookingCursorId = typeof CashuBookingCursorIdRaw.Output
+export const CashuCounterIdRaw = id("CashuCounter")
+export const CashuCounterId = standardSchemaToZod(CashuCounterIdRaw)
+export type CashuCounterId = typeof CashuCounterIdRaw.Output
 
-/** Evolu's `NonEmptyString100`/`NonEmptyString1000`, without trimming. */
-export const LinkyString100Schema = z
-  .string()
-  .min(1)
-  .max(100)
-  .brand<"LinkyString100">()
-export const LinkyString1000Schema = z
-  .string()
-  .min(1)
-  .max(1000)
-  .brand<"LinkyString1000">()
-export type LinkyString1000 = z.output<typeof LinkyString1000Schema>
+export const CashuOperationAttemptIdRaw = id("CashuOperationAttempt")
+export const CashuOperationAttemptId = standardSchemaToZod(
+  CashuOperationAttemptIdRaw
+)
+export type CashuOperationAttemptId = typeof CashuOperationAttemptIdRaw.Output
+
+export const CashuTokenArrivalIdRaw = id("CashuTokenArrival")
+export const CashuTokenArrivalId = standardSchemaToZod(CashuTokenArrivalIdRaw)
+export type CashuTokenArrivalId = typeof CashuTokenArrivalIdRaw.Output
+
+export const CashuMintCacheIdRaw = id("CashuMintCache")
+export const CashuMintCacheId = standardSchemaToZod(CashuMintCacheIdRaw)
+export type CashuMintCacheId = typeof CashuMintCacheIdRaw.Output
 
 const isHttpUrl = (value: string): boolean => {
   try {
@@ -62,9 +51,9 @@ const isHttpUrl = (value: string): boolean => {
 }
 
 /**
- * A mint's identity, normalised exactly as Linky normalises it
- * (`normalizeMintUrl` in `cashu-utils.ts`). Proofs, operations and counters
- * are keyed by this string, so two spellings of one mint fork the wallet.
+ * A mint's identity, normalised by `normalizeMintUrl` (`cashu-utils.ts`).
+ * Proofs, operations and counters are keyed by this string, so two spellings
+ * of one mint would fork the wallet.
  */
 export const MintUrlSchema = z
   .string()
@@ -79,9 +68,6 @@ export const MintUrlSchema = z
   .brand<"MintUrl">()
 export type MintUrl = z.output<typeof MintUrlSchema>
 export const MintUrl = MintUrlSchema.decode
-
-export const CashuUnitSchema = z.literal("sat")
-export type CashuUnit = z.output<typeof CashuUnitSchema>
 
 /** Hex keyset id bytes, even length (NUT-02). */
 export const KeysetIdSchema = z
@@ -120,66 +106,95 @@ export const CashuBolt11Schema = z
 export type CashuBolt11 = z.output<typeof CashuBolt11Schema>
 export const CashuBolt11 = CashuBolt11Schema.decode
 
-export const CashuQuoteIdSchema = LinkyString1000Schema
+/** A mint's quote id, unique within that mint only. */
+export const CashuQuoteIdSchema = z
+  .string()
+  .min(1)
+  .max(1000)
+  .brand<"CashuQuoteId">()
 export type CashuQuoteId = z.output<typeof CashuQuoteIdSchema>
+export const CashuQuoteId = CashuQuoteIdSchema.decode
 
 /** A positive amount in the wallet unit (sats). */
 export const CashuAmountSchema = PositiveIntegerSchema.brand<"CashuAmount">()
 export type CashuAmount = z.output<typeof CashuAmountSchema>
 export const CashuAmount = CashuAmountSchema.decode
 
-export const NonNegativeIntSchema = NonNegativeIntegerSchema
-export const PositiveIntSchema = PositiveIntegerSchema
-export const SqliteBooleanSchema = z.union([z.literal(0), z.literal(1)])
-
 /**
+ * What a proof is, read from its cells (cashu/0024):
+ *
  * - `available` — spendable balance
- * - `held` — inputs of an in-flight melt or an open envelope; a null
- *   `operationId` means its holder has not synced yet
- * - `handedOut` — in a token someone may claim
- * - `externalized` — handed off outside the app
- * - `spent` — terminal
+ * - `held` — an input of the in-flight melt its `operationId` names
+ * - `spent` — final
  */
-export const CashuProofStateSchema = z.enum([
-  "available",
-  "held",
-  "handedOut",
-  "externalized",
-  "spent",
-])
-export type CashuProofState = z.output<typeof CashuProofStateSchema>
+export type CashuProofState = "available" | "held" | "spent"
 
-export const CashuOperationKindSchema = z.enum([
-  "melt",
-  "topup",
-  "autoswap",
-  "send",
-  "receive",
-  "deferredReceive",
-  "envelope",
-])
+export const CashuOperationKindSchema = z.enum(["topup", "receive", "melt"])
 export type CashuOperationKind = z.output<typeof CashuOperationKindSchema>
 
 /**
- * Per kind (`linkshu/docs/concepts.md`): `topup`/`autoswap`/`receive` go
- * `pending` → `done` | `failed`; `melt` goes `pending` → `paid` | `unpaid` |
- * `failed`.
+ * `topup` and `receive` go `pending` → `done` | `failed`; `melt` goes
+ * `pending` → `paid` | `unpaid` | `failed`.
  */
 export const CashuOperationStatusSchema = z.enum([
   "pending",
+  "done",
   "paid",
   "unpaid",
-  "done",
   "failed",
-  "issued",
-  "externalized",
-  "returned",
 ])
 export type CashuOperationStatus = z.output<typeof CashuOperationStatusSchema>
 
+/** Why a topup exists: a payment's Lightning leg, or the target of a move. */
+export const CashuTopupPurposeSchema = z.enum(["payment", "move"])
+export type CashuTopupPurpose = z.output<typeof CashuTopupPurposeSchema>
+
 /**
- * The one shard scope Payky reads or writes. Linky's other scopes keep
- * pointers under the same owner (`contacts`, `messages`, ...); Payky leaves
- * them alone.
+ * Which call an attempt's slots are for (cashu/0039): a topup's mint, a
+ * receive's swap, a melt's swap (its pre-swap or a fence) or a melt request's
+ * blank outputs for its change.
  */
-export const cashuShardScope = "cashu"
+export const CashuAttemptRoleSchema = z.enum([
+  "mint",
+  "swap",
+  "meltSwap",
+  "meltChange",
+])
+export type CashuAttemptRole = z.output<typeof CashuAttemptRoleSchema>
+
+/** Why a melt exists: a withdrawal, or the source of a move. */
+export const CashuMeltPurposeSchema = z.enum(["withdrawal", "move"])
+export type CashuMeltPurpose = z.output<typeof CashuMeltPurposeSchema>
+
+/**
+ * What the wait screen shows of a token sent for a payment:
+ *
+ * - `untrustedMint` — from a mint the merchant does not trust (cashu/0016),
+ *   not received until it is
+ * - `receiving` — being swapped
+ * - `waitingForMint` — the mint did not answer; tried again later
+ * - `received` — in the wallet
+ * - `receivingElsewhere` — another Payky device of the account has its
+ *   receive pending and will settle the payment; tried again later
+ *   (cashu/0029)
+ * - `receivedElsewhere` — another wallet spent it first, for good: Linky on
+ *   the same npub, or a customer's double spend (cashu/0029)
+ * - `failed` — refused for good
+ *
+ * Which of them the wait screen says beside the QR: `cashuArrivalKeepsRequest`
+ * (cashu/0020).
+ */
+export const CashuTokenArrivalStateSchema = z.enum([
+  "untrustedMint",
+  "receiving",
+  "waitingForMint",
+  "received",
+  "receivingElsewhere",
+  "checkingElsewhere",
+  "receivedElsewhere",
+  "contested",
+  "failed",
+])
+export type CashuTokenArrivalState = z.output<
+  typeof CashuTokenArrivalStateSchema
+>

@@ -1,6 +1,6 @@
 # 0001 Cashu payments go into Linky's own wallet, written in Linky's format
 
-Status: accepted
+Status: superseded by cashu/0012
 Date: 2026-10-14
 
 ## Context

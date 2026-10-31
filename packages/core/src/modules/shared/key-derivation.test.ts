@@ -1,8 +1,10 @@
+import { bytesToHex } from "@noble/hashes/utils.js"
 import { Slip39 } from "slip39-ts"
 import { describe, expect, test } from "vitest"
 import {
   cashuWalletSeedDerivationPath,
   defaultSparkWalletDerivationPath,
+  deriveCashuWalletSeed,
   deriveDefaultSparkWalletSecret,
   deriveEvoluOwnerSecret,
   evoluOwnerDerivationPath,
@@ -20,9 +22,15 @@ const masterKey = MasterKey("000102030405060708090a0b0c0d0e0f")
 
 describe("key derivation", () => {
   test("uses the documented Payky derivation paths", () => {
-    expect(cashuWalletSeedDerivationPath).toBe("m/83696968'/39'/0'/24'/0'")
     expect(evoluOwnerDerivationPath).toBe("m/83696968'/39'/0'/24'/1'")
     expect(defaultSparkWalletDerivationPath).toBe("m/83696968'/39'/0'/12'/0'")
+    expect(cashuWalletSeedDerivationPath).toBe("m/83696968'/128169'/64'/0'")
+  })
+
+  test("derives the 64-byte Cashu wallet seed from BIP-85 HEX, with no mnemonic", () => {
+    expect(bytesToHex(deriveCashuWalletSeed(masterKey))).toBe(
+      "9448c9e3d92974ac5fb78fa2522d61f8f01d5012dce0c34c41fe2971e784da428deda78094a96e695084d8a22ce05791a2a96c084844feda63ffdc3f1b616a9b"
+    )
   })
 
   test("derives the documented Evolu owner secret", () => {

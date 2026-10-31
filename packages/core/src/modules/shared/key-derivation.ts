@@ -1,7 +1,5 @@
 import {
   createRandomBytes,
-  Mnemonic,
-  mnemonicToOwnerSecret,
   type OwnerId,
   type OwnerIdBytes,
   type OwnerSecret,
@@ -24,7 +22,6 @@ import {
   deriveHardenedPrivateKey,
   parseHardenedPath,
 } from "./bip32-hardened.ts"
-import { mnemonicToBip39Seed } from "./bip39-seed.ts"
 import { hmacSha512 } from "./hmac-sha512.ts"
 
 const Hex16Schema = z.string().regex(/^[0-9a-f]{32}$/u)
@@ -85,25 +82,20 @@ export const RecoveryMnemonic = RecoveryMnemonicSchema.decode
  * The word count matches how much of the derived entropy each consumer uses:
  * 24 words = 32 bytes, 12 words = 16 bytes.
  */
-/**
- * The Cashu wallet seed Linky derives (`CASHU_SEED_PATH` in Linky's
- * `derivationPaths.ts`): one wallet shared by both apps.
- */
-export const cashuWalletSeedDerivationPath = DerivationPath(
-  "m/83696968'/39'/0'/24'/0'"
-)
-/**
- * Linky's app (meta) owner (`META_OWNER_PATH`), a second Evolu identity next
- * to Payky's own; its shard owners hold the shared Cashu wallet.
- */
-export const linkyAppOwnerDerivationPath = DerivationPath(
-  "m/83696968'/39'/0'/24'/1'/0'"
-)
 export const evoluOwnerDerivationPath = DerivationPath(
   "m/83696968'/39'/0'/24'/1'"
 )
 export const defaultSparkWalletDerivationPath = DerivationPath(
   "m/83696968'/39'/0'/12'/0'"
+)
+/**
+ * BIP-85 paths with the HEX application: `m/83696968'/128169'/{bytes}'/
+ * {index}'`. Linky derives nothing under `128169'`, so Payky's Cashu wallet
+ * cannot collide with Linky's (cashu/0012).
+ */
+/** The Cashu wallet seed: 64 bytes, used as the BIP-39 seed directly. */
+export const cashuWalletSeedDerivationPath = DerivationPath(
+  "m/83696968'/128169'/64'/0'"
 )
 /**
  * NIP-06: plain BIP-32, not BIP-85 — the node's private key is the key.
@@ -114,9 +106,15 @@ export const nostrKeyDerivationPath = DerivationPath("m/44'/1237'/0'/0/0")
 
 const bipEntropyHmacKey = new TextEncoder().encode("bip-entropy-from-k")
 
+/**
+ * BIP-85 entropy at `path`: the first `length` bytes of the HMAC-SHA512 of
+ * the node's private key. 32 for the BIP-39 paths, which slice further, and
+ * the HEX application's own byte count (32 or 64) for the HEX paths.
+ */
 const deriveEntropy = (
   masterKey: MasterKey,
-  path: DerivationPath
+  path: DerivationPath,
+  length: 32 | 64 = 32
 ): Uint8Array => {
   const seed = hexToBytes(masterKey)
   // Payky's BIP-85 paths are fully hardened: derived without secp256k1.
@@ -130,7 +128,7 @@ const deriveEntropy = (
     throw new Error("A private BIP32 derivation path is required.")
   }
 
-  return hmacSha512(bipEntropyHmacKey, privateKey).slice(0, 32)
+  return hmacSha512(bipEntropyHmacKey, privateKey).slice(0, length)
 }
 
 export const deriveNostrSecretKey = (masterKey: MasterKey): NostrSecretKey => {
@@ -155,32 +153,10 @@ export const CashuWalletSeedSchema = z
 export type CashuWalletSeed = z.output<typeof CashuWalletSeedSchema>
 export const CashuWalletSeed = CashuWalletSeedSchema.decode
 
-/**
- * As Linky: 32 bytes of entropy → 24-word BIP-39 → `mnemonicToSeed` with an
- * empty passphrase.
- */
+/** BIP-85 HEX, 64 bytes, taken as the seed with no mnemonic in between. */
 export const deriveCashuWalletSeed = (masterKey: MasterKey): CashuWalletSeed =>
   CashuWalletSeed(
-    mnemonicToBip39Seed(
-      entropyToMnemonic(
-        deriveEntropy(masterKey, cashuWalletSeedDerivationPath),
-        wordlist
-      )
-    )
-  )
-
-/**
- * As Linky: the first 16 bytes → 12-word BIP-39 → Evolu's
- * `mnemonicToOwnerSecret`. Not Payky's own owner secret.
- */
-export const deriveLinkyAppOwnerSecret = (masterKey: MasterKey): OwnerSecret =>
-  mnemonicToOwnerSecret(
-    Mnemonic.orThrow(
-      entropyToMnemonic(
-        deriveEntropy(masterKey, linkyAppOwnerDerivationPath).slice(0, 16),
-        wordlist
-      )
-    )
+    new Uint8Array(deriveEntropy(masterKey, cashuWalletSeedDerivationPath, 64))
   )
 
 export const createMasterKey = (): MasterKey =>

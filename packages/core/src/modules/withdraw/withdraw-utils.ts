@@ -1,9 +1,21 @@
+import { createIdFromString } from "@evolu/common"
 import { z } from "zod"
 import {
   SPARK_TRANSFER_STATUS_COMPLETED,
   type SparkExitSpeed,
 } from "../../spark/spark-wallet.ts"
+import type { CashuOperationId } from "../cashu/cashu-types.ts"
 import type { WithdrawalQuote } from "./withdraw-actions.ts"
+import type { WithdrawalId } from "./withdraw-types.ts"
+
+/**
+ * The id of the withdrawal a Cashu melt pays: one per melt, so executing its
+ * quote again writes the same row (cashu/0041).
+ */
+export const deriveCashuWithdrawalId = (
+  meltOperationId: CashuOperationId
+): WithdrawalId =>
+  createIdFromString<"Withdrawal">(`withdrawal:cashu:${meltOperationId}`)
 
 export const computeTotalDebitedSats = ({
   amountSats,

@@ -1,4 +1,4 @@
-import { createIdFromString, type OwnerId } from "@evolu/common"
+import { createIdFromString } from "@evolu/common"
 import type { SparkSecret } from "../shared/key-derivation.ts"
 import type { FiatCurrency, Iban } from "../shared/schema.ts"
 import type { AccountId } from "./account-types.ts"
@@ -38,9 +38,9 @@ export const createQerkoTerminalAccountId = (
 ): AccountId =>
   createIdFromString<"Account">(`account:qerkoTerminal:${currency}`)
 
-/** Derived from Linky's app owner: one Cashu account per shared wallet. */
-export const createCashuAccountId = (linkyAppOwnerId: OwnerId): AccountId =>
-  createIdFromString<"Account">(`account:cashu:${linkyAppOwnerId}`)
+/** Fixed: an account database holds one Cashu wallet (cashu/0012). */
+export const createCashuAccountId = (): AccountId =>
+  createIdFromString<"Account">("account:cashu")
 
 /**
  * Derived from the lowercased address, so a different address is a different

@@ -38,7 +38,7 @@ export const createE2eCashuMintFetch = async (): Promise<
   const [{ createFakeCashuMint, createFakeMintsFetch }, { MAIN_MINT_URL }] =
     await Promise.all([
       import("@payky/core/cashu/fake-cashu-mint"),
-      import("@payky/core/cashu/cashu-mints"),
+      import("@payky/core/modules/cashu/cashu-utils"),
     ])
   // A melt at either mint pays the invoice wherever it was issued.
   const payInvoice = (invoice: string) => {

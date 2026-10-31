@@ -29,7 +29,7 @@ import { VerticalNav } from "../../components/vertical-nav.tsx"
 import { useBtcFiat } from "../../hooks/use-btc-fiat.ts"
 import { useInfiniteEvoluQuery } from "../../hooks/use-infinite-evolu-query.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import { useCashuWalletSnapshot } from "../shared/cashu/use-cashu-wallet-snapshot.ts"
+import { useCashuWallet } from "../shared/cashu/use-cashu-wallet.ts"
 import { useCashuAccountId } from "./use-cashu-withdraw-data.ts"
 import { useSparkAccountId, useSparkBalance } from "./use-withdraw-data.ts"
 import { WithdrawNoAccountCard } from "./withdraw-no-account-card.tsx"
@@ -105,14 +105,10 @@ function CashuBalanceSummary() {
 }
 
 function CashuBalanceLine() {
-  const { snapshot } = useCashuWalletSnapshot()
+  const { balances } = useCashuWallet()
   return (
     <BalanceSummary
-      balance={
-        snapshot === null
-          ? null
-          : [...snapshot.balances.values()].reduce((sum, sats) => sum + sats, 0)
-      }
+      balance={[...balances.values()].reduce((sum, sats) => sum + sats, 0)}
     />
   )
 }

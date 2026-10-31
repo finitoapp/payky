@@ -1,6 +1,6 @@
 # 0009 The page on how Payky works claims only what the code does
 
-Status: accepted
+Status: superseded by landing/0013
 Date: 2026-10-13
 
 ## Context

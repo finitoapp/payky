@@ -19,7 +19,7 @@ import { useTranslation } from "@/hooks/use-translation.ts"
 /**
  * The account a method's withdrawals are booked to: the active Spark wallet,
  * or the Cashu account even while Cashu is off, since its ecash stays in the
- * wallet shared with Linky.
+ * wallet.
  */
 export const useWithdrawAccountId = (
   method: WithdrawMethod
@@ -29,12 +29,10 @@ export const useWithdrawAccountId = (
   return (method === "spark" ? spark[0] : cashu[0])?.id
 }
 
-/** The shared Cashu wallet's balance over all mints, `null` while it loads. */
-export const useCashuBalanceSats = (): number | null => {
-  const { snapshot } = useCashuWallet()
-  return snapshot === null
-    ? null
-    : [...snapshot.balances.values()].reduce((sum, sats) => sum + sats, 0)
+/** The Cashu wallet's balance over all mints. */
+export const useCashuBalanceSats = (): number => {
+  const { balances } = useCashuWallet()
+  return [...balances.values()].reduce((sum, sats) => sum + sats, 0)
 }
 
 const noAccountKeys = {

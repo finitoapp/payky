@@ -116,6 +116,7 @@ export function PaymentMethodTabContent({
         <CashuPaymentTab
           paymentId={cashuPaymentId}
           qrPayload={method.qrPayload}
+          buildQrPayload={method.buildQrPayload}
           quoteExpired={method.quoteExpired}
           preparingMessageKey={preparingMessageKey}
           newQuotePending={newCashuQuotePending}

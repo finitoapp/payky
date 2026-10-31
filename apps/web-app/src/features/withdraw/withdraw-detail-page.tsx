@@ -269,7 +269,7 @@ function WithdrawalStatusCard({ view }: { readonly view: WithdrawalView }) {
       target.kind === "lightning" ? (
         <PendingLightningText view={view} />
       ) : target.kind === "cashu" ? (
-        // The Cashu job resumes the melt and settles it (withdraw/0013).
+        // The Cashu job resumes the melt and settles it (cashu/0027).
         <p className="text-sm">{t("withdraw.detail.pending.cashu")}</p>
       ) : (
         <>

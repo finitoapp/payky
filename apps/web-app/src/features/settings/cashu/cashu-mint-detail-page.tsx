@@ -1,24 +1,38 @@
+import {
+  cashuMintAddErrorKeys,
+  cashuSetDefaultMintErrorKeys,
+  cashuUntrustMintErrorKeys,
+} from "@payky/app-shared/cashu-mint-errors"
 import { formatMintLabel } from "@payky/app-shared/cashu-withdraw-flow"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
+import { missingCashuNuts } from "@payky/core/cashu/cashu-wallet"
+import type { CashuMoveError } from "@payky/core/modules/cashu/cashu-errors"
 import {
-  type CashuMoveError,
+  setDefaultCashuMint,
+  trustCashuMint,
+  untrustCashuMint,
+} from "@payky/core/modules/cashu/cashu-mint-actions"
+import {
   type CashuMoveEstimate,
   estimateCashuMove,
   moveCashuFunds,
-} from "@payky/core/cashu/cashu-autoswap"
-import {
-  removeKnownCashuMint,
-  writeCashuDefaultMint,
-} from "@payky/core/cashu/cashu-mints"
+} from "@payky/core/modules/cashu/cashu-move-actions"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
 import { normalizeMintUrl } from "@payky/core/modules/cashu/cashu-utils"
 import { Currency, Integer } from "@payky/core/modules/shared/schema"
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
-import { useAtomValue } from "jotai"
-import { ArrowRightLeftIcon, StarIcon, Trash2Icon } from "lucide-react"
+import { Link, useNavigate } from "@tanstack/react-router"
+import { useAtomValue, useStore } from "jotai"
+import {
+  ArrowRightLeftIcon,
+  ArrowUpFromLineIcon,
+  ShieldCheckIcon,
+  ShieldOffIcon,
+  StarIcon,
+} from "lucide-react"
 import { useState } from "react"
-import { cashuWalletDepAtom } from "@/atoms/evolu.ts"
+import { accountAtom } from "@/atoms/account.ts"
+import { cashuWalletDepAtom } from "@/atoms/cashu.ts"
 import { FadeHeader } from "@/components/fade-header.tsx"
 import { RouteMessage } from "@/components/route-message.tsx"
 import { Badge } from "@/components/ui/badge.tsx"
@@ -39,6 +53,7 @@ import {
 import { Input } from "@/components/ui/input.tsx"
 import { useCashuWallet } from "@/features/shared/cashu/use-cashu-wallet.ts"
 import { useAccess, useRequirePermission } from "@/hooks/use-access.ts"
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useCashuRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
@@ -47,14 +62,16 @@ import { formatMoney } from "@/lib/format-utils.ts"
 const moveErrorKeys = {
   MintUnreachable: "settings.cashuMints.moveError.unreachable",
   MintRejected: "settings.cashuMints.moveError.rejected",
+  CashuMintUnsupported: "settings.cashuMints.moveError.unsupported",
   CashuNothingToMove: "settings.cashuMints.moveError.nothing",
+  CashuMoveCostRose: "settings.cashuMints.moveError.costRose",
   CashuInsufficientFunds: "settings.cashuMints.moveError.insufficient",
   CashuMeltQuoteNotPayable: "settings.cashuMints.moveError.rejected",
   CashuMeltUnpaid: "settings.cashuMints.moveError.rejected",
   CashuMeltPending: "settings.cashuMints.moveError.pending",
   QuoteExpired: "settings.cashuMints.moveError.rejected",
   CounterLockTimeout: "settings.cashuMints.moveError.unreachable",
-  ClaimedElsewhere: "settings.cashuMints.moveError.pending",
+  CashuReclaimAmbiguous: "settings.cashuMints.moveError.pending",
 } satisfies Record<CashuMoveError["type"], TranslationKey>
 
 export function CashuMintDetailPage({ mint }: { readonly mint: string }) {
@@ -72,15 +89,26 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
   const runToast = useCashuRunToast()
   const access = useAccess()
   const { require, requirePin } = useRequirePermission()
-  const { store, snapshot, refetch } = useCashuWallet()
-  const walletDep = useAtomValue(cashuWalletDepAtom)
+  const wallet = useCashuWallet()
+  const confirm = useConfirmDialog()
+  const account = useAtomValue(accountAtom)
+  const jotaiStore = useStore()
   const info = useQuery({
-    queryKey: ["cashuMintInfo", mint],
-    // A fetch that records nothing: the mint is not marked seen by looking.
+    queryKey: ["cashuMintInfo", account.id, mint],
+    // A fetch that records nothing: looking at a mint does not add it. The
+    // wallet is read here, not in render: one that fails to load fails
+    // this query, and the balance and trust controls still show.
     queryFn: async () => {
+      const walletDep = await jotaiStore.get(cashuWalletDepAtom)
       const wallet = await walletDep.cashuWallet.loadFresh(mint)
       const mintInfo = wallet.getMintInfo()
-      return { name: mintInfo.name, iconUrl: mintInfo.cache.icon_url ?? null }
+      return {
+        name: mintInfo.name,
+        iconUrl: mintInfo.cache.icon_url ?? null,
+        // What Payky's wallet stands on and the mint does not list
+        // (cashu/0033).
+        unsupported: missingCashuNuts(mintInfo).length > 0,
+      }
     },
     retry: false,
   })
@@ -89,9 +117,15 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
   const [moveErrorKey, setMoveErrorKey] = useState<TranslationKey | null>(null)
   const [pending, setPending] = useState(false)
 
-  const balance = snapshot?.balances.get(mint) ?? 0
-  const defaultMint = snapshot?.defaultMint ?? null
+  const [trustErrorKey, setTrustErrorKey] = useState<TranslationKey | null>(
+    null
+  )
+
+  const balance = wallet.balances.get(mint) ?? 0
+  const { defaultMint } = wallet
   const isDefault = defaultMint === mint
+  const isTrusted = wallet.trustedMints.includes(mint)
+  const nextDefault = wallet.defaultWithout(mint)
   const sats = (value: number) =>
     formatMoney({ value: Integer(value), currency: Currency.BTC }, locale)
   const parsedAmount = amount.trim() === "" ? undefined : Number(amount)
@@ -99,19 +133,44 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
     parsedAmount === undefined ||
     (Number.isInteger(parsedAmount) && parsedAmount > 0)
 
-  const setAsDefault = async () => {
+  const trust = async () => {
     if (!(await require("admin", "access.action.cashuMints"))) return
-    await runToast(async () => {
-      await writeCashuDefaultMint(store, mint)
-      await refetch()
+    setTrustErrorKey(null)
+    await runToast(async (run) => {
+      const trusted = await run(trustCashuMint(mint))
+      if (!trusted.ok)
+        setTrustErrorKey(cashuMintAddErrorKeys[trusted.error.type])
     })
   }
 
-  const remove = async () => {
+  const setAsDefault = async () => {
     if (!(await require("admin", "access.action.cashuMints"))) return
     await runToast(async (run) => {
-      const removed = await run(removeKnownCashuMint(mint))
-      if (!removed.ok) return "settings.cashuMints.removeError.inUse"
+      const chosen = await run(setDefaultCashuMint(mint))
+      if (!chosen.ok) return cashuSetDefaultMintErrorKeys[chosen.error.type]
+    })
+  }
+
+  const untrust = async () => {
+    if (!(await require("admin", "access.action.cashuMints"))) return
+    const confirmed = await confirm({
+      title: t("settings.cashuMints.untrustConfirm.title", {
+        mint: formatMintLabel(mint),
+      }),
+      description:
+        isDefault && nextDefault !== null
+          ? t("settings.cashuMints.untrustConfirm.defaultDescription", {
+              next: formatMintLabel(nextDefault),
+            })
+          : t("settings.cashuMints.untrustConfirm.description"),
+      confirmLabel: t("settings.cashuMints.untrustConfirm.confirm"),
+      cancelLabel: t("settings.cashuMints.untrustConfirm.cancel"),
+      variant: "destructive",
+    })
+    if (!confirmed) return
+    await runToast(async (run) => {
+      const untrusted = await run(untrustCashuMint(mint))
+      if (!untrusted.ok) return cashuUntrustMintErrorKeys[untrusted.error.type]
       await navigate({ to: "/settings/payment-accounts/cashu/mints" })
     })
   }
@@ -135,7 +194,7 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
   }
 
   const move = async () => {
-    if (defaultMint === null || estimate === null) return
+    if (estimate === null || defaultMint === null) return
     // Moving money out of a mint always asks for the PIN (access/0009).
     const detail = t("settings.cashuMints.movePinDetail", {
       amount: sats(estimate.amount),
@@ -152,16 +211,18 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
           sourceMint: mint,
           targetMint: defaultMint,
           ...(parsedAmount === undefined ? {} : { amount: parsedAmount }),
+          // Never more than the merchant confirmed (cashu/0023).
+          maxTotal: estimate.totalFromSource,
         })
       )
       if (!result.ok) {
         setMoveErrorKey(moveErrorKeys[result.error.type])
         return
       }
-      setEstimate(null)
       setAmount("")
-      await refetch()
     })
+    // Whatever happened, the next move starts from a fresh price.
+    setEstimate(null)
     setPending(false)
   }
 
@@ -193,24 +254,55 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
                 : t("settings.cashuMints.balance", { amount: sats(balance) })}
             </CardDescription>
           </CardHeader>
-          {isDefault ? null : (
-            <CardContent className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">
-                {t("settings.cashuMints.defaultWarning")}
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              {isTrusted
+                ? t("settings.cashuMints.trustDescription")
+                : t("settings.cashuMints.notTrustedDescription")}
+            </p>
+            {isTrusted ? null : (
+              <Button variant="outline" onClick={() => void trust()}>
+                <ShieldCheckIcon />
+                {t("settings.cashuMints.trust")}
+              </Button>
+            )}
+            {trustErrorKey === null ? null : (
+              <p className="text-sm text-destructive">{t(trustErrorKey)}</p>
+            )}
+            {info.data?.unsupported === true ? (
+              <p className="text-sm text-destructive">
+                {t("settings.cashuMints.unsupported")}
               </p>
+            ) : null}
+            {isTrusted && !isDefault ? (
               <Button
                 variant="outline"
                 onClick={() => void setAsDefault()}
-                disabled={info.isError}
+                disabled={info.isError || info.data?.unsupported === true}
               >
                 <StarIcon />
                 {t("settings.cashuMints.setDefault")}
               </Button>
-            </CardContent>
-          )}
+            ) : null}
+            {!isTrusted && balance > 0 ? (
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/settings/payment-accounts/cashu/withdrawals/new"
+                    search={{ mint }}
+                  />
+                }
+              >
+                <ArrowUpFromLineIcon />
+                {t("settings.cashuMints.withdraw")}
+              </Button>
+            ) : null}
+          </CardContent>
         </Card>
 
-        {!isDefault && balance > 0 && defaultMint !== null ? (
+        {defaultMint !== null && !isDefault && balance > 0 ? (
           <Card>
             <CardHeader>
               <CardTitle>{t("settings.cashuMints.move.title")}</CardTitle>
@@ -267,12 +359,12 @@ function CashuMintDetail({ mint }: { readonly mint: MintUrl }) {
           </Card>
         ) : null}
 
-        {isDefault ? null : (
-          <Button variant="ghost" onClick={() => void remove()}>
-            <Trash2Icon />
-            {t("settings.cashuMints.remove")}
+        {isTrusted && nextDefault !== null ? (
+          <Button variant="ghost" onClick={() => void untrust()}>
+            <ShieldOffIcon />
+            {t("settings.cashuMints.untrust")}
           </Button>
-        )}
+        ) : null}
       </div>
     </>
   )

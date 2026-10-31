@@ -7,7 +7,7 @@ import { Text, YStack } from "tamagui"
 import { accountAtom } from "../../atoms/account.ts"
 import { deviceEvoluAtom } from "../../atoms/device-evolu.ts"
 import { nativeConsole } from "../../core/native-runtime.ts"
-import { useCashuAppRun } from "../../hooks/use-app-run.ts"
+import { useAppRun } from "../../hooks/use-app-run.ts"
 import { useScreenWakeLock } from "../../hooks/use-screen-wake-lock.ts"
 import { useTranslation } from "../../hooks/use-translation.ts"
 import {
@@ -53,7 +53,7 @@ type SeedState =
 export function DemoDataSeed() {
   const account = useAtomValue(accountAtom)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
-  const cashuAppRun = useCashuAppRun()
+  const appRun = useAppRun()
   const { t, language } = useTranslation()
   const [state, setState] = useState<SeedState>({ status: "idle" })
   useScreenWakeLock(state.status === "running")
@@ -70,7 +70,7 @@ export function DemoDataSeed() {
     void (async () => {
       setState({ status: "running", done: 0, total: 1 })
       try {
-        await using run = await cashuAppRun()
+        await using run = appRun()
         const { payments, days } = await run.ok(
           generateDemoData({
             language,
@@ -93,7 +93,7 @@ export function DemoDataSeed() {
         setState({ status: "failed" })
       }
     })()
-  }, [account.demo, account.id, cashuAppRun, deviceEvolu, language])
+  }, [account.demo, account.id, appRun, deviceEvolu, language])
 
   if (state.status === "idle" || dismissed) return null
   const running = state.status === "running"

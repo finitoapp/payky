@@ -12,6 +12,7 @@ import {
 } from "@payky/app-shared/withdraw-flow"
 import type { AccountId } from "@payky/core/modules/account/account-types"
 import type { MintUrl } from "@payky/core/modules/cashu/cashu-types"
+import { normalizeMintUrl } from "@payky/core/modules/cashu/cashu-utils"
 import type { DeviceId } from "@payky/core/modules/device/device-types"
 import {
   type CashuWithdrawalQuote,
@@ -33,7 +34,7 @@ import { useColumnScroll } from "../../components/web-column.tsx"
 import { useAccess, useRequirePermission } from "../../core/use-access.ts"
 import { useCashuAppRun } from "../../hooks/use-app-run.ts"
 import { useLocale, useTranslation } from "../../hooks/use-translation.ts"
-import { useCashuWalletSnapshot } from "../shared/cashu/use-cashu-wallet-snapshot.ts"
+import { useCashuWallet } from "../shared/cashu/use-cashu-wallet.ts"
 import { CashuWithdrawFormStep } from "./cashu-withdraw-form-step.tsx"
 import { CashuWithdrawReviewStep } from "./cashu-withdraw-review-step.tsx"
 import { useCashuAccountId } from "./use-cashu-withdraw-data.ts"
@@ -48,9 +49,9 @@ interface CashuReview {
 }
 
 /**
- * `/cashu-withdraw/new`: a Lightning withdrawal from one mint of the wallet
- * shared with Linky (cashu.md §6): the default mint preselected, a review of
- * the mint's own fees, and the PIN before anything leaves. Moves money.
+ * `/cashu-withdraw/new`: a Lightning withdrawal from one mint of Payky's
+ * Cashu wallet (withdraw/0015): the payment mint preselected, a review of the
+ * mint's own fees, and the PIN before anything leaves. Moves money.
  */
 export function CashuWithdrawPage() {
   const theme = useTheme()
@@ -73,7 +74,10 @@ export function CashuWithdrawPage() {
 }
 
 function CashuWithdrawAccount() {
-  const { destination } = useLocalSearchParams<{ destination?: string }>()
+  const { destination, mint } = useLocalSearchParams<{
+    destination?: string
+    mint?: string
+  }>()
   const accountId = useCashuAccountId()
   if (accountId === undefined) {
     return <WithdrawNoAccountCard method="cashu" />
@@ -82,6 +86,7 @@ function CashuWithdrawAccount() {
     <CashuWithdrawFlow
       accountId={accountId}
       initialDestination={destination ?? ""}
+      initialMint={mint === undefined ? null : normalizeMintUrl(mint)}
     />
   )
 }
@@ -89,9 +94,12 @@ function CashuWithdrawAccount() {
 function CashuWithdrawFlow({
   accountId,
   initialDestination,
+  initialMint,
 }: {
   readonly accountId: AccountId
   readonly initialDestination: string
+  /** The mint to withdraw from, as the mint's detail page links it. */
+  readonly initialMint: MintUrl | null
 }) {
   // CashuWithdrawPage's SafeAreaView pads the screen's sides.
   const column = useColumnScroll(screenPaddingX)
@@ -101,17 +109,17 @@ function CashuWithdrawFlow({
   const jotaiStore = useStore()
   const { t } = useTranslation()
   const locale = useLocale()
-  const { snapshot } = useCashuWalletSnapshot()
+  const wallet = useCashuWallet()
   const [draft, setDraft] = useState(() =>
     createWithdrawDraft(initialDestination)
   )
-  const [chosenMint, setChosenMint] = useState<MintUrl | null>(null)
+  const [chosenMint, setChosenMint] = useState<MintUrl | null>(initialMint)
   const [review, setReview] = useState<CashuReview | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [requoting, setRequoting] = useState(false)
   const [confirmError, setConfirmError] = useState<string | null>(null)
   // A melt may or may not have been sent: nothing is confirmed again from this
-  // review until the merchant has gone back (withdraw/0007, withdraw/0013).
+  // review until the merchant has gone back (withdraw/0007, cashu/0027).
   const [uncertain, setUncertain] = useState(false)
   // `confirming` lags a render behind: a second press before it lands must
   // not melt the same quote twice.
@@ -129,11 +137,11 @@ function CashuWithdrawFlow({
     }
   }, [])
 
-  const funded = fundedMints(snapshot?.balances ?? new Map<MintUrl, number>())
+  const funded = fundedMints(wallet.balances)
   const mint = withdrawMint({
     funded,
     chosen: chosenMint,
-    defaultMint: snapshot?.defaultMint ?? null,
+    defaultMint: wallet.defaultMint,
   })
 
   const confirm = async () => {

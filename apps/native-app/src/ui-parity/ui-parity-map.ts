@@ -863,9 +863,9 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     },
   },
   {
-    native: "src/features/settings/debug-console/cashu-shard-debug-card.tsx",
+    native: "src/features/settings/debug-console/cashu-wallet-debug-card.tsx",
     web: [
-      "apps/web-app/src/features/settings/debug-console/cashu-shard-debug-card.tsx",
+      "apps/web-app/src/features/settings/debug-console/cashu-wallet-debug-card.tsx",
     ],
     status: "matched",
   },
@@ -1245,16 +1245,6 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
       "apps/web-app/src/features/settings/cashu/cashu-account-settings-page.tsx",
     ],
     status: "matched",
-    allowedDifferences: {
-      Alert:
-        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
-      AlertAction:
-        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
-      AlertDescription:
-        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
-      Button:
-        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
-    },
   },
   {
     native: "src/features/settings/payment-accounts/cashu-mint-detail-page.tsx",
@@ -1269,19 +1259,16 @@ export const uiParityMap: ReadonlyArray<UiParityEntry> = [
     status: "matched",
   },
   {
+    native: "src/features/settings/payment-accounts/cashu-mints-not-synced.tsx",
+    web: [
+      "apps/web-app/src/features/settings/cashu/cashu-mints-not-synced.tsx",
+    ],
+    status: "matched",
+  },
+  {
     native: "src/features/settings/payment-accounts/cashu-mints-page.tsx",
     web: ["apps/web-app/src/features/settings/cashu/cashu-mints-page.tsx"],
     status: "matched",
-    allowedDifferences: {
-      Alert:
-        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
-      AlertAction:
-        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
-      AlertDescription:
-        "Native adds an inline retry alert on wallet-query errors; the web keeps its existing snapshot/default rendering.",
-      Button:
-        "Native adds an inline retry action on wallet-query errors; the web keeps its existing snapshot/default rendering.",
-    },
   },
   {
     native:

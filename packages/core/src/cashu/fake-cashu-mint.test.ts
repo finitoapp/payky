@@ -1,6 +1,5 @@
 import { getEncodedToken } from "@cashu/cashu-ts"
 import { describe, expect, test } from "vitest"
-import type { DeviceAccountId } from "../evolu/device-client.ts"
 import { KeysetId, MintUrl } from "../modules/cashu/cashu-types.ts"
 import {
   deriveCashuWalletSeed,
@@ -22,11 +21,13 @@ const setup = (inputFeePpk = 0) => {
   const mint = createFakeCashuMint({ url: mintUrl, inputFeePpk })
   const dep = createCashuWalletDep({
     seed,
-    deviceAccountId: "device" as DeviceAccountId,
     fetch: mint.fetch,
   })
   return { mint, dep }
 }
+
+const tokenOf = (proofs: Parameters<typeof getEncodedToken>[0]["proofs"]) =>
+  getEncodedToken({ mint: mintUrl, proofs, unit: "sat" })
 
 describe("fake cashu mint", () => {
   test("mints, swaps, checks state, restores and melts with a real cashu-ts wallet", async () => {
@@ -103,5 +104,100 @@ describe("fake cashu mint", () => {
     await expect(dep.cashuWallet.load(mintUrl)).rejects.toThrow()
     // The failed load is not cached.
     await expect(dep.cashuWallet.load(mintUrl)).resolves.toBeDefined()
+  })
+
+  test("a deferred request is answered as lost and handled only once it is delivered", async () => {
+    const { mint, dep } = setup()
+    const wallet = await dep.cashuWallet.load(mintUrl)
+    const quote = await wallet.createMintQuoteBolt11(100)
+    mint.payMintQuote(quote.quote)
+    const proofs = await wallet.mintProofsBolt11(100, quote.quote, undefined, {
+      type: "deterministic",
+      counter: 0,
+    })
+
+    mint.failNext("swap", { type: "deferred" })
+    await expect(
+      wallet.receive(tokenOf(proofs), undefined, {
+        type: "deterministic",
+        counter: 64,
+      })
+    ).rejects.toThrow()
+    const [held] = mint.deferredRequests()
+    expect(held?.endpoint).toBe("swap")
+    expect(proofs.every((proof) => !mint.isSpent(proof.secret))).toBe(true)
+
+    expect(mint.deliverDeferred(held?.id ?? -1)).toEqual({ ok: true })
+    expect(proofs.every((proof) => mint.isSpent(proof.secret))).toBe(true)
+    expect(mint.deferredRequests()).toEqual([])
+    const restored = await wallet.restore(64, 64, { keysetId: wallet.keysetId })
+    expect(restored.proofs.reduce((sum, p) => sum + Number(p.amount), 0)).toBe(
+      100
+    )
+  })
+
+  test("a deferred request delivered after its inputs were spent is refused, and a dropped one never lands", async () => {
+    const { mint, dep } = setup()
+    const wallet = await dep.cashuWallet.load(mintUrl)
+    const quote = await wallet.createMintQuoteBolt11(100)
+    mint.payMintQuote(quote.quote)
+    const proofs = await wallet.mintProofsBolt11(100, quote.quote, undefined, {
+      type: "deterministic",
+      counter: 0,
+    })
+
+    mint.failNext("swap", { type: "deferred" })
+    mint.failNext("swap", { type: "deferred" })
+    for (const counter of [64, 128])
+      await expect(
+        wallet.receive(tokenOf(proofs), undefined, {
+          type: "deterministic",
+          counter,
+        })
+      ).rejects.toThrow()
+    const [late, dropped] = mint.deferredRequests()
+    // A fence spends the inputs before either request lands.
+    await wallet.receive(tokenOf(proofs), undefined, {
+      type: "deterministic",
+      counter: 192,
+    })
+
+    expect(mint.deliverDeferred(late?.id ?? -1)).toEqual({
+      ok: false,
+      error: { code: 11001, detail: "Token already spent." },
+    })
+    mint.dropDeferred(dropped?.id ?? -1)
+    expect(mint.deferredRequests()).toEqual([])
+    const restored = await wallet.restore(64, 128, {
+      keysetId: wallet.keysetId,
+    })
+    expect(restored.proofs).toEqual([])
+  })
+
+  test("a melt request that reaches the mint after its quote expired is refused, nothing paid", async () => {
+    let nowMs = 1_780_000_000_000
+    const mint = createFakeCashuMint({ url: mintUrl, now: () => nowMs })
+    const wallet = await createCashuWalletDep({
+      seed,
+      fetch: mint.fetch,
+    }).cashuWallet.load(mintUrl)
+    const quote = await wallet.createMintQuoteBolt11(100)
+    mint.payMintQuote(quote.quote)
+    const proofs = await wallet.mintProofsBolt11(100, quote.quote, undefined, {
+      type: "deterministic",
+      counter: 0,
+    })
+    const meltQuote = await wallet.createMeltQuoteBolt11(
+      "lnbc500n1pjfakeinvoice"
+    )
+
+    nowMs += 601_000
+    await expect(
+      wallet.meltProofsBolt11(meltQuote, proofs, undefined, {
+        type: "deterministic",
+        counter: 64,
+      })
+    ).rejects.toMatchObject({ code: 20007 })
+    expect(proofs.every((proof) => !mint.isSpent(proof.secret))).toBe(true)
   })
 })

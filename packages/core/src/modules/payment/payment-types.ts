@@ -5,6 +5,19 @@ export const PaymentIdRaw = id("Payment")
 export const PaymentId = standardSchemaToZod(PaymentIdRaw)
 export type PaymentId = typeof PaymentIdRaw.Output
 
+export const PaymentCashuQuoteHoldIdRaw = id("PaymentCashuQuoteHold")
+export const PaymentCashuQuoteHoldId = standardSchemaToZod(
+  PaymentCashuQuoteHoldIdRaw
+)
+export type PaymentCashuQuoteHoldId = typeof PaymentCashuQuoteHoldIdRaw.Output
+
+export const PaymentCashuReceiveHoldIdRaw = id("PaymentCashuReceiveHold")
+export const PaymentCashuReceiveHoldId = standardSchemaToZod(
+  PaymentCashuReceiveHoldIdRaw
+)
+export type PaymentCashuReceiveHoldId =
+  typeof PaymentCashuReceiveHoldIdRaw.Output
+
 export type PaymentStatus = "canceled" | "paid" | "expired" | "pending"
 
 /**

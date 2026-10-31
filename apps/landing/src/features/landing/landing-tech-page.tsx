@@ -56,7 +56,7 @@ import { useLandingTranslation } from "@/features/landing/landing-translation.ts
 import type { Language, TranslationKey } from "@/i18n/resources.ts"
 import { cn } from "@/lib/utils.ts"
 
-// Every claim on this page holds for the code as it is; landing/0009 says
+// Every claim on this page holds for the code as it is; landing/0013 says
 // where each comes from and what the page must not say.
 
 interface TitledText {
@@ -275,7 +275,7 @@ type ServiceId =
   | "relay"
   | "linky"
   | "cashuMints"
-  | "linkyWallet"
+  | "cashuWallet"
   | "bank"
   | "eet"
   | "spark"
@@ -303,7 +303,7 @@ type PaykyServiceId = Extract<
   | "eetCertificates"
 >
 
-/** Payky's own servers, which also say why they exist (landing/0009). */
+/** Payky's own servers, which also say why they exist (landing/0013). */
 const paykyServiceIds: ReadonlySet<ServiceId> = new Set<PaykyServiceId>([
   "web",
   "relay",
@@ -318,7 +318,7 @@ const isPaykyService = (id: ServiceId): id is PaykyServiceId =>
   paykyServiceIds.has(id)
 
 /**
- * Everything the app talks to, kept complete by landing/0009, grouped by
+ * Everything the app talks to, kept complete by landing/0013, grouped by
  * when it happens; Payky's own servers lead each group.
  */
 const serviceGroups: ReadonlyArray<{
@@ -337,7 +337,7 @@ const serviceGroups: ReadonlyArray<{
       "eet",
       "spark",
       "cashuMints",
-      "linkyWallet",
+      "cashuWallet",
       "sentry",
       "openFacts",
     ],

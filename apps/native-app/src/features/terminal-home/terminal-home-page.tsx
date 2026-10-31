@@ -1,5 +1,6 @@
 import { sqliteTrue } from "@evolu/common"
 import {
+  accountSyncs,
   findOwnerRelays,
   initialSyncIdleLimitMs,
   isInitialSyncPending,
@@ -188,7 +189,7 @@ function NotOnboarded() {
   const { syncState } = nativeRun.deps
   const state = useSyncExternalStore(syncState.subscribe, syncState.get)
   const relays = findOwnerRelays(state, evolu.name, evolu.appOwner.id)
-  const syncs = account.demo === null && account.transports.length > 0
+  const syncs = accountSyncs(account)
   const ownerUnknown = syncs && relays === null
   const [ownerTimedOut, setOwnerTimedOut] = useState(false)
   useEffect(() => {

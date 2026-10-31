@@ -1,6 +1,6 @@
 # 0013 Resuming a pending melt settles it; it is not a retry
 
-Status: accepted
+Status: superseded by cashu/0027
 Date: 2026-10-14
 
 ## Context
@@ -31,4 +31,4 @@ A withdrawal can show as in progress until the mint answers.
 
 - `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > a lost response stays in progress until the resume settles it; it is never sent again`
 - `packages/core/src/modules/withdraw/withdraw-cashu-actions.test.ts > Cashu withdrawals > a melt the mint does not pay marks the withdrawal failed`
-- `packages/core/src/cashu/cashu-melt.test.ts > meltCashu > a lost response is settled by the resume, never sent again`
+- `packages/core/src/modules/cashu/cashu-melt-actions.test.ts > meltCashu > a lost response is settled by the resume, never sent again`

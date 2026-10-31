@@ -1,13 +1,6 @@
 import { err, ok, type Task } from "@evolu/common"
 
-import {
-  type CashuMeltCost,
-  type CashuMeltError,
-  meltCashu,
-  quoteCashuMelt,
-} from "../../cashu/cashu-melt.ts"
-import type { CashuTopupDeps } from "../../cashu/cashu-topup.ts"
-import type { MintFailure } from "../../cashu/cashu-wallet.ts"
+import type { CashuDeps } from "../../cashu/cashu-wallet.ts"
 import type { DateDep, EvoluOwnerDep, FetchDep } from "../../deps.ts"
 import { defineError } from "../../error.ts"
 import type { LnurlError } from "../../integrations/lnurl/lnurl-client.ts"
@@ -24,21 +17,28 @@ import {
   upsertAccountTransactionRows,
 } from "../account-transaction/account-transaction-actions.ts"
 import { accountTransactionExistsQuery } from "../account-transaction/account-transaction-queries.ts"
+import type { AccountTransactionId } from "../account-transaction/account-transaction-types.ts"
 import { deriveCashuAccountTransactionId } from "../account-transaction/account-transaction-utils.ts"
-import { sumAvailableByMint } from "../cashu/cashu-queries.ts"
+import type { CashuMeltError, MintFailure } from "../cashu/cashu-errors.ts"
+import { loadCashuMelt, loadCashuOperation } from "../cashu/cashu-guards.ts"
+import {
+  type CashuMeltCost,
+  type CashuMeltSettlement,
+  meltCashu,
+  quoteCashuMelt,
+} from "../cashu/cashu-melt-actions.ts"
+import { cashuBalancesQuery } from "../cashu/cashu-queries.ts"
 import {
   type CashuOperationId,
+  type CashuQuoteId,
   CashuQuoteIdSchema,
   type MintUrl,
 } from "../cashu/cashu-types.ts"
-import { cashuOperationIdFor, operationKeyOf } from "../cashu/cashu-utils.ts"
+import { cashuMeltOperationIdFor } from "../cashu/cashu-utils.ts"
 import type { DeviceId } from "../device/device-types.ts"
 import { paymentIdsByLnInvoiceQuery } from "../payment/payment-queries.ts"
 import type { EvoluDep } from "../shared/evolu-deps.ts"
-import {
-  createRowId,
-  runMutationWithCompletion,
-} from "../shared/evolu-utils.ts"
+import { runMutationWithCompletion } from "../shared/evolu-utils.ts"
 import type { LightningInvoice } from "../shared/lightning-invoice-utils.ts"
 import {
   Integer,
@@ -60,14 +60,16 @@ import {
 import type { WithdrawDestination } from "./withdraw-destination-utils.ts"
 import { withdrawalByCashuMeltQuery } from "./withdraw-queries.ts"
 import type { WithdrawalId } from "./withdraw-types.ts"
-import { WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS } from "./withdraw-utils.ts"
+import {
+  deriveCashuWithdrawalId,
+  WITHDRAWAL_QUOTE_EXPIRY_MARGIN_MS,
+} from "./withdraw-utils.ts"
 
 /**
- * Withdrawing from the wallet shared with Linky (cashu.md §6, withdraw/0011–
- * 0014): one mint at a time, to a Lightning invoice or address, paid by
- * Linky's melt. The fee reserve is the mint's own, and the balance is the
- * shared one, money received in Linky included. A melt whose response was
- * lost is settled by its resume, which never sends again (withdraw/0007).
+ * Withdrawing from Payky's own Cashu wallet (withdraw/0011, withdraw/0015):
+ * one mint at a time, to a Lightning invoice or address, paid by a melt. The
+ * fee reserve is the mint's own. A melt whose response was lost is settled by
+ * its resume, which never sends again (cashu/0027).
  */
 
 const createCashuWithdrawalAmountNeededError = defineError(
@@ -131,10 +133,12 @@ const isExpired = (invoice: LightningInvoice, now: Date): boolean =>
 
 /** The mint's available balance, as `costOfMelt` counts it. */
 const loadMintBalance = async (
-  deps: CashuTopupDeps,
+  deps: CashuDeps,
   mint: MintUrl
 ): Promise<number> =>
-  sumAvailableByMint(await deps.cashuShardStore.loadProofs()).get(mint) ?? 0
+  (await deps.evolu.loadQuery(cashuBalancesQuery)).find(
+    (row) => row.mintUrl === mint
+  )?.balance ?? 0
 
 /**
  * What "withdraw all" sends to a Lightning address (withdraw/0014): a probe
@@ -155,7 +159,7 @@ const cashuLightningAddressWithdrawAllSats =
     | InsufficientWithdrawalBalanceError
     | LightningAddressInvoiceMismatchError
     | LnurlError,
-    CashuTopupDeps & FetchDep & DateDep
+    CashuDeps & FetchDep & DateDep
   > =>
   async (run) => {
     const { minSendableSats, maxSendableSats } = metadata
@@ -212,7 +216,7 @@ export const quoteCashuWithdrawal =
   }): Task<
     CashuWithdrawalQuote,
     QuoteCashuWithdrawalError,
-    CashuTopupDeps & EvoluDep & FetchDep & DateDep
+    CashuDeps & EvoluDep & FetchDep & DateDep
   > =>
   async (run) => {
     let invoice: LightningInvoice
@@ -312,87 +316,85 @@ export const quoteCashuWithdrawal =
     })
   }
 
-/** The melt a quote's withdrawal pays with: its id derives from mint and quote. */
-export const cashuMeltOperationIdFor = (
-  mint: MintUrl,
-  quoteId: string
-): CashuOperationId =>
-  cashuOperationIdFor(
-    operationKeyOf({ kind: "melt", mint, quoteId, tokenText: null })
-  )
-
 /**
- * The withdrawal's movement once its melt is `paid`, or its failure once the
- * mint refused it; nothing while it is still pending. Shared by the
- * withdrawal and the Cashu job that resumes its melt. A movement already
- * written stays as it is.
+ * What a Cashu withdrawal writes in the batch that settles its melt
+ * (cashu/0014): its movement once the melt is `paid`, from the receipt, or
+ * its failure once the mint refused it.
  */
-export const settleCashuWithdrawal =
-  (
-    meltOperationId: CashuOperationId,
-    /** From the melt's receipt; another device's settle knows only the inputs. */
-    totalSpent?: number
-  ): Task<
-    "done" | "failed" | "pending" | "none",
-    never,
-    CashuTopupDeps & EvoluDep & EvoluOwnerDep
-  > =>
-  async (run) => {
-    const [withdrawal] = await run.deps.evolu.loadQuery(
-      withdrawalByCashuMeltQuery(meltOperationId)
-    )
-    if (withdrawal === undefined) return ok("none")
-    const operation =
-      await run.deps.cashuShardStore.loadOperation(meltOperationId)
-    if (operation === null || operation.status === "pending")
-      return ok("pending")
-    if (operation.status !== "paid") {
-      if (withdrawal.failedAt === null)
-        await runMutationWithCompletion((options) =>
-          run.deps.evolu.update(
-            "withdrawal",
-            {
-              id: withdrawal.id,
-              failedAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
-              failureReason: "rejected",
-            },
-            { ...options, owner: run.deps.evoluOwner }
-          )
-        )
-      return ok("failed")
-    }
-    const [existing] = await run.deps.evolu.loadQuery(
+const cashuWithdrawalSettlement = (
+  { evolu, date }: EvoluDep & DateDep,
+  withdrawal: {
+    readonly id: WithdrawalId
+    readonly accountId: AccountId
+    readonly deviceId: DeviceId | null
+    readonly accountTransactionId: AccountTransactionId
+  },
+  melt: {
+    readonly operationId: CashuOperationId
+    readonly quoteId: CashuQuoteId
+    readonly mintUrl: MintUrl
+  }
+): CashuMeltSettlement => ({
+  // A movement another device's settlement wrote, synced in, stays as it is:
+  // its time, and a note the merchant gave it since.
+  paid: async (receipt) => {
+    const [existing] = await evolu.loadQuery(
       accountTransactionExistsQuery(withdrawal.accountTransactionId)
     )
-    if (existing !== undefined) return ok("done")
-    // What left the wallet: the inputs less the change, or the inputs when
-    // the change is not known here (an upper bound).
-    const spent = totalSpent ?? operation.inputsTotal ?? operation.amount
-    const computed = computeAccountTransactionRows(
+    if (existing !== undefined) return () => {}
+    const rows = computeAccountTransactionRows(
       {
         id: withdrawal.accountTransactionId,
         accountId: withdrawal.accountId,
-        amount: Integer(-spent),
+        amount: Integer(-receipt.totalSpent),
         currency: "BTC",
-        occurredAt: TimestampMsSchema.decode(run.deps.date.now().getTime()),
+        occurredAt: TimestampMsSchema.decode(date.now().getTime()),
         note: null,
         internalTransferGroupId: null,
         source: { deviceId: withdrawal.deviceId, source: "auto" },
         cashu: {
-          cashuOperationId: meltOperationId,
-          quoteId: operation.quoteId,
-          mintUrl: operation.mint,
+          cashuOperationId: melt.operationId,
+          quoteId: melt.quoteId,
+          mintUrl: melt.mintUrl,
         },
       },
-      run.deps.date.now()
+      date.now()
     )
-    await runMutationWithCompletion((options) =>
-      upsertAccountTransactionRows(run.deps.evolu, computed, {
-        ...options,
-        owner: run.deps.evoluOwner,
+    return (options) => upsertAccountTransactionRows(evolu, rows, options)
+  },
+  closed: (_status, options) =>
+    evolu.update(
+      "withdrawal",
+      {
+        id: withdrawal.id,
+        failedAt: TimestampMsSchema.decode(date.now().getTime()),
+        failureReason: "rejected",
+      },
+      options
+    ),
+})
+
+/**
+ * The settlement of the withdrawal a melt pays, for the Cashu job that
+ * resumes the melt; null when no withdrawal holds it.
+ */
+export const loadCashuWithdrawalSettlement =
+  (
+    meltOperationId: CashuOperationId
+  ): Task<CashuMeltSettlement | null, never, EvoluDep & DateDep> =>
+  async (run) => {
+    const [withdrawal] = await run.deps.evolu.loadQuery(
+      withdrawalByCashuMeltQuery(meltOperationId)
+    )
+    const melt = await run.ok(loadCashuMelt(meltOperationId))
+    if (withdrawal === undefined || melt === null) return ok(null)
+    return ok(
+      cashuWithdrawalSettlement(run.deps, withdrawal, {
+        operationId: meltOperationId,
+        quoteId: melt.quoteId,
+        mintUrl: melt.mintUrl,
       })
     )
-    return ok("done")
   }
 
 export type ExecuteCashuWithdrawalError =
@@ -403,8 +405,8 @@ export type ExecuteCashuWithdrawalError =
 
 /**
  * Records the withdrawal before any money leaves (withdraw/0001), melts, and
- * writes its movement or its failure. A melt still pending is left to the
- * Cashu job.
+ * writes its movement or its failure in the batch that settles the melt
+ * (cashu/0014). A melt still pending is left to the Cashu job.
  */
 export const executeCashuWithdrawal =
   ({
@@ -420,47 +422,53 @@ export const executeCashuWithdrawal =
   }): Task<
     { readonly withdrawalId: WithdrawalId; readonly totalSpent: number },
     ExecuteCashuWithdrawalError,
-    CashuTopupDeps & EvoluDep & EvoluOwnerDep & DateDep
+    CashuDeps & EvoluDep & EvoluOwnerDep & DateDep
   > =>
   async (run) => {
     const quoteId = CashuQuoteIdSchema.safeParse(quote.cost.quoteId)
     if (!quoteId.success) return err(createCashuWithdrawalDestinationError())
     const meltOperationId = cashuMeltOperationIdFor(quote.mint, quoteId.data)
-    const withdrawalId = createRowId<"Withdrawal">()
+    const withdrawalId = deriveCashuWithdrawalId(meltOperationId)
 
-    await runMutationWithCompletion((options) => {
-      const mutationOptions = { ...options, owner: run.deps.evoluOwner }
-      run.deps.evolu.upsert(
-        "withdrawal",
-        {
-          id: withdrawalId,
-          accountId,
-          deviceId,
-          amountSats: PositiveInteger(quote.amountSats),
-          accountTransactionId:
-            deriveCashuAccountTransactionId(meltOperationId),
-          failedAt: null,
-          failureReason: null,
-          comment: comment ?? null,
-        },
-        mutationOptions
-      )
-      run.deps.evolu.upsert(
-        "withdrawalLightningCashu",
-        {
-          id: withdrawalId,
-          mintUrl: quote.mint,
-          quoteId: quoteId.data,
-          meltOperationId,
-          lnInvoice: NonEmptyStringSchema.decode(quote.invoice),
-          lightningAddress:
-            quote.lightningAddress === null
-              ? null
-              : NonEmptyStringSchema.decode(quote.lightningAddress),
-        },
-        mutationOptions
-      )
-    })
+    // A quote whose melt was written was sent, or may have been: it is
+    // settled, never sent again, and its withdrawal keeps what the
+    // settlement wrote (cashu/0041). Before that, executing it again
+    // retries a withdrawal that moved nothing.
+    const written = (await run.ok(loadCashuOperation(meltOperationId))) !== null
+    if (!written)
+      await runMutationWithCompletion((options) => {
+        const mutationOptions = { ...options, owner: run.deps.evoluOwner }
+        run.deps.evolu.upsert(
+          "withdrawal",
+          {
+            id: withdrawalId,
+            accountId,
+            deviceId,
+            amountSats: PositiveInteger(quote.amountSats),
+            accountTransactionId:
+              deriveCashuAccountTransactionId(meltOperationId),
+            failedAt: null,
+            failureReason: null,
+            comment: comment ?? null,
+          },
+          mutationOptions
+        )
+        run.deps.evolu.upsert(
+          "withdrawalLightningCashu",
+          {
+            id: withdrawalId,
+            mintUrl: quote.mint,
+            quoteId: quoteId.data,
+            meltOperationId,
+            lnInvoice: NonEmptyStringSchema.decode(quote.invoice),
+            lightningAddress:
+              quote.lightningAddress === null
+                ? null
+                : NonEmptyStringSchema.decode(quote.lightningAddress),
+          },
+          mutationOptions
+        )
+      })
 
     const melted = await run(
       meltCashu({
@@ -468,21 +476,30 @@ export const executeCashuWithdrawal =
         invoice: quote.invoice,
         quoteId: quoteId.data,
         maxTotal: quote.cost.maxTotal,
+        purpose: "withdrawal",
+        settlement: cashuWithdrawalSettlement(
+          run.deps,
+          {
+            id: withdrawalId,
+            accountId,
+            deviceId,
+            accountTransactionId:
+              deriveCashuAccountTransactionId(meltOperationId),
+          },
+          {
+            operationId: meltOperationId,
+            quoteId: quoteId.data,
+            mintUrl: quote.mint,
+          }
+        ),
       })
-    )
-    const settled = await run(
-      settleCashuWithdrawal(
-        meltOperationId,
-        melted.ok ? melted.value.totalSpent : undefined
-      )
     )
     if (!melted.ok) {
       // Refused before the melt existed: nothing moved and nothing is left
       // for the job to settle, so the withdrawal fails here and the review
       // shows why.
-      if (
-        (await run.deps.cashuShardStore.loadOperation(meltOperationId)) === null
-      ) {
+      const melt = await run.ok(loadCashuOperation(meltOperationId))
+      if (melt === null) {
         await runMutationWithCompletion((options) =>
           run.deps.evolu.update(
             "withdrawal",
@@ -498,7 +515,7 @@ export const executeCashuWithdrawal =
       }
       // The melt was sent: its withdrawal's detail follows what happens next.
       return err(
-        settled.ok && settled.value === "failed"
+        melt.status === "unpaid" || melt.status === "failed"
           ? createWithdrawalRejectedError({ withdrawalId })
           : createWithdrawalOutcomeUnknownError({ withdrawalId })
       )

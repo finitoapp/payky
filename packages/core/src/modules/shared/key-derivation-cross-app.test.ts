@@ -1,17 +1,14 @@
-import { createAppOwner } from "@evolu/common"
 import { hmac } from "@noble/hashes/hmac.js"
 import { sha512 } from "@noble/hashes/sha2.js"
 import { bytesToHex, hexToBytes } from "@noble/hashes/utils.js"
 import { HDKey } from "@scure/bip32"
-import { entropyToMnemonic, mnemonicToSeedSync } from "@scure/bip39"
+import { entropyToMnemonic } from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english.js"
 import { Slip39 } from "slip39-ts"
 import { describe, expect, test } from "vitest"
 import {
-  deriveCashuWalletSeed,
   deriveDefaultSparkWalletSecret,
   deriveEvoluOwnerSecret,
-  deriveLinkyAppOwnerSecret,
   deriveNostrSecretKey,
   MasterKey,
   masterKeyToMnemonic,
@@ -31,7 +28,8 @@ import {
  * 20-word SLIP-39 share (empty passphrase) via BIP-32 plus BIP-85-style
  * entropy (HMAC-SHA512 keyed "bip-entropy-from-k" over the derived node's
  * private key). A user's share must recover the same master secret in both
- * apps, and the shared cashu path must yield the same wallet.
+ * apps. Payky no longer derives Linky's Cashu paths (cashu/0012); their
+ * vectors stay so the table remains identical to Linky's copy.
  *
  * If a change here is intentional, update BOTH copies in the same way —
  * a mismatch means one app broke seed compatibility with the other.
@@ -152,15 +150,6 @@ const BIP85_VECTORS: Record<string, Bip85Vector> = {
   },
 }
 
-/**
- * What Linky's Evolu 7.4.1 makes of the vectors above: the meta owner's id
- * (`createAppOwner(mnemonicToOwnerSecret(linkyMetaOwner.mnemonic))`) and the
- * 64-byte seed of `sharedCashuWallet.mnemonic` (`mnemonicToSeed(m, "")`).
- */
-const LINKY_META_OWNER_ID = "AYFnTLng9r9QedjMIoFYrA"
-const SHARED_CASHU_WALLET_SEED_HEX =
-  "650b25127a8e53204e5da804137f545a0cb1fa4497e5833b67768817b6aa50e6d34c28db7a47f79ba0582e3c009535a247f3cc953b37850683738197a1710f29"
-
 const BIP85_HMAC_KEY = new TextEncoder().encode("bip-entropy-from-k")
 
 const deriveEntropy = (path: string, entropyBytes: 16 | 32): string => {
@@ -235,18 +224,5 @@ describe("Payky key-derivation API matches the cross-app vectors", () => {
     expect(sparkSecretToMnemonic(sparkSecret)).toBe(
       BIP85_VECTORS.paykySparkWallet?.mnemonic
     )
-  })
-
-  test("derives Linky's meta owner from its pinned vector", () => {
-    const owner = createAppOwner(deriveLinkyAppOwnerSecret(masterKey))
-    expect(owner.mnemonic).toBe(BIP85_VECTORS.linkyMetaOwner?.mnemonic)
-    expect(owner.id).toBe(LINKY_META_OWNER_ID)
-  })
-
-  test("derives the shared Cashu wallet seed from its pinned vector", () => {
-    const seed = bytesToHex(deriveCashuWalletSeed(masterKey))
-    expect(seed).toBe(SHARED_CASHU_WALLET_SEED_HEX)
-    const mnemonic = BIP85_VECTORS.sharedCashuWallet?.mnemonic ?? ""
-    expect(seed).toBe(bytesToHex(mnemonicToSeedSync(mnemonic)))
   })
 })

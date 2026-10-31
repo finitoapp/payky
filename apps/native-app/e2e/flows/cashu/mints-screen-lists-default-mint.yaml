@@ -27,5 +27,6 @@ tags: [cashu]
 - extendedWaitUntil:
     visible: ${output.t["settings.cashuMints.title"]}
     timeout: 15000
+- assertVisible: ${output.t["settings.cashuMints.trusted"]}
 - assertVisible: cashu.cz
 - assertVisible: ${output.t["settings.cashuMints.default"]}

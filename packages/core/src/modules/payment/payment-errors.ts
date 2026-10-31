@@ -278,14 +278,6 @@ export type CashuAccountNotFoundError = ReturnType<
   typeof createCashuAccountNotFoundError
 >
 
-/** Linky's owners did not sync in time: the shared wallet cannot be written. */
-export const createCashuWalletNotSyncedError = defineError(
-  "CashuWalletNotSynced"
-)()
-export type CashuWalletNotSyncedError = ReturnType<
-  typeof createCashuWalletNotSyncedError
->
-
 export const createLightningAddressAccountNotFoundError = defineError(
   "LightningAddressAccountNotFound"
 )<{ readonly id: AccountId }>()

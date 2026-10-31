@@ -29,11 +29,13 @@ export const skWithdraw = {
     "Z Cashu sa dá vyberať len cez Lightning: zadajte Lightning faktúru alebo adresu.",
   "withdraw.cashu.error.rejected":
     "Mint platbu odmietol. Z peňaženky nič neodišlo.",
+  "withdraw.cashu.error.unsupported":
+    "Mint neuvádza, čo Payky potrebuje na bezpečnú platbu (NUT-07, NUT-09). Z peňaženky nič neodišlo.",
   "withdraw.cashu.error.toSelf":
     "Toto je jedna z vašich vlastných platobných faktúr.",
   "withdraw.cashu.error.unreachable": "Mint neodpovedal. Nič nebolo odoslané.",
   "withdraw.cashu.form.description":
-    "Pošlite ecash z jedného mintu Cashu peňaženky zdieľanej s Linky na Lightning faktúru alebo Lightning adresu.",
+    "Pošlite ecash z jedného mintu Cashu peňaženky na Lightning faktúru alebo Lightning adresu.",
   "withdraw.cashu.mint": "Z ktorého mintu",
   "withdraw.cashu.noAccount.description":
     "Pred výberom zapnite Cashu v platobných účtoch.",

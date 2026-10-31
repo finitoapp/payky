@@ -29,12 +29,19 @@ import { appSettings } from "../modules/app-settings/app-settings.ts"
 import { bill, billIndexes } from "../modules/bill/bill.ts"
 import { billLine, billLineIndexes } from "../modules/bill-line/bill-line.ts"
 import {
-  _cashuBookingCursor,
+  _cashuCounter,
+  _cashuMintCache,
+  _cashuOwnAttempt,
+  _cashuTokenArrival,
   cashuIndexes,
+  cashuMelt,
+  cashuMintTrust,
+  cashuMove,
   cashuOperation,
+  cashuOperationAttempt,
   cashuProof,
-  setting,
-  shardPointer,
+  cashuReceive,
+  cashuTopup,
 } from "../modules/cashu/cashu.ts"
 import { catalogCategory } from "../modules/catalog-category/catalog-category.ts"
 import {
@@ -67,6 +74,8 @@ import {
   paymentCardSwitchio,
   paymentCashRegister,
   paymentCashu,
+  paymentCashuQuoteHold,
+  paymentCashuReceiveHold,
   paymentIban,
   paymentIndexes,
   paymentLightningAddress,
@@ -139,6 +148,8 @@ export const AppSchema = {
   paymentCardSwitchio,
   paymentQerkoTerminal,
   paymentCashu,
+  paymentCashuQuoteHold,
+  paymentCashuReceiveHold,
   paymentLightningAddress,
   paymentLine,
   paymentNumber,
@@ -163,13 +174,20 @@ export const AppSchema = {
   withdrawalOnchain,
   withdrawalLightning,
   withdrawalLightningCashu,
-  // Linky's tables, under Linky's owners only (src/core/modules/cashu/cashu.ts).
-  shardPointer,
-  setting,
+  // Payky's own Cashu wallet (cashu/0012).
   cashuProof,
   cashuOperation,
-  // Local-only: never synced (src/core/modules/cashu/cashu.ts).
-  _cashuBookingCursor,
+  cashuOperationAttempt,
+  cashuTopup,
+  cashuReceive,
+  cashuMelt,
+  cashuMove,
+  cashuMintTrust,
+  // Local-only: never synced.
+  _cashuCounter,
+  _cashuOwnAttempt,
+  _cashuTokenArrival,
+  _cashuMintCache,
 } as const
 
 export const createQuery = createQueryBuilder(AppSchema)

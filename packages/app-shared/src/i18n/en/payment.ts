@@ -256,11 +256,23 @@ export const enPayment = {
   "paymentWait.cashu.arrival.waitingForMint":
     "A token for {amount} sat arrived. Waiting for the mint {mint} to answer...",
   "paymentWait.cashu.arrival.untrustedMint":
-    "A token for {amount} sat came from {mint}, which is not the default mint. It was not accepted and does not pay this payment.",
+    "A token for {amount} sat came from {mint}, a mint you do not trust. It was not accepted and does not pay this payment.",
+  "paymentWait.cashu.arrival.receivingElsewhere":
+    "A token for {amount} sat from {mint} is being received on another Payky device of this account. Waiting for it...",
+  "paymentWait.cashu.arrival.checkingElsewhere":
+    "A token for {amount} sat from {mint} was already spent. Checking whether another Payky device of this account received it...",
+  "paymentWait.cashu.arrival.receivedElsewhere":
+    "A token for {amount} sat from {mint} was received by another wallet first, perhaps Linky on the same key. The payment stays unpaid here; if the money is in Linky, settle it by hand.",
+  "paymentWait.cashu.arrival.contested":
+    "A token for {amount} sat from {mint} landed in slots another operation of this account may have used too. The sats are in the Cashu wallet, but Payky cannot tell which of the two they paid: the payment stays unpaid here; settle it by hand.",
+  "paymentWait.cashu.lightning.contested":
+    "A Lightning payment of {amount} sat to {mint} landed in slots another operation of this account may have used too. The sats are in the Cashu wallet, but Payky cannot tell which of the two they paid: the payment stays unpaid here; settle it by hand.",
   "paymentWait.cashu.failure.mintUnreachable":
     "The mint did not answer. The token will be tried again.",
   "paymentWait.cashu.failure.mintRejected":
     "The mint refused the token. The payment stays unpaid.",
+  "paymentWait.cashu.failure.unsupported":
+    "The token comes from a mint Payky cannot use: it does not list NUT-07 and NUT-09. The payment stays unpaid.",
   "paymentWait.cashu.failure.locked":
     "The token is locked to someone else. The payment stays unpaid.",
   "paymentWait.cashu.failure.undecodable":
@@ -269,8 +281,6 @@ export const enPayment = {
     "The wallet already holds this token. The payment stays unpaid.",
   "paymentWait.cashu.failure.fee":
     "The mint's fee would take the whole token. The payment stays unpaid.",
-  "paymentWait.cashu.failure.spent":
-    "The token was already spent. The payment stays unpaid.",
   "paymentWait.cashu.newQuote": "New invoice",
   "paymentWait.method.card": "Payment card",
   "paymentWait.method.cash": "Cash",

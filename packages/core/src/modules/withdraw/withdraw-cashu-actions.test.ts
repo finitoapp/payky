@@ -1,49 +1,83 @@
 import { testCreateRun } from "@evolu/common"
 import { describe, expect, test } from "vitest"
 
-import { resumeCashuMelt } from "../../cashu/cashu-melt.ts"
-import {
-  claimCashuTopup,
-  createCashuTopupQuote,
-} from "../../cashu/cashu-topup.ts"
+import { createQuery } from "../../evolu/schema.ts"
 import {
   createCashuTest,
-  testCashuMasterKey,
+  fundTestCashuWallet,
+  loadTestCashuOperations,
+  testCashuBalance,
   testMintUrl,
+  watchTestQuery,
 } from "../../testing/cashu.ts"
 import { saveCashuAccount } from "../account/account-actions.ts"
 import type { AccountId } from "../account/account-types.ts"
-import { sumAvailableByMint } from "../cashu/cashu-queries.ts"
-import { CashuAmount } from "../cashu/cashu-types.ts"
+import { resumeCashuMelt } from "../cashu/cashu-melt-actions.ts"
+import { type CashuOperationId, CashuQuoteId } from "../cashu/cashu-types.ts"
+import { cashuMeltOperationIdFor } from "../cashu/cashu-utils.ts"
+import { runMutationWithCompletion } from "../shared/evolu-utils.ts"
 import { createTestInvoice } from "../shared/lightning-invoice-test-fixtures.ts"
 import { parseLightningInvoice } from "../shared/lightning-invoice-utils.ts"
 import { NonEmptyString255, PositiveInteger } from "../shared/schema.ts"
 import {
   executeCashuWithdrawal,
+  loadCashuWithdrawalSettlement,
   quoteCashuWithdrawal,
-  settleCashuWithdrawal,
 } from "./withdraw-cashu-actions.ts"
 import {
   toWithdrawalView,
   withdrawalsByAccountQuery,
 } from "./withdraw-queries.ts"
 
-const setup = async () => {
-  const t = await createCashuTest()
-  const deps = {
-    ...t.deps,
-    masterKey: testCashuMasterKey,
-    date: { now: () => new Date() },
-  }
+/** Melts closed while their withdrawal's movement or failure is missing. */
+const meltSettledWithoutWithdrawalQuery = createQuery((db) =>
+  db
+    .selectFrom("cashuOperation")
+    .innerJoin(
+      "withdrawalLightningCashu",
+      "withdrawalLightningCashu.meltOperationId",
+      "cashuOperation.id"
+    )
+    .innerJoin("withdrawal", "withdrawal.id", "withdrawalLightningCashu.id")
+    .leftJoin(
+      "accountTransaction",
+      "accountTransaction.id",
+      "withdrawal.accountTransactionId"
+    )
+    .select(["cashuOperation.id", "cashuOperation.status"])
+    .where((eb) =>
+      eb.or([
+        eb.and([
+          eb("cashuOperation.status", "=", "paid"),
+          eb("accountTransaction.id", "is", null),
+        ]),
+        eb.and([
+          eb("cashuOperation.status", "in", ["unpaid", "failed"]),
+          eb("withdrawal.failedAt", "is", null),
+        ]),
+      ])
+    )
+)
+
+const setup = async ({ inputFeePpk = 0 }: { inputFeePpk?: number } = {}) => {
+  const t = await createCashuTest({ mint: { inputFeePpk } })
+  const deps = t.deps
   await using run = testCreateRun(deps)
   const accountId = await run.ok(saveCashuAccount({ enabled: true }))
   if (accountId === null) throw new Error("no Cashu account")
-  const quote = await run.orThrow(
-    createCashuTopupQuote({ mint: testMintUrl, amount: CashuAmount(1000) })
-  )
-  t.mint.payMintQuote(quote.quoteId)
-  await run.orThrow(claimCashuTopup(quote.operationId))
+  await fundTestCashuWallet(t, 1000)
   return { t, deps, accountId }
+}
+
+/** The one melt the wallet holds. */
+const meltIdOf = async (
+  deps: Awaited<ReturnType<typeof setup>>["deps"]
+): Promise<CashuOperationId> => {
+  const melt = (await loadTestCashuOperations(deps.evolu)).find(
+    (operation) => operation.kind === "melt"
+  )
+  if (melt === undefined) throw new Error("no melt")
+  return melt.id
 }
 
 const loadWithdrawals = async (
@@ -116,6 +150,35 @@ const invoice50 = () => {
 }
 
 describe("Cashu withdrawals", () => {
+  test("writes the movement or the failure in the batch that settles the melt", async () => {
+    const { t, deps, accountId } = await setup()
+    await using _ = t
+    await using run = testCreateRun(deps)
+    using watch = await watchTestQuery(
+      deps.evolu,
+      meltSettledWithoutWithdrawalQuery
+    )
+
+    const paid = await run.orThrow(
+      quoteCashuWithdrawal({ mint: testMintUrl, destination: invoice50() })
+    )
+    await run.orThrow(
+      executeCashuWithdrawal({ accountId, deviceId: null, quote: paid })
+    )
+    t.mint.queueMeltOutcome("UNPAID")
+    const unpaid = await run.orThrow(
+      quoteCashuWithdrawal({ mint: testMintUrl, destination: invoice50() })
+    )
+    await run(
+      executeCashuWithdrawal({ accountId, deviceId: null, quote: unpaid })
+    )
+
+    expect(watch.seen).toEqual([])
+    expect(
+      (await loadWithdrawals(deps, accountId)).map((row) => row?.state.status)
+    ).toEqual(expect.arrayContaining(["done", "failed"]))
+  })
+
   test("melts at the mint and books the money that left, once", async () => {
     const { t, deps, accountId } = await setup()
     await using _ = t
@@ -129,19 +192,77 @@ describe("Cashu withdrawals", () => {
       executeCashuWithdrawal({ accountId, deviceId: null, quote })
     )
     expect(result.totalSpent).toBe(50)
-    await run(
-      settleCashuWithdrawal(
-        (await deps.cashuShardStore.loadOperations()).find(
-          (op) => op.kind === "melt"
-        )?.id ?? ("" as never)
-      )
-    )
 
     const [withdrawal] = await loadWithdrawals(deps, accountId)
     expect(withdrawal).toMatchObject({
       amountSats: 50,
       target: { kind: "cashu", mintUrl: testMintUrl },
       state: { status: "done", debitedSats: 50, feeSats: 0 },
+    })
+  })
+
+  test("at a mint charging input fees, books what left the balance, the pre-swap's fee included", async () => {
+    const { t, deps, accountId } = await setup({ inputFeePpk: 100 })
+    await using _ = t
+    await using run = testCreateRun(deps)
+    const before = await testCashuBalance(deps.evolu)
+    const quote = await run.orThrow(
+      quoteCashuWithdrawal({ mint: testMintUrl, destination: invoice50() })
+    )
+
+    const result = await run.orThrow(
+      executeCashuWithdrawal({ accountId, deviceId: null, quote })
+    )
+
+    const left = before - (await testCashuBalance(deps.evolu))
+    expect(left).toBeGreaterThan(50)
+    expect(result.totalSpent).toBe(left)
+    const [withdrawal] = await loadWithdrawals(deps, accountId)
+    expect(withdrawal?.state).toMatchObject({
+      status: "done",
+      debitedSats: left,
+    })
+  })
+
+  test("a movement already booked stays as it is when the melt is settled paid again, as by another device's resume", async () => {
+    const { t, deps, accountId } = await setup()
+    await using _ = t
+    await using run = testCreateRun(deps)
+    const quote = await run.orThrow(
+      quoteCashuWithdrawal({ mint: testMintUrl, destination: invoice50() })
+    )
+    await run.orThrow(
+      executeCashuWithdrawal({ accountId, deviceId: null, quote })
+    )
+    const operationId = cashuMeltOperationIdFor(
+      testMintUrl,
+      CashuQuoteId(quote.cost.quoteId)
+    )
+    const settlement = await run.ok(loadCashuWithdrawalSettlement(operationId))
+    if (settlement?.paid === undefined) throw new Error("no settlement")
+
+    const write = await settlement.paid({
+      operationId,
+      quoteId: quote.cost.quoteId,
+      paidAmount: 50,
+      feeReserve: 2,
+      changeAmount: 0,
+      totalSpent: 52,
+    })
+    // In the batch that settles the melt, as `meltCashu` writes it.
+    await runMutationWithCompletion((options) => {
+      deps.evolu.update(
+        "cashuOperation",
+        { id: operationId, status: "paid" },
+        options
+      )
+      write(options)
+    })
+
+    const [withdrawal] = await loadWithdrawals(deps, accountId)
+    expect(withdrawal?.state).toMatchObject({
+      status: "done",
+      debitedSats: 50,
     })
   })
 
@@ -190,22 +311,72 @@ describe("Cashu withdrawals", () => {
     })
     expect(pending?.state).toEqual({ status: "pending" })
 
-    const meltId =
-      (await deps.cashuShardStore.loadOperations()).find(
-        (op) => op.kind === "melt"
-      )?.id ?? ("" as never)
+    const meltId = await meltIdOf(deps)
     const melts = t.mint.requestCount("melt")
-    const resumed = await run.orThrow(resumeCashuMelt(meltId))
-    expect(resumed.type).toBe("paid")
-    await run(
-      settleCashuWithdrawal(
-        meltId,
-        resumed.type === "paid" ? resumed.receipt.totalSpent : undefined
-      )
+    const settlement = await run.ok(loadCashuWithdrawalSettlement(meltId))
+    const resumed = await run.orThrow(
+      resumeCashuMelt(meltId, settlement ?? undefined)
     )
+    expect(resumed.type).toBe("paid")
     expect(t.mint.requestCount("melt")).toBe(melts)
     const [settled] = await loadWithdrawals(deps, accountId)
     expect(settled?.state).toMatchObject({ status: "done", debitedSats: 50 })
+  })
+
+  test("executing a quote again leaves one withdrawal, its melt sent once (cashu/0041)", async () => {
+    const { t, deps, accountId } = await setup()
+    await using _ = t
+    await using run = testCreateRun(deps)
+    const quote = await run.orThrow(
+      quoteCashuWithdrawal({ mint: testMintUrl, destination: invoice50() })
+    )
+    t.mint.failNext("melt", { type: "unreachable" })
+
+    const first = await run(
+      executeCashuWithdrawal({ accountId, deviceId: null, quote })
+    )
+    const second = await run(
+      executeCashuWithdrawal({ accountId, deviceId: null, quote })
+    )
+
+    const withdrawals = await loadWithdrawals(deps, accountId)
+    expect(withdrawals).toHaveLength(1)
+    const [withdrawal] = withdrawals
+    for (const result of [first, second])
+      expect(result).toEqual({
+        ok: false,
+        error: {
+          type: "WithdrawalOutcomeUnknown",
+          withdrawalId: withdrawal?.id,
+        },
+      })
+    expect(withdrawal?.state).toEqual({ status: "pending" })
+    expect(t.mint.requestCount("melt")).toBe(1)
+  })
+
+  test("a withdrawal refused before anything moved is retried in the same row (cashu/0041)", async () => {
+    const { t, deps, accountId } = await setup()
+    await using _ = t
+    await using run = testCreateRun(deps)
+    const quote = await run.orThrow(
+      quoteCashuWithdrawal({ mint: testMintUrl, destination: invoice50() })
+    )
+    t.mint.failNext("checkMeltQuote", { type: "unreachable" })
+    const refused = await run(
+      executeCashuWithdrawal({ accountId, deviceId: null, quote })
+    )
+    expect(refused.ok).toBe(false)
+    expect((await loadWithdrawals(deps, accountId))[0]?.state.status).toBe(
+      "failed"
+    )
+
+    const retried = await run.orThrow(
+      executeCashuWithdrawal({ accountId, deviceId: null, quote })
+    )
+
+    const withdrawals = await loadWithdrawals(deps, accountId)
+    expect(withdrawals.map((row) => row?.id)).toEqual([retried.withdrawalId])
+    expect(withdrawals[0]?.state).toMatchObject({ status: "done" })
   })
 
   test("sends a Lightning address the comment it accepts and saves the merchant's own", async () => {
@@ -452,11 +623,7 @@ describe("Cashu withdrawals", () => {
         amountSats: 990,
         state: { status: "done", debitedSats: 990 },
       })
-      expect(
-        sumAvailableByMint(await deps.cashuShardStore.loadProofs()).get(
-          testMintUrl
-        )
-      ).toBe(10)
+      expect(await testCashuBalance(deps.evolu)).toBe(10)
     })
   })
 })

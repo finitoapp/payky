@@ -1,5 +1,5 @@
 # Native-only (web has no spec for it): moving funds from a mint to the
-# default one (cashu/0010). The in-app fake mints are linked, so the melt at
+# default one (cashu/0015). The in-app fake mints are linked, so the melt at
 # the main mint pays the second one's quote (e2e-cashu-mint.ts). Taps only
 # from enable-cashu on: a link would reload web and lose the fake mints.
 appId: ${APP_ID}

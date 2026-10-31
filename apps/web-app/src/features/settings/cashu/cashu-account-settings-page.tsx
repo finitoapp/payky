@@ -9,20 +9,21 @@ import {
   CardTitle,
 } from "@/components/ui/card.tsx"
 import { VerticalNav } from "@/components/vertical-nav.tsx"
+import { CashuMintsNotSynced } from "@/features/settings/cashu/cashu-mints-not-synced.tsx"
 import { useCashuWallet } from "@/features/shared/cashu/use-cashu-wallet.ts"
 import { useLocale } from "@/hooks/use-locale.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 import { formatMoney } from "@/lib/format-utils.ts"
 
 /**
- * The Cashu payment method (cashu.md §4): the wallet it shares with Linky,
- * its default mint, and what each mint holds.
+ * The Cashu payment method (cashu/0012): Payky's own wallet, its payment
+ * mint, and what each mint holds.
  */
 export function CashuAccountSettingsPage() {
   const { t } = useTranslation()
   const locale = useLocale()
-  const { snapshot } = useCashuWallet()
-  const balances = snapshot === null ? [] : [...snapshot.balances]
+  const wallet = useCashuWallet()
+  const balances = [...wallet.balances]
 
   return (
     <>
@@ -44,15 +45,15 @@ export function CashuAccountSettingsPage() {
               <span className="text-muted-foreground">
                 {t("settings.cashuAccount.defaultMint")}
               </span>
-              <span className="font-medium break-all">
-                {snapshot?.defaultMint ?? " "}
-              </span>
+              {wallet.defaultMint === null ? (
+                <CashuMintsNotSynced />
+              ) : (
+                <span className="font-medium break-all">
+                  {wallet.defaultMint}
+                </span>
+              )}
             </div>
-            {snapshot !== null && !snapshot.hydrated ? (
-              <p className="text-muted-foreground">
-                {t("settings.cashuAccount.syncing")}
-              </p>
-            ) : balances.length === 0 ? (
+            {balances.length === 0 ? (
               <p className="text-muted-foreground">
                 {t("settings.cashuAccount.empty")}
               </p>

@@ -1,6 +1,6 @@
 import { cashuMintAddErrorKeys } from "@payky/app-shared/cashu-mint-errors"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
-import { addKnownCashuMint } from "@payky/core/cashu/cashu-mints"
+import { trustCashuMint } from "@payky/core/modules/cashu/cashu-mint-actions"
 import { useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { FadeHeader } from "@/components/fade-header.tsx"
@@ -17,8 +17,9 @@ import { useCashuRunToast } from "@/hooks/use-run-toast.ts"
 import { useTranslation } from "@/hooks/use-translation.ts"
 
 /**
- * Adds a mint by URL. Unlike Linky, a mint that does not load or lists
- * another mint's keyset is refused, and the default stays (cashu.md §7).
+ * Adds a mint by URL. A mint that does not load or lists another mint's
+ * keyset is refused; an added mint is trusted and the default stays
+ * (cashu/0015).
  */
 export function CashuMintNewPage() {
   const { t } = useTranslation()
@@ -34,7 +35,7 @@ export function CashuMintNewPage() {
     setPending(true)
     setErrorKey(null)
     await runToast(async (run) => {
-      const added = await run(addKnownCashuMint(url))
+      const added = await run(trustCashuMint(url))
       if (!added.ok) {
         setErrorKey(cashuMintAddErrorKeys[added.error.type])
         return

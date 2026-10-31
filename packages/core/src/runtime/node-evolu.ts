@@ -1,6 +1,7 @@
 import { rmSync } from "node:fs"
 import {
   type CreateSqliteDriverDep,
+  type CreateWebSocket,
   constVoid,
   createConsole,
   createConsoleStoreOutput,
@@ -105,7 +106,15 @@ const createSqliteDep = (
   },
 })
 
-export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
+export const setupRunWithEvoluDeps = async (
+  mode: "memory" | string,
+  {
+    createWebSocket = testCreateWebSocket({ throwOnCreate: true }),
+  }: {
+    /** Refuses every socket unless a test syncs through a relay of its own. */
+    readonly createWebSocket?: CreateWebSocket
+  } = {}
+) => {
   await using disposer = new AsyncDisposableStack()
 
   const consoleStoreOutput = createConsoleStoreOutput()
@@ -122,7 +131,7 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
       createBroadcastChannel: testCreateBroadcastChannel,
       createMessageChannel: testCreateMessageChannel,
       createMessagePort: createMessagePort,
-      createWebSocket: testCreateWebSocket({ throwOnCreate: true }),
+      createWebSocket,
       lockManager,
       // What the shared worker may promise about stored databases: a file
       // persists, memory does not.
@@ -189,10 +198,13 @@ export const setupRunWithEvoluDeps = async (mode: "memory" | string) => {
 }
 
 /** App Evolu on an explicit Node SQLite file, or `"memory"` for tests. */
-export const createNodeEvolu = async (mode: "memory" | string) => {
+export const createNodeEvolu = async (
+  mode: "memory" | string,
+  options: Parameters<typeof setupRunWithEvoluDeps>[1] = {}
+) => {
   await using disposer = new AsyncDisposableStack()
 
-  const { run } = disposer.use(await setupRunWithEvoluDeps(mode))
+  const { run } = disposer.use(await setupRunWithEvoluDeps(mode, options))
 
   // The CLI database is owned by the shared Evolu test owner until the CLI
   // gets a real owner identity.
@@ -202,6 +214,8 @@ export const createNodeEvolu = async (mode: "memory" | string) => {
 
   return {
     evolu,
+    /** What the shared worker reports of every transport and route. */
+    syncState: run.deps.syncState,
     [Symbol.asyncDispose]: () => disposables.disposeAsync(),
   } as const
 }

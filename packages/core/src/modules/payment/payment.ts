@@ -21,7 +21,11 @@ import {
   VariableSymbolSchema,
 } from "../shared/schema.ts"
 import { TableId } from "../table/table-types.ts"
-import { PaymentId } from "./payment-types.ts"
+import {
+  PaymentCashuQuoteHoldId,
+  PaymentCashuReceiveHoldId,
+  PaymentId,
+} from "./payment-types.ts"
 
 export const payment = {
   id: PaymentId,
@@ -169,11 +173,15 @@ export const paymentIban = {
 /**
  * A payment's Cashu method (cashu.md §4, cashu/0003): its own detail table,
  * not an extension of `paymentBtc`, so Spark and Cashu prepared on one payment
- * keep a row each. `quoteId` names the mint quote whose `topup` operation, in
- * Linky's shards, settles the Lightning leg; `receiveOperationId` is set once
- * a token for this payment arrived over nostr, before anyone receives it.
- * `quoteExpiresAt` is the quote's expiry, for the wait screen only: the
- * payment's own `expiresAt` decides its status.
+ * keep a row each. It describes the quote the wait screen shows now: `quoteId`
+ * names the mint quote whose `topup` settles the Lightning leg, and
+ * `quoteExpiresAt` is its expiry, for the wait screen only: the payment's own
+ * `expiresAt` decides its status. Preparing again writes a new quote over it.
+ *
+ * What the payment is paid by is not read from here but from its holds,
+ * `paymentCashuQuoteHold` and `paymentCashuReceiveHold` (cashu/0036).
+ * `receiveOperationId` is no longer read or written: Evolu cannot drop a
+ * column.
  */
 export const paymentCashu = {
   id: PaymentId,
@@ -187,6 +195,32 @@ export const paymentCashu = {
   lnInvoice: NonEmptyStringSchema,
   quoteExpiresAt: TimestampMsSchema.nullable(),
   receiveOperationId: CashuOperationId.nullable(),
+} as const
+
+/**
+ * A mint quote the payment was ever prepared with (cashu/0036). A row is only
+ * ever added, under an id derived from the payment, the mint and the quote,
+ * so two devices holding the same quote write one row, and a new quote or
+ * another device's preparation never takes an old one away: money for any
+ * quote the payment held is claimed for it.
+ */
+export const paymentCashuQuoteHold = {
+  id: PaymentCashuQuoteHoldId,
+  paymentId: PaymentId,
+  mintUrl: MintUrlSchema,
+  quoteId: CashuQuoteIdSchema,
+} as const
+
+/**
+ * A token's receive the payment holds, written when a token sent for it
+ * arrives, before anyone receives it (cashu.md §5, cashu/0036). Added only,
+ * under an id derived from the payment and the receive, as a quote hold is:
+ * a second token, or a new quote, never takes the first one's hold away.
+ */
+export const paymentCashuReceiveHold = {
+  id: PaymentCashuReceiveHoldId,
+  paymentId: PaymentId,
+  receiveOperationId: CashuOperationId,
 } as const
 
 /**
@@ -249,8 +283,17 @@ export const paymentIndexes = ((create) => [
     .column("pendingTransactionId"),
   create("paymentIban_accountId").on("paymentIban").column("accountId"),
   create("paymentCashu_quoteId").on("paymentCashu").column("quoteId"),
-  create("paymentCashu_receiveOperationId")
-    .on("paymentCashu")
+  create("paymentCashuQuoteHold_paymentId")
+    .on("paymentCashuQuoteHold")
+    .column("paymentId"),
+  create("paymentCashuQuoteHold_quoteId")
+    .on("paymentCashuQuoteHold")
+    .column("quoteId"),
+  create("paymentCashuReceiveHold_paymentId")
+    .on("paymentCashuReceiveHold")
+    .column("paymentId"),
+  create("paymentCashuReceiveHold_receiveOperationId")
+    .on("paymentCashuReceiveHold")
     .column("receiveOperationId"),
   create("paymentLightningAddress_accountId")
     .on("paymentLightningAddress")

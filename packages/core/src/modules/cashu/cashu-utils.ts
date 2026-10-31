@@ -1,24 +1,30 @@
-import { createIdFromString, type OwnerId } from "@evolu/common"
+import { createIdFromString } from "@evolu/common"
 import { base64urlnopad } from "@scure/base"
 import { z } from "zod"
 import { jsonCodec } from "../../zod-utils.ts"
-import type {
-  CashuOperationId,
-  CashuOperationKind,
-  CashuProofId,
-  CashuProofState,
-  CashuTokenText,
-  LinkySettingId,
+import type { PaymentId } from "../payment/payment-types.ts"
+import {
+  type CashuCounterId,
+  type CashuMintCacheId,
+  type CashuMintTrustId,
+  type CashuMoveId,
+  type CashuOperationId,
+  type CashuProofId,
+  type CashuQuoteId,
+  type CashuTokenArrivalId,
+  type CashuTokenArrivalState,
+  type CashuTokenText,
+  CashuTokenTextSchema,
+  type KeysetId,
   MintUrl,
-  ShardPointerId,
+  MintUrlSchema,
 } from "./cashu-types.ts"
-import { CashuTokenTextSchema, MintUrlSchema } from "./cashu-types.ts"
 
 /**
- * Linky's `normalizeMintUrl` (`apps/web-app/src/utils/mint.ts`) followed by
- * linkshu's `parseMintUrl`: trimmed, no trailing slash, no search or hash,
- * and any `mint.minibits.cash` URL forced to `/Bitcoin`. Null when the result
- * is not an http(s) URL with a host. Pinned by `cashu-cross-app.test.ts`.
+ * A mint's one spelling: trimmed, no trailing slash, no search or hash, and
+ * any `mint.minibits.cash` URL forced to `/Bitcoin`, as Linky spells it, so a
+ * token from Linky names the mint the way the wallet does. Null when the
+ * result is not an http(s) URL with a host.
  */
 export const normalizeMintUrl = (value: string): MintUrl | null => {
   const raw = value.trim()
@@ -37,101 +43,200 @@ export const normalizeMintUrl = (value: string): MintUrl | null => {
     }
   })()
 
-  // linkshu's `parseMintUrl` trims and strips trailing slashes once more.
   const parsed = MintUrlSchema.safeParse(normalized.trim().replace(/\/+$/u, ""))
   return parsed.success ? parsed.data : null
 }
 
 /**
- * linkshu's `operationKeyOf` (`src/ports/OperationStore.ts`): a quote
- * operation by kind, mint and quote id, any other by kind and token text.
+ * Every id below derives from what the row is about, so devices agree on it.
+ * An attempt is the exception: each device writes a row of its own
+ * (cashu/0029).
  */
-export const operationKeyOf = (operation: {
-  readonly kind: CashuOperationKind
-  readonly mint: string
-  readonly quoteId: string | null
-  readonly tokenText: string | null
-}): string =>
-  operation.quoteId === null && operation.tokenText !== null
-    ? [operation.kind, operation.tokenText].join("|")
-    : [operation.kind, operation.mint, operation.quoteId ?? ""].join("|")
-
-/** The proof id hashes the secret, so a synced or restored proof never duplicates. */
 export const cashuProofIdFor = (secret: string): CashuProofId =>
   createIdFromString<"CashuProof">(secret)
 
-/** The operation id hashes {@link operationKeyOf}. */
-export const cashuOperationIdFor = (operationKey: string): CashuOperationId =>
-  createIdFromString<"CashuOperation">(operationKey)
+export const cashuTopupOperationIdFor = (
+  mint: MintUrl,
+  quoteId: CashuQuoteId
+): CashuOperationId =>
+  createIdFromString<"CashuOperation">(`topup|${mint}|${quoteId}`)
 
-/** Every device upserts the same pointer row per scope. */
-export const shardPointerIdFor = (scope: string): ShardPointerId =>
-  createIdFromString<"ShardPointer">(`shardPointer/${scope}`)
+/** Whoever swaps the token, the payment holding this id recognises it. */
+export const cashuReceiveOperationIdFor = (
+  tokenText: CashuTokenText
+): CashuOperationId =>
+  createIdFromString<"CashuOperation">(`receive|${tokenText}`)
 
-export const linkySettingIdFor = (key: string): LinkySettingId =>
-  createIdFromString<"Setting">(`setting/${key}`)
+export const cashuMeltOperationIdFor = (
+  mint: MintUrl,
+  quoteId: CashuQuoteId
+): CashuOperationId =>
+  createIdFromString<"CashuOperation">(`melt|${mint}|${quoteId}`)
 
-/** What every merge needs of a row: who holds the copy and whether it is a tombstone. */
-export interface ShardRowCopy {
-  readonly id: string
-  readonly ownerId: OwnerId
-  readonly isDeleted: 0 | 1 | null
+export const cashuMoveIdFor = (
+  topupOperationId: CashuOperationId
+): CashuMoveId => createIdFromString<"CashuMove">(`move|${topupOperationId}`)
+
+/** The one row of the account's trusted mints (cashu/0013). */
+export const cashuMintTrustId: CashuMintTrustId =
+  createIdFromString<"CashuMintTrust">("mint-trust")
+
+export const cashuCounterIdFor = (
+  mint: MintUrl,
+  keysetId: KeysetId
+): CashuCounterId =>
+  createIdFromString<"CashuCounter">(`counter|${mint}|sat|${keysetId}`)
+
+export const cashuMintCacheIdFor = (mint: MintUrl): CashuMintCacheId =>
+  createIdFromString<"CashuMintCache">(`mint-cache|${mint}`)
+
+export const cashuTokenArrivalIdFor = (
+  paymentId: PaymentId
+): CashuTokenArrivalId =>
+  createIdFromString<"CashuTokenArrival">(`token-arrival|${paymentId}`)
+
+/**
+ * Per arrival, whether the wait screen keeps the payment's QR beside what it
+ * says (cashu/0020). An arrival that leaves the payment unpaid keeps it, so
+ * the customer can still pay another way: a token from a mint not trusted
+ * (received only once the merchant trusts its mint), one spent elsewhere for
+ * good, one whose block was contested (cashu/0029), one refused for good.
+ * One that has paid the
+ * payment, or may still pay it on its own, replaces the QR, so the customer
+ * is not invited to pay twice: a spent token is checked for the grace
+ * before it is said spent elsewhere (cashu/0030).
+ */
+const arrivalKeepsRequest = {
+  untrustedMint: true,
+  receiving: false,
+  waitingForMint: false,
+  received: false,
+  receivingElsewhere: false,
+  checkingElsewhere: false,
+  receivedElsewhere: true,
+  contested: true,
+  failed: true,
+} satisfies Record<CashuTokenArrivalState, boolean>
+
+/** Whether the wait screen says this arrival beside the QR (cashu/0020). */
+export const cashuArrivalKeepsRequest = (
+  state: CashuTokenArrivalState
+): boolean => arrivalKeepsRequest[state]
+
+/** The mint enabling Cashu trusts (cashu/0013), Linky's default too. */
+export const MAIN_MINT_URL = MintUrl("https://cashu.cz")
+
+/** `cashuMintTrust.trustedMintsJson` as stored (cashu/0013). */
+export const CashuTrustedMintsJson = jsonCodec(MintUrlSchema.array().readonly())
+
+/** What `cashuTrustedMintsQuery` reads of the account's trusted mints. */
+export interface CashuMintTrustCells {
+  readonly trustedMintsJson: string | null
+  readonly seedMintUrl: MintUrl | null
 }
 
 /**
- * Linky's plain merge (`mergeShardRows`): one copy per id, the highest
- * shard's, from owners in `indexByOwner` only; tombstones dropped.
+ * The trusted mints, the default first (cashu/0013): the list the merchant
+ * last wrote on any device, else the mint enabling Cashu seeded. Empty when
+ * this device knows neither: it has not synced the account's mints, and
+ * `MAIN_MINT_URL` may be one the merchant untrusted (cashu/0018).
  */
-export const mergeShardRows = <Row extends ShardRowCopy>(
-  rows: ReadonlyArray<Row>,
-  indexByOwner: ReadonlyMap<OwnerId, number>
-): ReadonlyArray<Row> => {
-  const newest = new Map<
-    string,
-    { readonly row: Row; readonly index: number }
-  >()
-  for (const row of rows) {
-    const index = indexByOwner.get(row.ownerId)
-    if (index === undefined) continue
-    const current = newest.get(row.id)
-    if (current === undefined || index > current.index)
-      newest.set(row.id, { row, index })
-  }
-  return [...newest.values()]
-    .map((entry) => entry.row)
-    .filter((row) => row.isDeleted !== 1)
+export const trustedCashuMintsOf = (
+  rows: ReadonlyArray<CashuMintTrustCells>
+): ReadonlyArray<MintUrl> => {
+  const [row] = rows
+  if (row === undefined) return []
+  if (row.trustedMintsJson === null)
+    return row.seedMintUrl === null ? [] : [row.seedMintUrl]
+  const decoded = z.safeDecode(CashuTrustedMintsJson, row.trustedMintsJson)
+  return decoded.success ? [...new Set(decoded.data)] : []
 }
 
 /**
- * Linky's `mergeProofCopies` (`repositories/wallet.ts`): per id the highest
- * shard's copy wins, except that any `spent` copy wins, and a spent proof is
- * kept even when its copy is a tombstone.
+ * Whether no device has written the account's mints, list or seed, as far
+ * as this device's rows show (cashu/0013). Read from the cells, not the
+ * decoded list: a list this device cannot decode was written all the same,
+ * and a seed would never count against it.
  */
-export const mergeProofCopies = <
-  Row extends ShardRowCopy & { readonly state: CashuProofState | null },
->(
-  rows: ReadonlyArray<Row>,
-  indexByOwner: ReadonlyMap<OwnerId, number>
-): ReadonlyArray<Row> => {
-  const newestFirst = rows
-    .filter((row) => indexByOwner.has(row.ownerId))
-    .toSorted(
-      (a, b) =>
-        (indexByOwner.get(b.ownerId) ?? 0) - (indexByOwner.get(a.ownerId) ?? 0)
-    )
-  const byId = new Map<string, Row>()
-  for (const copy of newestFirst) {
-    const current = byId.get(copy.id)
-    if (
-      current === undefined ||
-      (copy.state === "spent" && current.state !== "spent")
-    )
-      byId.set(copy.id, copy)
-  }
-  return [...byId.values()].filter(
-    (row) => row.state === "spent" || row.isDeleted !== 1
+export const hasNoCashuMintCells = (
+  rows: ReadonlyArray<CashuMintTrustCells>
+): boolean => {
+  const [row] = rows
+  return (
+    row === undefined ||
+    (row.trustedMintsJson === null && row.seedMintUrl === null)
   )
 }
+
+/**
+ * The default mint (cashu/0013): the first trusted one. Null with none
+ * trusted, on a device that has not synced the mints (cashu/0018).
+ */
+export const pickDefaultCashuMint = (
+  trusted: ReadonlyArray<MintUrl>
+): MintUrl | null => trusted[0] ?? null
+
+/**
+ * The default once `mint` is no longer trusted (cashu/0015): the next in
+ * the list, the previous choice, or null when `mint` is the last trusted
+ * mint.
+ */
+export const defaultCashuMintWithout = (
+  trusted: ReadonlyArray<MintUrl>,
+  mint: MintUrl
+): MintUrl | null =>
+  pickDefaultCashuMint(trusted.filter((trustedMint) => trustedMint !== mint))
+
+/**
+ * The mints a NUT-18 request names: the trusted ones in order, capped; none
+ * with no trusted mint, which leaves the request out of the QR (cashu/0018).
+ */
+export const orderCashuRequestMints = (
+  trusted: ReadonlyArray<MintUrl>,
+  max: number
+): ReadonlyArray<MintUrl> => trusted.slice(0, max)
+
+/** Suggestions on the mints screen; Linky's test mint is left out on purpose. */
+export const PRODUCTION_MINTS: ReadonlyArray<MintUrl> = [
+  MAIN_MINT_URL,
+  MintUrl("https://mint.minibits.cash/Bitcoin"),
+  MintUrl("https://kashu.me"),
+  MintUrl("https://cashu.21m.lol"),
+]
+
+/**
+ * What the merchant typed as a mint URL: `https://` when no scheme is given,
+ * a dot in the host, then normalised.
+ */
+export const parseMintUrlInput = (text: string): MintUrl | null => {
+  const trimmed = text.trim()
+  if (trimmed === "") return null
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//iu.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`
+  try {
+    if (!new URL(withScheme).hostname.includes(".")) return null
+  } catch {
+    return null
+  }
+  return normalizeMintUrl(withScheme)
+}
+
+/** NUT-12's DLEQ proof as cashu-ts carries it, stored in `cashuProof.dleq`. */
+export const cashuDleqCodec = jsonCodec(
+  z.looseObject({
+    e: z.string(),
+    s: z.string(),
+    r: z.string().optional(),
+  })
+)
+
+/** A `defineError` value, stored in `cashuOperation.error`. */
+export const cashuErrorCodec = jsonCodec(z.looseObject({ type: z.string() }))
+
+/** The error column's text: the encoded error, cut to the column's 1000. */
+export const encodeCashuError = (error: { readonly type: string }): string =>
+  z.encode(cashuErrorCodec, error).slice(0, 1000)
 
 const JsonValue = jsonCodec(z.unknown())
 
@@ -168,11 +273,11 @@ const flattenProofs = (
 }
 
 /**
- * Linky's `normalizeTokenText` (`linkshu/src/token/codec.ts`): a bare
- * `cashu…` text trimmed, with no inner whitespace; a JSON proof bundle — the
- * NUT-18 payload included — re-serialised as-is into v3 `cashuA` text. The
- * receive operation's id hashes this text, so both apps must agree on it to
- * the byte (pinned by the cross-app vectors). Null for anything else.
+ * A token's one text: a bare `cashu…` text trimmed, with no inner
+ * whitespace; a JSON proof bundle — the NUT-18 payload included —
+ * re-serialised as-is into v3 `cashuA` text. The receive operation's id
+ * hashes this text, so every device must agree on it to the byte. Null for
+ * anything else.
  */
 export const normalizeCashuTokenText = (raw: string): CashuTokenText | null => {
   const trimmed = raw.trim()

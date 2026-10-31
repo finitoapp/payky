@@ -86,7 +86,7 @@ it("melts a quote once per press and never offers a retry after the melt may hav
   expect(page).toMatch(
     /router\.replace\(\{\s*pathname: withdrawRoutes\.cashu\.detail/
   )
-  // The resume of a lost melt is the Cashu job's (withdraw/0013): none here.
+  // The resume of a lost melt is the Cashu job's (cashu/0027): none here.
   expect(page).not.toMatch(/resumeCashuMelt|settleCashuWithdrawal/)
 })
 

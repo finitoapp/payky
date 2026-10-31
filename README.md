@@ -298,26 +298,25 @@ E = HMAC-SHA512(
 )[0:32]
 ```
 
-Payky paths follow [BIP-85](https://github.com/bitcoin/bips/blob/master/bip-0085.mediawiki)
-with the BIP-39 application: `m/83696968'/39'/{language}'/{words}'/{index}'`,
+Payky paths follow [BIP-85](https://github.com/bitcoin/bips/blob/master/bip-0085.mediawiki),
+most with the BIP-39 application: `m/83696968'/39'/{language}'/{words}'/{index}'`,
 language `0'` = English. The word count encodes how much of `E` the consumer
 uses (24 words = 32 bytes, 12 words = 16 bytes). The paths must never change
 after accounts exist.
 
 | Consumer | Path `P` | Result |
 | --- | --- | --- |
-| Cashu wallet seed (shared with Linky) | `m/83696968'/39'/0'/24'/0'` | `E` → 24-word BIP-39 → `mnemonicToSeed(m, "")`, the 64-byte NUT-13 seed |
 | Evolu master owner | `m/83696968'/39'/0'/24'/1'` | `E` as the 32-byte Evolu owner secret |
 | Default Spark wallet | `m/83696968'/39'/0'/12'/0'` | `E[0:16]` as the 16-byte Spark wallet secret |
-| Linky app (meta) owner | `m/83696968'/39'/0'/24'/1'/0'` | `E[0:16]` → 12-word BIP-39 → Evolu `mnemonicToOwnerSecret`; its `cashu` shard owners hold the shared Cashu wallet |
+| Cashu wallet seed | `m/83696968'/128169'/64'/0'` | BIP-85 HEX: all 64 bytes of `E` as the NUT-13 seed, no mnemonic in between |
 
 The Spark wallet secret is stored as hex and used as BIP-39 entropy: wallet
 initialization and the settings UI encode it as a 12-word mnemonic (never the
 raw secret), so the wallet can also be restored in any BIP-39-compatible Spark
-client. The Cashu seed and the Linky owner are Linky's own derivations
-(`packages/identity/src/derivationPaths.ts` there), so a master key moved
-between the two apps opens the same Cashu wallet; the cross-app vectors in
-`key-derivation-cross-app.test.ts` pin them.
+client. The Cashu seed uses BIP-85's HEX application
+(`m/83696968'/128169'/{bytes}'/{index}'`), under which Linky derives
+nothing, so Payky's Cashu wallet never collides with Linky's
+(`docs/decisions/cashu/0012`); `key-derivation.test.ts` pins it.
 
 `S` itself is backed up as a single [SLIP-39](https://github.com/satoshilabs/slips/blob/master/slip-0039.md)
 20-word recovery mnemonic (`packages/core/src/modules/shared/key-derivation.ts`, via

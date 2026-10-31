@@ -4,7 +4,7 @@ import { useEvoluQuery } from "../../hooks/use-evolu-query.ts"
 
 /**
  * The account Cashu withdrawals are booked to: the Cashu account, even while
- * Cashu is off, since its ecash stays in the wallet shared with Linky.
+ * Cashu is off, since its ecash stays in the wallet.
  */
 export const useCashuAccountId = (): AccountId | undefined =>
   useEvoluQuery(cashuAccountQuery).data[0]?.id

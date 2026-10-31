@@ -271,7 +271,7 @@ export const qerkoTerminalAccountQuery = createQuery((db) =>
     }>()
 )
 
-/** The Cashu account, enabled or not: there is at most one per shared wallet. */
+/** The Cashu account, enabled or not: there is at most one per account. */
 export const cashuAccountQuery = createQuery((db) =>
   db
     .selectFrom("account")

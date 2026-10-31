@@ -1,4 +1,8 @@
 import { createDateDep } from "@payky/core/deps"
+import {
+  accountSyncs,
+  createAppOwnerSyncDep,
+} from "@payky/core/evolu/initial-sync-state"
 import { createEetApiDep } from "@payky/core/integrations/eet/eet-client"
 import { createNostrDep } from "@payky/core/integrations/nostr/nostr-client"
 import { createQerkoApiDep } from "@payky/core/integrations/qerko/qerko-client"
@@ -8,7 +12,7 @@ import * as Crypto from "expo-crypto"
 import { useAtomValue, useStore } from "jotai"
 import { useCallback } from "react"
 import { accountAtom } from "../atoms/account.ts"
-import { cashuShardStoreAtom, cashuWalletDepAtom } from "../atoms/cashu.ts"
+import { cashuWalletDepAtom } from "../atoms/cashu.ts"
 import { deviceEvoluAtom } from "../atoms/device-evolu.ts"
 import { evoluAtom } from "../atoms/evolu.ts"
 import { nativeEnv } from "../core/native-env.ts"
@@ -31,6 +35,7 @@ function useAppRunDeps() {
   const evolu = useAtomValue(evoluAtom)
   const deviceEvolu = useAtomValue(deviceEvoluAtom)
   const account = useAtomValue(accountAtom)
+  const syncs = accountSyncs(account)
 
   return useCallback(() => {
     const dateDep = createDateDep()
@@ -61,8 +66,13 @@ function useAppRunDeps() {
         }
       ),
       ...createNostrDep(nativeEnv.EXPO_PUBLIC_PAYKY_NOSTR_RELAYS),
+      ...createAppOwnerSyncDep({
+        syncState: nativeRun.deps.syncState,
+        evolu,
+        syncs,
+      }),
     }
-  }, [account.masterKey, deviceEvolu, evolu])
+  }, [account.masterKey, deviceEvolu, evolu, syncs])
 }
 
 export function useAppRun() {
@@ -71,25 +81,17 @@ export function useAppRun() {
 }
 
 /**
- * `useAppRun` plus the shared Cashu wallet (`cashuShardStore`, `cashuWallet`),
- * for the Cashu actions only: `await using run = await cashuAppRun()`. The
- * Cashu atoms are read when a run is made, never while rendering, so a wallet
- * that fails to start, or never does, holds up no screen; the call that
- * needed it rejects instead.
+ * `useAppRun` plus Payky's Cashu wallet (`cashuWallet`), for the Cashu
+ * actions only: `await using run = await cashuAppRun()`. The wallet atom is
+ * read when a run is made, never while rendering, so a mint SDK that fails
+ * to load holds up no screen; the call that needed it rejects instead.
  */
 export function useCashuAppRun() {
   const appRunDeps = useAppRunDeps()
   const jotaiStore = useStore()
   return useCallback(async () => {
-    const [cashuShardStore, cashuWalletDep] = await Promise.all([
-      jotaiStore.get(cashuShardStoreAtom),
-      jotaiStore.get(cashuWalletDepAtom),
-    ])
-    return nativeRun.create({
-      ...appRunDeps(),
-      cashuShardStore,
-      ...cashuWalletDep,
-    })
+    const cashuWalletDep = await jotaiStore.get(cashuWalletDepAtom)
+    return nativeRun.create({ ...appRunDeps(), ...cashuWalletDep })
   }, [appRunDeps, jotaiStore])
 }
 

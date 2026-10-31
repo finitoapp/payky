@@ -1,6 +1,6 @@
 import { cashuMintAddErrorKeys } from "@payky/app-shared/cashu-mint-errors"
 import type { TranslationKey } from "@payky/app-shared/i18n/resources"
-import { addKnownCashuMint } from "@payky/core/cashu/cashu-mints"
+import { trustCashuMint } from "@payky/core/modules/cashu/cashu-mint-actions"
 import { router } from "expo-router"
 import { useState } from "react"
 import { FadeHeader } from "../../../components/fade-header.tsx"
@@ -20,8 +20,8 @@ import { useTranslation } from "../../../hooks/use-translation.ts"
 /**
  * Adds a mint by URL, as web's `CashuMintNewPage`. The URL check, the mint
  * info/keyset load and the keyset-host check all happen inside core's
- * `addKnownCashuMint`; a mint that does not load is refused and the default
- * stays (cashu.md §7).
+ * `trustCashuMint`; a mint that does not load is refused, an added one is
+ * trusted, and the default stays (cashu/0015).
  */
 export function CashuMintNewPage() {
   const { t } = useTranslation()
@@ -37,7 +37,7 @@ export function CashuMintNewPage() {
     setErrorKey(null)
     let added: string | null = null
     await runToast(async (run) => {
-      const result = await run(addKnownCashuMint(url))
+      const result = await run(trustCashuMint(url))
       if (!result.ok) {
         setErrorKey(cashuMintAddErrorKeys[result.error.type])
         return
